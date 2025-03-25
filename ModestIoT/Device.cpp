@@ -1,9 +1,9 @@
 /**
 * @file Device.cpp
- * @brief Implements the Device interface.
+ * @brief Implements the Device interface for the ModestIoT library.
  *
- * Placeholder implementation for the abstract Device class in the Modest IoT Nano-framework (C++ Edition).
- * Concrete devices must implement event and command handling logic.
+ * Placeholder for the abstract Device class in the ModestIoT (C++ Edition) Arduino library.
+ * Concrete implementations must define the on() and handle() methods to process events and commands.
  *
  * @author Angel Velasquez
  * @date March 22, 2025
@@ -11,7 +11,7 @@
  */
 
 /*
- * This file is part of the Modest IoT Nano-framework (C++ Edition).
+ * This file is part of the ModestIoT Arduino library (C++ Edition).
  * Copyright (c) 2025 Angel Velasquez
  *
  * Licensed under the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0).
@@ -24,4 +24,4 @@
 
 #include "Device.h"
 
-// No implementation needed for abstract class; derived classes provide concrete logic.
+// No implementation needed for abstract class
