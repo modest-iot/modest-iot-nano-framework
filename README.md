@@ -52,7 +52,7 @@ This repository contains the C++ Edition of the Modest IoT Nano-framework, packa
    │   ├── Device.h
    │   └── Device.cpp
 ```
-3. **Integration**: Copy the `framework/` folder into your Arduino project directory, or install it as a library in the Arduino IDE (place in `~/Arduino/libraries/ModestIoT/` and rename `framework/` to `ModestIoT/`).
+4. **Integration**: Copy the `ModestIoT/` folder into your Arduino project directory, or install it as a library in the Arduino IDE (place in `~/Arduino/libraries/ModestIoT/`).
 
 ### Usage
 Include the library in your sketch:
