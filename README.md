@@ -2,12 +2,11 @@
 
 **Version**: 0.1  
 **Author**: Angel Velasquez  
-**Date**: March 22, 2025
+**Date**: March 23, 2025
 
 ## Overview
 
-Modest IoT Nano-framework (C++ Edition) is a lightweight, object-oriented, event-driven, and CQRS-inspired framework designed for Internet of Things (IoT) projects on resource-constrained devices like the ESP32. Implemented in C++, it provides a modular architecture for building IoT applications, emphasizing simplicity, reusability, and separation of concerns. This framework includes core components for handling events, commands, sensors, actuators, and devices, making it ideal for small-scale IoT prototyping on Arduino-compatible platforms.
-
+Modest IoT Nano-framework (C++ Edition) is a lightweight, object-oriented, event-driven, and CQRS-inspired framework designed for Internet of Things (IoT) projects on resource-constrained devices like the ESP32. Implemented in C++, it provides a modular software architecture for building IoT applications, emphasizing simplicity, reusability, and separation of concerns. This framework includes core components for handling events, commands, sensors, actuators, and devices, making it ideal for small-scale IoT prototyping on Arduino-compatible platforms.
 This repository contains the C++ Edition of the Modest IoT Nano-framework, packaged as an Arduino library. A MicroPython Edition is planned as a separate distribution (not an Arduino library) for MicroPython-compatible devices. For practical demonstrations of this C++ Edition, see example projects like [`ToggableLedDevice-Example-Cpp`](https://github.com/avelasquezn/ToggableLedDevice-Example-Cpp).
 
 ## Key Characteristics
