@@ -8,7 +8,7 @@
 
 Modest IoT Nano-framework (C++ Edition) is a lightweight, object-oriented, event-driven, and CQRS-inspired framework designed for Internet of Things (IoT) projects on resource-constrained devices like the ESP32. Implemented in C++, it provides a modular architecture for building IoT applications, emphasizing simplicity, reusability, and separation of concerns. This framework includes core components for handling events, commands, sensors, actuators, and devices, making it ideal for small-scale IoT prototyping on Arduino-compatible platforms.
 
-This repository contains only the framework itself. For practical demonstrations, see separate example projects like [`ToggableLedDevice-Example-Cpp`](https://github.com/avelasquezn/ToggableLedDevice-Example-Cpp).
+This repository contains the C++ Edition of the Modest IoT Nano-framework, packaged as an Arduino library. A MicroPython Edition is planned as a separate distribution (not an Arduino library) for MicroPython-compatible devices. For practical demonstrations of this C++ Edition, see example projects like [`ToggableLedDevice-Example-Cpp`](https://github.com/avelasquezn/ToggableLedDevice-Example-Cpp).
 
 ## Key Characteristics
 - **Object-Oriented**: Built with C++ classes, inheritance, and encapsulation for maintainable code.
@@ -31,10 +31,14 @@ This repository contains only the framework itself. For practical demonstrations
 
 ### Installation
 1. **Download**: Clone or download this repository from [avelasquezn/Modest-IoT-Nano-framework-Cpp](https://github.com/avelasquezn/Modest-IoT-Nano-framework-Cpp).
-2. **Directory Structure**: The framework files are organized as:
+2. **Install as Library**:
+    - Copy the `ModestIoT/` folder to your Arduino libraries directory (e.g., `~/Arduino/libraries/` on Linux/Mac, `Documents\Arduino\libraries\` on Windows).
+    - Alternatively, in the Arduino IDE: Sketch > Include Library > Add .ZIP Library, select a zipped `ModestIoT/` folder.
+3. **Verify Structure**: The library should be organized as:
 ```plaintext
    Modest-IoT-Nano-framework-Cpp/
-   ├── framework/
+   ├── ModestIoT/
+   │   ├── library.properties
    │   ├── ModestIoT.h
    │   ├── EventHandler.h
    │   ├── CommandHandler.h
@@ -52,9 +56,9 @@ This repository contains only the framework itself. For practical demonstrations
 3. **Integration**: Copy the `framework/` folder into your Arduino project directory, or install it as a library in the Arduino IDE (place in `~/Arduino/libraries/ModestIoT/` and rename `framework/` to `ModestIoT/`).
 
 ### Usage
-Include the framework in your sketch:
+Include the library in your sketch:
 ```cpp
-#include "framework/ModestIoT.h" 
+#include <ModestIoT.h> 
 ```
 - Extend Device to create custom IoT devices.
 - Use Button and Led as examples of concrete sensor and actuator implementations, or derive your own from Sensor and Actuator.
