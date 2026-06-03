@@ -25,15 +25,16 @@
 
 #include "Actuator.h"
 
-Actuator::Actuator(int pin, CommandHandler* commandHandler)
-    : pin(pin), handler(commandHandler) {}
+Actuator::Actuator(int signalGpioPin, CommandHandler* parentHandler)
+    : pin(signalGpioPin), handler(parentHandler) {}
 
 void Actuator::handle(Command command) {
+    executeCommand(command);
     if (handler != nullptr) {
         handler->handle(command);
     }
 }
 
-void Actuator::setHandler(CommandHandler* commandHandler) {
-    handler = commandHandler;
+void Actuator::setHandler(CommandHandler* parentHandler) {
+    handler = parentHandler;
 }

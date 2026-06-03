@@ -32,14 +32,16 @@ class Actuator : public CommandHandler {
 protected:
     int pin; ///< GPIO pin assigned to the actuator.
     CommandHandler* handler; ///< Optional handler to receive propagated commands.
-
+    virtual void executeCommand(Command command) = 0;
 public:
     /**
      * @brief Constructs an Actuator with a pin and optional command handler.
-     * @param pin The GPIO pin for the actuator.
-     * @param commandHandler Pointer to a CommandHandler to receive commands (default: nullptr).
+     * @param signalGpioPin The GPIO pin for the actuator.
+     * @param parentHandler Pointer to a CommandHandler to receive commands (default: nullptr).
      */
-    Actuator(int pin, CommandHandler* commandHandler = nullptr);
+    Actuator(int signalGpioPin, CommandHandler* parentHandler = nullptr);
+
+    virtual ~Actuator() override = default;
 
     /**
      * @brief Handles a command by propagating it to the assigned handler.
@@ -49,9 +51,9 @@ public:
 
     /**
      * @brief Sets or updates the command handler for this actuator.
-     * @param commandHandler Pointer to the new CommandHandler.
+     * @param parentHandler Pointer to the new CommandHandler.
      */
-    void setHandler(CommandHandler* commandHandler);
+    void setHandler(CommandHandler* parentHandler);
 };
 
 #endif // ACTUATOR_H
