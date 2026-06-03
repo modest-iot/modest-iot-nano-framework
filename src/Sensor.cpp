@@ -25,15 +25,18 @@
 
 #include "Sensor.h"
 
-Sensor::Sensor(int pin, EventHandler* eventHandler)
-    : pin(pin), handler(eventHandler) {}
+Sensor::Sensor(int signalGpioPin, EventHandler* parentHandler)
+    : pin(signalGpioPin), eventHandler(parentHandler) {}
 
 void Sensor::on(Event event) {
-    if (handler != nullptr) {
-        handler->on(event);
+    processEvent(event);
+    if (event.identifier == -1)
+        return;
+    if (eventHandler != nullptr) {
+        eventHandler->on(event);
     }
 }
 
-void Sensor::setHandler(EventHandler* eventHandler) {
-    handler = eventHandler;
+void Sensor::setHandler(EventHandler* parentHandler) {
+    eventHandler = parentHandler;
 }

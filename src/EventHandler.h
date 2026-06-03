@@ -33,10 +33,10 @@
  * the framework. Define custom events by assigning unique IDs in your application.
  */
 struct Event {
-    int id; ///< Unique identifier for the event type.
+    int identifier; ///< Unique identifier for the event type.
 
-    explicit Event(int eventId) : id(eventId) {}
-    bool operator==(const Event& other) const { return id == other.id; }
+    explicit Event(int eventIdentifier) : identifier(eventIdentifier) {}
+    bool operator==(const Event& other) const { return this->identifier == other.identifier; }
 };
 
 /**

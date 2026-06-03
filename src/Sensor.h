@@ -31,15 +31,17 @@
 class Sensor : public EventHandler {
 protected:
     int pin; ///< GPIO pin assigned to the sensor.
-    EventHandler* handler; ///< Optional handler to receive propagated events.
+    EventHandler* eventHandler; ///< Optional handler to receive propagated events.
+    virtual void processEvent(Event& event) = 0;
 
 public:
     /**
      * @brief Constructs a Sensor with a pin and optional event handler.
-     * @param pin The GPIO pin for the sensor.
-     * @param eventHandler Pointer to an EventHandler to receive events (default: nullptr).
+     * @param signalGpioPin The GPIO pin for the sensor.
+     * @param parentHandler Pointer to an EventHandler to receive events (default: nullptr).
      */
-    Sensor(int pin, EventHandler* eventHandler = nullptr);
+    Sensor(int signalGpioPin, EventHandler* parentHandler = nullptr);
+    virtual ~Sensor() = default;
 
     /**
      * @brief Handles an event by propagating it to the assigned handler.
@@ -49,9 +51,9 @@ public:
 
     /**
      * @brief Sets or updates the event handler for this sensor.
-     * @param eventHandler Pointer to the new EventHandler.
+     * @param parentHandler Pointer to the new EventHandler.
      */
-    void setHandler(EventHandler* eventHandler);
+    void setHandler(EventHandler* parentHandler);
 };
 
 #endif // SENSOR_H

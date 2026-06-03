@@ -33,10 +33,10 @@
  * Define custom commands by assigning unique IDs in your application.
  */
 struct Command {
-    int id; ///< Unique identifier for the command type.
+    int identifier; ///< Unique identifier for the command type.
 
-    explicit Command(int commandId) : id(commandId) {}
-    bool operator==(const Command& other) const { return id == other.id; }
+    explicit Command(int commandIdentifier) : identifier(commandIdentifier) {}
+    bool operator==(const Command& other) const { return identifier == other.identifier; }
 };
 
 /**
