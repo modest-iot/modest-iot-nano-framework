@@ -127,8 +127,10 @@ package "Concrete Sensors" #EEF6EE {
     }
 
     class DhtSensor {
+        - physicalDhtSensor : DHT
         - cachedTemperatureInCelsius : float
         - cachedRelativeHumidityInPercentage : float
+        - {static} SENSOR_ERROR_SUPPRESSION_IDENTIFIER : int = -1
         ..
         + {static} DATA_READ_EVENT_IDENTIFIER : int = 20
         + {static} MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER : int = 21
@@ -163,6 +165,9 @@ package "Concrete Actuators" #EEF0FF {
     }
 
     class LcdDisplay {
+        - physicalLcdScreen : LiquidCrystal_I2C
+        - {static} MAXIMUM_ROW_COUNT : uint8_t = 2
+        - {static} MAXIMUM_COLUMN_COUNT : uint8_t = 16
         - screenBuffer : char[2][17]
         - isBacklightEnabled : bool
         ..
@@ -177,6 +182,8 @@ package "Concrete Actuators" #EEF0FF {
         + setScreenBuffer(rowIndex : uint8_t, text : char*) : void
         + setScreenBuffer(lines : char*[]) : void
         + isBacklightOn() : bool
+        - initializeHardwareRegisters() : void
+        - commitBufferToPhysicalScreen() : void
         # executeCommand(command : Command) : void
     }
 }
@@ -240,8 +247,8 @@ Actuator "0..1" o-->  CommandHandler : handler\n(propagation target)
 Device   "0..8" o-->  EventHandler   : scheduledSequences\n(round-robin scheduler)
 
 ' CustomDevice owns its concrete sensor and actuator instances
-CustomDevice *-->  Sensor    : owns ▶
-CustomDevice *-->  Actuator  : owns ▶
+CustomDevice *-->  Sensor    : owns
+CustomDevice *-->  Actuator  : owns
 
 @enduml
 
