@@ -38,23 +38,7 @@ protected:
     void processEvent(Event& event) override;
 
 public:
-    /**
-     * @brief Unique identifier for the data-read event.
-     */
-    static const int DATA_READ_EVENT_IDENTIFIER = 20;
-    /**
-     * @brief Unique identifier for a request to measure the sensor.
-     */
-    static const int MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER = 21;
 
-    /**
-     * @brief Event emitted when a fresh reading is available.
-     */
-    static const Event DATA_READ_EVENT;
-    /**
-     * @brief Event used to request a new measurement from the DHT sensor.
-     */
-    static const Event MEASURE_DATA_REQUESTED_EVENT;
 
     /**
      * @brief Creates a DHT sensor wrapper and starts the underlying hardware driver.

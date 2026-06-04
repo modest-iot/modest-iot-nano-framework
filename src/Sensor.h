@@ -40,6 +40,12 @@ protected:
     virtual void processEvent(Event& event) = 0;
 
 public:
+    // --- FRAMEWORK-WIDE UNIFIED SENSOR SPECIFICATION EVENTS ---
+    static const int DATA_READ_EVENT_IDENTIFIER = 20;
+    static const int MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER = 21;
+
+    static const Event DATA_READ_EVENT;
+    static const Event MEASURE_DATA_REQUESTED_EVENT;
     /**
      * @brief Constructs a Sensor with a pin and optional event handler.
      * @param signalGpioPin The GPIO pin for the sensor.

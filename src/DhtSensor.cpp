@@ -1,15 +1,6 @@
 #include "DhtSensor.h"
 
 /**
- * @brief Event emitted when a fresh DHT reading has been captured.
- */
-const Event DhtSensor::DATA_READ_EVENT = Event(DhtSensor::DATA_READ_EVENT_IDENTIFIER);
-/**
- * @brief Event that requests the sensor to perform a new measurement.
- */
-const Event DhtSensor::MEASURE_DATA_REQUESTED_EVENT = Event(DhtSensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-
-/**
  * @brief Initializes the DHT driver and caches sentinel values for the first reading.
  * @param signalGpioPin GPIO pin connected to the DHT sensor.
  * @param dhtModelType DHT model constant expected by the driver library.
