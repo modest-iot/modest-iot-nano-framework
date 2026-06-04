@@ -54,9 +54,8 @@ void Device::initializeAsynchronousEngine(size_t elementSize, uint8_t maximumQue
 }
 
 bool Device::appendSensorToScheduler(EventHandler* targetSensorInstance, int requestedEventIdentifier) {
-    if (registeredSlotCount >= MAXIMUM_SCHEDULED_SLOTS || targetSensorInstance == nullptr) {
+    if (registeredSlotCount >= MAXIMUM_SCHEDULED_SLOTS || targetSensorInstance == nullptr)
         return false;
-    }
     scheduledSequences[registeredSlotCount] = { targetSensorInstance, requestedEventIdentifier };
     registeredSlotCount++;
     return true;
@@ -87,10 +86,9 @@ void Device::executeHardwareSamplingContext(void* taskParameters) {
             uint8_t currentSlotIndex = self->activeSequencePointer;
             ScheduledTaskSlot activeTask = self->scheduledSequences[currentSlotIndex];
 
-            if (activeTask.sensorInstance != nullptr) {
+            if (activeTask.sensorInstance != nullptr)
                 // Safely sample slow physical components inside this thread context
                 activeTask.sensorInstance->on(Event(activeTask.targetEventIdentifier));
-            }
 
             // General Round-Robin Pointer Rotation
             self->activeSequencePointer = (currentSlotIndex + 1) % self->registeredSlotCount;
