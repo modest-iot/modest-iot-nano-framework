@@ -32,6 +32,11 @@ class Sensor : public EventHandler {
 protected:
     int pin; ///< GPIO pin assigned to the sensor.
     EventHandler* eventHandler; ///< Optional handler to receive propagated events.
+
+    /**
+     * @brief Template-method hook that lets subclasses transform or suppress an event before propagation.
+     * @param event Event being processed.
+     */
     virtual void processEvent(Event& event) = 0;
 
 public:
@@ -41,7 +46,7 @@ public:
      * @param parentHandler Pointer to an EventHandler to receive events (default: nullptr).
      */
     Sensor(int signalGpioPin, EventHandler* parentHandler = nullptr);
-    virtual ~Sensor() = default;
+    ~Sensor() override = default;
 
     /**
      * @brief Handles an event by propagating it to the assigned handler.

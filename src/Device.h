@@ -32,6 +32,9 @@
 
 class Device : public EventHandler, public CommandHandler {
 private:
+    /**
+     * @brief Internal scheduler entry that maps a sensor instance to an event identifier.
+     */
     struct ScheduledTaskSlot {
         EventHandler* sensorInstance;
         int targetEventIdentifier;
@@ -50,32 +53,48 @@ private:
     static void executeHardwareSamplingContext(void* taskParameters);
     static void executeNetworkDispatchContext(void* taskParameters);
 protected:
+    /**
+     * @brief Creates a device with no scheduled sensors and no background workers running.
+     */
     Device();
-    virtual ~Device();
+
+    /**
+     * @brief Stops background workers and releases asynchronous engine resources.
+     */
+    ~Device() override;
 
     /**
      * @brief Spawns background FreeRTOS tasks and structures.
+     * @param elementSize Size in bytes of each telemetry payload stored in the queue.
+     * @param maximumQueueLength Maximum number of telemetry payloads that can wait in the queue.
      */
     void initializeAsynchronousEngine(size_t elementSize, uint8_t maximumQueueLength = 5);
 
     /**
      * @brief Pushes telemetry memory packets out to the low-priority background dispatcher.
+     * @param telemetryDataSnapshot Pointer to a telemetry payload with the size configured for the queue.
+     * @return True when the payload was enqueued successfully.
      */
     bool enqueueTelemetryPayload(const void* telemetryDataSnapshot);
 
     /**
      * @brief Registers a sensor driver component directly into the automated round-robin scheduler.
+     * @param targetSensorInstance Sensor handler to invoke during the sampling cycle.
+     * @param requestedEventIdentifier Event identifier passed to the sensor during sampling.
+     * @return True when the sensor was added to the scheduler.
      */
     bool appendSensorToScheduler(EventHandler* targetSensorInstance, int requestedEventIdentifier);
 
     /**
      * @brief PURE VIRTUAL EXTENSION HOOK: Implementations unpack telemetry and process transmissions.
+     * @param rawQueueItemPayload Raw telemetry bytes received from the asynchronous queue.
      */
     virtual void processQueuedTelemetryData(const void* rawQueueItemPayload) = 0;
 public:
     /**
-         * @brief Hardware ISR vectors signal this method to advance the scheduling cycle.
-         */
-    void IRAM_ATTR notifyHardwareTimerInterrupt();};
+     * @brief Hardware timer ISR entry point used to wake the sensor sampling task.
+     */
+    void IRAM_ATTR notifyHardwareTimerInterrupt();
+};
 
 #endif // DEVICE_H

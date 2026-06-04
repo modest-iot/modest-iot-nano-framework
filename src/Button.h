@@ -29,13 +29,30 @@
 
 class Button : public Sensor {
 private:
+    /**
+     * @brief Timestamp of the last accepted interrupt, used for debouncing.
+     */
     unsigned long lastInterruptTimestamp;
+    /**
+     * @brief Minimum time between accepted interrupts.
+     */
     const unsigned long debounceDelayInMilliseconds;
 protected:
+    /**
+     * @brief Button-specific event processing hook; the pressed event is already validated.
+     * @param event Event being processed.
+     */
     void processEvent(Event& event) override;
 public:
-    static const int BUTTON_PRESSED_EVENT_IDENTIFIER = 10; ///< Unique ID for button press event.
-    static const Event BUTTON_PRESSED_EVENT; ///< Predefined event for button presses.
+    /**
+     * @brief Unique identifier for the button pressed event.
+     */
+    static const int BUTTON_PRESSED_EVENT_IDENTIFIER = 10;
+
+    /**
+     * @brief Predefined event emitted when the button is accepted after debouncing.
+     */
+    static const Event BUTTON_PRESSED_EVENT;
 
     /**
      * @brief Constructs a Button sensor.
@@ -45,6 +62,9 @@ public:
      */
     Button(int signalGpioPin, unsigned long debounceDelay = 200, EventHandler* parentHandler = nullptr);
 
+    /**
+     * @brief ISR-safe hook to convert a physical button interrupt into a framework event.
+     */
     void handleHardwareInterrupt();
 };
 

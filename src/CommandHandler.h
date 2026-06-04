@@ -35,7 +35,17 @@
 struct Command {
     int identifier; ///< Unique identifier for the command type.
 
+    /**
+     * @brief Creates a command with the given identifier.
+     * @param commandIdentifier Unique command identifier used for dispatch and comparisons.
+     */
     explicit Command(int commandIdentifier) : identifier(commandIdentifier) {}
+
+    /**
+     * @brief Compares two commands by identifier.
+     * @param other Command to compare against.
+     * @return True when both commands represent the same action.
+     */
     bool operator==(const Command& other) const { return identifier == other.identifier; }
 };
 
@@ -47,8 +57,16 @@ struct Command {
  */
 class CommandHandler {
 public:
-    virtual void handle(Command command) = 0; ///< Pure virtual method to process a command.
-    virtual ~CommandHandler() = default; ///< Virtual destructor for safe inheritance.
+    /**
+     * @brief Processes an incoming command.
+     * @param command Command instance to execute.
+     */
+    virtual void handle(Command command) = 0;
+
+    /**
+     * @brief Virtual destructor for safe polymorphic deletion.
+     */
+    virtual ~CommandHandler() = default;
 };
 
 #endif // COMMAND_HANDLER_H

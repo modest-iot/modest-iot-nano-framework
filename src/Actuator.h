@@ -32,6 +32,11 @@ class Actuator : public CommandHandler {
 protected:
     int pin; ///< GPIO pin assigned to the actuator.
     CommandHandler* handler; ///< Optional handler to receive propagated commands.
+
+    /**
+     * @brief Template-method hook that lets subclasses execute or suppress a command before propagation.
+     * @param command Command being processed.
+     */
     virtual void executeCommand(Command command) = 0;
 public:
     /**
@@ -41,7 +46,7 @@ public:
      */
     Actuator(int signalGpioPin, CommandHandler* parentHandler = nullptr);
 
-    virtual ~Actuator() override = default;
+    ~Actuator() override = default;
 
     /**
      * @brief Handles a command by propagating it to the assigned handler.

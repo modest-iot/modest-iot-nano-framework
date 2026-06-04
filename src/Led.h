@@ -33,12 +33,35 @@ private:
     bool active; ///< Current state of the LED (true = ON, false = OFF).
 
 public:
-    static const int TOGGLE_LED_COMMAND_IDENTIFIER = 100; ///< Unique ID for toggle command.
-    static const int TURN_ON_COMMAND_IDENTIFIER = 101; ///< Unique ID for turn-on command.
-    static const int TURN_OFF_COMMAND_IDENTIFIER = 102; ///< Unique ID for turn-off command.
-    static const Command TOGGLE_LED_COMMAND; ///< Predefined command to toggle the LED.
-    static const Command TURN_ON_COMMAND; ///< Predefined command to turn the LED ON.
-    static const Command TURN_OFF_COMMAND; ///< Predefined command to turn the LED OFF.
+    /**
+     * @brief Unique identifier for the toggle command.
+     */
+    static const int TOGGLE_LED_COMMAND_IDENTIFIER = 100;
+
+    /**
+     * @brief Unique identifier for the turn-on command.
+     */
+    static const int TURN_ON_COMMAND_IDENTIFIER = 101;
+
+    /**
+     * @brief Unique identifier for the turn-off command.
+     */
+    static const int TURN_OFF_COMMAND_IDENTIFIER = 102;
+
+    /**
+     * @brief Predefined command that toggles the LED state.
+     */
+    static const Command TOGGLE_LED_COMMAND;
+
+    /**
+     * @brief Predefined command that turns the LED on.
+     */
+    static const Command TURN_ON_COMMAND;
+
+    /**
+     * @brief Predefined command that turns the LED off.
+     */
+    static const Command TURN_OFF_COMMAND;
 
     /**
      * @brief Constructs an Led actuator.
@@ -53,7 +76,13 @@ public:
      * @brief Gets the current state of the LED.
      * @return True if the LED is ON, false if OFF.
      */
-    bool isActive() const;
+    [[nodiscard]] bool isActive() const;
+
+    /**
+     * @brief Processes an incoming command by updating the LED state.
+     * @param command Command to apply.
+     */
+    void handle(Command command) override;
 
 };
 

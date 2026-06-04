@@ -35,7 +35,17 @@
 struct Event {
     int identifier; ///< Unique identifier for the event type.
 
+    /**
+     * @brief Creates an event with the given identifier.
+     * @param eventIdentifier Unique event identifier used for dispatch and comparisons.
+     */
     explicit Event(int eventIdentifier) : identifier(eventIdentifier) {}
+
+    /**
+     * @brief Compares two events by identifier.
+     * @param other Event to compare against.
+     * @return True when both events represent the same event type.
+     */
     bool operator==(const Event& other) const { return this->identifier == other.identifier; }
 };
 
@@ -47,8 +57,16 @@ struct Event {
  */
 class EventHandler {
 public:
-    virtual void on(Event event) = 0; ///< Pure virtual method to handle an event.
-    virtual ~EventHandler() = default; ///< Virtual destructor for safe inheritance.
+    /**
+     * @brief Handles an incoming event.
+     * @param event Event instance to process.
+     */
+    virtual void on(Event event) = 0;
+
+    /**
+     * @brief Virtual destructor for safe polymorphic deletion.
+     */
+    virtual ~EventHandler() = default;
 };
 
 #endif // EVENT_HANDLER_H
