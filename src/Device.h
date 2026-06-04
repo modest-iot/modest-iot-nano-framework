@@ -27,22 +27,55 @@
 
 #include "EventHandler.h"
 #include "CommandHandler.h"
+#include <Arduino.h>
+#include <cstdint>
 
 class Device : public EventHandler, public CommandHandler {
+private:
+    struct ScheduledTaskSlot {
+        EventHandler* sensorInstance;
+        int targetEventIdentifier;
+    };
+
+    static const uint8_t MAXIMUM_SCHEDULED_SLOTS = 8;
+    ScheduledTaskSlot scheduledSequences[MAXIMUM_SCHEDULED_SLOTS];
+    uint8_t registeredSlotCount;
+    uint8_t activeSequencePointer;
+
+    // FreeRTOS OS Kernel Objects
+    TaskHandle_t hardwareSamplingTaskHandle;
+    TaskHandle_t networkDispatcherTaskHandle;
+    QueueHandle_t telemetryQueueHandle;
+
+    static void executeHardwareSamplingContext(void* taskParameters);
+    static void executeNetworkDispatchContext(void* taskParameters);
+protected:
+    Device();
+    virtual ~Device();
+
+    /**
+     * @brief Spawns background FreeRTOS tasks and structures.
+     */
+    void initializeAsynchronousEngine(size_t elementSize, uint8_t maximumQueueLength = 5);
+
+    /**
+     * @brief Pushes telemetry memory packets out to the low-priority background dispatcher.
+     */
+    bool enqueueTelemetryPayload(const void* telemetryDataSnapshot);
+
+    /**
+     * @brief Registers a sensor driver component directly into the automated round-robin scheduler.
+     */
+    bool appendSensorToScheduler(EventHandler* targetSensorInstance, int requestedEventIdentifier);
+
+    /**
+     * @brief PURE VIRTUAL EXTENSION HOOK: Implementations unpack telemetry and process transmissions.
+     */
+    virtual void processQueuedTelemetryData(const void* rawQueueItemPayload) = 0;
 public:
     /**
-     * @brief Handles an event received by the device.
-     * @param event The event to process.
-     */
-    virtual void on(Event event) override = 0;
-
-    /**
-     * @brief Handles a command issued to the device.
-     * @param command The command to execute.
-     */
-    virtual void handle(Command command) override = 0;
-
-    virtual ~Device() = default; ///< Virtual destructor for safe inheritance.
-};
+         * @brief Hardware ISR vectors signal this method to advance the scheduling cycle.
+         */
+    void IRAM_ATTR notifyHardwareTimerInterrupt();};
 
 #endif // DEVICE_H
