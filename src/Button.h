@@ -30,7 +30,7 @@
 class Button : public Sensor {
 private:
     unsigned long lastInterruptTimestamp;
-    const unsigned long debounceDelayMilliseconds;
+    const unsigned long debounceDelayInMilliseconds;
 protected:
     void processEvent(Event& event) override;
 public:

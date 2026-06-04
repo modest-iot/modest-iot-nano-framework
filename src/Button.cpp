@@ -31,7 +31,7 @@ const Event Button::BUTTON_PRESSED_EVENT = Event(BUTTON_PRESSED_EVENT_IDENTIFIER
 Button::Button(int signalGpioPin, unsigned long debounceDelay, EventHandler* parentHandler)
     : Sensor(signalGpioPin, parentHandler),
 lastInterruptTimestamp(0),
-debounceDelayMilliseconds(debounceDelay){
+debounceDelayInMilliseconds(debounceDelay){
     pinMode(signalGpioPin, INPUT_PULLUP);
 }
 
@@ -39,7 +39,7 @@ void Button::handleHardwareInterrupt() {
     unsigned long currentTimestamp = millis();
 
     // Encapsulated temporal tracking logic handles debouncing internally
-    if (currentTimestamp - lastInterruptTimestamp > debounceDelayMilliseconds) {
+    if (currentTimestamp - lastInterruptTimestamp > debounceDelayInMilliseconds) {
         lastInterruptTimestamp = currentTimestamp;
 
         // Safely invoke the template method pipeline
