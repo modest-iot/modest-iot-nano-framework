@@ -31,7 +31,14 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 
 ## Documentation
 
-The codebase now includes code-level Doxygen comments in both header files and implementation files. These comments document:
+The `docs/` folder contains the following design and reference artifacts:
+
+| Artifact | Description |
+|---|---|
+| [`docs/class-diagram.puml`](docs/class-diagram.puml) | PlantUML class diagram of the full framework — inheritance hierarchy, associations, and the `CustomDevice` composition pattern. |
+| [`docs/user-stories.md`](docs/user-stories.md) | User stories and acceptance criteria that drove the framework design. |
+
+The source files in `src/` also include code-level Doxygen comments in both header and implementation files. These comments document:
 
 - public APIs and their expected behavior,
 - template-method extension points used by subclasses,
