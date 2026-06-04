@@ -26,35 +26,25 @@
 #include "Led.h"
 #include <Arduino.h>
 
-const Command Led::TOGGLE_LED_COMMAND = Command(TOGGLE_LED_COMMAND_ID);
-const Command Led::TURN_ON_COMMAND = Command(TURN_ON_COMMAND_ID);
-const Command Led::TURN_OFF_COMMAND = Command(TURN_OFF_COMMAND_ID);
+const Command Led::TOGGLE_LED_COMMAND = Command(TOGGLE_LED_COMMAND_IDENTIFIER);
+const Command Led::TURN_ON_COMMAND = Command(TURN_ON_COMMAND_IDENTIFIER);
+const Command Led::TURN_OFF_COMMAND = Command(TURN_OFF_COMMAND_IDENTIFIER);
 
-Led::Led(int pin, bool initialState, CommandHandler* commandHandler)
-    : Actuator(pin, commandHandler), state(initialState) {
+Led::Led(int signalGpioPin, bool initialState, CommandHandler* parentHandler)
+    : Actuator(signalGpioPin, parentHandler), active(initialState) {
     pinMode(pin, OUTPUT);
-    digitalWrite(pin, state);
+    digitalWrite(pin, isActive() ? HIGH : LOW);
 }
 
 void Led::handle(Command command) {
     if (command == TOGGLE_LED_COMMAND) {
-        state = !state;
-        digitalWrite(pin, state);
+        active = !active;
     } else if (command == TURN_ON_COMMAND) {
-        state = true;
-        digitalWrite(pin, state);
+        active = true;
     } else if (command == TURN_OFF_COMMAND) {
-        state = false;
-        digitalWrite(pin, state);
+        active = false;
     }
-    Actuator::handle(command); // Propagate to handler if set
+    digitalWrite(pin, active);
 }
 
-bool Led::getState() const {
-    return state;
-}
-
-void Led::setState(bool newState) {
-    state = newState;
-    digitalWrite(pin, state);
-}
+bool Led::isActive() const { return active; }
