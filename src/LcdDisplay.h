@@ -1,6 +1,14 @@
 #ifndef LCD_DISPLAY_H
 #define LCD_DISPLAY_H
 
+/**
+ * @file LcdDisplay.h
+ * @brief Declares the LcdDisplay concrete actuator class.
+ *
+ * This component integrates a 16x2 I2C character LCD into the
+ * Modest IoT Nano-framework command pipeline.
+ */
+
 #include "Actuator.h"
 #include <LiquidCrystal_I2C.h>
 

@@ -1,3 +1,8 @@
+/**
+ * @file LcdDisplay.cpp
+ * @brief Implements the LcdDisplay concrete actuator class.
+ */
+
 #include "LcdDisplay.h"
 
 /**
