@@ -33,6 +33,8 @@
 #include "Actuator.h"
 #include "Button.h"
 #include "Led.h"
+#include "DhtSensor.h"
+#include "LcdDisplay.h"
 #include "Device.h"
 
 #endif // MODEST_IOT_H
