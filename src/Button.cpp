@@ -26,8 +26,17 @@
 #include "Button.h"
 #include <Arduino.h>
 
+/**
+ * @brief Predefined event emitted for a validated button press.
+ */
 const Event Button::BUTTON_PRESSED_EVENT = Event(BUTTON_PRESSED_EVENT_IDENTIFIER);
 
+/**
+ * @brief Initializes the button sensor and configures the input pin with an internal pull-up.
+ * @param signalGpioPin GPIO pin connected to the button.
+ * @param debounceDelay Debounce interval in milliseconds.
+ * @param parentHandler Optional parent handler used for event propagation.
+ */
 Button::Button(int signalGpioPin, unsigned long debounceDelay, EventHandler* parentHandler)
     : Sensor(signalGpioPin, parentHandler),
 lastInterruptTimestamp(0),
@@ -35,6 +44,9 @@ debounceDelayInMilliseconds(debounceDelay){
     pinMode(signalGpioPin, INPUT_PULLUP);
 }
 
+/**
+ * @brief Converts a hardware interrupt into a debounced button-press event.
+ */
 void Button::handleHardwareInterrupt() {
     unsigned long currentTimestamp = millis();
 
@@ -47,6 +59,10 @@ void Button::handleHardwareInterrupt() {
     }
 }
 
+/**
+ * @brief Button events are terminal and require no local mutation before propagation.
+ * @param event Event being processed.
+ */
 void Button::processEvent(Event& event) {
     // The button interrupt enforces its own valid event; no further mutation is required
 }

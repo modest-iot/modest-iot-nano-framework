@@ -26,16 +26,35 @@
 #include "Led.h"
 #include <Arduino.h>
 
+/**
+ * @brief Predefined command that toggles the LED state.
+ */
 const Command Led::TOGGLE_LED_COMMAND = Command(TOGGLE_LED_COMMAND_IDENTIFIER);
+/**
+ * @brief Predefined command that turns the LED on.
+ */
 const Command Led::TURN_ON_COMMAND = Command(TURN_ON_COMMAND_IDENTIFIER);
+/**
+ * @brief Predefined command that turns the LED off.
+ */
 const Command Led::TURN_OFF_COMMAND = Command(TURN_OFF_COMMAND_IDENTIFIER);
 
+/**
+ * @brief Initializes the LED output pin and applies the requested initial state.
+ * @param signalGpioPin GPIO pin connected to the LED.
+ * @param initialState Initial logical state of the LED.
+ * @param parentHandler Optional parent handler used for command propagation.
+ */
 Led::Led(int signalGpioPin, bool initialState, CommandHandler* parentHandler)
     : Actuator(signalGpioPin, parentHandler), active(initialState) {
     pinMode(pin, OUTPUT);
     digitalWrite(pin, isActive() ? HIGH : LOW);
 }
 
+/**
+ * @brief Applies LED commands locally before forwarding them to any parent handler.
+ * @param command Command to execute.
+ */
 void Led::handle(Command command) {
     if (command == TOGGLE_LED_COMMAND) {
         active = !active;
@@ -47,4 +66,8 @@ void Led::handle(Command command) {
     digitalWrite(pin, active);
 }
 
+/**
+ * @brief Returns the current LED state.
+ * @return True when the LED is active.
+ */
 bool Led::isActive() const { return active; }
