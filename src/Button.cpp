@@ -26,9 +26,28 @@
 #include "Button.h"
 #include <Arduino.h>
 
-const Event Button::BUTTON_PRESSED_EVENT = Event(BUTTON_PRESSED_EVENT_ID);
+const Event Button::BUTTON_PRESSED_EVENT = Event(BUTTON_PRESSED_EVENT_IDENTIFIER);
 
-Button::Button(int pin, EventHandler* eventHandler)
-    : Sensor(pin, eventHandler) {
-    pinMode(pin, INPUT_PULLUP);
+Button::Button(int signalGpioPin, unsigned long debounceDelay, EventHandler* parentHandler)
+    : Sensor(signalGpioPin, parentHandler),
+lastInterruptTimestamp(0),
+debounceDelayMilliseconds(debounceDelay){
+    pinMode(signalGpioPin, INPUT_PULLUP);
 }
+
+void Button::handleHardwareInterrupt() {
+    unsigned long currentTimestamp = millis();
+
+    // Encapsulated temporal tracking logic handles debouncing internally
+    if (currentTimestamp - lastInterruptTimestamp > debounceDelayMilliseconds) {
+        lastInterruptTimestamp = currentTimestamp;
+
+        // Safely invoke the template method pipeline
+        this->on(BUTTON_PRESSED_EVENT);
+    }
+}
+
+void Button::processEvent(Event& event) {
+    // The button interrupt enforces its own valid event; no further mutation is required
+}
+

@@ -28,16 +28,24 @@
 #include "Sensor.h"
 
 class Button : public Sensor {
+private:
+    unsigned long lastInterruptTimestamp;
+    const unsigned long debounceDelayMilliseconds;
+protected:
+    void processEvent(Event& event) override;
 public:
-    static const int BUTTON_PRESSED_EVENT_ID = 0; ///< Unique ID for button press event.
+    static const int BUTTON_PRESSED_EVENT_IDENTIFIER = 10; ///< Unique ID for button press event.
     static const Event BUTTON_PRESSED_EVENT; ///< Predefined event for button presses.
 
     /**
      * @brief Constructs a Button sensor.
-     * @param pin The GPIO pin for the button (configured as INPUT_PULLUP).
-     * @param eventHandler Optional handler to receive button events (default: nullptr).
+     * @param signalGpioPin The GPIO pin for the button (configured as INPUT_PULLUP).
+     * @param debounceDelay Debounce delay in milliseconds to prevent multiple triggers from a single press (default: 200ms).
+     * @param parentHandler Optional handler to receive button events (default: nullptr).
      */
-    Button(int pin, EventHandler* eventHandler = nullptr);
+    Button(int signalGpioPin, unsigned long debounceDelay = 200, EventHandler* parentHandler = nullptr);
+
+    void handleHardwareInterrupt();
 };
 
 #endif // BUTTON_H
