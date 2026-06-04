@@ -1,6 +1,14 @@
 #ifndef DHT_SENSOR_H
 #define DHT_SENSOR_H
 
+/**
+ * @file DhtSensor.h
+ * @brief Declares the DhtSensor concrete sensor class.
+ *
+ * This component integrates a DHT-family temperature/humidity sensor into the
+ * Modest IoT Nano-framework event pipeline.
+ */
+
 #include "Sensor.h"
 #include <DHT.h>
 
@@ -38,6 +46,25 @@ protected:
     void processEvent(Event& event) override;
 
 public:
+    /**
+     * @brief Unique identifier for the data-read event.
+     */
+    static const int DATA_READ_EVENT_IDENTIFIER = 20;
+
+    /**
+     * @brief Unique identifier for a request to measure the sensor.
+     */
+    static const int MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER = 21;
+
+    /**
+     * @brief Event emitted when a fresh reading is available.
+     */
+    static const Event DATA_READ_EVENT;
+
+    /**
+     * @brief Event used to request a new measurement from the DHT sensor.
+     */
+    static const Event MEASURE_DATA_REQUESTED_EVENT;
 
 
     /**
@@ -52,13 +79,13 @@ public:
      * @brief Returns the most recently cached temperature value.
      * @return Temperature in Celsius, or the default sentinel value if no valid reading exists yet.
      */
-    float getTemperatureInCelsius() const;
+    [[nodiscard]] float getTemperatureInCelsius() const;
 
     /**
      * @brief Returns the most recently cached relative humidity value.
      * @return Relative humidity in percent, or the default sentinel value if no valid reading exists yet.
      */
-    float getRelativeHumidityInPercentage() const;
+    [[nodiscard]] float getRelativeHumidityInPercentage() const;
 };
 
 #endif // DHT_SENSOR_H
