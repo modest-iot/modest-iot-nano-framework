@@ -31,21 +31,29 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 
 ## Documentation
 
-The `docs/` folder contains the following design and reference artifacts:
+Documentation is split between architecture artifacts in `docs/` and code-level API documentation in `src/`.
+
+### Design and Architecture (`docs/`)
 
 | Artifact | Description |
 |---|---|
-| [`docs/class-diagram.puml`](docs/class-diagram.puml) | PlantUML class diagram of the full framework — inheritance hierarchy, associations, and the `CustomDevice` composition pattern. |
-| [`docs/user-stories.md`](docs/user-stories.md) | User stories and acceptance criteria that drove the framework design. |
+| [`docs/class-diagram.puml`](docs/class-diagram.puml) | PlantUML class diagram of the current framework structure (inheritance, associations, and the `CustomDevice : Device` composition pattern). |
+| [`docs/user-stories.md`](docs/user-stories.md) | Product-level user stories and acceptance criteria that motivated the framework design. |
 
-The source files in `src/` also include code-level Doxygen comments in both header and implementation files. These comments document:
+### API and Code-Level Reference (`src/`)
+
+The source files in `src/` include Doxygen comments in both headers and implementation files. These comments document:
 
 - public APIs and their expected behavior,
 - template-method extension points used by subclasses,
 - predefined events and commands, and
 - internal helper routines and worker loops.
 
-If you generate API documentation with Doxygen, point it at the `src/` directory to include the inline documentation in the rendered output.
+### Maintenance Guidelines
+
+- Keep `docs/class-diagram.puml` synchronized with changes in class names, inheritance, and key associations.
+- Treat header declarations and inline Doxygen comments as the source of truth for API contracts.
+- Update documentation in the same change set whenever behavior or public interfaces change.
 
 ## Getting Started
 
