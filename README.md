@@ -1,13 +1,15 @@
 # Modest IoT Nano-framework (C++ Edition)
 
-**Version**: 0.1  
+**Version**: 0.2.0  
 **Author**: Angel Velasquez  
-**Date**: March 23, 2025
+**Date created**: 2025-03-23
+**Last updated**: 2026-06-04
 
 ## Overview
 
-Modest IoT Nano-framework (C++ Edition) is a lightweight, object-oriented, event-driven, and CQRS-inspired framework designed for Internet of Things (IoT) projects on resource-constrained devices like the ESP32. It is implemented in C++, providing a modular software architecture for building IoT applications, emphasizing simplicity, reusability, and separation of concerns. This framework includes core components for handling events, commands, sensors, actuators, and devices, making it ideal for small-scale IoT prototyping on Arduino-compatible platforms.
-This repository contains the C++ Edition of the Modest IoT Nano-framework, packaged as an Arduino library. A MicroPython Edition is planned as a separate distribution (not an Arduino library) for MicroPython-compatible devices. For practical demonstrations of this C++ Edition, see example projects like [`ToggableLedDevice-Example-Cpp`](https://github.com/avelasquezn/ToggableLedDevice-Example-Cpp).
+Modest IoT Nano-framework (C++ Edition) is a lightweight, object-oriented, event-driven, and CQRS-inspired Arduino library for resource-constrained IoT projects such as ESP32-based devices. It provides a small set of reusable abstractions for events, commands, sensors, actuators, and complete devices, making it easy to assemble small IoT applications with clear separation of concerns.
+
+This repository contains the C++ edition of the framework. A MicroPython edition is planned as a separate distribution for MicroPython-compatible devices. For a practical usage example, see [`ToggableLedDevice-Example-Cpp`](https://github.com/avelasquezn/ToggableLedDevice-Example-Cpp).
 
 ## Key Characteristics
 - **Object-Oriented**: Built with C++ classes, inheritance, and encapsulation for maintainable code.
@@ -22,6 +24,19 @@ This repository contains the C++ Edition of the Modest IoT Nano-framework, packa
 - **`Device`**: Abstract base class combining event and command handling for complete IoT devices.
 - **`Button`**: A concrete sensor class for detecting button presses and generating events.
 - **`Led`**: A concrete actuator class for controlling an LED with toggle, on, and off commands.
+- **`DhtSensor`**: A concrete sensor for reading temperature and humidity from a DHT module.
+- **`LcdDisplay`**: A concrete actuator for driving a 16x2 I2C character LCD.
+
+## Documentation
+
+The codebase now includes code-level Doxygen comments in both header files and implementation files. These comments document:
+
+- public APIs and their expected behavior,
+- template-method extension points used by subclasses,
+- predefined events and commands, and
+- internal helper routines and worker loops.
+
+If you generate API documentation with Doxygen, point it at the `src/` directory to include the inline documentation in the rendered output.
 
 ## Getting Started
 
@@ -31,38 +46,61 @@ This repository contains the C++ Edition of the Modest IoT Nano-framework, packa
 ### Installation
 1. **Download**: Clone or download this repository from [avelasquezn/Modest-IoT-Nano-framework-Cpp](https://github.com/avelasquezn/Modest-IoT-Nano-framework-Cpp).
 2. **Install as Library**:
-    - Copy the `ModestIoT/` folder to your Arduino libraries directory (e.g., `~/Arduino/libraries/` on Linux/Mac, `Documents\Arduino\libraries\` on Windows).
-    - Alternatively, in the Arduino IDE: Sketch > Include Library > Add .ZIP Library, select a zipped `ModestIoT/` folder.
+    - Copy the repository contents, or at minimum the `src/` folder and `src/library.properties`, to your Arduino libraries directory (for example, `~/Arduino/libraries/ModestIoT/` on macOS/Linux or `Documents\Arduino\libraries\ModestIoT\` on Windows).
+    - Alternatively, in the Arduino IDE: Sketch > Include Library > Add .ZIP Library, then select a zipped copy of the library folder.
 3. **Verify Structure**: The library should be organized as:
 ```plaintext
    Modest-IoT-Nano-framework-Cpp/
-   ├── ModestIoT/
+   ├── README.md
+   ├── src/
    │   ├── library.properties
    │   ├── ModestIoT.h
    │   ├── EventHandler.h
    │   ├── CommandHandler.h
    │   ├── Sensor.h
    │   ├── Sensor.cpp
-   │   ├── Button.h
-   │   ├── Button.cpp
    │   ├── Actuator.h
    │   ├── Actuator.cpp
+   │   ├── Device.h
+   │   ├── Device.cpp
+   │   ├── Button.h
+   │   ├── Button.cpp
    │   ├── Led.h
    │   ├── Led.cpp
-   │   ├── Device.h
-   │   └── Device.cpp
+   │   ├── DhtSensor.h
+   │   ├── DhtSensor.cpp
+   │   ├── LcdDisplay.h
+   │   └── LcdDisplay.cpp
 ```
-4. **Integration**: Copy the `ModestIoT/` folder into your Arduino project directory, or install it as a library in the Arduino IDE (place in `~/Arduino/libraries/ModestIoT/`).
+4. **Integration**: Include the library from your sketch with `#include <ModestIoT.h>` after the folder has been installed in your Arduino libraries directory.
 
 ### Usage
 Include the library in your sketch:
 ```cpp
 #include <ModestIoT.h> 
 ```
-- Extend Device to create custom IoT devices.
-- Use Button and Led as examples of concrete sensor and actuator implementations, or derive your own from Sensor and Actuator.
-- Handle events and commands via the EventHandler and CommandHandler interfaces.
-For a complete example, refer to ToggableLedDevice-Example-Cpp.
+- Extend `Device` to create a custom IoT device that owns and coordinates its sensors and actuators.
+- Use `Button`, `Led`, `DhtSensor`, and `LcdDisplay` as building blocks inside your device subclass, or derive your own from `Sensor` and `Actuator`.
+- Have your sketch instantiate the custom device and interact with that device object; the device is responsible for wiring events and commands through `EventHandler` and `CommandHandler`.
+- For a complete example, refer to `ToggableLedDevice-Example-Cpp`.
+
+### Example usage
+
+```cpp
+#include <ModestIoT.h>
+
+// Sketch-level code should interact with a custom Device subclass.
+// The device owns and wires the components together internally.
+// CustomDevice device;
+```
+
+The framework is designed so that sensors emit events and actuators consume commands through the base handler interfaces, with the sketch operating on the custom `Device` object as the composition root.
+
+## Notes
+
+- The library targets Arduino-compatible ESP32 projects.
+- Some example components depend on external Arduino libraries such as `DHT` and `LiquidCrystal_I2C`.
+- If you are generating documentation, the Doxygen comments in `src/*.h` and `src/*.cpp` provide the canonical code-level reference.
 ## License
 This project is licensed under the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0):
 
