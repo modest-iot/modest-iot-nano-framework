@@ -27,6 +27,7 @@
  */
 
 #include "EventHandler.h"
+#include "Event.h"
 
 class Sensor : public EventHandler {
 protected:
