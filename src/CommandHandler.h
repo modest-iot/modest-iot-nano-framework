@@ -26,29 +26,7 @@
  * Full license text: https://creativecommons.org/licenses/by-nd/4.0/legalcode
  */
 
-/**
- * @brief Represents a command with a unique identifier.
- * 
- * Commands are lightweight structs used to instruct devices or actuators to perform actions.
- * Define custom commands by assigning unique IDs in your application.
- */
-struct Command {
-    int identifier; ///< Unique identifier for the command type.
-
-    /**
-     * @brief Creates a command with the given identifier.
-     * @param commandIdentifier Unique command identifier used for dispatch and comparisons.
-     */
-    explicit Command(int commandIdentifier) : identifier(commandIdentifier) {}
-
-    /**
-     * @brief Compares two commands by identifier.
-     * @param other Command to compare against.
-     * @return True when both commands represent the same action.
-     */
-    bool operator==(const Command& other) const { return identifier == other.identifier; }
-};
-
+#include "Command.h"
 /**
  * @brief Abstract interface for handling commands.
  * 

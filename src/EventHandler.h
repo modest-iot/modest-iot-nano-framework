@@ -26,29 +26,7 @@
  * Full license text: https://creativecommons.org/licenses/by-nd/4.0/legalcode
  */
 
-/**
- * @brief Represents an event with a unique identifier.
- * 
- * Events are lightweight structs used to signal occurrences (e.g., sensor triggers) within
- * the framework. Define custom events by assigning unique IDs in your application.
- */
-struct Event {
-    int identifier; ///< Unique identifier for the event type.
-
-    /**
-     * @brief Creates an event with the given identifier.
-     * @param eventIdentifier Unique event identifier used for dispatch and comparisons.
-     */
-    explicit Event(int eventIdentifier) : identifier(eventIdentifier) {}
-
-    /**
-     * @brief Compares two events by identifier.
-     * @param other Event to compare against.
-     * @return True when both events represent the same event type.
-     */
-    bool operator==(const Event& other) const { return this->identifier == other.identifier; }
-};
-
+#include "Event.h"
 /**
  * @brief Abstract interface for handling events.
  * 
