@@ -31,23 +31,25 @@
  * @param parentHandler Optional parent handler used for command propagation.
  */
 Actuator::Actuator(int signalGpioPin, CommandHandler* parentHandler)
-    : pin(signalGpioPin), handler(parentHandler) {}
+    : pin(signalGpioPin), commandHandler(parentHandler) {}
 
 /**
  * @brief Executes the command locally and then forwards it to the configured handler.
  * @param command Command to handle.
  */
 void Actuator::handle(Command command) {
+    // 1. Process concrete hardware output actions
     executeCommand(command);
-    if (handler != nullptr) {
-        handler->handle(command);
-    }
-}
+
+    // 2. Seamlessly propagate monitoring metrics upstream
+    if (commandHandler != nullptr) {
+        commandHandler->handle(command);
+    }}
 
 /**
  * @brief Replaces the current propagation target for this actuator.
  * @param parentHandler Pointer to the new command handler.
  */
 void Actuator::setHandler(CommandHandler* parentHandler) {
-    handler = parentHandler;
+    commandHandler = parentHandler;
 }
