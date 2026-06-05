@@ -13,6 +13,7 @@
 #include "ConnectivityDriver.h"
 #include "WiFiConnectivityDriver.h"
 #include "HttpEdgeGatewayClient.h"
+#include "MqttGatewayClient.h"
 
 // --- 3. HARDWARE PERIPHERAL DRIVER SUBSYSTEMS ---
 #include "Button.h"
