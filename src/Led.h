@@ -5,7 +5,7 @@
 
 class Led : public Actuator {
 private:
-    bool state;
+    bool active;
 
 protected:
     void executeCommand(Command command) override;
