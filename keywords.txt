@@ -1,16 +1,16 @@
 #######################################
 # Datatypes and Classes (KEYWORD1)
 #######################################
-Device	KEYWORD1
-Sensor	KEYWORD1
-Actuator	KEYWORD1
-TelemetryPackage	KEYWORD1
-ConnectivityDriver	KEYWORD1
-WiFiConnectivityDriver	KEYWORD1
+Device  KEYWORD1
+Sensor  KEYWORD1
+Actuator    KEYWORD1
+TelemetryPackage    KEYWORD1
+ConnectivityDriver  KEYWORD1
+WiFiConnectivityDriver  KEYWORD1
 HttpEdgeGatewayClient	KEYWORD1
 MqttGatewayClient	KEYWORD1
 CharacterLcdDisplay	KEYWORD1
-Led	KEYWORD1
+Led KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
