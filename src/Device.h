@@ -27,8 +27,9 @@
 
 #include "EventHandler.h"
 #include "CommandHandler.h"
+#include "TelemetryPackage.h"
 #include <Arduino.h>
-#include <cstdint>
+
 
 class Device : public EventHandler, public CommandHandler {
 private:
