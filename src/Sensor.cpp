@@ -42,9 +42,14 @@ Sensor::Sensor(int signalGpioPin, EventHandler* parentHandler)
  * @param event Event to handle.
  */
 void Sensor::on(Event event) {
+    // 1. Execute concrete sensor reading and validation logic
     processEvent(event);
+
+    // 2. Performance Guard: If event mutation sets ID to -1, propagation terminates early
     if (event.identifier == -1)
         return;
+
+    // 3. Automatically push event upstream to the registered mediator device
     if (eventHandler != nullptr) {
         eventHandler->on(event);
     }
