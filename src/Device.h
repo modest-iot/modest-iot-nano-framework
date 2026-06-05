@@ -62,35 +62,27 @@ protected:
     /**
      * @brief Stops background workers and releases asynchronous engine resources.
      */
-    ~Device() override;
+    ~Device();
+
+    **
+      * @brief Spawns background FreeRTOS tasks and tracking queue structures.
+      */
+     void initializeAsynchronousEngine(uint8_t maximumQueueLength = 10);
 
     /**
-     * @brief Spawns background FreeRTOS tasks and structures.
-     * @param elementSize Size in bytes of each telemetry payload stored in the queue.
-     * @param maximumQueueLength Maximum number of telemetry payloads that can wait in the queue.
+     * @brief Pushes a polymorphic TelemetryPackage pointer memory address to the dispatcher.
      */
-    void initializeAsynchronousEngine(size_t elementSize, uint8_t maximumQueueLength = 5);
-
-    /**
-     * @brief Pushes telemetry memory packets out to the low-priority background dispatcher.
-     * @param telemetryDataSnapshot Pointer to a telemetry payload with the size configured for the queue.
-     * @return True when the payload was enqueued successfully.
-     */
-    bool enqueueTelemetryPayload(const void* telemetryDataSnapshot);
+    bool enqueueTelemetryPayload(TelemetryPackage** telemetryPackagePointerAddress);
 
     /**
      * @brief Registers a sensor driver component directly into the automated round-robin scheduler.
-     * @param targetSensorInstance Sensor handler to invoke during the sampling cycle.
-     * @param requestedEventIdentifier Event identifier passed to the sensor during sampling.
-     * @return True when the sensor was added to the scheduler.
      */
     bool appendSensorToScheduler(EventHandler* targetSensorInstance, int requestedEventIdentifier);
 
     /**
-     * @brief PURE VIRTUAL EXTENSION HOOK: Implementations unpack telemetry and process transmissions.
-     * @param rawQueueItemPayload Raw telemetry bytes received from the asynchronous queue.
+     * @brief PURE VIRTUAL EXTENSION HOOK: Implementations unpack polymorphic telemetry packages.
      */
-    virtual void processQueuedTelemetryData(const void* rawQueueItemPayload) = 0;
+    virtual void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) = 0;
 public:
     /**
      * @brief Hardware timer ISR entry point used to wake the sensor sampling task.
