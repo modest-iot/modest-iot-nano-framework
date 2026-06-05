@@ -8,7 +8,7 @@ Device::Device(unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupI
       telemetryQueueHandle(nullptr),
       hardwareTimer(nullptr),
       pollingIntervalInMilliseconds(samplingIntervalInMilliseconds),
-      hardwareTimerIndex(timerGroupIndex) // Safeguards parallel hardware instances
+      hardwareTimerIndex(timerGroupIndex)
 {
     for (uint8_t i = 0; i < MAXIMUM_SCHEDULED_SLOTS; ++i) {
         scheduledSequences[i] = { nullptr, -1 };
@@ -30,7 +30,6 @@ void IRAM_ATTR Device::handleHardwareTimerInterrupt(void* deviceInstance) {
     if (deviceInstance != nullptr) {
         Device* self = static_cast<Device*>(deviceInstance);
         BaseType_t higherPriorityTaskWoken = pdFALSE;
-
         vTaskNotifyGiveFromISR(self->hardwareSamplingTaskHandle, &higherPriorityTaskWoken);
         if (higherPriorityTaskWoken) portYIELD_FROM_ISR();
     }
@@ -42,10 +41,7 @@ void Device::initializeAsynchronousEngine(uint8_t maximumQueueLength) {
     xTaskCreatePinnedToCore(&Device::executeHardwareSamplingContext, "HardwareWorker", 4096, this, 3, &hardwareSamplingTaskHandle, 1);
     xTaskCreatePinnedToCore(&Device::executeNetworkDispatchContext, "NetworkWorker", 8192, this, 1, &networkDispatcherTaskHandle, 1);
 
-    // --- ENCAPSULATED HARDWARE CLOCK CONFIGURATION ---
-    // Uses the dynamic hardwareTimerIndex instead of hardcoding '0'
     hardwareTimer = timerBegin(hardwareTimerIndex, 80, true);
-
     timerAttachInterruptArg(hardwareTimer, &Device::handleHardwareTimerInterrupt, this, true);
 
     uint64_t alarmIntervalInMicroseconds = static_cast<uint64_t>(pollingIntervalInMilliseconds) * 1000;
