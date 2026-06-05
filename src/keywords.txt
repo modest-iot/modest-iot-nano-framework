@@ -1,0 +1,31 @@
+#######################################
+# Datatypes and Classes (KEYWORD1)
+#######################################
+Device	KEYWORD1
+Sensor	KEYWORD1
+Actuator	KEYWORD1
+TelemetryPackage	KEYWORD1
+ConnectivityDriver	KEYWORD1
+WiFiConnectivityDriver	KEYWORD1
+HttpEdgeGatewayClient	KEYWORD1
+MqttGatewayClient	KEYWORD1
+CharacterLcdDisplay	KEYWORD1
+Led	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+initializeAsynchronousEngine	KEYWORD2
+appendSensorToScheduler	KEYWORD2
+enqueueTelemetryPayload	KEYWORD2
+canTransmit	KEYWORD2
+sendTelemetryRecord	KEYWORD2
+notifyHardwareTimerInterrupt	KEYWORD2
+setLineBuffer	KEYWORD2
+
+#######################################
+# Constants and Literals (LITERAL1)
+#######################################
+DATA_READ_EVENT_IDENTIFIER	LITERAL1
+MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER	LITERAL1
+UPDATE_TEXT_COMMAND_IDENTIFIER	LITERAL1
