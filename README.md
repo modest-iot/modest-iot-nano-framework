@@ -1,11 +1,11 @@
-# Modest IoT Nano-framework (C++ Edition)
+# Modest-IoT Nano-framework (C++ Edition)
 
-**Version**: 0.2.0  
+**Version**: 1.0.0  
 **Author**: Angel Velasquez  
 
 **Date created**: 2025-03-23
 
-**Last updated**: 2026-06-04
+**Last updated**: 2026-06-05
 
 ## Overview
 
