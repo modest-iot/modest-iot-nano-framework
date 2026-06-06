@@ -4,12 +4,20 @@
 /**
  * @file TelemetryPackage.h
  * @brief Declares the abstract telemetry payload contract used by gateway clients.
+ * @ingroup core_module
  */
 
 #include <ArduinoJson.h>
 
 /**
+ * @name Core: Telemetry Contracts
+ * @ingroup core_module
+ * @{
+ */
+
+/**
  * @brief Polymorphic payload contract for telemetry serialization.
+ * @ingroup core_module
  */
 class TelemetryPackage {
 public:
@@ -33,5 +41,7 @@ public:
         return standaloneDocument;
     }
 };
+
+/** @} */ // End of Core: Telemetry Contracts
 
 #endif // TELEMETRY_PACKAGE_H

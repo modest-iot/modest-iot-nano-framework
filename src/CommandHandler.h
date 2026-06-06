@@ -4,6 +4,7 @@
 /**
  * @file CommandHandler.h
  * @brief Defines the CommandHandler interface.
+ * @ingroup core_module
  *
  * This file establishes the foundation for command-driven behavior in the Modest IoT Nano-framework.
  * `CommandHandler` is an abstract interface for classes that process `Command` objects,
@@ -28,8 +29,15 @@
 
 #include "Command.h"
 /**
+ * @name Core: Base Contracts & Interfaces
+ * @ingroup core_module
+ * @{
+ */
+
+/**
  * @brief Abstract interface for handling commands.
- * 
+ * @ingroup core_module
+ *
  * Implement this interface in classes that need to execute commands. The `handle` method is called
  * when a command is issued, allowing for custom execution logic.
  */
@@ -46,5 +54,7 @@ public:
      */
     virtual ~CommandHandler() = default;
 };
+
+        /** @} */ // End of Core: Base Contracts & Interfaces
 
 #endif // COMMAND_HANDLER_H

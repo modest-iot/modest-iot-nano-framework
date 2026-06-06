@@ -4,6 +4,7 @@
 /**
  * @file Device.h
  * @brief Declares the Device base class that orchestrates sensors, commands, and telemetry dispatch.
+ * @ingroup core_module
  */
 
 #include "EventHandler.h"
@@ -15,7 +16,14 @@ struct hw_timer_s;
 typedef struct hw_timer_s hw_timer_t;
 
 /**
+ * @name Core: Device Orchestration
+ * @ingroup core_module
+ * @{
+ */
+
+/**
  * @brief Base class for composed IoT devices with asynchronous sampling and telemetry pipelines.
+ * @ingroup core_module
  *
  * `Device` coordinates periodic sensor polling, queue-based telemetry handoff, and
  * dispatch hooks implemented by subclasses.
@@ -101,5 +109,7 @@ protected:
      */
     virtual void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) = 0;
 };
+
+/** @} */ // End of Core: Device Orchestration
 
 #endif // DEVICE_H

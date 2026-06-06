@@ -4,6 +4,7 @@
 /**
  * @file WiFiConnectivityDriver.h
  * @brief Declares an ESP32 Wi-Fi implementation of `ConnectivityDriver`.
+ * @ingroup connectivity_module
  */
 
 #include "ConnectivityDriver.h"
@@ -14,7 +15,14 @@ class WiFiClient;
 class Client;
 
 /**
+ * @name Connectivity: Concrete Drivers
+ * @ingroup connectivity_module
+ * @{
+ */
+
+/**
  * @brief Connectivity adapter that manages Wi-Fi provisioning and socket access.
+ * @ingroup connectivity_module
  */
 class WiFiConnectivityDriver : public ConnectivityDriver {
 private:
@@ -61,5 +69,7 @@ public:
      */
     Client& getNetworkSocket();
 };
+
+/** @} */ // End of Connectivity: Concrete Drivers
 
 #endif // WIFI_CONNECTIVITY_DRIVER_H

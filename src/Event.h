@@ -4,10 +4,18 @@
 /**
  * @file Event.h
  * @brief Defines the lightweight event value object used by the framework.
+ * @ingroup core_module
+ */
+
+/**
+ * @name Core: Event & Command Primitives
+ * @ingroup core_module
+ * @{
  */
 
 /**
  * @brief Immutable-like event descriptor used to route sensor notifications.
+ * @ingroup core_module
  */
 class Event {
 public:
@@ -31,5 +39,7 @@ public:
         return this->identifier == other.identifier;
     }
 };
+
+/** @} */ // End of Core: Event & Command Primitives
 
 #endif // EVENT_H

@@ -4,12 +4,20 @@
 /**
  * @file Led.h
  * @brief Declares an LED actuator with on/off/toggle command support.
+ * @ingroup actuators_module
  */
 
 #include "Actuator.h"
 
 /**
+ * @name Actuators: Simple Digital Output
+ * @ingroup actuators_module
+ * @{
+ */
+
+/**
  * @brief Digital output actuator that controls an LED state.
+ * @ingroup actuators_module
  */
 class Led : public Actuator {
 private:
@@ -51,5 +59,7 @@ public:
      */
     bool isActive() const;
 };
+
+/** @} */ // End of Actuators: Simple Digital Output
 
 #endif // LED_H

@@ -4,10 +4,18 @@
 /**
  * @file Command.h
  * @brief Defines the lightweight command value object used by actuators and devices.
+ * @ingroup core_module
+ */
+
+/**
+ * @name Core: Event & Command Primitives
+ * @ingroup core_module
+ * @{
  */
 
 /**
  * @brief Immutable-like command descriptor used to route actuator actions.
+ * @ingroup core_module
  */
 class Command {
 public:
@@ -31,5 +39,7 @@ public:
         return this->identifier == other.identifier;
     }
 };
+
+/** @} */ // End of Core: Event & Command Primitives
 
 #endif // COMMAND_H

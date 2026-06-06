@@ -4,6 +4,7 @@
 /**
  * @file ModestIoT.h
  * @brief Umbrella header that exposes the public framework API.
+ * @ingroup core_module
  *
  * Include this header from sketches to import all core primitives,
  * connectivity abstractions, and built-in sensor/actuator implementations.

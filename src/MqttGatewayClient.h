@@ -4,6 +4,7 @@
 /**
  * @file MqttGatewayClient.h
  * @brief Declares an MQTT publisher client for serialized telemetry payloads.
+ * @ingroup gateway_module
  */
 
 #include "ConnectivityDriver.h"
@@ -12,7 +13,14 @@
 #include <PubSubClient.h>   // Extends standard PubSubClient compilation visibility
 
 /**
+ * @name Gateway: Protocol-Specific Implementations
+ * @ingroup gateway_module
+ * @{
+ */
+
+/**
  * @brief Gateway adapter that publishes `TelemetryPackage` payloads to an MQTT topic.
+ * @ingroup gateway_module
  */
 class MqttGatewayClient {
 private:
@@ -46,5 +54,7 @@ public:
      */
     bool sendTelemetryRecord(const TelemetryPackage& abstractTelemetryPayload);
 };
+
+/** @} */ // End of Gateway: Protocol-Specific Implementations
 
 #endif // MQTT_GATEWAY_CLIENT_H

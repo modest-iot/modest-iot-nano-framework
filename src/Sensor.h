@@ -4,7 +4,8 @@
 /**
  * @file Sensor.h
  * @brief Declares the Sensor base class.
- * 
+ * @ingroup sensors_module
+ *
  * This abstract base class represents input devices in the Modest IoT Nano-framework, providing
  * a foundation for sensors that generate events. It includes event propagation to an optional
  * handler, supporting the framework’s event-driven design.
@@ -28,6 +29,12 @@
 
 #include "EventHandler.h"
 #include "Event.h"
+
+/**
+ * @name Sensors: Base Abstraction
+ * @ingroup sensors_module
+ * @{
+ */
 
 class Sensor : public EventHandler {
 protected:
@@ -67,5 +74,7 @@ public:
      */
     void setHandler(EventHandler* parentHandler);
 };
+
+/** @} */ // End of Sensors: Base Abstraction
 
 #endif // SENSOR_H

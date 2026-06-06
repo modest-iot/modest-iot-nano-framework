@@ -4,12 +4,20 @@
 /**
  * @file UltrasonicSensor.h
  * @brief Declares an HC-SR04 style ultrasonic distance sensor adapter.
+ * @ingroup sensors_module
  */
 
 #include "Sensor.h"
 
 /**
+ * @name Sensors: Environmental & Distance
+ * @ingroup sensors_module
+ * @{
+ */
+
+/**
  * @brief Distance sensor that triggers an ultrasonic pulse and measures echo time.
+ * @ingroup sensors_module
  */
 class UltrasonicSensor : public Sensor {
 private:
@@ -46,6 +54,8 @@ public:
      */
     float getDistanceInCentimeters() const;
 };
+
+/** @} */ // End of Sensors: Environmental & Distance
 
 #endif // ULTRASONIC_SENSOR_H
 

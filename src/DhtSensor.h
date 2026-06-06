@@ -4,13 +4,21 @@
 /**
  * @file DhtSensor.h
  * @brief Declares a DHT temperature and humidity sensor adapter.
+ * @ingroup sensors_module
  */
 
 #include "Sensor.h"
 #include <DHT.h>
 
 /**
+ * @name Sensors: Environmental & Distance
+ * @ingroup sensors_module
+ * @{
+ */
+
+/**
  * @brief Sensor adapter for DHT-family devices (temperature + humidity).
+ * @ingroup sensors_module
  */
 class DhtSensor : public Sensor {
 private:
@@ -48,5 +56,7 @@ public:
      */
     float getRelativeHumidityInPercentage() const;
 };
+
+/** @} */ // End of Sensors: Environmental & Distance
 
 #endif // DHT_SENSOR_H

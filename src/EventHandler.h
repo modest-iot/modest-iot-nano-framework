@@ -4,6 +4,7 @@
 /**
  * @file EventHandler.h
  * @brief Defines the EventHandler interface.
+ * @ingroup core_module
  *
  * This file provides the foundation for event-driven behavior in the Modest IoT Nano-framework.
  * `EventHandler` is an abstract interface for classes that respond to `Event` objects,
@@ -28,8 +29,15 @@
 
 #include "Event.h"
 /**
+ * @name Core: Base Contracts & Interfaces
+ * @ingroup core_module
+ * @{
+ */
+
+/**
  * @brief Abstract interface for handling events.
- * 
+ * @ingroup core_module
+ *
  * Implement this interface in classes that need to react to events. The `on` method is called
  * when an event occurs, allowing for custom handling logic.
  */
@@ -46,5 +54,7 @@ public:
      */
     virtual ~EventHandler() = default;
 };
+
+        /** @} */ // End of Core: Base Contracts & Interfaces
 
 #endif // EVENT_HANDLER_H

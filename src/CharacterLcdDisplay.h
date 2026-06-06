@@ -4,13 +4,21 @@
 /**
  * @file CharacterLcdDisplay.h
  * @brief Declares an I2C character LCD actuator with buffered text updates.
+ * @ingroup actuators_module
  */
 
 #include "Actuator.h"
 #include <LiquidCrystal_I2C.h>
 
 /**
+ * @name Actuators: Display & Character Output
+ * @ingroup actuators_module
+ * @{
+ */
+
+/**
  * @brief Actuator adapter for HD44780-compatible character LCD displays over I2C.
+ * @ingroup actuators_module
  */
 class CharacterLcdDisplay : public Actuator {
 private:
@@ -82,5 +90,7 @@ public:
     /** @brief Returns the number of addressable columns on this display. */
     uint8_t getMaximumColumnCount() const;
 };
+
+/** @} */ // End of Actuators: Display & Character Output
 
 #endif // CHARACTER_LCD_DISPLAY_H

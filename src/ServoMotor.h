@@ -4,13 +4,21 @@
 /**
  * @file ServoMotor.h
  * @brief Declares a servo actuator with bounded-angle control commands.
+ * @ingroup actuators_module
  */
 
 #include "Actuator.h"
 #include <ESP32Servo.h>
 
 /**
+ * @name Actuators: Motion Control
+ * @ingroup actuators_module
+ * @{
+ */
+
+/**
  * @brief Actuator adapter for hobby servo motors driven through ESP32 PWM.
+ * @ingroup actuators_module
  */
 class ServoMotor : public Actuator {
 private:
@@ -64,5 +72,7 @@ public:
      */
     int getCurrentActiveAngleInDegrees() const;
 };
+
+/** @} */ // End of Actuators: Motion Control
 
 #endif // SERVO_MOTOR_H

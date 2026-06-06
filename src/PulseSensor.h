@@ -4,12 +4,20 @@
 /**
  * @file PulseSensor.h
  * @brief Declares a heartbeat sensor adapter with adaptive threshold detection.
+ * @ingroup sensors_module
  */
 
 #include "Sensor.h"
 
 /**
+ * @name Sensors: Biometric & Analog
+ * @ingroup sensors_module
+ * @{
+ */
+
+/**
  * @brief Analog pulse sensor that estimates beats-per-minute from waveform peaks.
+ * @ingroup sensors_module
  */
 class PulseSensor : public Sensor {
 private:
@@ -61,5 +69,7 @@ public:
      */
     int getRawSignalValue() const;
 };
+
+/** @} */ // End of Sensors: Biometric & Analog
 
 #endif // PULSE_SENSOR_H

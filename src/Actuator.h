@@ -4,7 +4,8 @@
 /**
  * @file Actuator.h
  * @brief Declares the Actuator base class.
- * 
+ * @ingroup actuators_module
+ *
  * This abstract base class represents output devices in the Modest IoT Nano-framework, providing
  * a foundation for actuators that respond to commands. It includes command propagation to an
  * optional handler, supporting the framework’s CQRS-inspired design.
@@ -27,6 +28,12 @@
  */
 
 #include "CommandHandler.h"
+
+/**
+ * @name Actuators: Base Abstraction
+ * @ingroup actuators_module
+ * @{
+ */
 
 class Actuator : public CommandHandler {
 protected:
@@ -60,5 +67,7 @@ public:
      */
     void setHandler(CommandHandler* parentHandler);
 };
+
+/** @} */ // End of Actuators: Base Abstraction
 
 #endif // ACTUATOR_H
