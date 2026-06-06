@@ -110,6 +110,12 @@ protected:
      * @param rawQueueItemPayload Pointer to the queued telemetry payload.
      */
     virtual void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) = 0;
+public:
+    /**
+     * @brief Concrete fallback command interface fulfillment.
+     * Intercepts framework-wide actions; overrides CommandHandler.
+     */
+    void handle(Command command) override;
 };
 
 /** @} */ // End of Core: Device Orchestration

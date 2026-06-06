@@ -102,3 +102,19 @@ void Device::executeNetworkDispatchContext(void* taskParameters) {
         }
     }
 }
+
+/**
+ * @brief Default fallback implementation of CommandHandler interface.
+ * Allows derived application controllers to completely omit empty override boilerplate.
+ */
+void Device::handle(Command command) {
+    // Intentional default no-op for devices that only process Events up
+}
+
+/**
+ * @brief Default fallback implementation of Telemetry Queue dispatcher hook.
+ * Allows action/control-only nodes to ignore the network queue cycle seamlessly.
+ */
+void Device::processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) {
+    // Intentional default no-op
+}
