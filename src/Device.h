@@ -109,7 +109,7 @@ protected:
      * @brief Subclass hook for converting queued payloads into network transmissions.
      * @param rawQueueItemPayload Pointer to the queued telemetry payload.
      */
-    virtual void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) = 0;
+    virtual void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload);
 public:
     /**
      * @brief Concrete fallback command interface fulfillment.
