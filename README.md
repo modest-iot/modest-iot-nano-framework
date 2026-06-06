@@ -1,4 +1,4 @@
-# Modest-IoT Nano-framework (C++ Edition)
+# ModestIoT Nano-framework (C++ Edition)
 
 **Version**: 1.0.0  
 **Author**: Angel Velasquez  
@@ -35,10 +35,10 @@ Documentation is split between architecture artifacts in `docs/` and code-level 
 
 ### Design and Architecture (`docs/`)
 
-| Artifact | Description |
-|---|---|
+| Artifact                                             | Description                                                                                                                                 |
+|------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
 | [`docs/class-diagram.puml`](docs/class-diagram.puml) | PlantUML class diagram of the current framework structure (inheritance, associations, and the `CustomDevice : Device` composition pattern). |
-| [`docs/user-stories.md`](docs/user-stories.md) | Product-level user stories and acceptance criteria that motivated the framework design. |
+| [`docs/user-stories.md`](docs/user-stories.md)       | Product-level user stories and acceptance criteria that motivated the framework design.                                                     |
 
 ### API and Code-Level Reference (`src/`)
 
@@ -74,29 +74,29 @@ Then open `docs/build/html/index.html` in your browser.
     - Copy the repository contents, or at minimum the `src/` folder and `src/library.properties`, to your Arduino libraries directory (for example, `~/Arduino/libraries/ModestIoT/` on macOS/Linux or `Documents\Arduino\libraries\ModestIoT\` on Windows).
     - Alternatively, in the Arduino IDE: Sketch > Include Library > Add .ZIP Library, then select a zipped copy of the library folder.
 3. **Verify Structure**: The library should be organized as:
-```plaintext
-   Modest-IoT-Nano-framework-Cpp/
-   ├── README.md
-   ├── src/
-   │   ├── library.properties
-   │   ├── ModestIoT.h
-   │   ├── EventHandler.h
-   │   ├── CommandHandler.h
-   │   ├── Sensor.h
-   │   ├── Sensor.cpp
-   │   ├── Actuator.h
-   │   ├── Actuator.cpp
-   │   ├── Device.h
-   │   ├── Device.cpp
-   │   ├── Button.h
-   │   ├── Button.cpp
-   │   ├── Led.h
-   │   ├── Led.cpp
-   │   ├── DhtSensor.h
-   │   ├── DhtSensor.cpp
-   │   ├── LcdDisplay.h
-   │   └── LcdDisplay.cpp
-```
+   ```plaintext
+      Modest-IoT-Nano-framework-Cpp/
+      ├── README.md
+      ├── src/
+      │   ├── library.properties
+      │   ├── ModestIoT.h
+      │   ├── EventHandler.h
+      │   ├── CommandHandler.h
+      │   ├── Sensor.h
+      │   ├── Sensor.cpp
+      │   ├── Actuator.h
+      │   ├── Actuator.cpp
+      │   ├── Device.h
+      │   ├── Device.cpp
+      │   ├── Button.h
+      │   ├── Button.cpp
+      │   ├── Led.h
+      │   ├── Led.cpp
+      │   ├── DhtSensor.h
+      │   ├── DhtSensor.cpp
+      │   ├── LcdDisplay.h
+      │   └── LcdDisplay.cpp
+   ```
 4. **Integration**: Include the library from your sketch with `#include <ModestIoT.h>` after the folder has been installed in your Arduino libraries directory.
 
 ### Usage
@@ -145,4 +145,4 @@ Due to the CC BY-ND 4.0 license, modifications or extensions to the framework ar
 For questions, feedback, or support, contact Angel Velasquez via GitHub:
 - **GitHub**: avelasquezn
 ---
-Modest IoT Nano-framework (C++ Edition): A simple, modular foundation for your IoT projects.
+ModestIoT Nano-Framework (C++ Edition): A simple, modular foundation for your IoT projects.
