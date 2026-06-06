@@ -58,7 +58,11 @@ class ClassicBlinker : public Device {
 
     // 2. Register this device context to receive automated clock alarm notifications
     // mapped directly to our clean event identity token
-    appendSensorToScheduler(this, TIMER_EVENT_IDENTIFIER);
+    // Capture and evaluate scheduler capacity bounds gracefully
+    bool registered = appendSensorToScheduler(this, TIMER_EVENT_IDENTIFIER);
+    if (!registered) {
+    Serial.println(F("[ERROR] Blinker registration failed: Scheduler capacity full!"));
+}
 }
 
     /**
