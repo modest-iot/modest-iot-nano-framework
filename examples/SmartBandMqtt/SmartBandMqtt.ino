@@ -18,9 +18,9 @@ class SmartBandTelemetryPackage : public TelemetryPackage {
 
     public:
     SmartBandTelemetryPackage(int heartRate, float temperature, float humidity)
-    : heartBeatsPerMinute(heartRate),
-    skinTemperatureInCelsius(temperature),
-    relativeHumidityInPercentage(humidity) {}
+        : heartBeatsPerMinute(heartRate),
+        skinTemperatureInCelsius(temperature),
+        relativeHumidityInPercentage(humidity) {}
 
     virtual ~SmartBandTelemetryPackage() override = default;
 
@@ -42,21 +42,21 @@ class SmartBandDevice : public Device {
 
     void packageAndQueueTelemetrySnapshot() {
         TelemetryPackage* livePayloadSnapshot = new SmartBandTelemetryPackage(
-        heartRateSensor.getBeatsPerMinute(),
-        ambientClimateSensor.getTemperatureInCelsius(),
-        ambientClimateSensor.getRelativeHumidityInPercentage()
+            heartRateSensor.getBeatsPerMinute(),
+            ambientClimateSensor.getTemperatureInCelsius(),
+            ambientClimateSensor.getRelativeHumidityInPercentage()
         );
 
         if (!enqueueTelemetryPayload(&livePayloadSnapshot)) {
-        delete livePayloadSnapshot;
-    }
+            delete livePayloadSnapshot;
+        }
     }
 
     protected:
     void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) override {
         if (rawQueueItemPayload != nullptr) {
-        gatewayClient.sendTelemetryRecord(*rawQueueItemPayload);
-    }
+            gatewayClient.sendTelemetryRecord(*rawQueueItemPayload);
+        }
     }
 
     public:
@@ -67,28 +67,28 @@ class SmartBandDevice : public Device {
     ambientClimateSensor(climatePin, DHT22, nullptr),
     userActionButton(buttonPin, 50, nullptr),
     gatewayClient(client)
-{
-    heartRateSensor.setHandler(this);
-    ambientClimateSensor.setHandler(this);
-    userActionButton.setHandler(this);
+    {
+        heartRateSensor.setHandler(this);
+        ambientClimateSensor.setHandler(this);
+        userActionButton.setHandler(this);
 
-    initializeAsynchronousEngine(10);
+        initializeAsynchronousEngine(10);
 
-    // All sensors are systematically polled inside the thread sequence ring safely
-    appendSensorToScheduler(&heartRateSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-    appendSensorToScheduler(&ambientClimateSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-    appendSensorToScheduler(&userActionButton, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-}
+        // All sensors are systematically polled inside the thread sequence ring safely
+        appendSensorToScheduler(&heartRateSensor,       Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+        appendSensorToScheduler(&ambientClimateSensor,  Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+        appendSensorToScheduler(&userActionButton,      Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+    }
 
     virtual ~SmartBandDevice() override = default;
 
     void on(Event event) override {
         if (event.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER) {
-        packageAndQueueTelemetrySnapshot();
-    }
+            packageAndQueueTelemetrySnapshot();
+        }
         else if (event.identifier == Button::BUTTON_PRESSED_EVENT_IDENTIFIER) {
-        Serial.println("[SmartBand UI] Action button click registered safely out of ISR!");
-    }
+            Serial.println("[SmartBand UI] Action button click registered safely out of ISR!");
+        }
     }
 
     void handle(Command command) override {}
@@ -121,19 +121,19 @@ void setup() {
     gatewayClient = new MqttGatewayClient(
     *transportDriver,
     transportDriver->getNetworkSocket(),
-    MQTT_BROKER_IP,
-    MQTT_BROKER_PORT,
-    MQTT_PUBLISH_TOPIC,
-    "SmartBand_Wrist_01"
+        MQTT_BROKER_IP,
+        MQTT_BROKER_PORT,
+        MQTT_PUBLISH_TOPIC,
+        "SmartBand_Wrist_01"
     );
 
     smartBandApplication = new SmartBandDevice(
-    BIOLOGICAL_PULSE_ANALOG_PIN,
-    CLIMATE_ONE_WIRE_BUS_PIN,
-    USER_INTERFACE_BUTTON_PIN,
-    *gatewayClient,
-    TELEMETRY_POLLING_INTERVAL_IN_MILLISECONDS,
-    HARDWARE_TIMER_CHANNEL_INDEX
+        BIOLOGICAL_PULSE_ANALOG_PIN,
+        CLIMATE_ONE_WIRE_BUS_PIN,
+        USER_INTERFACE_BUTTON_PIN,
+        *gatewayClient,
+        TELEMETRY_POLLING_INTERVAL_IN_MILLISECONDS,
+        HARDWARE_TIMER_CHANNEL_INDEX
     );
 
     Serial.println("[SmartBand Core] Thread execution loop online. Architecture finalized.");
