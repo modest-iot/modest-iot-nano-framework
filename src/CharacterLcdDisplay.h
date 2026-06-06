@@ -5,6 +5,8 @@
  * @file CharacterLcdDisplay.h
  * @brief Declares an I2C character LCD actuator with buffered text updates.
  * @ingroup actuators_module
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "Actuator.h"

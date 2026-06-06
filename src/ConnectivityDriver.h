@@ -5,6 +5,8 @@
  * @file ConnectivityDriver.h
  * @brief Defines the abstraction for network transport provisioning and readiness checks.
  * @ingroup connectivity_module
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 /**

@@ -5,6 +5,8 @@
  * @file Event.h
  * @brief Defines the lightweight event value object used by the framework.
  * @ingroup core_module
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 /**

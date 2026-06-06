@@ -8,6 +8,8 @@
  *
  * Include this header from sketches to import all core primitives,
  * connectivity abstractions, and built-in sensor/actuator implementations.
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 // --- 1. CORE ASYNCHRONOUS ENGINE & SIGNALING PRIMITIVES ---

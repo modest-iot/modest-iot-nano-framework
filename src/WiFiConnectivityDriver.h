@@ -5,6 +5,8 @@
  * @file WiFiConnectivityDriver.h
  * @brief Declares an ESP32 Wi-Fi implementation of `ConnectivityDriver`.
  * @ingroup connectivity_module
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "ConnectivityDriver.h"

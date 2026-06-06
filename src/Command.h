@@ -5,6 +5,8 @@
  * @file Command.h
  * @brief Defines the lightweight command value object used by actuators and devices.
  * @ingroup core_module
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 /**

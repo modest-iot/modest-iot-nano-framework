@@ -5,6 +5,8 @@
  * @file UltrasonicSensor.h
  * @brief Declares an HC-SR04 style ultrasonic distance sensor adapter.
  * @ingroup sensors_module
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "Sensor.h"
@@ -58,4 +60,3 @@ public:
 /** @} */ // End of Sensors: Environmental & Distance
 
 #endif // ULTRASONIC_SENSOR_H
-

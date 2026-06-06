@@ -1,6 +1,8 @@
 /**
  * @file DhtSensor.cpp
  * @brief Implements DHT sampling and cached temperature/humidity updates.
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "DhtSensor.h"

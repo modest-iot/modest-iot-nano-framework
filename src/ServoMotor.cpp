@@ -1,6 +1,8 @@
 /**
  * @file ServoMotor.cpp
  * @brief Implements bounded-angle servo control and buffered-angle command execution.
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "ServoMotor.h"

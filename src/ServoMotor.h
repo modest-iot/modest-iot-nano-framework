@@ -5,6 +5,8 @@
  * @file ServoMotor.h
  * @brief Declares a servo actuator with bounded-angle control commands.
  * @ingroup actuators_module
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "Actuator.h"

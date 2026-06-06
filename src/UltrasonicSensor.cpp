@@ -1,6 +1,8 @@
 /**
  * @file UltrasonicSensor.cpp
  * @brief Implements pulse-echo distance measurement for ultrasonic sensors.
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "UltrasonicSensor.h"

@@ -1,6 +1,8 @@
 /**
  * @file Device.cpp
  * @brief Implements asynchronous scheduling, queueing, and telemetry worker routines.
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "Device.h"

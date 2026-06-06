@@ -1,6 +1,8 @@
 /**
  * @file CharacterLcdDisplay.cpp
  * @brief Implements buffered text rendering and backlight control for I2C LCD displays.
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "CharacterLcdDisplay.h"

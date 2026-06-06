@@ -1,6 +1,8 @@
 /**
  * @file SmartBandMqtt.ino
  * @brief SmartBand Embedded Application entry point for the Modest-IoT Nano-Framework.
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include <Arduino.h>
@@ -42,7 +44,7 @@ class SmartBandDevice : public Device {
         TelemetryPackage* livePayloadSnapshot = new SmartBandTelemetryPackage(
         heartRateSensor.getBeatsPerMinute(),
         ambientClimateSensor.getTemperatureInCelsius(),
-        ambientClimateSensor.getRelativeHumidityPercentage()
+        ambientClimateSensor.getRelativeHumidityInPercentage()
         );
 
         if (!enqueueTelemetryPayload(&livePayloadSnapshot)) {

@@ -1,6 +1,8 @@
 /**
  * @file HttpEdgeGatewayClient.cpp
  * @brief Implements HTTP POST transport for serialized telemetry packages.
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "HttpEdgeGatewayClient.h"

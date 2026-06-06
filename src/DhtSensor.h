@@ -5,6 +5,8 @@
  * @file DhtSensor.h
  * @brief Declares a DHT temperature and humidity sensor adapter.
  * @ingroup sensors_module
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "Sensor.h"

@@ -5,6 +5,8 @@
  * @file Button.h
  * @brief Declares a debounced digital button sensor.
  * @ingroup sensors_module
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "Sensor.h"

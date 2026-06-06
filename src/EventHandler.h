@@ -11,8 +11,8 @@
  * enabling asynchronous reactivity in IoT devices.
  *
  * @author Angel Velasquez
- * @date March 22, 2025
- * @version 0.1
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 /*

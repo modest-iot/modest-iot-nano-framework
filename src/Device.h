@@ -5,6 +5,8 @@
  * @file Device.h
  * @brief Declares the Device base class that orchestrates sensors, commands, and telemetry dispatch.
  * @ingroup core_module
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "EventHandler.h"

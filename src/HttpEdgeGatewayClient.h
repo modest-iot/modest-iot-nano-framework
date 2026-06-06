@@ -5,6 +5,8 @@
  * @file HttpEdgeGatewayClient.h
  * @brief Declares an HTTP client for sending serialized telemetry payloads.
  * @ingroup gateway_module
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "ConnectivityDriver.h"

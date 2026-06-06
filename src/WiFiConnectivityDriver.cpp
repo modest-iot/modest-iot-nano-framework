@@ -1,6 +1,8 @@
 /**
  * @file WiFiConnectivityDriver.cpp
  * @brief Implements Wi-Fi provisioning, connection checks, and socket access.
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "WiFiConnectivityDriver.h"

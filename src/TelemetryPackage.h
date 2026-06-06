@@ -5,6 +5,8 @@
  * @file TelemetryPackage.h
  * @brief Declares the abstract telemetry payload contract used by gateway clients.
  * @ingroup core_module
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include <ArduinoJson.h>

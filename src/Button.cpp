@@ -1,6 +1,8 @@
 /**
  * @file Button.cpp
  * @brief Implements debounced button sampling and press-event emission.
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "Button.h"

@@ -1,6 +1,8 @@
 /**
  * @file Led.cpp
  * @brief Implements command-driven LED state transitions.
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "Led.h"

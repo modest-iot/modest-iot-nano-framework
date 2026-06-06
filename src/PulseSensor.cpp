@@ -1,6 +1,8 @@
 /**
  * @file PulseSensor.cpp
  * @brief Implements adaptive-threshold heartbeat detection and BPM estimation.
+ * @date 2026-06-06
+ * @version 1.0
  */
 
 #include "PulseSensor.h"
