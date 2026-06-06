@@ -1,0 +1,19 @@
+<map id="src/Device.cpp" name="src/Device.cpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="235,5,344,31"/>
+<area shape="rect" id="Node000002" href="$_device_8h.html" title="Declares the Device base class that orchestrates sensors, commands, and telemetry dispatch." alt="" coords="253,79,326,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="291,29,292,64,287,62,288,34"/>
+<area shape="rect" id="Node000003" href="$_event_handler_8h.html" title="Defines the Event structure and EventHandler interface." alt="" coords="5,153,116,178"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="252,107,115,150,113,145,254,102"/>
+<area shape="rect" id="Node000005" href="$_command_handler_8h.html" title="Defines the Command structure and CommandHandler interface." alt="" coords="140,153,277,178"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="278,104,235,145,232,140,274,107"/>
+<area shape="rect" id="Node000007" href="$_telemetry_package_8h.html" title="Declares the abstract telemetry payload contract used by gateway clients." alt="" coords="301,153,441,178"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="304,103,349,143,344,142,303,108"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="465,153,541,178"/>
+<area shape="poly" id="edge8_Node000002_Node000009" title=" " alt="" coords="326,103,455,147,450,148,326,108"/>
+<area shape="rect" id="Node000004" href="$_event_8h.html" title="Defines the lightweight event value object used by the framework." alt="" coords="27,226,94,252"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="62,177,63,211,58,210,59,181"/>
+<area shape="rect" id="Node000006" href="$_command_8h.html" title="Defines the lightweight command value object used by actuators and devices." alt="" coords="162,226,255,252"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="210,177,211,212,206,209,207,180"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="319,226,423,252"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="373,177,373,212,369,209,369,180"/>
+</map>

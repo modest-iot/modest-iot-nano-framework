@@ -1,0 +1,11 @@
+<map id="src/ServoMotor.h" name="src/ServoMotor.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="72,5,192,31"/>
+<area shape="rect" id="Node000002" href="$_actuator_8h.html" title="Declares the Actuator base class." alt="" coords="33,79,114,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="121,34,95,69,91,66,124,29"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="137,79,244,105"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="142,29,174,67,169,67,142,34"/>
+<area shape="rect" id="Node000003" href="$_command_handler_8h.html" title="Defines the Command structure and CommandHandler interface." alt="" coords="5,153,142,178"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="74,102,76,137,71,136,73,107"/>
+<area shape="rect" id="Node000004" href="$_command_8h.html" title="Defines the lightweight command value object used by actuators and devices." alt="" coords="27,226,120,252"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="75,177,76,211,71,210,72,181"/>
+</map>

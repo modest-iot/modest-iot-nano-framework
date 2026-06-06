@@ -1,0 +1,14 @@
+<map id="src/HttpEdgeGatewayClient.cpp" name="src/HttpEdgeGatewayClient.cpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="242,5,452,31"/>
+<area shape="rect" id="Node000002" href="$_http_edge_gateway_client_8h.html" title=" " alt="" coords="136,79,310,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="324,33,258,73,256,69,328,30"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="240,226,344,252"/>
+<area shape="poly" id="edge6_Node000001_Node000005" title=" " alt="" coords="348,29,342,95,324,179,309,215,305,211,319,178,337,94,345,33"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="384,79,486,105"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="362,29,411,69,406,69,361,34"/>
+<area shape="rect" id="Node000003" href="$_connectivity_driver_8h.html" title="Defines the abstraction for network transport provisioning and readiness checks." alt="" coords="5,153,145,178"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="196,107,115,148,113,143,200,103"/>
+<area shape="rect" id="Node000004" href="$_telemetry_package_8h.html" title="Declares the abstract telemetry payload contract used by gateway clients." alt="" coords="169,153,309,178"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="227,103,235,138,230,136,224,107"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="249,176,277,214,272,213,247,181"/>
+</map>

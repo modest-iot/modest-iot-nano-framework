@@ -1,0 +1,7 @@
+<map id="DhtSensor" name="DhtSensor">
+<area shape="rect" id="Node000001" title="Sensor adapter for DHT&#45;family devices (temperature + humidity)." alt="" coords="14,153,97,178"/>
+<area shape="rect" id="Node000002" href="$class_sensor.html" title=" " alt="" coords="24,79,87,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="57,118,58,153,53,152,54,122"/>
+<area shape="rect" id="Node000003" href="$class_event_handler.html" title="Abstract interface for handling events." alt="" coords="5,5,106,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="56,44,58,79,53,78,55,49"/>
+</map>

@@ -1,0 +1,8 @@
+<map id="src/Sensor.h" name="src/Sensor.h">
+<area shape="rect" id="Node000001" title="Declares the Sensor base class." alt="" coords="59,5,153,31"/>
+<area shape="rect" id="Node000002" href="$_event_handler_8h.html" title="Defines the Event structure and EventHandler interface." alt="" coords="5,79,116,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="97,33,78,67,74,64,100,29"/>
+<area shape="rect" id="Node000003" href="$_event_8h.html" title="Defines the lightweight event value object used by the framework." alt="" coords="73,153,139,178"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="113,29,127,64,131,84,130,105,120,140,115,137,125,104,125,85,122,65,111,34"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="69,103,93,139,87,140,67,107"/>
+</map>

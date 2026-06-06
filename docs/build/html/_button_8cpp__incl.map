@@ -1,0 +1,14 @@
+<map id="src/Button.cpp" name="src/Button.cpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="101,5,207,31"/>
+<area shape="rect" id="Node000002" href="$_button_8h.html" title="Declares a debounced digital button sensor." alt="" coords="71,79,141,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="145,34,125,67,120,65,147,29"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="165,79,241,105"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="162,29,189,66,184,67,162,34"/>
+<area shape="rect" id="Node000003" href="$_sensor_8h.html" title="Declares the Sensor base class." alt="" coords="70,153,142,178"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="107,102,108,137,103,136,105,107"/>
+<area shape="rect" id="Node000004" href="$_event_handler_8h.html" title="Defines the Event structure and EventHandler interface." alt="" coords="5,226,116,252"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="97,181,78,215,74,212,100,176"/>
+<area shape="rect" id="Node000005" href="$_event_8h.html" title="Defines the lightweight event value object used by the framework." alt="" coords="73,300,139,326"/>
+<area shape="poly" id="edge5_Node000003_Node000005" title=" " alt="" coords="113,176,127,211,131,232,130,252,120,287,115,284,125,252,125,232,122,212,111,181"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="69,250,93,287,87,287,67,255"/>
+</map>

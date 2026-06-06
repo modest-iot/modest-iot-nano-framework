@@ -1,0 +1,7 @@
+<map id="UltrasonicSensor" name="UltrasonicSensor">
+<area shape="rect" id="Node000001" title="Distance sensor that triggers an ultrasonic pulse and measures echo time." alt="" coords="5,153,127,178"/>
+<area shape="rect" id="Node000002" href="$class_sensor.html" title=" " alt="" coords="35,79,97,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="68,118,69,153,63,151,64,122"/>
+<area shape="rect" id="Node000003" href="$class_event_handler.html" title="Abstract interface for handling events." alt="" coords="16,5,116,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="67,44,69,79,63,78,65,49"/>
+</map>

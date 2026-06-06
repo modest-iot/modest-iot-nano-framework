@@ -1,0 +1,81 @@
+/*
+ @licstart  The following is the entire license notice for the JavaScript code in this file.
+
+ The MIT License (MIT)
+
+ Copyright (C) 1997-2020 by Dimitri van Heesch
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+ and associated documentation files (the "Software"), to deal in the Software without restriction,
+ including without limitation the rights to use, copy, modify, merge, publish, distribute,
+ sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in all copies or
+ substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+ BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+ @licend  The above is the entire license notice for the JavaScript code in this file
+*/
+var NAVTREE =
+[
+  [ "Modest IoT Nano-framework (C++ Edition)", "index.html", [
+    [ "Architecture Overview", "index.html#autotoc_md1", null ],
+    [ "Main API Entry Point", "index.html#autotoc_md2", null ],
+    [ "Documentation Conventions", "index.html#autotoc_md3", null ],
+    [ "Generating The Docs", "index.html#autotoc_md4", null ],
+    [ "Modest-IoT Nano-framework (C++ Edition)", "md__r_e_a_d_m_e.html", [
+      [ "Overview", "md__r_e_a_d_m_e.html#autotoc_md6", null ],
+      [ "Key Characteristics", "md__r_e_a_d_m_e.html#autotoc_md7", null ],
+      [ "Components", "md__r_e_a_d_m_e.html#autotoc_md8", null ],
+      [ "Documentation", "md__r_e_a_d_m_e.html#autotoc_md9", [
+        [ "Design and Architecture (<span class=\"tt\">docs/</span>)", "md__r_e_a_d_m_e.html#autotoc_md10", null ],
+        [ "API and Code-Level Reference (<span class=\"tt\">src/</span>)", "md__r_e_a_d_m_e.html#autotoc_md11", null ],
+        [ "Maintenance Guidelines", "md__r_e_a_d_m_e.html#autotoc_md12", null ]
+      ] ],
+      [ "Getting Started", "md__r_e_a_d_m_e.html#autotoc_md13", [
+        [ "Prerequisites", "md__r_e_a_d_m_e.html#autotoc_md14", null ],
+        [ "Installation", "md__r_e_a_d_m_e.html#autotoc_md15", null ],
+        [ "Usage", "md__r_e_a_d_m_e.html#autotoc_md16", null ],
+        [ "Example usage", "md__r_e_a_d_m_e.html#autotoc_md17", null ]
+      ] ],
+      [ "Notes", "md__r_e_a_d_m_e.html#autotoc_md18", null ],
+      [ "License", "md__r_e_a_d_m_e.html#autotoc_md19", null ],
+      [ "Contributing", "md__r_e_a_d_m_e.html#autotoc_md20", null ],
+      [ "Future Directions", "md__r_e_a_d_m_e.html#autotoc_md21", null ],
+      [ "Contact", "md__r_e_a_d_m_e.html#autotoc_md22", null ],
+      [ "- <b>GitHub</b>: avelasquezn", "md__r_e_a_d_m_e.html#autotoc_md23", null ]
+    ] ],
+    [ "Classes", "annotated.html", [
+      [ "Class List", "annotated.html", "annotated_dup" ],
+      [ "Class Index", "classes.html", null ],
+      [ "Class Hierarchy", "hierarchy.html", "hierarchy" ],
+      [ "Class Members", "functions.html", [
+        [ "All", "functions.html", null ],
+        [ "Functions", "functions_func.html", null ],
+        [ "Variables", "functions_vars.html", null ]
+      ] ]
+    ] ],
+    [ "Files", "files.html", [
+      [ "File List", "files.html", "files_dup" ],
+      [ "File Members", "globals.html", [
+        [ "All", "globals.html", null ],
+        [ "Typedefs", "globals_type.html", null ]
+      ] ]
+    ] ]
+  ] ]
+];
+
+var NAVTREEINDEX =
+[
+"_actuator_8cpp.html"
+];
+
+const SYNCONMSG = 'click to disable panel synchronization';
+const SYNCOFFMSG = 'click to enable panel synchronization';
+const LISTOFALLMEMBERS = 'List of all members';

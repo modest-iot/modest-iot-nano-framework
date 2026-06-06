@@ -1,0 +1,183 @@
+/**
+ * @file doxygen-groups.dox
+ * @brief Doxygen module taxonomy for organizing the API navigation tree.
+ */
+
+/**
+ * @defgroup framework_modules Framework Modules
+ * @brief Top-level module index for the Modest IoT Nano-framework.
+ */
+
+/**
+ * @defgroup core_module Core
+ * @ingroup framework_modules
+ * @brief Core contracts, orchestration primitives, and shared payload abstractions.
+ *
+ * The core module establishes the foundational event/command-driven architecture
+ * and provides the base abstractions for orchestrating IoT devices.
+ */
+
+/**
+ * @name Core: Base Contracts & Interfaces
+ * @ingroup core_module
+ * @{
+ */
+// EventHandler and CommandHandler interfaces defined here
+/** @} */
+
+/**
+ * @name Core: Event & Command Primitives
+ * @ingroup core_module
+ * @{
+ */
+// Event and Command value objects defined here
+/** @} */
+
+/**
+ * @name Core: Device Orchestration
+ * @ingroup core_module
+ * @{
+ */
+// Device orchestration & asynchronous scheduling defined here
+/** @} */
+
+/**
+ * @name Core: Telemetry Contracts
+ * @ingroup core_module
+ * @{
+ */
+// TelemetryPackage serialization contract defined here
+/** @} */
+
+/**
+ * @defgroup sensors_module Sensors
+ * @ingroup framework_modules
+ * @brief Sensor adapters that emit framework events.
+ *
+ * The sensors module contains the base Sensor abstraction and concrete
+ * implementations for digital, analog, and protocol-based input devices.
+ */
+
+/**
+ * @name Sensors: Base Abstraction
+ * @ingroup sensors_module
+ * @{
+ */
+// Sensor base class and interface defined here
+/** @} */
+
+/**
+ * @name Sensors: Digital & Debounced Input
+ * @ingroup sensors_module
+ * @{
+ */
+// Button sensor with debounce logic defined here
+/** @} */
+
+/**
+ * @name Sensors: Environmental & Distance
+ * @ingroup sensors_module
+ * @{
+ */
+// DHT and ultrasonic distance sensors defined here
+/** @} */
+
+/**
+ * @name Sensors: Biometric & Analog
+ * @ingroup sensors_module
+ * @{
+ */
+// Pulse sensor with adaptive threshold detection defined here
+/** @} */
+
+/**
+ * @defgroup actuators_module Actuators
+ * @ingroup framework_modules
+ * @brief Actuator adapters that execute framework commands.
+ *
+ * The actuators module contains the base Actuator abstraction and concrete
+ * implementations for digital output, display, and motion control devices.
+ */
+
+/**
+ * @name Actuators: Base Abstraction
+ * @ingroup actuators_module
+ * @{
+ */
+// Actuator base class and interface defined here
+/** @} */
+
+/**
+ * @name Actuators: Simple Digital Output
+ * @ingroup actuators_module
+ * @{
+ */
+// LED on/off/toggle control defined here
+/** @} */
+
+/**
+ * @name Actuators: Display & Character Output
+ * @ingroup actuators_module
+ * @{
+ */
+// Character LCD display with buffered text and backlight defined here
+/** @} */
+
+/**
+ * @name Actuators: Motion Control
+ * @ingroup actuators_module
+ * @{
+ */
+// Servo motor with bounded angle commands defined here
+/** @} */
+
+/**
+ * @defgroup connectivity_module Connectivity
+ * @ingroup framework_modules
+ * @brief Transport connectivity abstractions and concrete network drivers.
+ *
+ * The connectivity module provides the transport layer abstraction and
+ * concrete implementations for establishing and maintaining network links.
+ */
+
+/**
+ * @name Connectivity: Interface & Contracts
+ * @ingroup connectivity_module
+ * @{
+ */
+// ConnectivityDriver strategy interface defined here
+/** @} */
+
+/**
+ * @name Connectivity: Concrete Drivers
+ * @ingroup connectivity_module
+ * @{
+ */
+// Wi-Fi connectivity driver for ESP32 defined here
+/** @} */
+
+/**
+ * @defgroup gateway_module Gateway
+ * @ingroup framework_modules
+ * @brief Telemetry gateway clients for HTTP and MQTT publication flows.
+ *
+ * The gateway module provides abstractions and implementations for
+ * serializing and transmitting telemetry payloads to edge/cloud endpoints.
+ */
+
+/**
+ * @name Gateway: Generic Abstraction
+ * @ingroup gateway_module
+ * @{
+ */
+// Generic EdgeGatewayClient defined here
+/** @} */
+
+/**
+ * @name Gateway: Protocol-Specific Implementations
+ * @ingroup gateway_module
+ * @{
+ */
+// HTTP and MQTT gateway clients defined here
+/** @} */
+

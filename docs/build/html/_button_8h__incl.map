@@ -1,0 +1,10 @@
+<map id="src/Button.h" name="src/Button.h">
+<area shape="rect" id="Node000001" title="Declares a debounced digital button sensor." alt="" coords="60,5,152,31"/>
+<area shape="rect" id="Node000002" href="$_sensor_8h.html" title="Declares the Sensor base class." alt="" coords="70,79,142,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="107,29,108,64,103,63,105,34"/>
+<area shape="rect" id="Node000003" href="$_event_handler_8h.html" title="Defines the Event structure and EventHandler interface." alt="" coords="5,153,116,178"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="97,107,78,141,74,138,100,103"/>
+<area shape="rect" id="Node000004" href="$_event_8h.html" title="Defines the lightweight event value object used by the framework." alt="" coords="73,226,139,252"/>
+<area shape="poly" id="edge4_Node000002_Node000004" title=" " alt="" coords="113,103,127,137,131,158,130,179,120,213,115,211,125,178,125,158,122,139,111,108"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="69,176,93,213,87,214,67,181"/>
+</map>

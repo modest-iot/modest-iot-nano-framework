@@ -1,0 +1,9 @@
+<map id="src/EdgeGatewayClient.h" name="src/EdgeGatewayClient.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="71,5,242,31"/>
+<area shape="rect" id="Node000002" href="$_connectivity_driver_8h.html" title="Defines the abstraction for network transport provisioning and readiness checks." alt="" coords="5,79,145,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="141,34,102,71,98,67,144,30"/>
+<area shape="rect" id="Node000003" href="$_telemetry_package_8h.html" title="Declares the abstract telemetry payload contract used by gateway clients." alt="" coords="169,79,309,105"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="171,29,216,68,211,69,170,34"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="187,153,291,178"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="241,103,241,138,237,135,237,107"/>
+</map>

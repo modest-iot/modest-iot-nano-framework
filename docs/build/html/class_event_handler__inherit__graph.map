@@ -1,0 +1,15 @@
+<map id="EventHandler" name="EventHandler">
+<area shape="rect" id="Node000001" title="Abstract interface for handling events." alt="" coords="93,5,193,31"/>
+<area shape="rect" id="Node000002" href="$class_device.html" title="Base class for composed IoT devices with asynchronous sampling and telemetry pipelines." alt="" coords="69,79,132,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="130,42,110,80,105,77,126,46"/>
+<area shape="rect" id="Node000003" href="$class_sensor.html" title=" " alt="" coords="156,79,218,105"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="159,42,182,79,177,78,157,47"/>
+<area shape="rect" id="Node000004" href="$class_button.html" title="Debounced button sensor that emits a press event on stable transitions." alt="" coords="5,153,65,178"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="149,114,62,154,60,150,146,109"/>
+<area shape="rect" id="Node000005" href="$class_dht_sensor.html" title="Sensor adapter for DHT&#45;family devices (temperature + humidity)." alt="" coords="89,153,173,178"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="171,116,142,154,139,150,166,118"/>
+<area shape="rect" id="Node000006" href="$class_pulse_sensor.html" title=" " alt="" coords="197,153,292,178"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="207,114,237,153,232,152,205,119"/>
+<area shape="rect" id="Node000007" href="$class_ultrasonic_sensor.html" title="Distance sensor that triggers an ultrasonic pulse and measures echo time." alt="" coords="316,153,437,178"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="233,108,347,151,341,153,232,113"/>
+</map>
