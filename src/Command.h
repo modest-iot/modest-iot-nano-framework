@@ -24,7 +24,7 @@ public:
     /**
      * @brief Numeric identifier used for command type matching.
      */
-    int identifier;
+    const int identifier;
 
     /**
      * @brief Creates a Command with the provided identifier.
