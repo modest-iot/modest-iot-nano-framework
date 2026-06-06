@@ -25,12 +25,17 @@ public:
      * @brief Numeric identifier used for event type matching.
      */
     int identifier;
+    /**
+     * @brief Optional source identifier for contextual disambiguation (e.g., multiple buttons).
+     */
+    int sourceId;
 
     /**
      * @brief Creates an Event with the provided identifier.
      * @param eventIdentifier Event type discriminator.
+     * @param source Optional source identifier for contextual disambiguation.
      */
-    explicit Event(int eventIdentifier) : identifier(eventIdentifier) {}
+    explicit Event(int eventIdentifier, int source = -1) : identifier(eventIdentifier), sourceId(source) {}
 
     /**
      * @brief Compares two events by identifier.
@@ -38,7 +43,7 @@ public:
      * @return `true` when both identifiers match, otherwise `false`.
      */
     bool operator==(const Event& other) const {
-        return this->identifier == other.identifier;
+        return this->identifier == other.identifier && this->sourceId == other.sourceId;
     }
 };
 
