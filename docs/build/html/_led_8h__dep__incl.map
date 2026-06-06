@@ -1,7 +1,0 @@
-<map id="src/Led.h" name="src/Led.h">
-<area shape="rect" id="Node000001" title="Declares an LED actuator with on/off/toggle command support." alt="" coords="75,5,150,31"/>
-<area shape="rect" id="Node000002" href="$_led_8cpp.html" title=" " alt="" coords="5,79,95,105"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="95,42,62,80,59,77,90,43"/>
-<area shape="rect" id="Node000003" href="$_modest_io_t_8h.html" title="Umbrella header that exposes the public framework API." alt="" coords="118,79,232,105"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="134,40,167,79,162,78,132,45"/>
-</map>

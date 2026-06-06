@@ -1,5 +1,0 @@
-<map id="src/TelemetryPackage.h" name="src/TelemetryPackage.h">
-<area shape="rect" id="Node000001" title="Declares the abstract telemetry payload contract used by gateway clients." alt="" coords="5,5,168,31"/>
-<area shape="rect" id="Node000002" title=" " alt="" coords="34,79,139,105"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="88,29,89,64,84,62,85,33"/>
-</map>

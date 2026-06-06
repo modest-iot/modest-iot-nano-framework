@@ -1,6 +1,0 @@
-<map id="Actuator" name="Actuator">
-<area shape="rect" id="Node000001" title=" " alt="" coords="33,102,104,128"/>
-<area shape="rect" id="Node000002" href="$class_command_handler.html" title="Abstract interface for handling commands." alt="" coords="5,5,132,31"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="67,44,68,55,68,78,70,102,65,101,63,78,63,55,65,49"/>
-<area shape="poly" id="edge2_Node000001_Node000002" title=" " alt="" coords="71,45,71,102,66,101,66,48"/>
-</map>

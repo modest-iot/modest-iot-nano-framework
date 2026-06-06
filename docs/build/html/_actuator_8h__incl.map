@@ -1,7 +1,0 @@
-<map id="src/Actuator.h" name="src/Actuator.h">
-<area shape="rect" id="Node000001" title="Declares the Actuator base class." alt="" coords="22,5,125,31"/>
-<area shape="rect" id="Node000002" href="$_command_handler_8h.html" title="Defines the Command structure and CommandHandler interface." alt="" coords="5,79,142,105"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="74,29,76,64,71,63,73,34"/>
-<area shape="rect" id="Node000003" href="$_command_8h.html" title="Defines the lightweight command value object used by actuators and devices." alt="" coords="27,153,120,178"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="75,103,76,138,71,136,72,107"/>
-</map>

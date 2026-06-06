@@ -1,7 +1,0 @@
-<map id="ServoMotor" name="ServoMotor">
-<area shape="rect" id="Node000001" title=" " alt="" coords="24,153,113,178"/>
-<area shape="rect" id="Node000002" href="$class_actuator.html" title=" " alt="" coords="33,79,104,105"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="70,118,71,153,66,151,67,122"/>
-<area shape="rect" id="Node000003" href="$class_command_handler.html" title="Abstract interface for handling commands." alt="" coords="5,5,132,31"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="69,44,71,79,66,78,68,49"/>
-</map>
