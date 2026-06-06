@@ -32,9 +32,10 @@ class AirConditioningDevice : public Device {
      */
     void updateCurrentMeasureDisplay() {
         char currentMeasureBuffer[17];
-        snprintf(currentMeasureBuffer, sizeof(currentMeasureBuffer), "Cur: %.1fC  %.0f%%", currentTemperature, currentHumidity);
+        snprintf(currentMeasureBuffer, sizeof(currentMeasureBuffer), "Cur: %.1fC  %.0f%%",
+            currentTemperature, currentHumidity);
 
-        statusDisplay.setLineBuffer(0, currentMeasure);
+        statusDisplay.setLineBuffer(0, currentMeasureBuffer);
         statusDisplay.handle(CharacterLcdDisplay::UPDATE_TEXT_COMMAND);
     }
 
@@ -63,9 +64,6 @@ class AirConditioningDevice : public Device {
     }
 
     public:
-    // Isolated local event identifiers to distinguish button nodes without pointer tracking
-    static const int TARGET_TEMPERATURE_UP_BUTTON_PRESSED_EVENT_IDENTIFIER   = 501;
-    static const int TARGET_TEMPERATURE_DOWN_BUTTON_PRESSED_EVENT_IDENTIFIER = 502;
 
     /**
      * @param dhtPin GPIO pin connected to the DHT climate module.
@@ -75,30 +73,30 @@ class AirConditioningDevice : public Device {
      * @param servoPin GPIO PWM output pin driving the vent servo.
      */
     AirConditioningDevice(int dhtPin, int upPin, int downPin, uint8_t lcdAddr, int servoPin)
-    : Device(2000, 0), // Master scheduler triggers hardware conversions every 2000ms
-    humidityAndTemperatureSensor(dhtPin, 22), // Type 22 explicitly maps to a DHT22 sensor context
-    targetTemperatureUpButton(upPin, 150, this),
-    targetTemperatureDownButton(downPin, 150, this),
-    statusDisplay(lcdAddr, 16, 2, this),
-    airHandler(servoPin, 0, this),
-    currentTemperature(0.0f),
-    currentHumidity(0.0f),
-    targetTemperature(22) // Default baseline target temperature (Celsius)
-{
-    // 1. Launch FreeRTOS execution background engines (Queue depth of 8)
-    initializeAsynchronousEngine(8);
+        : Device(2000, 0), // Master scheduler triggers hardware conversions every 2000ms
+        humidityAndTemperatureSensor(dhtPin, 22), // Type 22 explicitly maps to a DHT22 sensor context
+        targetTemperatureUpButton(upPin, 150, this),
+        targetTemperatureDownButton(downPin, 150, this),
+        statusDisplay(lcdAddr, 16, 2, this),
+        airHandler(servoPin, 0, this),
+        currentTemperature(0.0f),
+        currentHumidity(0.0f),
+        targetTemperature(22) // Default baseline target temperature (Celsius)
+    {
+        // 1. Launch FreeRTOS execution background engines (Queue depth of 8)
+        initializeAsynchronousEngine(8);
 
-    // 2. Register the DHT sensor using the baseline scheduler ticker token
-    appendSensorToScheduler(&humidityAndTemperatureSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+        // 2. Register the DHT sensor using the baseline scheduler ticker token
+        appendSensorToScheduler(&humidityAndTemperatureSensor,  Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
-    // 3. Register button handlers using their specific localized identity tokens
-    appendSensorToScheduler(&targetTemperatureUpButton, TARGET_TEMPERATURE_UP_BUTTON_PRESSED_EVENT_IDENTIFIER);
-    appendSensorToScheduler(&targetTemperatureDownButton, TARGET_TEMPERATURE_DOWN_BUTTON_PRESSED_EVENT_IDENTIFIER);
+        // 3. Register button handlers using their specific localized identity tokens
+        appendSensorToScheduler(&targetTemperatureUpButton,     Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+        appendSensorToScheduler(&targetTemperatureDownButton,   Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
-    // 4. Initial rendering pass to populate both display lines
-    updateCurrentMeasureDisplay();
-    updateTargetMeasureDisplay();
-}
+        // 4. Initial rendering pass to populate both display lines
+        updateCurrentMeasureDisplay();
+        updateTargetMeasureDisplay();
+    }
 
     /**
      * @brief Inversion of Control interface contract handler.
@@ -107,32 +105,30 @@ class AirConditioningDevice : public Device {
      */
     void on(Event event) override {
 
-    // Context A: DHT Sensor successfully finalized data acquisition
-    if (event.identifier == DhtSensor::DATA_READ_EVENT) {
-    currentTemperature = humidityAndTemperatureSensor.getTemperature();
-    currentHumidity = humidityAndTemperatureSensor.getHumidity();
+        // Context A: DHT Sensor successfully finalized data acquisition
+        if (event.identifier == DhtSensor::DATA_READ_EVENT) {
+            currentTemperature = humidityAndTemperatureSensor.getTemperature();
+            currentHumidity = humidityAndTemperatureSensor.getHumidity();
+            updateCurrentMeasureDisplay();
+        }
 
-    updateCurrentMeasureDisplay();
-}
-
-    // Context B: User pressed the target increment button
-    else if (event.identifier == TARGET_TEMPERATURE_UP_BUTTON_PRESSED_EVENT_IDENTIFIER) {
-    targetTemperature++;
-    updateTargetMeasureDisplay();
-    Serial.println("[AC Device] Target temperature incremented.");
-}
-
-    // Context C: User pressed the target decrement button
-    else if (event.identifier == TARGET_TEMPERATURE_DOWN_BUTTON_PRESSED_EVENT_IDENTIFIER) {
-    targetTemperature--;
-    updateTargetMeasureDisplay();
-    Serial.println("[AC Device] Target temperature decremented.");
-}
-
-    // Optimized Sequence: Evaluate control loops at the very end.
-    // Ensures physical updates operate exclusively on fully settled states.
-    evaluateAirHandlerOperationState();
-}
+        // Context B & C: User pressed one ot the buttons
+        else if (event.identifier == Button::BUTTON_PRESSED_EVENT_IDENTIFIER) {
+            char* buttonContext = nullptr;
+            if (event.sourceId == TARGET_TEMPERATURE_UP_BUTTON_PIN) {
+                targetTemperature++;
+                buttonContext = "Increase";
+            } else if (event.sourceId == TARGET_TEMPERATURE_DOWN_BUTTON_PIN) {
+                targetTemperature--;
+                buttonContext = "Decrease";
+            }
+            updateTargetMeasureDisplay();
+            Serial.printf("[AC Device] Target temperature %s button pressed.\n", buttonContext);
+        }
+        // Optimized Sequence: Evaluate control loops at the very end.
+        // Ensures physical updates operate exclusively on fully settled states.
+        evaluateAirHandlerOperationState();
+    }
 };
 
 // --- 2. DECLARATIVE RUNTIME CANVAS ---
