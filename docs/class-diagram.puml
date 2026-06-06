@@ -1,254 +1,271 @@
 @startuml Modest-IoT-Nano-framework
 
-' ─────────────────────────────────────────────
-' Appearance
-' ─────────────────────────────────────────────
 skinparam classAttributeIconSize 0
 skinparam classFontStyle bold
 skinparam packageStyle rectangle
 skinparam linetype ortho
 skinparam shadowing false
-skinparam class {
-    BackgroundColor White
-    BorderColor #333
-    ArrowColor #444
-    FontColor #111
-}
-skinparam note {
-    BackgroundColor LightYellow
-    BorderColor #999
-}
 
-' ─────────────────────────────────────────────────────────────────────────────
-' PACKAGE: Core – value types & interfaces
-' ─────────────────────────────────────────────────────────────────────────────
 package "Core" #FAFAFA {
+  class Event <<struct>> {
+    +identifier : int
+    +Event(eventIdentifier : int)
+    +operator==(other : Event) : bool
+  }
 
-    class Event <<struct>> {
-        + identifier : int
-        ..
-        + Event(eventIdentifier : int)
-        + operator==(other : Event) : bool
-    }
+  class Command <<struct>> {
+    +identifier : int
+    +Command(commandIdentifier : int)
+    +operator==(other : Command) : bool
+  }
 
-    class Command <<struct>> {
-        + identifier : int
-        ..
-        + Command(commandIdentifier : int)
-        + operator==(other : Command) : bool
-    }
+  interface EventHandler {
+    +on(event : Event) : void
+  }
 
-    ' ── Interfaces ──────────────────────────────────────────────────────────
-    interface EventHandler <<interface>> {
-        + {abstract} on(event : Event) : void
-    }
+  interface CommandHandler {
+    +handle(command : Command) : void
+  }
 
-    interface CommandHandler <<interface>> {
-        + {abstract} handle(command : Command) : void
-    }
+  abstract class Sensor {
+    #pin : int
+    #eventHandler : EventHandler*
+    +{static} DATA_READ_EVENT_IDENTIFIER : int = 20
+    +{static} MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER : int = 21
+    +{static} DATA_READ_EVENT : Event
+    +{static} MEASURE_DATA_REQUESTED_EVENT : Event
+    +Sensor(signalGpioPin : int, parentHandler : EventHandler* = nullptr)
+    +on(event : Event) : void
+    +setHandler(parentHandler : EventHandler*) : void
+    #processEvent(event : Event&) : void
+  }
 
-    ' ── Abstract base: Sensor ───────────────────────────────────────────────
-    abstract class Sensor {
-        # pin : int
-        # eventHandler : EventHandler*
-        ..
-        + Sensor(signalGpioPin : int, parentHandler : EventHandler* = nullptr)
-        + on(event : Event) : void
-        + setHandler(parentHandler : EventHandler*) : void
-        # {abstract} processEvent(event : Event&) : void
-    }
+  abstract class Actuator {
+    #pin : int
+    #commandHandler : CommandHandler*
+    +Actuator(signalGpioPin : int, parentHandler : CommandHandler* = nullptr)
+    +handle(command : Command) : void
+    +setHandler(parentHandler : CommandHandler*) : void
+    #executeCommand(command : Command) : void
+  }
 
-    note right of Sensor
-      Template-method pattern:
-      processEvent() transforms or
-      suppresses the event before
-      propagation to eventHandler.
-    end note
+  abstract class Device {
+    -scheduledSequences : ScheduledTaskSlot[8]
+    -registeredSlotCount : uint8_t
+    -activeSequencePointer : uint8_t
+    -hardwareSamplingTaskHandle : TaskHandle_t
+    -networkDispatcherTaskHandle : TaskHandle_t
+    -telemetryQueueHandle : QueueHandle_t
+    -hardwareTimer : hw_timer_t*
+    -pollingIntervalInMilliseconds : unsigned long
+    -hardwareTimerIndex : uint8_t
+    #Device(samplingIntervalInMilliseconds : unsigned long,
+            timerGroupIndex : uint8_t = 0)
+    #initializeAsynchronousEngine(maximumQueueLength : uint8_t = 10) : void
+    #enqueueTelemetryPayload(telemetryPackagePointerAddress : TelemetryPackage**) : bool
+    #appendSensorToScheduler(targetSensorInstance : EventHandler*, requestedEventIdentifier : int) : bool
+    #processQueuedTelemetryData(rawQueueItemPayload : TelemetryPackage*) : void
+  }
 
-    ' ── Abstract base: Actuator ─────────────────────────────────────────────
-    abstract class Actuator {
-        # pin : int
-        # handler : CommandHandler*
-        ..
-        + Actuator(signalGpioPin : int, parentHandler : CommandHandler* = nullptr)
-        + handle(command : Command) : void
-        + setHandler(parentHandler : CommandHandler*) : void
-        # {abstract} executeCommand(command : Command) : void
-    }
-
-    note right of Actuator
-      Template-method pattern:
-      executeCommand() applies the
-      effect before propagation
-      to handler.
-    end note
-
-    ' ── Abstract base: Device ───────────────────────────────────────────────
-    abstract class Device {
-        - scheduledSequences : ScheduledTaskSlot[8]
-        - registeredSlotCount : uint8_t
-        - activeSequencePointer : uint8_t
-        - hardwareSamplingTaskHandle : TaskHandle_t
-        - networkDispatcherTaskHandle : TaskHandle_t
-        - telemetryQueueHandle : QueueHandle_t
-        ..
-        # Device()
-        # initializeAsynchronousEngine(elementSize : size_t,\n    maximumQueueLength : uint8_t = 5) : void
-        # appendSensorToScheduler(sensor : EventHandler*,\n    eventId : int) : bool
-        # enqueueTelemetryPayload(snapshot : void*) : bool
-        # {abstract} processQueuedTelemetryData(payload : void*) : void
-        + notifyHardwareTimerInterrupt() : void
-    }
-
-    note right of Device
-      Round-robin scheduler ticks on
-      each hardware timer interrupt.
-      Background FreeRTOS tasks keep
-      hardware sampling and network
-      I/O isolated on Core 1.
-    end note
+  abstract class TelemetryPackage {
+    +serialize(serializationDestination : JsonDocument&) : void
+    +serialize() : JsonDocument
+  }
 }
 
-' ─────────────────────────────────────────────────────────────────────────────
-' PACKAGE: Concrete Sensors
-' ─────────────────────────────────────────────────────────────────────────────
-package "Concrete Sensors" #EEF6EE {
+package "Sensors" #EEF6EE {
+  class Button {
+    -lastStableTimestamp : unsigned long
+    -debounceDelayInMilliseconds : unsigned long
+    -previousState : bool
+    +{static} BUTTON_PRESSED_EVENT_IDENTIFIER : int = 10
+    +{static} BUTTON_PRESSED_EVENT : Event
+    +Button(signalGpioPin : int, debounceDelayInMilliseconds : unsigned long = 50,
+            parentHandler : EventHandler* = nullptr)
+    #processEvent(event : Event&) : void
+  }
 
-    class Button {
-        - lastInterruptTimestamp : unsigned long
-        - debounceDelayInMilliseconds : unsigned long
-        ..
-        + {static} BUTTON_PRESSED_EVENT_IDENTIFIER : int = 10
-        + {static} BUTTON_PRESSED_EVENT : Event
-        ..
-        + Button(signalGpioPin : int,\n    debounceDelay : unsigned long = 200,\n    parentHandler : EventHandler* = nullptr)
-        + handleHardwareInterrupt() : void
-        # processEvent(event : Event&) : void
-    }
+  class DhtSensor {
+    -physicalDhtSensor : DHT
+    -cachedTemperatureInCelsius : float
+    -cachedRelativeHumidityInPercentage : float
+    +DhtSensor(signalGpioPin : int, dhtModelType : uint8_t,
+               parentHandler : EventHandler* = nullptr)
+    +getTemperatureInCelsius() : float
+    +getRelativeHumidityInPercentage() : float
+    #processEvent(event : Event&) : void
+  }
 
-    class DhtSensor {
-        - physicalDhtSensor : DHT
-        - cachedTemperatureInCelsius : float
-        - cachedRelativeHumidityInPercentage : float
-        - {static} SENSOR_ERROR_SUPPRESSION_IDENTIFIER : int = -1
-        ..
-        + {static} DATA_READ_EVENT_IDENTIFIER : int = 20
-        + {static} MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER : int = 21
-        + {static} DATA_READ_EVENT : Event
-        + {static} MEASURE_DATA_REQUESTED_EVENT : Event
-        ..
-        + DhtSensor(signalGpioPin : int,\n    dhtModelType : uint8_t,\n    parentHandler : EventHandler* = nullptr)
-        + getTemperatureInCelsius() : float
-        + getRelativeHumidityInPercentage() : float
-        # processEvent(event : Event&) : void
-    }
+  class UltrasonicSensor {
+    -echoGpioPin : int
+    -cachedDistanceInCentimeters : float
+    +UltrasonicSensor(triggerGpioPin : int, echoGpioPin : int,
+                      parentHandler : EventHandler* = nullptr)
+    +getDistanceInCentimeters() : float
+    #processEvent(event : Event&) : void
+  }
+
+  class PulseSensor {
+    -cachedBeatsPerMinute : int
+    -sampleSignalValue : int
+    -lastBeatTimestamp : unsigned long
+    +PulseSensor(analogInputGpioPin : int, parentHandler : EventHandler* = nullptr)
+    +getBeatsPerMinute() : int
+    +getRawSignalValue() : int
+    #processEvent(event : Event&) : void
+  }
 }
 
-' ─────────────────────────────────────────────────────────────────────────────
-' PACKAGE: Concrete Actuators
-' ─────────────────────────────────────────────────────────────────────────────
-package "Concrete Actuators" #EEF0FF {
+package "Actuators" #EEF0FF {
+  class Led {
+    -active : bool
+    +{static} TURN_ON_COMMAND_IDENTIFIER : int = 100
+    +{static} TURN_OFF_COMMAND_IDENTIFIER : int = 101
+    +{static} TOGGLE_LED_COMMAND_IDENTIFIER : int = 102
+    +{static} TURN_ON_COMMAND : Command
+    +{static} TURN_OFF_COMMAND : Command
+    +{static} TOGGLE_LED_COMMAND : Command
+    +Led(signalGpioPin : int, initialState : bool = false,
+         parentHandler : CommandHandler* = nullptr)
+    +isActive() : bool
+    #executeCommand(command : Command) : void
+  }
 
-    class Led {
-        - active : bool
-        ..
-        + {static} TOGGLE_LED_COMMAND_IDENTIFIER : int = 100
-        + {static} TURN_ON_COMMAND_IDENTIFIER : int = 101
-        + {static} TURN_OFF_COMMAND_IDENTIFIER : int = 102
-        + {static} TOGGLE_LED_COMMAND : Command
-        + {static} TURN_ON_COMMAND : Command
-        + {static} TURN_OFF_COMMAND : Command
-        ..
-        + Led(signalGpioPin : int,\n    initialState : bool = false,\n    parentHandler : CommandHandler* = nullptr)
-        + handle(command : Command) : void
-        + isActive() : bool
-    }
+  class CharacterLcdDisplay {
+    -physicalLcdScreen : LiquidCrystal_I2C
+    -maximumRowCount : uint8_t
+    -maximumColumnCount : uint8_t
+    -characterScreenMatrixBuffer : char*
+    -backlightEnabled : bool
+    +{static} UPDATE_TEXT_COMMAND_IDENTIFIER : int = 200
+    +{static} TURN_BACKLIGHT_ON_COMMAND_IDENTIFIER : int = 201
+    +{static} TURN_BACKLIGHT_OFF_COMMAND_IDENTIFIER : int = 202
+    +{static} UPDATE_TEXT_COMMAND : Command
+    +{static} TURN_BACKLIGHT_ON_COMMAND : Command
+    +{static} TURN_BACKLIGHT_OFF_COMMAND : Command
+    +CharacterLcdDisplay(i2cAddress : uint8_t, columnCount : uint8_t, rowCount : uint8_t,
+                         backlightInitialState : bool = true,
+                         parentHandler : CommandHandler* = nullptr)
+    +setLineBuffer(rowIndex : uint8_t, nullTerminatedString : char*) : void
+    +setLineBuffer(multiLineArrayPointer : char*[]) : void
+    +isBacklightOn() : bool
+    +getMaximumRowCount() : uint8_t
+    +getMaximumColumnCount() : uint8_t
+    #executeCommand(command : Command) : void
+  }
 
-    class LcdDisplay {
-        - physicalLcdScreen : LiquidCrystal_I2C
-        - {static} MAXIMUM_ROW_COUNT : uint8_t = 2
-        - {static} MAXIMUM_COLUMN_COUNT : uint8_t = 16
-        - screenBuffer : char[2][17]
-        - isBacklightEnabled : bool
-        ..
-        + {static} UPDATE_TEXT_COMMAND_IDENTIFIER : int = 200
-        + {static} TURN_BACKLIGHT_ON_COMMAND_IDENTIFIER : int = 201
-        + {static} TURN_BACKLIGHT_OFF_COMMAND_IDENTIFIER : int = 202
-        + {static} UPDATE_TEXT_COMMAND : Command
-        + {static} TURN_BACKLIGHT_ON_COMMAND : Command
-        + {static} TURN_BACKLIGHT_OFF_COMMAND : Command
-        ..
-        + LcdDisplay(i2cAddress : uint8_t,\n    enableBacklightAtBoot : bool = true,\n    parentHandler : CommandHandler* = nullptr)
-        + setScreenBuffer(rowIndex : uint8_t, text : char*) : void
-        + setScreenBuffer(lines : char*[]) : void
-        + isBacklightOn() : bool
-        - initializeHardwareRegisters() : void
-        - commitBufferToPhysicalScreen() : void
-        # executeCommand(command : Command) : void
-    }
+  class ServoMotor {
+    -embeddedServoDriver : Servo
+    -currentActiveAngleInDegrees : int
+    -bufferedTargetAngleInDegrees : int
+    +{static} LOCK_TO_MINIMUM_LIMIT_COMMAND_IDENTIFIER : int = 150
+    +{static} LOCK_TO_MAXIMUM_LIMIT_COMMAND_IDENTIFIER : int = 151
+    +{static} DRIVE_TO_BUFFERED_ANGLE_COMMAND_IDENTIFIER : int = 152
+    +{static} LOCK_TO_MINIMUM_LIMIT_COMMAND : Command
+    +{static} LOCK_TO_MAXIMUM_LIMIT_COMMAND : Command
+    +{static} DRIVE_TO_BUFFERED_ANGLE_COMMAND : Command
+    +ServoMotor(signalGpioPin : int,
+               initialAngleInDegrees : int = 0,
+               parentHandler : CommandHandler* = nullptr)
+    +setTargetAngleBufferInDegrees(targetAngleInDegrees : int) : void
+    +getCurrentActiveAngleInDegrees() : int
+    #executeCommand(command : Command) : void
+  }
 }
 
-' ─────────────────────────────────────────────────────────────────────────────
-' PACKAGE: User Application – sketch composition root
-' ─────────────────────────────────────────────────────────────────────────────
-package "User Application (Sketch)" #FFF8EE {
+package "Connectivity" #EDF3FF {
+  interface ConnectivityDriver {
+    +connect() : void
+    +isConnected() : bool
+    +canTransmit() : bool
+  }
 
-    class CustomDevice <<extends Device>> {
-        ' user-defined Sensor fields  (e.g. Button, DhtSensor)
-        ' user-defined Actuator fields (e.g. Led, LcdDisplay)
-        ..
-        ' class CustomDevice : public Device { ... }
-        ..
-        + on(event : Event) : void
-        + handle(command : Command) : void
-        # processQueuedTelemetryData(payload : void*) : void
-    }
-
-    note bottom of CustomDevice
-      Mandatory descent from Device:
-        class CustomDevice : public Device
-
-      Sketch interacts only with the
-      device object as the single
-      composition root:
-        CustomDevice device;
-        device.notifyHardwareTimerInterrupt();
-        device.handle(Led::TOGGLE_LED_COMMAND);
-    end note
+  class WiFiConnectivityDriver {
+    -networkSsidIdentifier : char*
+    -networkPasswordCredential : char*
+    -provisioningRequested : bool
+    -hardwareSocket : WiFiClient*
+    +WiFiConnectivityDriver(ssid : char*, password : char*)
+    +connect() : void
+    +isConnected() : bool
+    +canTransmit() : bool
+    +getNetworkSocket() : Client&
+  }
 }
 
-' ─────────────────────────────────────────────────────────────────────────────
-' Inheritance
-' ─────────────────────────────────────────────────────────────────────────────
-EventHandler   <|..  Sensor    : implements
-EventHandler   <|..  Device    : implements
-CommandHandler <|..  Actuator  : implements
-CommandHandler <|..  Device    : implements
+package "Gateway" #FFF8EE {
+  class EdgeGatewayClient {
+    -communicationTransportDriver : ConnectivityDriver&
+    -serviceEndpointUrl : char*
+    +EdgeGatewayClient(transportDriver : ConnectivityDriver&, targetEndpoint : char*)
+    +sendTelemetryRecord(abstractTelemetryPayload : TelemetryPackage&) : bool
+  }
 
-Sensor   <|--  Button
-Sensor   <|--  DhtSensor
+  class HttpEdgeGatewayClient {
+    -communicationTransportDriver : ConnectivityDriver&
+    -serviceEndpointUrl : char*
+    -contentTypeHeader : char*
+    +HttpEdgeGatewayClient(transportDriver : ConnectivityDriver&, targetEndpoint : char*)
+    +sendTelemetryRecord(abstractTelemetryPayload : TelemetryPackage&) : bool
+  }
 
-Actuator <|--  Led
-Actuator <|--  LcdDisplay
+  class MqttGatewayClient {
+    -communicationTransportDriver : ConnectivityDriver&
+    -mqttClient : PubSubClient
+    -clientIdentifier : char*
+    -publishTopic : char*
+    +MqttGatewayClient(transportDriver : ConnectivityDriver&, networkClient : Client&,
+                       brokerIpAddress : char*, brokerPort : uint16_t,
+                       topic : char*, deviceId : char* = "ModestIotNode")
+    +sendTelemetryRecord(abstractTelemetryPayload : TelemetryPackage&) : bool
+  }
+}
 
-Device   <|--  CustomDevice
+package "User Application (Sketch)" #FFFDF3 {
+  class CustomDevice <<example subclass>> {
+    +on(event : Event) : void
+    +handle(command : Command) : void
+    #processQueuedTelemetryData(rawQueueItemPayload : TelemetryPackage*) : void
+  }
+}
 
-' ─────────────────────────────────────────────────────────────────────────────
-' Associations
-' ─────────────────────────────────────────────────────────────────────────────
+EventHandler <|.. Sensor : implements
+EventHandler <|.. Device : implements
+CommandHandler <|.. Actuator : implements
+CommandHandler <|.. Device : implements
 
-' Sensor holds an optional reference to a parent EventHandler for propagation
-Sensor   "0..1" o-->  EventHandler   : eventHandler\n(propagation target)
+Sensor <|-- Button
+Sensor <|-- DhtSensor
+Sensor <|-- UltrasonicSensor
+Sensor <|-- PulseSensor
 
-' Actuator holds an optional reference to a parent CommandHandler for propagation
-Actuator "0..1" o-->  CommandHandler : handler\n(propagation target)
+Actuator <|-- Led
+Actuator <|-- CharacterLcdDisplay
+Actuator <|-- ServoMotor
 
-' Device scheduler holds EventHandler* slots that point at registered sensors
-Device   "0..8" o-->  EventHandler   : scheduledSequences\n(round-robin scheduler)
+ConnectivityDriver <|.. WiFiConnectivityDriver : implements
 
-' CustomDevice owns its concrete sensor and actuator instances
-CustomDevice *-->  Sensor    : owns
-CustomDevice *-->  Actuator  : owns
+Device <|-- CustomDevice
+
+Sensor "0..1" o--> EventHandler : eventHandler
+Actuator "0..1" o--> CommandHandler : commandHandler
+Device "0..8" o--> EventHandler : scheduledSequences
+
+EdgeGatewayClient --> ConnectivityDriver : uses
+HttpEdgeGatewayClient --> ConnectivityDriver : uses
+MqttGatewayClient --> ConnectivityDriver : uses
+
+EdgeGatewayClient ..> TelemetryPackage : serializes
+HttpEdgeGatewayClient ..> TelemetryPackage : serializes
+MqttGatewayClient ..> TelemetryPackage : serializes
+
+MqttGatewayClient --> Client : uses socket
+MqttGatewayClient *-- PubSubClient : owns
+WiFiConnectivityDriver ..> WiFiClient : allocates
+WiFiConnectivityDriver ..> Client : exposes
+
+CustomDevice *--> Sensor : owns
+CustomDevice *--> Actuator : owns
 
 @enduml
 
