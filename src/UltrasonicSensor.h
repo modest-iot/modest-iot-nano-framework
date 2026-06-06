@@ -1,8 +1,16 @@
 #ifndef ULTRASONIC_SENSOR_H
 #define ULTRASONIC_SENSOR_H
 
+/**
+ * @file UltrasonicSensor.h
+ * @brief Declares an HC-SR04 style ultrasonic distance sensor adapter.
+ */
+
 #include "Sensor.h"
 
+/**
+ * @brief Distance sensor that triggers an ultrasonic pulse and measures echo time.
+ */
 class UltrasonicSensor : public Sensor {
 private:
     int echoGpioPin;
@@ -17,12 +25,27 @@ private:
     static const long TRACKING_FAILURE_VALUATION = 0;
 
 protected:
+    /**
+     * @brief Performs a ranging cycle and updates the cached distance value.
+     * @param event Mutable event request/response payload.
+     */
     void processEvent(Event& event) override;
 
 public:
+    /**
+     * @brief Constructs an ultrasonic distance sensor.
+     * @param triggerGpioPin Output pin used to trigger the sonar pulse.
+     * @param echoGpioPin Input pin used to capture echo return timing.
+     * @param parentHandler Optional upstream handler for propagated events.
+     */
     UltrasonicSensor(int triggerGpioPin, int echoGpioPin, EventHandler* parentHandler = nullptr);
 
-    float getDistanceInCentimeters() const; 
+    /**
+     * @brief Returns the most recent successful distance estimate.
+     * @return Distance in centimeters.
+     */
+    float getDistanceInCentimeters() const;
 };
 
 #endif // ULTRASONIC_SENSOR_H
+

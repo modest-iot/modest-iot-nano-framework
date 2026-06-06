@@ -1,3 +1,8 @@
+/**
+ * @file PulseSensor.cpp
+ * @brief Implements adaptive-threshold heartbeat detection and BPM estimation.
+ */
+
 #include "PulseSensor.h"
 #include <Arduino.h>
 

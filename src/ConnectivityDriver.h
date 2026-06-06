@@ -1,8 +1,17 @@
 #ifndef CONNECTIVITY_DRIVER_H
 #define CONNECTIVITY_DRIVER_H
 
+/**
+ * @file ConnectivityDriver.h
+ * @brief Defines the abstraction for network transport provisioning and readiness checks.
+ */
+
+/**
+ * @brief Strategy interface for physical/network link management.
+ */
 class ConnectivityDriver {
 public:
+    /** @brief Virtual destructor for safe polymorphic deletion. */
     virtual ~ConnectivityDriver() = default;
 
     /**
@@ -12,12 +21,14 @@ public:
 
     /**
      * @brief Evaluates whether the underlying transceiver link is fully authenticated.
+     * @return `true` if the transport is connected, otherwise `false`.
      */
     virtual bool isConnected() = 0;
 
     /**
      * @brief INTENTION-REVEALING QUERY: Evaluates whether the underlying radio
      * link layer is clear, healthy, and ready to stream payload byte chunks.
+     * @return `true` if the link is able to transmit payloads, otherwise `false`.
      */
     virtual bool canTransmit() = 0;
 };

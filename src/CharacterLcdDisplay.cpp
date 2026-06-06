@@ -1,3 +1,8 @@
+/**
+ * @file CharacterLcdDisplay.cpp
+ * @brief Implements buffered text rendering and backlight control for I2C LCD displays.
+ */
+
 #include "CharacterLcdDisplay.h"
 
 const Command CharacterLcdDisplay::UPDATE_TEXT_COMMAND = Command(CharacterLcdDisplay::UPDATE_TEXT_COMMAND_IDENTIFIER);

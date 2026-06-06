@@ -1,9 +1,17 @@
 #ifndef SERVO_MOTOR_H
 #define SERVO_MOTOR_H
 
+/**
+ * @file ServoMotor.h
+ * @brief Declares a servo actuator with bounded-angle control commands.
+ */
+
 #include "Actuator.h"
 #include <ESP32Servo.h>
 
+/**
+ * @brief Actuator adapter for hobby servo motors driven through ESP32 PWM.
+ */
 class ServoMotor : public Actuator {
 private:
     Servo embeddedServoDriver;
@@ -20,6 +28,10 @@ private:
     static const int SECONDARY_HARDWARE_TIMER_CHANNEL = 1;
 
 protected:
+    /**
+     * @brief Executes servo movement commands.
+     * @param command Command to execute.
+     */
     void executeCommand(Command command) override;
 
 public:
@@ -31,10 +43,25 @@ public:
     static const Command LOCK_TO_MAXIMUM_LIMIT_COMMAND;
     static const Command DRIVE_TO_BUFFERED_ANGLE_COMMAND;
 
+    /**
+     * @brief Constructs a servo actuator.
+     * @param signalGpioPin PWM-capable output pin for the servo signal wire.
+     * @param initialAngleInDegrees Initial angle applied during setup.
+     * @param parentHandler Optional upstream handler for propagated commands.
+     */
     ServoMotor(int signalGpioPin, int initialAngleInDegrees = MINIMUM_PHYSICAL_ANGLE_IN_DEGREES, CommandHandler* parentHandler = nullptr);
     virtual ~ServoMotor() override;
 
+    /**
+     * @brief Stores a target angle used by `DRIVE_TO_BUFFERED_ANGLE_COMMAND`.
+     * @param targetAngleInDegrees Target angle in degrees.
+     */
     void setTargetAngleBufferInDegrees(int targetAngleInDegrees);
+
+    /**
+     * @brief Returns the currently applied servo angle.
+     * @return Active servo angle in degrees.
+     */
     int getCurrentActiveAngleInDegrees() const;
 };
 

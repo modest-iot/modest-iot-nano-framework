@@ -1,3 +1,8 @@
+/**
+ * @file Device.cpp
+ * @brief Implements asynchronous scheduling, queueing, and telemetry worker routines.
+ */
+
 #include "Device.h"
 
 Device::Device(unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupIndex)

@@ -1,9 +1,17 @@
 #ifndef CHARACTER_LCD_DISPLAY_H
 #define CHARACTER_LCD_DISPLAY_H
 
+/**
+ * @file CharacterLcdDisplay.h
+ * @brief Declares an I2C character LCD actuator with buffered text updates.
+ */
+
 #include "Actuator.h"
 #include <LiquidCrystal_I2C.h>
 
+/**
+ * @brief Actuator adapter for HD44780-compatible character LCD displays over I2C.
+ */
 class CharacterLcdDisplay : public Actuator {
 private:
     LiquidCrystal_I2C physicalLcdScreen;
@@ -51,18 +59,27 @@ public:
 
     /**
      * @brief Stages a clean string into a target row index, automatically zero-padded.
+     * @param rowIndex Target row to update.
+     * @param nullTerminatedString Source string to copy into the row buffer.
      */
     void setLineBuffer(uint8_t rowIndex, const char* nullTerminatedString);
 
     /**
      * @brief Composite helper allowing multi-row string pointer arrays to be loaded concurrently.
+     * @param multiLineArrayPointer Null-terminated array of C-string row values.
      */
     void setLineBuffer(const char* multiLineArrayPointer[]);
 
     // ALIGNED PARADIGM: Active interrogative queries are reserved exclusively for methods
+    /**
+     * @brief Reports whether the backlight is currently enabled.
+     * @return `true` when backlight is on, otherwise `false`.
+     */
     bool isBacklightOn() const;
 
+    /** @brief Returns the number of addressable rows on this display. */
     uint8_t getMaximumRowCount() const;
+    /** @brief Returns the number of addressable columns on this display. */
     uint8_t getMaximumColumnCount() const;
 };
 

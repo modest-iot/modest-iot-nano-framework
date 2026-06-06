@@ -1,3 +1,8 @@
+/**
+ * @file ServoMotor.cpp
+ * @brief Implements bounded-angle servo control and buffered-angle command execution.
+ */
+
 #include "ServoMotor.h"
 
 const Command ServoMotor::LOCK_TO_MINIMUM_LIMIT_COMMAND = Command(ServoMotor::LOCK_TO_MINIMUM_LIMIT_COMMAND_IDENTIFIER);

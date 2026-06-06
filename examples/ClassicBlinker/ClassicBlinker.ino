@@ -10,18 +10,42 @@
 
 // --- 1. EVENT-DRIVEN APPLICATION MEDIATOR ---
 
+/**
+ * @brief Implements the Classic Blinker application as an event-driven mediator.
+ *
+ * This class extends the `Device` base class from the Modest-IoT Nano-Framework
+ * to manage an LED, toggling its state asynchronously based on timer events.
+ * It demonstrates a loop-less, event-driven approach using framework Event handlers
+ * and class-encapsulated Actuator Commands, avoiding traditional `delay()` calls
+ * and direct state management within the main loop.
+ */
 class ClassicBlinker : public Device {
     private:
+    /**
+     * @brief The LED actuator controlled by this application.
+     */
     Led statusLed;
 
     public:
-    // Define a localized, explicit event identifier for the hardware timer tick
+    /**
+     * @brief A localized, explicit event identifier for the hardware timer tick.
+     *
+     * This constant is used to uniquely identify timer events dispatched
+     * to this `ClassicBlinker` instance, allowing for clear event routing.
+     */
     static const int TIMER_EVENT_IDENTIFIER = 300;
 
     /**
+     * @brief Constructs a new ClassicBlinker application instance.
+     *
+     * Initializes the device with a specified LED pin, blink interval,
+     * and an optional hardware timer channel. It sets up the asynchronous
+     * engine and registers itself to receive automated clock alarm notifications.
+     *
      * @param ledPin Target GPIO pin where the physical LED is connected.
-     * @param blinkIntervalMs Ticking frequency rate.
+     * @param blinkIntervalMs Ticking frequency rate in milliseconds.
      * @param timerChannel Dedicated hardware 64-bit timer group index (0-3).
+     *                     Defaults to 0 if not specified.
      */
     ClassicBlinker(int ledPin, unsigned long blinkIntervalMs, uint8_t timerChannel = 0)
     : Device(blinkIntervalMs, timerChannel),
@@ -36,9 +60,15 @@ class ClassicBlinker : public Device {
 }
 
     /**
-     * @brief Inversion of Control interface contract handler.
-     * Intercepts framework events dispatched from the background worker tasks.
-     * @param event The triggered event context payload.
+     * @brief Inversion of Control interface contract handler for incoming events.
+     *
+     * This method is called by the framework when an event is dispatched
+     * from the background worker tasks. It checks for the specific timer event
+     * and routes a toggle command directly to the `statusLed` actuator.
+     * No local state tracking variables or toggles are written here,
+     * demonstrating a truly event-driven command routing.
+     *
+     * @param event The triggered event context payload containing identifier and data.
      */
     void on(Event event) override {
     // Handle the explicit timing event assigned to this device
@@ -53,13 +83,39 @@ class ClassicBlinker : public Device {
 
 // --- 2. DECLARATIVE RUNTIME CANVAS ---
 
-// Target the ESP32 onboard diagnostic blue LED pin (GPIO 2)
+/**
+ * @brief Defines the GPIO pin for the system diagnostic LED.
+ *
+ * This typically targets the ESP32 onboard diagnostic blue LED pin (GPIO 2).
+ */
 static const int SYSTEM_DIAGNOSTIC_LED_PIN = 2;
+
+/**
+ * @brief Defines the blink rate for the LED in milliseconds.
+ */
 static const unsigned long BLINK_RATE_MS = 500;
+
+/**
+ * @brief Defines the hardware core timer channel to be used.
+ *
+ * This specifies which 64-bit timer group (0-3) will be utilized for timing events.
+ */
 static const uint8_t CORE_TIMER_CHANNEL = 0;
 
+/**
+ * @brief Pointer to the ClassicBlinker application instance.
+ *
+ * This global pointer holds the single instance of our event-driven blinker application.
+ */
 static ClassicBlinker* blinkerApplication = nullptr;
 
+/**
+ * @brief Arduino setup function.
+ *
+ * Initializes serial communication and boots the Modest-IoT Nano-Framework application.
+ * Background execution queues, FreeRTOS tasks, and hardware alarm vectors
+ * are launched automatically upon instantiation of `ClassicBlinker`.
+ */
 void setup() {
     Serial.begin(115200);
 
@@ -70,6 +126,15 @@ void setup() {
     Serial.println("[Blinker Node] Loop-less, event-driven command routing active.");
 }
 
+/**
+ * @brief Arduino loop function.
+ *
+ * This master loop is intentionally kept completely clean and empty.
+ * It yields 100% of its execution cycles natively back to the FreeRTOS kernel scheduler,
+ * allowing the Modest-IoT Nano-Framework's background tasks to manage the application logic.
+ * A `vTaskDelay` is included to prevent watchdog timer resets in some FreeRTOS configurations
+ * when the loop is otherwise completely idle.
+ */
 void loop() {
     // The master loop is completely clean and empty.
     // It yields 100% of its execution cycles natively back to the FreeRTOS kernel scheduler.

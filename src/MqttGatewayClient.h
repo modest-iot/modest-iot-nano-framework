@@ -1,11 +1,19 @@
 #ifndef MQTT_GATEWAY_CLIENT_H
 #define MQTT_GATEWAY_CLIENT_H
 
+/**
+ * @file MqttGatewayClient.h
+ * @brief Declares an MQTT publisher client for serialized telemetry payloads.
+ */
+
 #include "ConnectivityDriver.h"
 #include "TelemetryPackage.h"
 #include <Client.h>         // Standard Arduino Network Client reference interface
 #include <PubSubClient.h>   // Extends standard PubSubClient compilation visibility
 
+/**
+ * @brief Gateway adapter that publishes `TelemetryPackage` payloads to an MQTT topic.
+ */
 class MqttGatewayClient {
 private:
     ConnectivityDriver& communicationTransportDriver;
@@ -33,6 +41,7 @@ public:
 
     /**
      * @brief Polymorphically serializes any payload inheriting from TelemetryPackage and publishes it.
+     * @param abstractTelemetryPayload Polymorphic payload to serialize and publish.
      * @return True if the payload byte stream was successfully accepted and pushed by the broker.
      */
     bool sendTelemetryRecord(const TelemetryPackage& abstractTelemetryPayload);

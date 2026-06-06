@@ -1,6 +1,14 @@
 #ifndef MODEST_IOT_H
 #define MODEST_IOT_H
 
+/**
+ * @file ModestIoT.h
+ * @brief Umbrella header that exposes the public framework API.
+ *
+ * Include this header from sketches to import all core primitives,
+ * connectivity abstractions, and built-in sensor/actuator implementations.
+ */
+
 // --- 1. CORE ASYNCHRONOUS ENGINE & SIGNALING PRIMITIVES ---
 #include "Event.h"
 #include "Command.h"

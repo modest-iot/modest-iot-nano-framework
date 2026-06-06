@@ -1,6 +1,11 @@
 #ifndef WIFI_CONNECTIVITY_DRIVER_H
 #define WIFI_CONNECTIVITY_DRIVER_H
 
+/**
+ * @file WiFiConnectivityDriver.h
+ * @brief Declares an ESP32 Wi-Fi implementation of `ConnectivityDriver`.
+ */
+
 #include "ConnectivityDriver.h"
 
 // Forward declarations notify the compiler of types without forcing
@@ -8,6 +13,9 @@
 class WiFiClient;
 class Client;
 
+/**
+ * @brief Connectivity adapter that manages Wi-Fi provisioning and socket access.
+ */
 class WiFiConnectivityDriver : public ConnectivityDriver {
 private:
     const char* networkSsidIdentifier;
@@ -21,6 +29,7 @@ private:
 
 public:
     /**
+     * @brief Constructs a Wi-Fi connectivity adapter.
      * @param ssid Wireless local network access point name.
      * @param password Authentication credential passphrase.
      */
@@ -35,17 +44,20 @@ public:
 
     /**
      * @brief Inquires whether the local interface is fully authenticated with an IP allocation.
+     * @return `true` if Wi-Fi association and IP allocation are complete.
      */
     bool isConnected() override;
 
     /**
      * @brief Intention-Revealing Query: Verifies whether the link layer is clear and ready.
+     * @return `true` if the adapter can transmit outbound payloads.
      */
     bool canTransmit() override;
 
     /**
      * @brief Explicit Protocol Bridge: Exposes the internal socket interface
      * upcasted cleanly to the generic Arduino Client contract.
+     * @return Reference to the underlying network socket.
      */
     Client& getNetworkSocket();
 };

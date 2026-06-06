@@ -1,3 +1,8 @@
+/**
+ * @file MqttGatewayClient.cpp
+ * @brief Implements MQTT broker session handling and telemetry publish operations.
+ */
+
 #include "MqttGatewayClient.h"
 #include <ArduinoJson.h>
 

@@ -1,3 +1,8 @@
+/**
+ * @file DhtSensor.cpp
+ * @brief Implements DHT sampling and cached temperature/humidity updates.
+ */
+
 #include "DhtSensor.h"
 
 DhtSensor::DhtSensor(int signalGpioPin, uint8_t dhtModelType, EventHandler* parentHandler)

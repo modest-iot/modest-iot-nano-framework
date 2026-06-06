@@ -1,3 +1,8 @@
+/**
+ * @file Button.cpp
+ * @brief Implements debounced button sampling and press-event emission.
+ */
+
 #include "Button.h"
 #include <Arduino.h>
 

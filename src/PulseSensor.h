@@ -1,8 +1,16 @@
 #ifndef PULSE_SENSOR_H
 #define PULSE_SENSOR_H
 
+/**
+ * @file PulseSensor.h
+ * @brief Declares a heartbeat sensor adapter with adaptive threshold detection.
+ */
+
 #include "Sensor.h"
 
+/**
+ * @brief Analog pulse sensor that estimates beats-per-minute from waveform peaks.
+ */
 class PulseSensor : public Sensor {
 private:
     int cachedBeatsPerMinute; 
@@ -34,9 +42,23 @@ protected:
     void processEvent(Event& event) override;
 
 public:
+    /**
+     * @brief Constructs a pulse sensor wrapper.
+     * @param analogInputGpioPin Analog input pin connected to the pulse module.
+     * @param parentHandler Optional upstream handler for propagated events.
+     */
     PulseSensor(int analogInputGpioPin, EventHandler* parentHandler = nullptr);
 
+    /**
+     * @brief Returns the latest validated heart-rate estimate.
+     * @return Beats per minute.
+     */
     int getBeatsPerMinute() const;
+
+    /**
+     * @brief Returns the latest raw ADC sample value.
+     * @return Raw analog sample from the pulse input pin.
+     */
     int getRawSignalValue() const;
 };
 

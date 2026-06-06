@@ -1,3 +1,8 @@
+/**
+ * @file Led.cpp
+ * @brief Implements command-driven LED state transitions.
+ */
+
 #include "Led.h"
 #include <Arduino.h>
 

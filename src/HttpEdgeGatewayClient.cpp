@@ -1,3 +1,8 @@
+/**
+ * @file HttpEdgeGatewayClient.cpp
+ * @brief Implements HTTP POST transport for serialized telemetry packages.
+ */
+
 #include "HttpEdgeGatewayClient.h"
 #include <HTTPClient.h> 
 #include <ArduinoJson.h>

@@ -3,12 +3,12 @@
 
 /**
  * @file EventHandler.h
- * @brief Defines the Event structure and EventHandler interface.
- * 
+ * @brief Defines the EventHandler interface.
+ *
  * This file provides the foundation for event-driven behavior in the Modest IoT Nano-framework.
- * The `Event` structure represents a unique event type, and `EventHandler` is an abstract
- * interface for classes that respond to events, enabling asynchronous reactivity in IoT devices.
- * 
+ * `EventHandler` is an abstract interface for classes that respond to `Event` objects,
+ * enabling asynchronous reactivity in IoT devices.
+ *
  * @author Angel Velasquez
  * @date March 22, 2025
  * @version 0.1

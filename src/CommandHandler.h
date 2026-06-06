@@ -3,12 +3,12 @@
 
 /**
  * @file CommandHandler.h
- * @brief Defines the Command structure and CommandHandler interface.
- * 
+ * @brief Defines the CommandHandler interface.
+ *
  * This file establishes the foundation for command-driven behavior in the Modest IoT Nano-framework.
- * The `Command` structure represents an action to be performed, and `CommandHandler` is an abstract
- * interface for classes that process commands, supporting a CQRS-inspired design.
- * 
+ * `CommandHandler` is an abstract interface for classes that process `Command` objects,
+ * supporting a CQRS-inspired design.
+ *
  * @author Angel Velasquez
  * @date March 22, 2025
  * @version 0.1

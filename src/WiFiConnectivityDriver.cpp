@@ -1,3 +1,8 @@
+/**
+ * @file WiFiConnectivityDriver.cpp
+ * @brief Implements Wi-Fi provisioning, connection checks, and socket access.
+ */
+
 #include "WiFiConnectivityDriver.h"
 #include <WiFi.h> // Quarantined securely inside this translation unit only
 

@@ -1,21 +1,30 @@
 #ifndef TELEMETRY_PACKAGE_H
 #define TELEMETRY_PACKAGE_H
 
+/**
+ * @file TelemetryPackage.h
+ * @brief Declares the abstract telemetry payload contract used by gateway clients.
+ */
+
 #include <ArduinoJson.h>
 
+/**
+ * @brief Polymorphic payload contract for telemetry serialization.
+ */
 class TelemetryPackage {
 public:
+    /** @brief Virtual destructor for safe polymorphic deletion. */
     virtual ~TelemetryPackage() = default;
 
     /**
-     * @brief EXPLICIT TARGET MUTATOR: Serializes fields directly into an existing document context.
-     * Essential for composing nested objects or appending metadata out of sight.
+     * @brief Serializes fields into an existing JSON document instance.
+     * @param serializationDestination Destination document to populate.
      */
     virtual void serialize(JsonDocument& serializationDestination) const = 0;
 
     /**
-     * @brief STANDALONE GENERATOR OVERLOAD: Creates, populates, and returns a new document instance.
-     * Leverages Return Value Optimization (RVO) to maximize memory efficiency.
+     * @brief Convenience overload that creates and returns a standalone document.
+     * @return A JSON document populated by `serialize(JsonDocument&)`.
      */
     JsonDocument serialize() const {
         JsonDocument standaloneDocument;

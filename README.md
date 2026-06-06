@@ -49,6 +49,14 @@ The source files in `src/` include Doxygen comments in both headers and implemen
 - predefined events and commands, and
 - internal helper routines and worker loops.
 
+To generate browsable API docs locally, use the provided Doxygen configuration:
+
+```sh
+doxygen docs/Doxyfile
+```
+
+Then open `docs/build/html/index.html` in your browser.
+
 ### Maintenance Guidelines
 
 - Keep `docs/class-diagram.puml` synchronized with changes in class names, inheritance, and key associations.
