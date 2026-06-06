@@ -30,7 +30,7 @@ void Button::processEvent(Event& event) {
                 previousState = currentState;
 
                 if (currentState == LOW) {
-                    event = BUTTON_PRESSED_EVENT;
+                    event = Event(BUTTON_PRESSED_EVENT_IDENTIFIER, pin);
                     return;
                 }
             }
