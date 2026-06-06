@@ -127,17 +127,16 @@ The framework is designed so that sensors emit events and actuators consume comm
 - Some example components depend on external Arduino libraries such as `DHT` and `LiquidCrystal_I2C`.
 - If you are generating documentation, the Doxygen comments in `src/*.h` and `src/*.cpp` provide the canonical code-level reference.
 ## License
-This project is licensed under the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0):
+This project is licensed under the **MIT License**.
 
-- **Allowed**: Use and redistribute the framework in its original, unmodified form for any purpose, with credit to Angel Velasquez.
-- **Not Allowed**: Modify, adapt, or create derivative works from the framework.
-- **Full License**: CC BY-ND 4.0 Legal Text.
-Note: CC BY-ND 4.0 ensures the framework’s original design is preserved while allowing broad usage.
+- **Allowed**: Use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the framework, with attribution.
+- **Full License**: See [`LICENSE.md`](LICENSE.md) for the complete terms.
+
 ## Contributing
-Due to the CC BY-ND 4.0 license, modifications or extensions to the framework are not permitted. However, you’re welcome to:
+Contributions, improvements, and extensions are welcome under the MIT License. You're welcome to:
 - Use the framework in your projects.
-- Share feedback or suggestions with the author via GitHub.
-- Create separate example projects that leverage the framework unchanged.
+- Submit feedback, bug reports, or feature suggestions via GitHub.
+- Fork and adapt the framework for your own needs (with attribution).
 ## Future Directions
 - **Version 0.2**: Potential additions like new sensor/actuator types (e.g., temperature sensors, motors).
 - **MicroPython Edition**: A planned port to MicroPython in a separate repository (e.g., Modest-IoT-Nano-framework-MicroPython).

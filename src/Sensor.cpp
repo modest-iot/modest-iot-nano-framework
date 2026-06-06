@@ -13,14 +13,10 @@
 
 /*
  * This file is part of the Modest IoT Nano-framework (C++ Edition).
- * Copyright (c) 2025 Angel Velasquez
+ * Copyright (c) 2025-2026 Angel Velasquez
  *
- * Licensed under the Creative Commons Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0).
- * You may use, copy, and distribute this software in its original, unmodified form, provided
- * you give appropriate credit to the original author (Angel Velasquez) and include this notice.
- * Modifications, adaptations, or derivative works are not permitted.
- *
- * Full license text: https://creativecommons.org/licenses/by-nd/4.0/legalcode
+ * Licensed under the MIT License.
+ * See LICENSE.md in the root of this repository for full terms.
  */
 
 #include "Sensor.h"
