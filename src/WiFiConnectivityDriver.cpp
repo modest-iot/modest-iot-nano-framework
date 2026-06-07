@@ -6,7 +6,7 @@
  */
 
 #include "WiFiConnectivityDriver.h"
-#include <WiFi.h> // Quarantined securely inside this translation unit only
+
 
 WiFiConnectivityDriver::WiFiConnectivityDriver(const char* ssid, const char* password)
     : networkSsidIdentifier(ssid),

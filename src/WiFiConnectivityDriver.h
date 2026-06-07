@@ -9,11 +9,11 @@
  * @version 1.0
  */
 
+#include <WiFi.h>
 #include "ConnectivityDriver.h"
 
 // Forward declarations notify the compiler of types without forcing
 // heavy downstream library include leaks into the application layer.
-class WiFiClient;
 class Client;
 
 /**
