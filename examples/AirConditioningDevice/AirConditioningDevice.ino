@@ -146,11 +146,11 @@ void setup() {
 
     // Boot complete application context framework dynamically
     airConditioningController = new AirConditioningDevice(
-    HUMIDITY_AND_TEMPERATURE_SENSOR_PIN,
-    TARGET_TEMPERATURE_UP_BUTTON_PIN,
-    TARGET_TEMPERATURE_DOWN_BUTTON_PIN,
-    STATUS_DISPLAY_ADDRESS,
-    AIR_HANDLER_PIN
+        HUMIDITY_AND_TEMPERATURE_SENSOR_PIN,
+        TARGET_TEMPERATURE_UP_BUTTON_PIN,
+        TARGET_TEMPERATURE_DOWN_BUTTON_PIN,
+        STATUS_DISPLAY_ADDRESS,
+        AIR_HANDLER_PIN
     );
 
     Serial.println("[System Boot] Loop-less Air Conditioning Orchestrator active.");
