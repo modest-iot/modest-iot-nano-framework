@@ -106,9 +106,9 @@ class AirConditioningDevice : public Device {
     void on(Event event) override {
 
         // Context A: DHT Sensor successfully finalized data acquisition
-        if (event.identifier == DhtSensor::DATA_READ_EVENT) {
-            currentTemperature = humidityAndTemperatureSensor.getTemperature();
-            currentHumidity = humidityAndTemperatureSensor.getHumidity();
+        if (event.identifier == DhtSensor::DATA_READ_EVENT_IDENTIFIER) {
+            currentTemperature = humidityAndTemperatureSensor.getTemperatureInCelsius();
+            currentHumidity = humidityAndTemperatureSensor.getRelativeHumidityInPercentage();
             updateCurrentMeasureDisplay();
         }
 
