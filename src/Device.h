@@ -15,7 +15,7 @@
 #include <Arduino.h>
 
 struct hw_timer_s;
-typedef struct hw_timer_s hw_timer_t;
+
 
 /**
  * @name Core: Device Orchestration

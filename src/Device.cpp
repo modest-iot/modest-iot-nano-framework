@@ -24,7 +24,7 @@ Device::Device(unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupI
 
 Device::~Device() {
     if (hardwareTimer != nullptr) {
-        timerAlarmDisable(hardwareTimer);
+        timerEnd(hardwareTimer);
         timerDetachInterrupt(hardwareTimer);
         hardwareTimer = nullptr;
     }
@@ -48,12 +48,11 @@ void Device::initializeAsynchronousEngine(uint8_t maximumQueueLength) {
     xTaskCreatePinnedToCore(&Device::executeHardwareSamplingContext, "HardwareWorker", 4096, this, 3, &hardwareSamplingTaskHandle, 1);
     xTaskCreatePinnedToCore(&Device::executeNetworkDispatchContext, "NetworkWorker", 8192, this, 1, &networkDispatcherTaskHandle, 1);
 
-    hardwareTimer = timerBegin(hardwareTimerIndex, 80, true);
-    timerAttachInterruptArg(hardwareTimer, &Device::handleHardwareTimerInterrupt, this, true);
+    hardwareTimer = timerBegin(1000000);
+    timerAttachInterruptArg(hardwareTimer, &Device::handleHardwareTimerInterrupt, this);
 
     uint64_t alarmIntervalInMicroseconds = static_cast<uint64_t>(pollingIntervalInMilliseconds) * 1000;
-    timerAlarmWrite(hardwareTimer, alarmIntervalInMicroseconds, true);
-    timerAlarmEnable(hardwareTimer);
+    timerAlarm(hardwareTimer, alarmIntervalInMicroseconds, true, 0);
 }
 
 bool Device::appendSensorToScheduler(EventHandler* targetSensorInstance, int requestedEventIdentifier) {
