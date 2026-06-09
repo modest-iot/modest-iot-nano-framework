@@ -7,13 +7,7 @@
 
 #include <Arduino.h>
 // Explicitly include the local framework component headers
-#include "src/Device.h"
-#include "src/DhtSensor.h"
-#include "src/CharacterLcdDisplay.h"
-#include "src/ServoMotor.h"
-#include "src/Button.h"
-#include "src/Event.h"
-#include "src/Command.h"
+#include "src/ModestIoT.h"
 
 // --- 2. DECLARATIVE RUNTIME CANVAS ---
 
