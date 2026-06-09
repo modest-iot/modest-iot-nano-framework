@@ -52,18 +52,18 @@ class ClassicBlinker : public Device {
     ClassicBlinker(int ledPin, unsigned long blinkIntervalMs, uint8_t timerChannel = 0)
     : Device(blinkIntervalMs, timerChannel),
     statusLed(ledPin, false, this) // Pass pin, initial active state (false), and set parent handler
-{
-    // 1. Launch internal background task workers with a safe queue boundary depth of 5
-    initializeAsynchronousEngine(5);
+    {
+        // 1. Launch internal background task workers with a safe queue boundary depth of 5
+        initializeAsynchronousEngine(5);
 
-    // 2. Register this device context to receive automated clock alarm notifications
-    // mapped directly to our clean event identity token
-    // Capture and evaluate scheduler capacity bounds gracefully
-    bool registered = appendSensorToScheduler(this, TIMER_EVENT_IDENTIFIER);
-    if (!registered) {
-    Serial.println(F("[ERROR] Blinker registration failed: Scheduler capacity full!"));
-}
-}
+        // 2. Register this device context to receive automated clock alarm notifications
+        // mapped directly to our clean event identity token
+        // Capture and evaluate scheduler capacity bounds gracefully
+        bool registered = appendSensorToScheduler(this, TIMER_EVENT_IDENTIFIER);
+        if (!registered) {
+            Serial.println(F("[ERROR] Blinker registration failed: Scheduler capacity full!"));
+        }
+    }
 
     /**
      * @brief Inversion of Control interface contract handler for incoming events.
@@ -77,14 +77,15 @@ class ClassicBlinker : public Device {
      * @param event The triggered event context payload containing identifier and data.
      */
     void on(Event event) override {
-    // Handle the explicit timing event assigned to this device
-    if (event.identifier == TIMER_EVENT_IDENTIFIER) {
+        // Handle the explicit timing event assigned to this device
+        if (event.identifier == TIMER_EVENT_IDENTIFIER) {
 
-    // Route the pre-instantiated static toggle command directly to the actuator.
-    // No local state tracking variables or toggles are written here!
-    statusLed.handle(Led::TOGGLE_LED_COMMAND);
-}
-}
+            // Route the pre-instantiated static toggle command directly to the actuator.
+            // No local state tracking variables or toggles are written here!
+            statusLed.handle(Led::TOGGLE_LED_COMMAND);
+            Serial.println("[ClassicBlinker] Timer event caught -> LED toggle dispatched.");
+        }
+    }
 };
 
 // --- 2. DECLARATIVE RUNTIME CANVAS ---
