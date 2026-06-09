@@ -31,7 +31,7 @@ class ToggableLedDevice : public Device {
 
         // 2. Register the button object pointer to the scheduler grid
         // mapped directly to its pre-defined pressed event token.
-        appendSensorToScheduler(&toggleLedButton, Button::BUTTON_PRESSED_EVENT_IDENTIFIER);
+        appendSensorToScheduler(&toggleLedButton, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
     }
 
     /**
@@ -55,8 +55,8 @@ class ToggableLedDevice : public Device {
 // --- 2. DECLARATIVE RUNTIME CANVAS ---
 
 // Clean configuration canvas constants aligned perfectly with member variable naming
-static const int     TOGGLE_BUTTON_PIN  = 12; // Mapped pushbutton GPIO
-static const int     STATUS_LED_PIN     = 2;  // Onboard ESP32 diagnostic blue LED
+static const int     TOGGLE_BUTTON_PIN  = 26; // Mapped pushbutton GPIO
+static const int     STATUS_LED_PIN     = 27;  // Onboard ESP32 diagnostic blue LED
 static const uint8_t CORE_TIMER_CHANNEL = 0;
 
 static ToggableLedDevice* applicationNode = nullptr;
