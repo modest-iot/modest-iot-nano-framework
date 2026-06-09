@@ -33,7 +33,7 @@ void DhtSensor::processEvent(Event& event) {
 
         cachedTemperatureInCelsius = rawTemperature;
         cachedRelativeHumidityInPercentage = rawHumidity;
-        event = DATA_READ_EVENT;
+        event = Event(DATA_READ_EVENT_IDENTIFIER);
     }
 }
 
