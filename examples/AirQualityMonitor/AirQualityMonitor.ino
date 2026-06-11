@@ -31,6 +31,10 @@ public:
 
     virtual ~AirQualityTelemetryPackage() override = default;
 
+    /**
+     * @brief Serializes the telemetry data into a JSON object.
+     * @param serializationDestination The `JsonDocument` where data will be stored.
+     */
     void serialize(JsonDocument& serializationDestination) const override {
         serializationDestination["gasPpm"] = this->gasConcentrationInPpm;
         serializationDestination["gasDetected"] = this->gasDetected;
@@ -59,6 +63,10 @@ private:
 
     /**
      * @brief Updates the LCD display with current sensor status and backlight based on gas detection.
+     *
+     * Depending on the sensor's `OperatingMode` (Raw, Calibrating, or Accurate),
+     * it formats the appropriate text and displays it on the LCD.
+     * Also controls the backlight based on whether gas is detected.
      */
     void updateOperationStatusDisplay() {
         char textBufferInternal[2][21]; // Max 20 chars + null terminator for 2 lines
@@ -221,34 +229,34 @@ public:
 
 // --- 3. TOP-LEVEL DECLARATIVE CANVAS (Arduino Setup & Loop) ---
 
-/** @brief Pin Definitions */
-/// @brief Analog pin for the gas sensor.
+/** @brief Hardware Pin Definitions */
+/// @brief Analog pin for the gas sensor (ADC input).
 static const int GAS_ANALOG_PIN = 34; // Example: ESP32 ADC1_CH6
-/// @brief Digital pin for the gas sensor's threshold output.
+/// @brief Digital pin for the gas sensor's threshold output (digital I/O).
 static const int GAS_DIGITAL_PIN = 2; // Example: ESP32 GPIO2 (D0 on some MQ boards)
-/// @brief GPIO pin for the buzzer.
+/// @brief GPIO pin for the buzzer (PWM output).
 static const int BUZZER_PIN = 13; // Example: ESP32 GPIO13
 
-/** @brief LCD Definitions */
-/// @brief I2C address of the LCD.
-static const uint8_t LCD_I2C_ADDRESS = 0x27; // Common I2C address for 16x2/20x4 LCDs
-/// @brief Number of columns on the LCD.
+/** @brief LCD Display Configurations */
+/// @brief I2C address of the LCD module (e.g., 0x27 or 0x3F).
+static const uint8_t LCD_I2C_ADDRESS = 0x27; 
+/// @brief Number of columns on the LCD (e.g., 16 or 20).
 static const uint8_t LCD_COLUMNS = 16;
-/// @brief Number of rows on the LCD.
+/// @brief Number of rows on the LCD (e.g., 2 or 4).
 static const uint8_t LCD_ROWS = 2;
 
-/** @brief Network Definitions (for MQTT telemetry) */
-/// @brief WiFi SSID.
+/** @brief Network and MQTT Configuration */
+/// @brief WiFi SSID for network connection.
 static const char* WIFI_SSID = "YourWiFiSSID";
-/// @brief WiFi password.
+/// @brief WiFi password for network connection.
 static const char* WIFI_PASSWORD = "YourWiFiPassword";
 /// @brief MQTT broker IP address.
-static const char* MQTT_BROKER_IP = "192.168.1.100"; // Replace with your MQTT broker IP
+static const char* MQTT_BROKER_IP = "192.168.1.100"; 
 /// @brief MQTT broker port.
 static const uint16_t MQTT_BROKER_PORT = 1883;
-/// @brief MQTT topic for publishing telemetry.
+/// @brief MQTT topic for publishing telemetry data.
 static const char* MQTT_PUBLISH_TOPIC = "airquality/monitor/data";
-/// @brief MQTT client ID.
+/// @brief MQTT client ID to identify this device.
 static const char* MQTT_CLIENT_ID = "AirQualityMonitor01";
 
 // Framework Instance Pointers
