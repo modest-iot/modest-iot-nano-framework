@@ -8,7 +8,6 @@
  */
 
 #include <Arduino.h>
-// #include <WiFi.h> // No longer needed, WiFiClient is exposed by WiFiConnectivityDriver
 #include "ModestIoT.h" // Umbrella header for framework components
 
 // --- 1. CONCRETE APPLICATION TELEMETRY SCHEMA ---
@@ -140,7 +139,7 @@ public:
         : Device(samplingIntervalInMilliseconds, timerGroupIndex),
           gasSensor(gasAnalogPin, gasDigitalPin, this, GasSensor::OperatingMode::RawMode), // Start in RawMode
           alarmBuzzer(buzzerPin, this),
-          statusDisplay(lcdI2CAddress, lcdColumns, lcdRows, true, this), // Backlight on initially, renamed from lcdDisplay
+          statusDisplay(lcdI2CAddress, lcdColumns, lcdRows, true, this), // Backlight on initially
           gatewayClient(client)
     {
         // Set handlers for sensors (this device acts as the EventHandler)
@@ -228,7 +227,6 @@ static const char* MQTT_PUBLISH_TOPIC = "airquality/monitor/data";
 static const char* MQTT_CLIENT_ID = "AirQualityMonitor01";
 
 // Framework Instance Pointers
-// static WiFiClient wifiClient; // No longer needed, exposed by WiFiConnectivityDriver
 static WiFiConnectivityDriver* wifiDriver = nullptr;
 static MqttGatewayClient* mqttGateway = nullptr;
 static AirQualityMonitorDevice* airMonitorDevice = nullptr;
