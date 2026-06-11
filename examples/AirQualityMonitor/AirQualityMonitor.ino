@@ -18,9 +18,12 @@
  */
 class AirQualityTelemetryPackage : public TelemetryPackage {
 private:
+    /// @brief Gas concentration in PPM.
     float gasConcentrationInPpm;
+    /// @brief Flag indicating if gas is detected.
     bool gasDetected;
-    int operatingMode; // Cast from enum class OperatingMode
+    /// @brief The operating mode of the sensor, cast from `GasSensor::OperatingMode`.
+    int operatingMode;
 
 public:
     AirQualityTelemetryPackage(float ppm, bool detected, GasSensor::OperatingMode mode)
@@ -45,13 +48,19 @@ public:
  */
 class AirQualityMonitorDevice : public Device {
 private:
+    /// @brief The gas sensor instance.
     GasSensor gasSensor;
+    /// @brief The buzzer instance for alarms.
     Buzzer alarmBuzzer;
-    CharacterLcdDisplay statusDisplay; // Renamed from lcdDisplay
+    /// @brief The LCD display instance for status.
+    CharacterLcdDisplay statusDisplay;
+    /// @brief The MQTT gateway client reference.
     MqttGatewayClient& gatewayClient;
 
-    // Helper to update the LCD display
-    void updateOperationStatusDisplay() { // Renamed from updateLcd
+    /**
+     * @brief Updates the LCD display with current sensor status and backlight based on gas detection.
+     */
+    void updateOperationStatusDisplay() {
         char textBufferInternal[2][21]; // Max 20 chars + null terminator for 2 lines
         const char* textBufferPtrs[2];
 
@@ -90,7 +99,11 @@ private:
         }
     }
 
-    // Helper to get gas type name for display
+    /**
+     * @brief Gets the string representation of a gas type.
+     * @param type The `GasSensor::GasType`.
+     * @return The gas type name as a string.
+     */
     const char* getGasTypeName(GasSensor::GasType type) {
         switch (type) {
             case GasSensor::GasType::LPG: return "LPG";
@@ -208,22 +221,34 @@ public:
 
 // --- 3. TOP-LEVEL DECLARATIVE CANVAS (Arduino Setup & Loop) ---
 
-// Pin Definitions
+/** @brief Pin Definitions */
+/// @brief Analog pin for the gas sensor.
 static const int GAS_ANALOG_PIN = 34; // Example: ESP32 ADC1_CH6
+/// @brief Digital pin for the gas sensor's threshold output.
 static const int GAS_DIGITAL_PIN = 2; // Example: ESP32 GPIO2 (D0 on some MQ boards)
+/// @brief GPIO pin for the buzzer.
 static const int BUZZER_PIN = 13; // Example: ESP32 GPIO13
 
-// LCD Definitions
+/** @brief LCD Definitions */
+/// @brief I2C address of the LCD.
 static const uint8_t LCD_I2C_ADDRESS = 0x27; // Common I2C address for 16x2/20x4 LCDs
+/// @brief Number of columns on the LCD.
 static const uint8_t LCD_COLUMNS = 16;
+/// @brief Number of rows on the LCD.
 static const uint8_t LCD_ROWS = 2;
 
-// Network Definitions (for MQTT telemetry)
+/** @brief Network Definitions (for MQTT telemetry) */
+/// @brief WiFi SSID.
 static const char* WIFI_SSID = "YourWiFiSSID";
+/// @brief WiFi password.
 static const char* WIFI_PASSWORD = "YourWiFiPassword";
+/// @brief MQTT broker IP address.
 static const char* MQTT_BROKER_IP = "192.168.1.100"; // Replace with your MQTT broker IP
+/// @brief MQTT broker port.
 static const uint16_t MQTT_BROKER_PORT = 1883;
+/// @brief MQTT topic for publishing telemetry.
 static const char* MQTT_PUBLISH_TOPIC = "airquality/monitor/data";
+/// @brief MQTT client ID.
 static const char* MQTT_CLIENT_ID = "AirQualityMonitor01";
 
 // Framework Instance Pointers
@@ -231,6 +256,9 @@ static WiFiConnectivityDriver* wifiDriver = nullptr;
 static MqttGatewayClient* mqttGateway = nullptr;
 static AirQualityMonitorDevice* airMonitorDevice = nullptr;
 
+/**
+ * @brief Initializes the device, sensors, connectivity, and MQTT gateway.
+ */
 void setup() {
     Serial.begin(115200);
     while (!Serial && millis() < 5000) { /* wait for serial port to connect */ }
@@ -270,6 +298,9 @@ void setup() {
     Serial.println("[AirQualityMonitor] Setup complete. Monitoring started.");
 }
 
+/**
+ * @brief The main application loop, kept empty as the device runs asynchronously.
+ */
 void loop() {
     // The master loop is completely clean and empty.
     // It yields 100% of its execution cycles natively back to the FreeRTOS kernel scheduler.
