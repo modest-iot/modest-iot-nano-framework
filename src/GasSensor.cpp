@@ -9,15 +9,15 @@
 #include <Arduino.h>
 #include <math.h> // For log10 and pow
 
-// Assuming a 3.3V reference for ESP32 ADC and 12-bit resolution
+// Assuming a 3.3V reference for ESP32 ADC and 12-bit resolution.
 // These values are typical for ESP32, adjust if using a different board or ADC configuration.
 static constexpr float ADC_MAX_VOLTAGE = 3.3f;
 static constexpr float ADC_MAX_VALUE = 4095.0f;
 
-// Define the custom digital gas detected event
+// Define the custom digital gas-detected event
 const Event GasSensor::DIGITAL_GAS_DETECTED_EVENT = Event(GasSensor::DIGITAL_GAS_DETECTED_EVENT_IDENTIFIER);
 
-GasSensor::GasSensor(int analogInputGpioPin, int digitalInputGpioPin, EventHandler* parentHandler, OperatingMode initialMode)
+GasSensor::GasSensor(const int analogInputGpioPin, const int digitalInputGpioPin, EventHandler* const parentHandler, const OperatingMode initialMode)
     : Sensor(analogInputGpioPin, parentHandler), // 'pin' from Sensor base class is now analogInputGpioPin
       cachedRawAnalogValue(-1),
       cachedSensorResistanceInKiloOhm(-1.0f),
@@ -53,7 +53,7 @@ void GasSensor::startCalibration() {
     // Serial.println("[GasSensor] Starting calibration. Keep sensor in clean air."); // Removed Serial.println
 }
 
-void GasSensor::setR0(float cleanAirResistanceInKiloOhm) {
+void GasSensor::setR0(const float cleanAirResistanceInKiloOhm) {
     if (cleanAirResistanceInKiloOhm > 0.0f) {
         r0InKiloOhm = cleanAirResistanceInKiloOhm;
         currentMode = OperatingMode::AccurateMode;
@@ -66,7 +66,7 @@ void GasSensor::setR0(float cleanAirResistanceInKiloOhm) {
     }
 }
 
-bool GasSensor::setTargetGas(GasType gasType) {
+bool GasSensor::setTargetGas(const GasType gasType) {
     if (gasType == GasType::None || gasType >= GasType::_MAX_GAS_TYPE_COUNT) {
         targetGasType = GasType::None;
         // Serial.println("[GasSensor] Invalid gas type selected."); // Removed Serial.println
@@ -76,7 +76,7 @@ bool GasSensor::setTargetGas(GasType gasType) {
     return true;
 }
 
-bool GasSensor::setGasCalibrationParameters(GasType gasType, float slope, float intercept) {
+bool GasSensor::setGasCalibrationParameters(const GasType gasType, const float slope, const float intercept) {
     if (gasType == GasType::None || gasType >= GasType::_MAX_GAS_TYPE_COUNT) {
         // Serial.println("[GasSensor] Cannot set calibration parameters for invalid gas type."); // Removed Serial.println
         return false;
@@ -96,7 +96,7 @@ GasSensor::GasType GasSensor::getTargetGasType() const {
     return targetGasType;
 }
 
-bool GasSensor::loadDefaultGasCalibrationParameters(GasType gasType, GasCalibrationParameters& calibrationParameters) { // Added static
+bool GasSensor::loadDefaultGasCalibrationParameters(const GasType gasType, GasSensor::GasCalibrationParameters& calibrationParameters) { // Removed redundant static, fully qualified GasCalibrationParameters
     // NOTE: These are EXAMPLE calibration values.
     // Developers MUST replace these with actual datasheet values for their specific MQ sensor model.
     // The values below are loosely based on MQ-2 and MQ-7 datasheets for illustration.
@@ -139,7 +139,7 @@ bool GasSensor::loadDefaultGasCalibrationParameters(GasType gasType, GasCalibrat
     return true;
 }
 
-float GasSensor::calculateSensorResistanceInKiloOhm(int rawAnalogValue) { // Added static
+float GasSensor::calculateSensorResistanceInKiloOhm(const int rawAnalogValue) { // Removed redundant static, added const
     float vOut = rawAnalogValue * (ADC_MAX_VOLTAGE / ADC_MAX_VALUE);
     if (vOut > 0.001f) { // Avoid division by zero or near-zero V_out
         return (ADC_MAX_VOLTAGE / vOut - 1.0f) * DEFAULT_LOAD_RESISTOR_IN_KILOOHM;
@@ -153,7 +153,7 @@ void GasSensor::updateDigitalGasDetectedState() {
     }
 }
 
-void GasSensor::handleCalibratingModeLogic(Event& event, float currentSensorResistanceInKiloOhm) {
+void GasSensor::handleCalibratingModeLogic(Event& event, const float currentSensorResistanceInKiloOhm) {
     if (currentSensorResistanceInKiloOhm > 0.0f) {
         calibrationSumRs += currentSensorResistanceInKiloOhm;
         calibrationReadingsCount++;
@@ -179,7 +179,7 @@ void GasSensor::handleCalibratingModeLogic(Event& event, float currentSensorResi
     }
 }
 
-void GasSensor::handleAccurateModeLogic(Event& event, float currentSensorResistanceInKiloOhm) {
+void GasSensor::handleAccurateModeLogic(Event& event, const float currentSensorResistanceInKiloOhm) {
     float currentRsR0Ratio = -1.0f;
     if (r0InKiloOhm > 0.0f && currentSensorResistanceInKiloOhm > 0.0f) {
         currentRsR0Ratio = currentSensorResistanceInKiloOhm / r0InKiloOhm;
@@ -288,7 +288,7 @@ float GasSensor::getGasConcentrationInPpm() const {
     }
 
     // Retrieve calibration parameters dynamically
-    GasCalibrationParameters parameters;
+    GasSensor::GasCalibrationParameters parameters; // Fully qualified
     if (customCalibrationSet[static_cast<int>(targetGasType)]) {
         parameters = customGasCalibrations[static_cast<int>(targetGasType)];
     } else {
