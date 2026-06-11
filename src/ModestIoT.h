@@ -35,5 +35,6 @@
 #include "CharacterLcdDisplay.h"
 #include "ServoMotor.h"
 #include "GasSensor.h"
+#include "Buzzer.h"
 
 #endif // MODEST_IOT_H
