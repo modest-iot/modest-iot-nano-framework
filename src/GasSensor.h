@@ -36,7 +36,7 @@ public:
      * @brief Defines the operating mode of the GasSensor.
      */
     enum class OperatingMode {
-        RawMode,          ///< Primarily digital gas detection (if digital pin configured) or raw analog/Rs values.
+        RawMode,          ///< Provides raw analog and Rs values; if a digital pin is configured, it's used for `isGasDetected()`.
         CalibratingMode,  ///< Actively collecting data to determine R0; suppresses events.
         AccurateMode      ///< R0 is set, provides Rs/R0 ratio and PPM estimations.
     };
@@ -60,52 +60,104 @@ public:
         Benzene,    ///< C6H6
         Toluene,    ///< C7H8
         Acetone,    ///< C3H6O
-        _MAX_GAS_TYPE_COUNT ///< Internal use: Represents the count of defined gas types.
+        MAX_GAS_TYPE_COUNT ///< Internal use: Represents the count of defined gas types.
     };
 
-    // Calibration parameters struct (moved here for public visibility for static methods)
+    /**
+     * @brief Structure to hold calibration parameters (slope and intercept) for a specific gas type.
+     */
     struct GasCalibrationParameters {
-        float slope;
-        float intercept;
+        float slope;     ///< The slope of the gas's calibration curve on a log-log plot.
+        float intercept; ///< The Y-intercept of the gas's calibration curve on a log-log plot.
     };
 
 private:
-    // Analog-related members
+    /**
+     * @brief The most recent raw analog reading from the sensor's analog output pin.
+     */
     int cachedRawAnalogValue;
+    /**
+     * @brief The most recent calculated sensor resistance (Rs) in KiloOhm.
+     */
     float cachedSensorResistanceInKiloOhm;
-    float cachedRsR0Ratio; // This will now store Rs/R0
-    float r0InKiloOhm; // Resistance to clean air (calibrated baseline)
+    /**
+     * @brief The most recent calculated Rs/R0 ratio.
+     */
+    float cachedRsR0Ratio;
+    /**
+     * @brief The R0 value (resistance in clean air) in KiloOhm, determined during calibration.
+     */
+    float r0InKiloOhm;
 
-    // Digital-related members
-    int digitalInputPin; ///< Digital input pin for threshold detection (e.g., D0 on breakout board).
+    /**
+     * @brief The GPIO pin connected to the digital output (D0) of the gas sensor breakout board.
+     * A value of -1 indicates no digital pin is configured.
+     */
+    int digitalInputPin;
+    /**
+     * @brief The most recent state of the digital output pin, indicating threshold-based gas detection.
+     */
     bool cachedDigitalGasDetected;
 
+    /**
+     * @brief The current operating mode of the gas sensor.
+     */
     OperatingMode currentMode;
-    GasType targetGasType; ///< The specific gas type this sensor is currently configured to detect for PPM.
+    /**
+     * @brief The specific gas type for which the sensor is currently configured to estimate PPM.
+     */
+    GasType targetGasType;
 
-    // Storage for user-provided custom calibration parameters
-    GasCalibrationParameters customGasCalibrations[static_cast<int>(GasType::_MAX_GAS_TYPE_COUNT)];
-    bool customCalibrationSet[static_cast<int>(GasType::_MAX_GAS_TYPE_COUNT)];
+    /**
+     * @brief Array to store custom calibration parameters provided by the user for each GasType.
+     */
+    GasCalibrationParameters customGasCalibrations[static_cast<int>(GasType::MAX_GAS_TYPE_COUNT)];
+    /**
+     * @brief Boolean array indicating whether custom calibration parameters have been set for each GasType.
+     */
+    bool customCalibrationSet[static_cast<int>(GasType::MAX_GAS_TYPE_COUNT)];
 
     // Calibration state variables
+    /**
+     * @brief Timestamp when the calibration process was started.
+     */
     unsigned long calibrationStartTime;
+    /**
+     * @brief Accumulator for Rs readings during the calibration phase.
+     */
     float calibrationSumRs;
+    /**
+     * @brief Counter for the number of Rs readings taken during calibration.
+     */
     int calibrationReadingsCount;
 
-    // A simple load resistor value for calculating Rs.
-    // This would typically be part of the sensor's external circuit.
+    /**
+     * @brief The value of the load resistor (RL) in KiloOhm used in the sensor's external circuit.
+     */
     static constexpr float DEFAULT_LOAD_RESISTOR_IN_KILOOHM = 10.0f; // Example: 10 KiloOhm
 
-    // Threshold for detecting a significant change in Rs/R0 ratio to trigger an event.
+    /**
+     * @brief Threshold for detecting a significant change in the Rs/R0 ratio to trigger a DATA_READ_EVENT.
+     */
     static constexpr float RSR0_CHANGE_THRESHOLD = 0.05f; // 5% change in Rs/R0 ratio
 
-    // Calibration constants
+    /**
+     * @brief The duration in milliseconds for which the sensor collects readings during calibration.
+     */
     static constexpr unsigned long CALIBRATION_DURATION_IN_MILLISECONDS = 30000; // 30 seconds for calibration
+    /**
+     * @brief The minimum number of readings required to complete the calibration process.
+     */
     static constexpr int CALIBRATION_MIN_READINGS = 10; // Minimum readings needed for R0 calculation
 
-    // Threshold for accurate mode gas detection (deviation from clean air Rs/R0 = 1.0)
+    /**
+     * @brief Threshold for detecting gas in AccurateMode, based on deviation of Rs/R0 from 1.0 (clean air).
+     */
     static constexpr float ACCURATE_MODE_RSR0_DEVIATION_THRESHOLD = 0.15f; // 15% deviation from 1.0
 
+    /**
+     * @brief Special identifier used to suppress event propagation when no significant change or valid data is available.
+     */
     static constexpr int PROPAGATION_SUPPRESSION_IDENTIFIER = -1;
 
     /**
@@ -115,14 +167,14 @@ private:
      * @param calibrationParameters Reference to a struct to populate with the loaded parameters.
      * @return True if default calibration parameters were found and loaded, false otherwise.
      */
-    static bool loadDefaultGasCalibrationParameters(const GasType gasType, GasCalibrationParameters& calibrationParameters); // Added const
+    static bool loadDefaultGasCalibrationParameters(GasType gasType, GasCalibrationParameters& calibrationParameters);
 
     /**
      * @brief Calculates the sensor resistance (Rs) in KiloOhm from a raw analog reading.
      * @param rawAnalogValue The raw ADC reading from the analog input pin.
      * @return The calculated sensor resistance in KiloOhm.
      */
-    static float calculateSensorResistanceInKiloOhm(const int rawAnalogValue); // Added const
+    static float calculateSensorResistanceInKiloOhm(int rawAnalogValue);
 
     /**
      * @brief Reads the digital input pin (if configured) and updates the cached digital gas-detected state.
@@ -135,7 +187,7 @@ private:
      * @param event Mutable event request/response payload.
      * @param currentSensorResistanceInKiloOhm The most recent calculated sensor resistance.
      */
-    void handleCalibratingModeLogic(Event& event, const float currentSensorResistanceInKiloOhm); // Added const
+    void handleCalibratingModeLogic(Event& event, float currentSensorResistanceInKiloOhm);
 
     /**
      * @brief Handles the logic for the AccurateMode.
@@ -143,7 +195,7 @@ private:
      * @param event Mutable event request/response payload.
      * @param currentSensorResistanceInKiloOhm The most recent calculated sensor resistance.
      */
-    void handleAccurateModeLogic(Event& event, const float currentSensorResistanceInKiloOhm); // Added const
+    void handleAccurateModeLogic(Event& event, float currentSensorResistanceInKiloOhm);
 
     /**
      * @brief Handles the logic for the RawMode.
@@ -151,13 +203,15 @@ private:
      * @param event Mutable event request/response payload.
      * @param currentSensorResistanceInKiloOhm The most recent calculated sensor resistance.
      */
-    void handleRawModeLogic(Event& event, const float currentSensorResistanceInKiloOhm); // Added const
+    void handleRawModeLogic(Event& event, float currentSensorResistanceInKiloOhm);
 
 protected:
     /**
-     * @brief Performs an analog read and updates cached gas level measurements.
-     * Handles mode-specific logic for raw, calibrating, and accurate modes.
-     * @param event Mutable event request/response payload.
+     * @brief Processes an incoming event, typically a `MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER`.
+     * This method orchestrates the sensor's behavior based on its current operating mode.
+     * @param event The triggered event context payload. This event may be mutated
+     *              to `DATA_READ_EVENT` or `DIGITAL_GAS_DETECTED_EVENT` if a significant
+     *              reading occurs, or suppressed if no change.
      */
     void processEvent(Event& event) override;
 
@@ -174,7 +228,7 @@ public:
      * @param parentHandler Optional upstream handler for propagated events.
      * @param initialMode The initial operating mode of the sensor (default: RawMode).
      */
-    GasSensor(const int analogInputGpioPin, const int digitalInputGpioPin = -1, EventHandler* const parentHandler = nullptr, const OperatingMode initialMode = OperatingMode::RawMode); // Added const
+    GasSensor(int analogInputGpioPin, int digitalInputGpioPin = -1, EventHandler* parentHandler = nullptr, OperatingMode initialMode = OperatingMode::RawMode);
 
     /**
      * @brief Initiates the calibration process for the sensor.
@@ -190,7 +244,7 @@ public:
      * Setting R0 manually will switch the sensor to AccurateMode.
      * @param cleanAirResistanceInKiloOhm The R0 value in KiloOhm.
      */
-    void setR0(const float cleanAirResistanceInKiloOhm); // Added const
+    void setR0(float cleanAirResistanceInKiloOhm);
 
     /**
      * @brief Configures the sensor to target a specific gas type for PPM estimation.
@@ -199,7 +253,7 @@ public:
      * @param gasType The GasType to configure the sensor for.
      * @return True if the gas type is valid, false otherwise.
      */
-    bool setTargetGas(const GasType gasType); // Added const
+    bool setTargetGas(GasType gasType);
 
     /**
      * @brief Allows the developer to provide custom calibration parameters (slope and intercept)
@@ -209,31 +263,31 @@ public:
      * @param intercept The Y-intercept of the gas's calibration curve on a log-log plot.
      * @return True if the custom calibration parameters were successfully set, false otherwise.
      */
-    bool setGasCalibrationParameters(const GasType gasType, const float slope, const float intercept); // Added const
+    bool setGasCalibrationParameters(GasType gasType, float slope, float intercept);
 
     /**
      * @brief Returns the current operating mode of the sensor.
      * @return The current OperatingMode.
      */
-    OperatingMode getOperatingMode() const;
+    [[nodiscard]] OperatingMode getOperatingMode() const;
 
     /**
      * @brief Returns the currently configured target gas type for PPM estimation.
      * @return The current GasType.
      */
-    GasType getTargetGasType() const;
+    [[nodiscard]] GasType getTargetGasType() const;
 
     /**
      * @brief Returns the most recent raw analog reading from the sensor.
      * @return Raw analog value (e.g., 0-4095 for ESP32 ADC).
      */
-    int getRawAnalogValue() const;
+    [[nodiscard]] int getRawAnalogValue() const;
 
     /**
      * @brief Returns the most recent calculated sensor resistance (Rs) in KiloOhm.
      * @return Sensor resistance in KiloOhm.
      */
-    float getSensorResistanceInKiloOhm() const;
+    [[nodiscard]] float getSensorResistanceInKiloOhm() const;
 
     /**
      * @brief Returns the most recent calculated Rs/R0 ratio.
@@ -241,7 +295,7 @@ public:
      * Returns -1.0f if not in AccurateMode or R0 is not set.
      * @return Rs/R0 ratio.
      */
-    float getRsR0Ratio() const;
+    [[nodiscard]] float getRsR0Ratio() const;
 
     /**
      * @brief Estimates the gas concentration in PPM for the currently targeted gas type.
@@ -254,7 +308,7 @@ public:
      *
      * @return Estimated gas concentration in PPM.
      */
-    float getGasConcentrationInPpm() const;
+    [[nodiscard]] float getGasConcentrationInPpm() const;
 
     /**
      * @brief Determines if gas is currently detected based on the sensor's operating mode.
@@ -264,7 +318,7 @@ public:
      * - In AccurateMode: Returns true if the Rs/R0 ratio deviates significantly from 1.0.
      * @return `true` if gas is detected, `false` otherwise.
      */
-    bool isGasDetected() const;
+    [[nodiscard]] bool isGasDetected() const;
 };
 
 /** @} */ // End of Sensors: Environmental & Distance
