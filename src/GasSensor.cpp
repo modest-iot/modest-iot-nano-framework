@@ -17,6 +17,13 @@ static constexpr float ADC_MAX_VALUE = 4095.0f;
 // Define the custom digital gas-detected event
 const Event GasSensor::DIGITAL_GAS_DETECTED_EVENT = Event(GasSensor::DIGITAL_GAS_DETECTED_EVENT_IDENTIFIER);
 
+/**
+ * @brief Constructs a GasSensor.
+ * @param analogInputGpioPin Analog input GPIO pin.
+ * @param digitalInputGpioPin Digital input GPIO pin.
+ * @param parentHandler Upstream handler for events.
+ * @param initialMode Initial operating mode for the sensor.
+ */
 GasSensor::GasSensor(const int analogInputGpioPin, const int digitalInputGpioPin, EventHandler* const parentHandler, const OperatingMode initialMode)
     : Sensor(analogInputGpioPin, parentHandler), // 'pin' from Sensor base class is now analogInputGpioPin
       cachedRawAnalogValue(-1),
@@ -44,6 +51,9 @@ GasSensor::GasSensor(const int analogInputGpioPin, const int digitalInputGpioPin
     }
 }
 
+/**
+ * @brief Starts the gas sensor calibration process.
+ */
 void GasSensor::startCalibration() {
     currentMode = OperatingMode::CalibratingMode;
     calibrationStartTime = millis();
@@ -53,6 +63,10 @@ void GasSensor::startCalibration() {
     // Serial.println("[GasSensor] Starting calibration. Keep sensor in clean air."); // Removed Serial.println
 }
 
+/**
+ * @brief Sets the R0 (resistance in clean air) value.
+ * @param cleanAirResistanceInKiloOhm The R0 value in kOhm.
+ */
 void GasSensor::setR0(const float cleanAirResistanceInKiloOhm) {
     if (cleanAirResistanceInKiloOhm > 0.0f) {
         r0InKiloOhm = cleanAirResistanceInKiloOhm;
@@ -66,6 +80,11 @@ void GasSensor::setR0(const float cleanAirResistanceInKiloOhm) {
     }
 }
 
+/**
+ * @brief Sets the target gas type.
+ * @param gasType The GasType to target.
+ * @return true if successful, false otherwise.
+ */
 bool GasSensor::setTargetGas(const GasType gasType) {
     if (gasType == GasType::None || gasType >= GasType::_MAX_GAS_TYPE_COUNT) {
         targetGasType = GasType::None;
@@ -76,6 +95,13 @@ bool GasSensor::setTargetGas(const GasType gasType) {
     return true;
 }
 
+/**
+ * @brief Sets custom calibration parameters for a gas type.
+ * @param gasType The GasType.
+ * @param slope The slope of the curve.
+ * @param intercept The intercept of the curve.
+ * @return true if successful, false otherwise.
+ */
 bool GasSensor::setGasCalibrationParameters(const GasType gasType, const float slope, const float intercept) {
     if (gasType == GasType::None || gasType >= GasType::_MAX_GAS_TYPE_COUNT) {
         // Serial.println("[GasSensor] Cannot set calibration parameters for invalid gas type."); // Removed Serial.println
@@ -88,14 +114,28 @@ bool GasSensor::setGasCalibrationParameters(const GasType gasType, const float s
     return true;
 }
 
+/**
+ * @brief Gets the current operating mode.
+ * @return The OperatingMode.
+ */
 GasSensor::OperatingMode GasSensor::getOperatingMode() const {
     return currentMode;
 }
 
+/**
+ * @brief Gets the target gas type.
+ * @return The GasType.
+ */
 GasSensor::GasType GasSensor::getTargetGasType() const {
     return targetGasType;
 }
 
+/**
+ * @brief Loads default gas calibration parameters.
+ * @param gasType The GasType.
+ * @param calibrationParameters Reference to store parameters.
+ * @return true if successful, false otherwise.
+ */
 bool GasSensor::loadDefaultGasCalibrationParameters(const GasType gasType, GasSensor::GasCalibrationParameters& calibrationParameters) { // Removed redundant static, fully qualified GasCalibrationParameters
     // NOTE: These are EXAMPLE calibration values.
     // Developers MUST replace these with actual datasheet values for their specific MQ sensor model.
@@ -139,6 +179,11 @@ bool GasSensor::loadDefaultGasCalibrationParameters(const GasType gasType, GasSe
     return true;
 }
 
+/**
+ * @brief Calculates sensor resistance in kOhm.
+ * @param rawAnalogValue The raw analog reading.
+ * @return The resistance in kOhm.
+ */
 float GasSensor::calculateSensorResistanceInKiloOhm(const int rawAnalogValue) { // Removed redundant static, added const
     float vOut = rawAnalogValue * (ADC_MAX_VOLTAGE / ADC_MAX_VALUE);
     if (vOut > 0.001f) { // Avoid division by zero or near-zero V_out
@@ -147,12 +192,20 @@ float GasSensor::calculateSensorResistanceInKiloOhm(const int rawAnalogValue) { 
     return -1.0f;
 }
 
+/**
+ * @brief Updates digital gas detection state.
+ */
 void GasSensor::updateDigitalGasDetectedState() {
     if (digitalInputPin != -1) {
         cachedDigitalGasDetected = (digitalRead(digitalInputPin) == HIGH); // Assuming HIGH means gas detected
     }
 }
 
+/**
+ * @brief Handles calibrating mode logic.
+ * @param event The event.
+ * @param currentSensorResistanceInKiloOhm Current resistance in kOhm.
+ */
 void GasSensor::handleCalibratingModeLogic(Event& event, const float currentSensorResistanceInKiloOhm) {
     if (currentSensorResistanceInKiloOhm > 0.0f) {
         calibrationSumRs += currentSensorResistanceInKiloOhm;
@@ -179,6 +232,11 @@ void GasSensor::handleCalibratingModeLogic(Event& event, const float currentSens
     }
 }
 
+/**
+ * @brief Handles accurate mode logic.
+ * @param event The event.
+ * @param currentSensorResistanceInKiloOhm Current resistance in kOhm.
+ */
 void GasSensor::handleAccurateModeLogic(Event& event, const float currentSensorResistanceInKiloOhm) {
     float currentRsR0Ratio = -1.0f;
     if (r0InKiloOhm > 0.0f && currentSensorResistanceInKiloOhm > 0.0f) {
@@ -202,6 +260,11 @@ void GasSensor::handleAccurateModeLogic(Event& event, const float currentSensorR
     }
 }
 
+/**
+ * @brief Handles raw mode logic.
+ * @param event The event.
+ * @param currentSensorResistanceInKiloOhm Current resistance in kOhm.
+ */
 void GasSensor::handleRawModeLogic(Event& event, const float currentSensorResistanceInKiloOhm) {
     if (digitalInputPin != -1) {
         // In RawMode, if digital pin is configured, propagate DIGITAL_GAS_DETECTED_EVENT on change
@@ -237,6 +300,10 @@ void GasSensor::handleRawModeLogic(Event& event, const float currentSensorResist
     }
 }
 
+/**
+ * @brief Processes incoming events.
+ * @param event The event to process.
+ */
 void GasSensor::processEvent(Event& event) {
     if (event.identifier != MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER) {
         event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER; // Only process measure requests
@@ -264,14 +331,26 @@ void GasSensor::processEvent(Event& event) {
     }
 }
 
+/**
+ * @brief Gets the cached raw analog value.
+ * @return The raw analog value.
+ */
 int GasSensor::getRawAnalogValue() const {
     return cachedRawAnalogValue;
 }
 
+/**
+ * @brief Gets the cached sensor resistance in kOhm.
+ * @return The resistance in kOhm.
+ */
 float GasSensor::getSensorResistanceInKiloOhm() const {
     return cachedSensorResistanceInKiloOhm;
 }
 
+/**
+ * @brief Gets the cached Rs/R0 ratio.
+ * @return The Rs/R0 ratio.
+ */
 float GasSensor::getRsR0Ratio() const {
     if (currentMode != OperatingMode::AccurateMode || r0InKiloOhm <= 0.0f) {
         return -1.0f; // Not in accurate mode or R0 not set
@@ -279,6 +358,10 @@ float GasSensor::getRsR0Ratio() const {
     return cachedRsR0Ratio;
 }
 
+/**
+ * @brief Calculates and gets the gas concentration in PPM.
+ * @return The gas concentration in PPM.
+ */
 float GasSensor::getGasConcentrationInPpm() const {
     if (currentMode != OperatingMode::AccurateMode || r0InKiloOhm <= 0.0f || targetGasType == GasType::None) {
         return -1.0f; // Not in accurate mode, R0 not set, or no target gas
@@ -306,6 +389,10 @@ float GasSensor::getGasConcentrationInPpm() const {
     return -1.0f;
 }
 
+/**
+ * @brief Checks if gas is detected.
+ * @return true if detected, false otherwise.
+ */
 bool GasSensor::isGasDetected() const {
     if (currentMode == OperatingMode::RawMode) {
         // In RawMode, if digital pin is configured, use its state

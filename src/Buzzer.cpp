@@ -12,6 +12,11 @@ const Command Buzzer::TURN_ON_COMMAND = Command(Buzzer::TURN_ON_COMMAND_IDENTIFI
 const Command Buzzer::TURN_OFF_COMMAND = Command(Buzzer::TURN_OFF_COMMAND_IDENTIFIER);
 const Command Buzzer::PLAY_TONE_COMMAND = Command(Buzzer::PLAY_TONE_COMMAND_IDENTIFIER);
 
+/**
+ * @brief Constructs a Buzzer actuator.
+ * @param signalGpioPin The GPIO pin for the buzzer.
+ * @param parentHandler The parent command handler.
+ */
 Buzzer::Buzzer(const int signalGpioPin, CommandHandler* const parentHandler)
     : Actuator(signalGpioPin, parentHandler),
       active(false),
@@ -22,17 +27,26 @@ Buzzer::Buzzer(const int signalGpioPin, CommandHandler* const parentHandler)
     digitalWrite(pin, LOW); // Ensure buzzer is off initially
 }
 
+/**
+ * @brief Plays the default tone without a duration.
+ */
 void Buzzer::playDefaultToneWithoutDuration() {
     tone(pin, 1000); // Play a default 1kHz tone continuously
     active = true;
 }
 
+/**
+ * @brief Turns the buzzer off.
+ */
 void Buzzer::turnBuzzerOff() {
     noTone(pin);
     digitalWrite(pin, LOW); // Ensure pin is low
     active = false;
 }
 
+/**
+ * @brief Plays the buffered tone.
+ */
 void Buzzer::playBufferedTone() {
     if (bufferedFrequency > 0 && bufferedDuration > 0) {
         tone(pin, bufferedFrequency, bufferedDuration);
@@ -45,6 +59,10 @@ void Buzzer::playBufferedTone() {
     }
 }
 
+/**
+ * @brief Executes a command.
+ * @param command The command to execute.
+ */
 void Buzzer::executeCommand(Command command) {
     if (command == TURN_ON_COMMAND) {
         playDefaultToneWithoutDuration();
@@ -55,11 +73,20 @@ void Buzzer::executeCommand(Command command) {
     }
 }
 
+/**
+ * @brief Sets the tone parameters.
+ * @param frequency The frequency in Hz.
+ * @param duration The duration in ms.
+ */
 void Buzzer::setTone(const int frequency, const unsigned long duration) {
     bufferedFrequency = frequency;
     bufferedDuration = duration;
 }
 
+/**
+ * @brief Checks if the buzzer is active.
+ * @return True if active, false otherwise.
+ */
 bool Buzzer::isActive() const {
     // For tone() with duration, the active state is tricky.
     // This currently reflects if a tone() or continuous tone was *started*.
@@ -67,10 +94,18 @@ bool Buzzer::isActive() const {
     return active;
 }
 
+/**
+ * @brief Gets the buffered frequency.
+ * @return The frequency in Hz.
+ */
 int Buzzer::getBufferedFrequency() const {
     return bufferedFrequency;
 }
 
+/**
+ * @brief Gets the buffered duration.
+ * @return The duration in ms.
+ */
 unsigned long Buzzer::getBufferedDuration() const {
     return bufferedDuration;
 }
