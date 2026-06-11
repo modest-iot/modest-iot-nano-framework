@@ -101,12 +101,12 @@ private:
 
     // Calibration constants
     static constexpr unsigned long CALIBRATION_DURATION_IN_MILLISECONDS = 30000; // 30 seconds for calibration
-    static const int CALIBRATION_MIN_READINGS = 10; // Minimum readings needed for R0 calculation
+    static constexpr int CALIBRATION_MIN_READINGS = 10; // Minimum readings needed for R0 calculation
 
     // Threshold for accurate mode gas detection (deviation from clean air Rs/R0 = 1.0)
     static constexpr float ACCURATE_MODE_RSR0_DEVIATION_THRESHOLD = 0.15f; // 15% deviation from 1.0
 
-    static const int PROPAGATION_SUPPRESSION_IDENTIFIER = -1;
+    static constexpr int PROPAGATION_SUPPRESSION_IDENTIFIER = -1;
 
     /**
      * @brief Loads the default calibration slope and intercept for a given gas type.
@@ -163,7 +163,7 @@ protected:
 
 public:
     /** @brief Identifier emitted when a digital gas detection threshold is crossed. */
-    static const int DIGITAL_GAS_DETECTED_EVENT_IDENTIFIER = 40;
+    static constexpr int DIGITAL_GAS_DETECTED_EVENT_IDENTIFIER = 40;
     /** @brief Prebuilt event instance for digital gas detection notifications. */
     static const Event DIGITAL_GAS_DETECTED_EVENT;
 
@@ -248,7 +248,7 @@ public:
      *
      * This method uses the internally stored calibration parameters (slope and intercept)
      * for the gas type set via `setTargetGas()`.
-     * The formula used is PPM = 10^((log10(Rs/R0) - intercept) / slope)).
+     * The formula used is PPM = 10^((log10(Rs/R0) - intercept) / slope).
      * Returns -1.0f if not in AccurateMode, Rs/R0 is invalid, R0 is not set,
      * or no target gas type has been configured.
      *
@@ -259,7 +259,7 @@ public:
     /**
      * @brief Determines if gas is currently detected based on the sensor's operating mode.
      * - In RawMode: Returns true if the digital pin indicates gas, or if no digital pin,
-     *   it returns false (as analog raw data alone isn't sufficient for 'detected').
+     *   it returns false (as analog raw data alone isn't enough for 'detected').
      * - In CalibratingMode: Always returns false.
      * - In AccurateMode: Returns true if the Rs/R0 ratio deviates significantly from 1.0.
      * @return `true` if gas is detected, `false` otherwise.
