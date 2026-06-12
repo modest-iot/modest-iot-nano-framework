@@ -44,7 +44,7 @@ protected:
     virtual void processEvent(Event& event) = 0;
 
 public:
-    // --- FRAMEWORK-WIDE UNIFIED SENSOR SPECIFICATION EVENTS ---
+    /// --- FRAMEWORK-WIDE UNIFIED SENSOR SPECIFICATION EVENTS ---
     static const int DATA_READ_EVENT_IDENTIFIER = 20;
     static const int MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER = 21;
 
