@@ -45,9 +45,9 @@ protected:
     void executeCommand(Command command) override;
 
 public:
-    static const int LOCK_TO_MINIMUM_LIMIT_COMMAND_IDENTIFIER = 150;
-    static const int LOCK_TO_MAXIMUM_LIMIT_COMMAND_IDENTIFIER = 151;
-    static const int DRIVE_TO_BUFFERED_ANGLE_COMMAND_IDENTIFIER = 152;
+    static cont int LOCK_TO_MINIMUM_LIMIT_COMMAND_IDENTIFIER = 150;
+    static cont int LOCK_TO_MAXIMUM_LIMIT_COMMAND_IDENTIFIER = 151;
+    static cont int DRIVE_TO_BUFFERED_ANGLE_COMMAND_IDENTIFIER = 152;
 
     static const Command LOCK_TO_MINIMUM_LIMIT_COMMAND;
     static const Command LOCK_TO_MAXIMUM_LIMIT_COMMAND;
