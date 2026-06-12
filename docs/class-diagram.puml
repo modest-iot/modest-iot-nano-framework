@@ -114,6 +114,17 @@ package "Sensors" #EEF6EE {
     +getRawSignalValue() : int
     #processEvent(event : Event&) : void
   }
+
+  class GasSensor {
+    -pin : int
+    +GasSensor(analogInputGpioPin : int, digitalInputGpioPin : int,
+               parentHandler : EventHandler* = nullptr,
+               initialMode : int = 0)
+    +startCalibration() : void
+    +setR0(cleanAirResistanceInKiloOhm : float) : void
+    +isGasDetected() : bool
+    #processEvent(event : Event&) : void
+  }
 }
 
 package "Actuators" #EEF0FF {
@@ -169,6 +180,23 @@ package "Actuators" #EEF0FF {
                parentHandler : CommandHandler* = nullptr)
     +setTargetAngleBufferInDegrees(targetAngleInDegrees : int) : void
     +getCurrentActiveAngleInDegrees() : int
+    #executeCommand(command : Command) : void
+  }
+
+  class Buzzer {
+    -active : bool
+    -bufferedFrequency : int
+    -bufferedDuration : unsigned long
+    +{static} TURN_ON_COMMAND_IDENTIFIER : int = 250
+    +{static} TURN_OFF_COMMAND_IDENTIFIER : int = 251
+    +{static} PLAY_TONE_COMMAND_IDENTIFIER : int = 252
+    +{static} TURN_ON_COMMAND : Command
+    +{static} TURN_OFF_COMMAND : Command
+    +{static} PLAY_TONE_COMMAND : Command
+    +Buzzer(signalGpioPin : int, parentHandler : CommandHandler* = nullptr)
+    +isActive() : bool
+    +getBufferedFrequency() : int
+    +getBufferedDuration() : unsigned long
     #executeCommand(command : Command) : void
   }
 }
@@ -238,10 +266,12 @@ Sensor <|-- Button
 Sensor <|-- DhtSensor
 Sensor <|-- UltrasonicSensor
 Sensor <|-- PulseSensor
+Sensor <|-- GasSensor
 
 Actuator <|-- Led
 Actuator <|-- CharacterLcdDisplay
 Actuator <|-- ServoMotor
+Actuator <|-- Buzzer
 
 ConnectivityDriver <|.. WiFiConnectivityDriver : implements
 
