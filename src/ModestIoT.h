@@ -19,6 +19,7 @@
 #include "CommandHandler.h"
 #include "TelemetryPackage.h"
 #include "Device.h"
+#include "LocationData.h"
 
 /// --- 2. LAYER-ISOLATED NETWORK COMPREHENSION ---
 #include "ConnectivityDriver.h"
@@ -36,5 +37,7 @@
 #include "ServoMotor.h"
 #include "GasSensor.h"
 #include "Buzzer.h"
+#include "GeolocationSensor.h"
+
 
 #endif // MODEST_IOT_H
