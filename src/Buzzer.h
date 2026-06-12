@@ -27,29 +27,43 @@
  */
 class Buzzer : public Actuator {
 private:
-    bool active; ///< Tracks if the buzzer is currently active (making sound).
-    int bufferedFrequency; ///< Frequency to play when PLAY_TONE_COMMAND is received.
-    unsigned long bufferedDuration; ///< Duration to play when PLAY_TONE_COMMAND is received.
+    /**
+     * @brief Tracks if the buzzer is currently active (making sound).
+     * This flag is set when a tone is started and cleared when `turnBuzzerOff()` is called.
+     */
+    bool active;
+    /**
+     * @brief The frequency in Hertz (Hz) buffered for the next `PLAY_TONE_COMMAND`.
+     */
+    int bufferedFrequency;
+    /**
+     * @brief The duration in milliseconds (ms) buffered for the next `PLAY_TONE_COMMAND`.
+     */
+    unsigned long bufferedDuration;
 
     /**
      * @brief Plays a default 1kHz tone continuously without a specified duration.
+     * Sets the `active` flag to true.
      */
     void playDefaultToneWithoutDuration();
 
     /**
-     * @brief Turns the buzzer off, stopping any current sound.
+     * @brief Turns the buzzer off, stopping any current sound and ensuring the pin is LOW.
+     * Clears the `active` flag.
      */
     void turnBuzzerOff();
 
     /**
      * @brief Plays the currently buffered tone (frequency and duration).
-     * If buffered parameters are invalid, the buzzer is turned off.
+     * If buffered parameters are invalid (frequency or duration is zero), the buzzer is turned off.
+     * Sets the `active` flag to true if a valid tone is played.
      */
     void playBufferedTone();
 
 protected:
     /**
      * @brief Executes buzzer state commands (on/off/play tone) and optionally propagates them upstream.
+     * This method dispatches to private helper methods based on the incoming command.
      * @param command Command to execute.
      */
     void executeCommand(Command command) override;
@@ -71,6 +85,7 @@ public:
 
     /**
      * @brief Constructs a Buzzer actuator.
+     * Initializes the buzzer pin as an OUTPUT and ensures it's off.
      * @param signalGpioPin Output GPIO pin connected to the buzzer.
      * @param parentHandler Optional upstream handler for propagated commands.
      */
@@ -79,28 +94,30 @@ public:
     /**
      * @brief Sets the frequency and duration for the next tone command.
      * These parameters are used when `PLAY_TONE_COMMAND` is received.
-     * @param frequency The frequency of the tone in Hertz (Hz).
-     * @param duration The duration of the tone in milliseconds (ms).
+     * @param frequency The frequency of the tone in Hertz (Hz). Must be positive.
+     * @param duration The duration of the tone in milliseconds (ms). Must be positive.
      */
     void setTone(const int frequency, const unsigned long duration);
 
     /**
      * @brief Reports if the buzzer is currently active (making sound).
+     * Note: For tones played with a duration, this flag reflects if the tone was *started*,
+     * not necessarily if it has finished playing.
      * @return `true` if the buzzer is on or playing a tone, otherwise `false`.
      */
-    bool isActive() const;
+    [[nodiscard]] bool isActive() const;
 
     /**
      * @brief Returns the currently buffered tone frequency.
      * @return The buffered frequency in Hertz.
      */
-    int getBufferedFrequency() const;
+    [[nodiscard]] int getBufferedFrequency() const;
 
     /**
      * @brief Returns the currently buffered tone duration.
      * @return The buffered duration in milliseconds.
      */
-    unsigned long getBufferedDuration() const;
+    [[nodiscard]] unsigned long getBufferedDuration() const;
 };
 
 /** @} */ // End of Actuators: Sound Output
