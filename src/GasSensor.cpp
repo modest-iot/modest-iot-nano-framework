@@ -7,7 +7,7 @@
 
 #include "GasSensor.h"
 #include <Arduino.h>
-#include <math.h> // For log10 and pow
+#include <cmath> // For log10 and pow
 
 // Assuming a 3.3V reference for ESP32 ADC and 12-bit resolution.
 // These values are typical for ESP32, adjust if using a different board or ADC configuration.
@@ -45,7 +45,7 @@ GasSensor::GasSensor(const int analogInputGpioPin, const int digitalInputGpioPin
     // currentGasCalibration is no longer directly set in constructor, it's loaded on demand
 
     // Initialize custom calibration arrays
-    for (int i = 0; i < static_cast<int>(GasType::_MAX_GAS_TYPE_COUNT); ++i) {
+    for (int i = 0; i < static_cast<int>(GasType::MAX_GAS_TYPE_COUNT); ++i) {
         customCalibrationSet[i] = false;
         customGasCalibrations[i] = {0.0f, 0.0f};
     }
@@ -86,7 +86,7 @@ void GasSensor::setR0(const float cleanAirResistanceInKiloOhm) {
  * @return true if successful, false otherwise.
  */
 bool GasSensor::setTargetGas(const GasType gasType) {
-    if (gasType == GasType::None || gasType >= GasType::_MAX_GAS_TYPE_COUNT) {
+    if (gasType == GasType::None || gasType >= GasType::MAX_GAS_TYPE_COUNT) {
         targetGasType = GasType::None;
         // Serial.println("[GasSensor] Invalid gas type selected."); // Removed Serial.println
         return false;
@@ -103,14 +103,11 @@ bool GasSensor::setTargetGas(const GasType gasType) {
  * @return true if successful, false otherwise.
  */
 bool GasSensor::setGasCalibrationParameters(const GasType gasType, const float slope, const float intercept) {
-    if (gasType == GasType::None || gasType >= GasType::_MAX_GAS_TYPE_COUNT) {
-        // Serial.println("[GasSensor] Cannot set calibration parameters for invalid gas type."); // Removed Serial.println
+    if (gasType == GasType::None || gasType >= GasType::MAX_GAS_TYPE_COUNT) {
         return false;
     }
     customGasCalibrations[static_cast<int>(gasType)] = {slope, intercept};
     customCalibrationSet[static_cast<int>(gasType)] = true;
-    // Serial.print("[GasSensor] Custom calibration parameters set for gas type: "); // Removed Serial.print
-    // Serial.println(static_cast<int>(gasType)); // Removed Serial.println
     return true;
 }
 
@@ -185,8 +182,7 @@ bool GasSensor::loadDefaultGasCalibrationParameters(const GasType gasType, GasSe
  * @return The resistance in kOhm.
  */
 float GasSensor::calculateSensorResistanceInKiloOhm(const int rawAnalogValue) { // Removed redundant static, added const
-    float vOut = rawAnalogValue * (ADC_MAX_VOLTAGE / ADC_MAX_VALUE);
-    if (vOut > 0.001f) { // Avoid division by zero or near-zero V_out
+    if (const float vOut = static_cast<float>(rawAnalogValue) * (ADC_MAX_VOLTAGE / ADC_MAX_VALUE); vOut > 0.001f) { // Avoid division by zero or near-zero V_out
         return (ADC_MAX_VOLTAGE / vOut - 1.0f) * DEFAULT_LOAD_RESISTOR_IN_KILOOHM;
     }
     return -1.0f;
@@ -195,9 +191,9 @@ float GasSensor::calculateSensorResistanceInKiloOhm(const int rawAnalogValue) { 
 /**
  * @brief Updates digital gas detection state.
  */
-void GasSensor::updateDigitalGasDetectedState() {
+void GasSensor::updateDigitalGasDetectedState() const {
     if (digitalInputPin != -1) {
-        cachedDigitalGasDetected = (digitalRead(digitalInputPin) == HIGH); // Assuming HIGH means gas detected
+        cachedDigitalGasDetected = digitalRead(digitalInputPin) == HIGH; // Assuming HIGH means gas detected
     }
 }
 
@@ -212,19 +208,16 @@ void GasSensor::handleCalibratingModeLogic(Event& event, const float currentSens
         calibrationReadingsCount++;
     }
 
-    unsigned long currentTime = millis();
-    if ((currentTime - calibrationStartTime >= CALIBRATION_DURATION_IN_MILLISECONDS) &&
-        (calibrationReadingsCount >= CALIBRATION_MIN_READINGS)) {
+    if (unsigned long currentTime = millis(); (currentTime - calibrationStartTime >= CALIBRATION_DURATION_IN_MILLISECONDS) &&
+                                              (calibrationReadingsCount >= CALIBRATION_MIN_READINGS)) {
 
-        r0InKiloOhm = calibrationSumRs / calibrationReadingsCount;
+        r0InKiloOhm = calibrationSumRs / static_cast<float>(calibrationReadingsCount);
         currentMode = OperatingMode::AccurateMode;
         // Update ratio for first accurate reading, ensuring R0 is set
         if (r0InKiloOhm > 0.0f) {
             cachedRsR0Ratio = currentSensorResistanceInKiloOhm / r0InKiloOhm;
         }
-        // Serial.print("[GasSensor] Calibration complete. R0 = "); // Removed Serial.print
-        // Serial.print(r0InKiloOhm); // Removed Serial.print
-        // Serial.println(" KiloOhm. Entering AccurateMode."); // Removed Serial.println
+
         event = DATA_READ_EVENT; // Signal calibration completion and first accurate reading
     } else {
         // Suppress events during calibration
@@ -265,7 +258,7 @@ void GasSensor::handleAccurateModeLogic(Event& event, const float currentSensorR
  * @param event The event.
  * @param currentSensorResistanceInKiloOhm Current resistance in kOhm.
  */
-void GasSensor::handleRawModeLogic(Event& event, const float currentSensorResistanceInKiloOhm) {
+void GasSensor::handleRawModeLogic(Event& event, const float currentSensorResistanceInKiloOhm) const {
     if (digitalInputPin != -1) {
         // In RawMode, if digital pin is configured, propagate DIGITAL_GAS_DETECTED_EVENT on change
         const bool previousDigitalGasDetected = cachedDigitalGasDetected; // Use the value before updateDigitalGasDetectedState()
@@ -288,9 +281,8 @@ void GasSensor::handleRawModeLogic(Event& event, const float currentSensorResist
         bool changed = false;
         if (fabs(currentSensorResistanceInKiloOhm - cachedSensorResistanceInKiloOhm) > 0.01f) { // Simple change detection for Rs
              changed = true;
-        } else if (currentSensorResistanceInKiloOhm < 0.0f && currentSensorResistanceInKiloOhm > 0.0f) { // First valid reading
+        } else if (currentSensorResistanceInKiloOhm < 0.0f && currentSensorResistanceInKiloOhm > 0.0f) // First valid reading
             changed = true;
-        }
 
         if (changed) {
             event = DATA_READ_EVENT;
@@ -371,7 +363,7 @@ float GasSensor::getGasConcentrationInPpm() const {
     }
 
     // Retrieve calibration parameters dynamically
-    GasSensor::GasCalibrationParameters parameters; // Fully qualified
+    GasCalibrationParameters parameters{}; // Fully qualified
     if (customCalibrationSet[static_cast<int>(targetGasType)]) {
         parameters = customGasCalibrations[static_cast<int>(targetGasType)];
     } else {

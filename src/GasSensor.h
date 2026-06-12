@@ -179,7 +179,7 @@ private:
     /**
      * @brief Reads the digital input pin (if configured) and updates the cached digital gas-detected state.
      */
-    void updateDigitalGasDetectedState();
+    void updateDigitalGasDetectedState() const;
 
     /**
      * @brief Handles the logic for the CalibratingMode.
@@ -203,7 +203,7 @@ private:
      * @param event Mutable event request/response payload.
      * @param currentSensorResistanceInKiloOhm The most recent calculated sensor resistance.
      */
-    void handleRawModeLogic(Event& event, float currentSensorResistanceInKiloOhm);
+    void handleRawModeLogic(Event& event, float currentSensorResistanceInKiloOhm) const;
 
 protected:
     /**
