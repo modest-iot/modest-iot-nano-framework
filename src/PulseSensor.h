@@ -32,7 +32,7 @@ private:
     int runningSignalTrough; ///< Trough value of the signal.
     int adaptiveThresholdValue; ///< Adaptive threshold value.
 
-    // --- SCOPED EXPLICIT CONSTANTS (ELIMINATING MAGIC NUMBERS) ---
+    /// --- SCOPED EXPLICIT CONSTANTS (ELIMINATING MAGIC NUMBERS) ---
     static constexpr int DEFAULT_STABILIZATION_PEAK_BASELINE = 512; ///< Default stabilization peak baseline.
     static constexpr int HEARTBEAT_IGNITION_MINIMUM_AMPLITUDE = 100; ///< Minimum amplitude for heartbeat ignition.
     static const unsigned long DEBOUNCE_HEARTBEAT_WINDOW_IN_MILLISECONDS = 300; ///< Debounce a heartbeat window in milliseconds.
