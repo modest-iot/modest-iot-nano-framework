@@ -203,6 +203,11 @@ public:
                 delete telemetry; // Clean up if queue is full
             }
         }
+
+        if (gasSensor.getOperatingMode() == GasSensor::OperatingMode::CalibratingMode) {
+            // During calibration, we want to update the LCD with instructions and status even if no new data is propagated
+            updateOperationStatusDisplay();
+        }
     }
 
     /**
@@ -249,9 +254,9 @@ static const uint8_t LCD_ROWS = 2;
 
 /** @brief Network and MQTT Configuration */
 /// @brief WiFi SSID for network connection.
-static const char* WIFI_SSID = "YourWiFiSSID";
+static const char* WIFI_SSID = "Wokki-GUEST";
 /// @brief WiFi password for network connection.
-static const char* WIFI_PASSWORD = "YourWiFiPassword";
+static const char* WIFI_PASSWORD = "";
 /// @brief MQTT broker IP address.
 static const char* MQTT_BROKER_IP = "192.168.1.100"; 
 /// @brief MQTT broker port.
