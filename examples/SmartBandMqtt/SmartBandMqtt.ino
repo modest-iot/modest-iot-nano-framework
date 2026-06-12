@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include "ModestIoT.h"
 
-// --- CONCRETE APPLICATION DATA SCHEMA SPECIFICATION ---
+/// --- CONCRETE APPLICATION DATA SCHEMA SPECIFICATION ---
 
 class SmartBandTelemetryPackage : public TelemetryPackage {
     private:
@@ -31,7 +31,7 @@ class SmartBandTelemetryPackage : public TelemetryPackage {
     }
 };
 
-// --- APPLICATION MEDIATOR IMPLEMENTATION ---
+/// --- APPLICATION MEDIATOR IMPLEMENTATION ---
 
 class SmartBandDevice : public Device {
     private:
@@ -94,7 +94,7 @@ class SmartBandDevice : public Device {
     void handle(Command command) override {}
 };
 
-// --- TOP-LEVEL DECLARATIVE CANVAS ---
+/// --- TOP-LEVEL DECLARATIVE CANVAS ---
 
 static const int BIOLOGICAL_PULSE_ANALOG_PIN = 34;
 static const int CLIMATE_ONE_WIRE_BUS_PIN    = 4;
