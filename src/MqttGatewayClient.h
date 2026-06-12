@@ -26,13 +26,13 @@
  */
 class MqttGatewayClient {
 private:
-    ConnectivityDriver& communicationTransportDriver;
-    PubSubClient mqttClient;
+    ConnectivityDriver& communicationTransportDriver; ///< Reference to the connectivity driver.
+    PubSubClient mqttClient; ///< Underlying MQTT client instance.
     
-    const char* clientIdentifier;
-    const char* publishTopic;
+    const char* clientIdentifier; ///< Unique client identifier.
+    const char* publishTopic; ///< MQTT topic for publishing.
 
-    void ensureBrokerSessionConnection();
+    void ensureBrokerSessionConnection(); ///< Ensures broker session is active.
 
 public:
     /**

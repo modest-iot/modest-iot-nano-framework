@@ -5,6 +5,8 @@
  * This example showcases the integration of multiple sensor and actuator types within the
  * Modest-IoT Nano-Framework. It monitors gas levels, performs calibration, displays
  * status and PPM values on an LCD, and triggers a buzzer upon gas detection.
+ * @date 2026-06-12
+ * @version 1.0
  */
 
 #include <Arduino.h>

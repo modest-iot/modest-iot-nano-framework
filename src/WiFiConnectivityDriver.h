@@ -28,14 +28,14 @@ class Client;
  */
 class WiFiConnectivityDriver : public ConnectivityDriver {
 private:
-    const char* networkSsidIdentifier;
-    const char* networkPasswordCredential;
+    const char* networkSsidIdentifier; ///< SSID of the network.
+    const char* networkPasswordCredential; ///< Password for the network.
 
     // Aligned Naming Rule: Variables represent properties without 'is' prefixes
-    bool provisioningRequested;
+    bool provisioningRequested; ///< Flag indicating if provisioning was requested.
 
     // Encapsulated concrete socket footprint hidden from outer layers
-    WiFiClient* hardwareSocket{};
+    WiFiClient* hardwareSocket{}; ///< Pointer to the hardware socket.
 
 public:
     /**

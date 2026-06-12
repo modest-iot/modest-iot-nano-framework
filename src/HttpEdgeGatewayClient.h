@@ -24,9 +24,9 @@
  */
 class HttpEdgeGatewayClient {
 private:
-    ConnectivityDriver& communicationTransportDriver;
-    const char* serviceEndpointUrl;
-    const char* contentTypeHeader;
+    ConnectivityDriver& communicationTransportDriver; ///< Reference to the connectivity driver.
+    const char* serviceEndpointUrl; ///< The HTTP service endpoint URL.
+    const char* contentTypeHeader; ///< Content-Type header for the HTTP request.
 
 public:
     /**

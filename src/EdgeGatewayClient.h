@@ -24,10 +24,15 @@
  */
 class EdgeGatewayClient {
 private:
-    ConnectivityDriver& communicationTransportDriver;
-    const char* serviceEndpointUrl;
+    ConnectivityDriver& communicationTransportDriver; ///< Reference to the connectivity driver.
+    const char* serviceEndpointUrl; ///< The endpoint URL.
 
 public:
+    /**
+     * @brief Constructs a generic gateway client.
+     * @param transportDriver Reference to the connectivity driver.
+     * @param targetEndpoint The target endpoint URL.
+     */
     EdgeGatewayClient(ConnectivityDriver& transportDriver, const char* targetEndpoint)
         : communicationTransportDriver(transportDriver), serviceEndpointUrl(targetEndpoint) {}
 

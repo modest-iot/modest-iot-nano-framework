@@ -23,9 +23,9 @@
  */
 class Button : public Sensor {
 private:
-    unsigned long lastStableTimestamp;
-    const unsigned long debounceDelayInMilliseconds;
-    bool previousState;
+    unsigned long lastStableTimestamp; ///< Timestamp of the last stable input transition.
+    const unsigned long debounceDelayInMilliseconds; ///< Configured debounce delay in milliseconds.
+    bool previousState; ///< The previous state of the input pin for debouncing logic.
 
 protected:
     /**

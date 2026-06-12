@@ -23,7 +23,7 @@
  */
 class Led : public Actuator {
 private:
-    bool active;
+    bool active; ///< Current state of the LED.
 
 protected:
     /**

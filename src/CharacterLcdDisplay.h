@@ -24,21 +24,21 @@
  */
 class CharacterLcdDisplay : public Actuator {
 private:
-    LiquidCrystal_I2C physicalLcdScreen;
+    LiquidCrystal_I2C physicalLcdScreen; ///< Underlying LiquidCrystal_I2C driver instance.
 
     // Instance-specific structural dimensions assigned at construction
-    const uint8_t maximumRowCount;
-    const uint8_t maximumColumnCount;
+    const uint8_t maximumRowCount; ///< Maximum number of rows supported.
+    const uint8_t maximumColumnCount; ///< Maximum number of columns supported.
 
     // Contiguous memory allocation buffer tracking absolute dimensions safely
-    char* characterScreenMatrixBuffer;
+    char* characterScreenMatrixBuffer; ///< Buffer for storing characters to be displayed.
 
     // ALIGNED PARADIGM: Variables hold raw state configurations without 'is' or 'has' prefixes
-    bool backlightEnabled;
+    bool backlightEnabled; ///< Backlight state (true = on, false = off).
 
     // Private encapsulated layout routines to elevate code clarity
-    void initializeHardwareRegisters();
-    void commitBuffersToPhysicalScreen();
+    void initializeHardwareRegisters(); ///< Initializes hardware registers for the LCD.
+    void commitBuffersToPhysicalScreen(); ///< Writes buffered data to the physical screen.
 
 protected:
     /**

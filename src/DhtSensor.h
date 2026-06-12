@@ -24,11 +24,11 @@
  */
 class DhtSensor : public Sensor {
 private:
-    DHT physicalDhtSensor;
-    float cachedTemperatureInCelsius;
-    float cachedRelativeHumidityInPercentage;
+    DHT physicalDhtSensor; ///< Underlying DHT sensor instance.
+    float cachedTemperatureInCelsius; ///< Last successful temperature reading.
+    float cachedRelativeHumidityInPercentage; ///< Last successful humidity reading.
 
-    static const int SENSOR_ERROR_SUPPRESSION_IDENTIFIER = -1;
+    static const int SENSOR_ERROR_SUPPRESSION_IDENTIFIER = -1; ///< Identifier used to suppress error events.
 
 protected:
     /**

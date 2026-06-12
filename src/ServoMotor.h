@@ -24,18 +24,18 @@
  */
 class ServoMotor : public Actuator {
 private:
-    Servo embeddedServoDriver;
-    int currentActiveAngleInDegrees;       
-    int bufferedTargetAngleInDegrees;      
+    Servo embeddedServoDriver; ///< Underlying ESP32 servo driver instance.
+    int currentActiveAngleInDegrees; ///< Currently active angle in degrees.       
+    int bufferedTargetAngleInDegrees; ///< Buffered target angle in degrees.      
 
-    static const int MINIMUM_PHYSICAL_ANGLE_IN_DEGREES = 0;
-    static const int MAXIMUM_PHYSICAL_ANGLE_IN_DEGREES = 180;
-    static const int MINIMUM_PULSE_WIDTH_IN_MICROSECONDS = 500;
-    static const int MAXIMUM_PULSE_WIDTH_IN_MICROSECONDS = 2400;
-    static const int HARDWARE_PWM_FREQUENCY_IN_HERTZ = 50;
+    static const int MINIMUM_PHYSICAL_ANGLE_IN_DEGREES = 0; ///< Minimum physical angle.
+    static const int MAXIMUM_PHYSICAL_ANGLE_IN_DEGREES = 180; ///< Maximum physical angle.
+    static const int MINIMUM_PULSE_WIDTH_IN_MICROSECONDS = 500; ///< Minimum pulse width in microseconds.
+    static const int MAXIMUM_PULSE_WIDTH_IN_MICROSECONDS = 2400; ///< Maximum pulse width in microseconds.
+    static const int HARDWARE_PWM_FREQUENCY_IN_HERTZ = 50; ///< PWM frequency in Hz.
 
-    static const int PRIMARY_HARDWARE_TIMER_CHANNEL = 0;
-    static const int SECONDARY_HARDWARE_TIMER_CHANNEL = 1;
+    static const int PRIMARY_HARDWARE_TIMER_CHANNEL = 0; ///< Primary hardware timer channel.
+    static const int SECONDARY_HARDWARE_TIMER_CHANNEL = 1; ///< Secondary hardware timer channel.
 
 protected:
     /**

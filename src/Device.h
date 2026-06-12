@@ -36,22 +36,22 @@ private:
      * @brief Internal scheduler slot that maps one sensor to one event request.
      */
     struct ScheduledTaskSlot {
-        EventHandler* sensorInstance;
-        int targetEventIdentifier;
+        EventHandler* sensorInstance; ///< Pointer to the sensor handler.
+        int targetEventIdentifier; ///< Event identifier requested from the sensor.
     };
 
-    static const uint8_t MAXIMUM_SCHEDULED_SLOTS = 8;
-    ScheduledTaskSlot scheduledSequences[MAXIMUM_SCHEDULED_SLOTS];
-    uint8_t registeredSlotCount;
-    uint8_t activeSequencePointer;
+    static const uint8_t MAXIMUM_SCHEDULED_SLOTS = 8; ///< Maximum number of sensor slots.
+    ScheduledTaskSlot scheduledSequences[MAXIMUM_SCHEDULED_SLOTS]; ///< Array of scheduled task slots.
+    uint8_t registeredSlotCount; ///< Number of registered slots.
+    uint8_t activeSequencePointer; ///< Index of the currently active sequence.
 
-    TaskHandle_t hardwareSamplingTaskHandle;
-    TaskHandle_t networkDispatcherTaskHandle;
-    QueueHandle_t telemetryQueueHandle;
+    TaskHandle_t hardwareSamplingTaskHandle; ///< Handle for the hardware sampling task.
+    TaskHandle_t networkDispatcherTaskHandle; ///< Handle for the network dispatcher task.
+    QueueHandle_t telemetryQueueHandle; ///< Handle for the telemetry queue.
 
-    hw_timer_t* hardwareTimer;
-    const unsigned long pollingIntervalInMilliseconds;
-    const uint8_t hardwareTimerIndex;
+    hw_timer_t* hardwareTimer; ///< Pointer to the hardware timer.
+    const unsigned long pollingIntervalInMilliseconds; ///< Polling interval in milliseconds.
+    const uint8_t hardwareTimerIndex; ///< Index of the hardware timer.
 
     /**
      * @brief FreeRTOS task entry point for sensor polling.

@@ -3,6 +3,8 @@
  * @brief Complex example demonstrating multi-input, multi-output coordination.
  * Uses a DHT sensor, two adjustment buttons, a 16x2 I2C LCD, and a Servo Motor
  * to build an event-driven temperature control loop under Modest-IoT.
+ * @date 2026-06-12
+ * @version 1.0
  */
 
 #include <Arduino.h>

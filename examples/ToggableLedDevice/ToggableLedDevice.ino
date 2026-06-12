@@ -3,6 +3,8 @@
  * @brief Modern replacement example inspired by the legacy Wokwi prototype.
  * Demonstrates a loop-less, event-driven hardware button press triggering an LED toggle
  * using framework Event handlers and class-encapsulated Actuator Commands.
+ * @date 2026-06-12
+ * @version 1.0
  */
 
 #include <Arduino.h>
