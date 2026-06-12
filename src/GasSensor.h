@@ -134,7 +134,7 @@ private:
     /**
      * @brief The value of the load resistor (RL) in KiloOhm used in the sensor's external circuit.
      */
-    static constexpr float DEFAULT_LOAD_RESISTOR_IN_KILOOHM = 10.0f; // Example: 10 KiloOhm
+    static constexpr float DEFAULT_LOAD_RESISTOR_IN_KILOOHM = 1.0f; // Adjusted to match Wokwi simulation
 
     /**
      * @brief Threshold for detecting a significant change in the Rs/R0 ratio to trigger a DATA_READ_EVENT.
