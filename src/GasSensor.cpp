@@ -191,7 +191,7 @@ float GasSensor::calculateSensorResistanceInKiloOhm(const int rawAnalogValue) { 
 /**
  * @brief Updates digital gas detection state.
  */
-void GasSensor::updateDigitalGasDetectedState() const {
+void GasSensor::updateDigitalGasDetectedState()  {
     if (digitalInputPin != -1) {
         cachedDigitalGasDetected = digitalRead(digitalInputPin) == HIGH; // Assuming HIGH means gas detected
     }
@@ -202,7 +202,7 @@ void GasSensor::updateDigitalGasDetectedState() const {
  * @param event The event.
  * @param currentSensorResistanceInKiloOhm Current resistance in kOhm.
  */
-void GasSensor::handleCalibratingModeLogic(Event& event, const float currentSensorResistanceInKiloOhm) {
+void GasSensor::handleCalibratingModeLogic(Event& event, float currentSensorResistanceInKiloOhm) {
     if (currentSensorResistanceInKiloOhm > 0.0f) {
         calibrationSumRs += currentSensorResistanceInKiloOhm;
         calibrationReadingsCount++;
@@ -258,7 +258,7 @@ void GasSensor::handleAccurateModeLogic(Event& event, const float currentSensorR
  * @param event The event.
  * @param currentSensorResistanceInKiloOhm Current resistance in kOhm.
  */
-void GasSensor::handleRawModeLogic(Event& event, const float currentSensorResistanceInKiloOhm) const {
+void GasSensor::handleRawModeLogic(Event& event, const float currentSensorResistanceInKiloOhm) {
     if (digitalInputPin != -1) {
         // In RawMode, if digital pin is configured, propagate DIGITAL_GAS_DETECTED_EVENT on change
         const bool previousDigitalGasDetected = cachedDigitalGasDetected; // Use the value before updateDigitalGasDetectedState()

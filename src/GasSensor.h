@@ -167,43 +167,47 @@ private:
      * @param calibrationParameters Reference to a struct to populate with the loaded parameters.
      * @return True if default calibration parameters were found and loaded, false otherwise.
      */
-    static bool loadDefaultGasCalibrationParameters(GasType gasType, GasCalibrationParameters& calibrationParameters);
+    static bool loadDefaultGasCalibrationParameters(const GasType gasType, GasCalibrationParameters& calibrationParameters);
 
     /**
      * @brief Calculates the sensor resistance (Rs) in KiloOhm from a raw analog reading.
      * @param rawAnalogValue The raw ADC reading from the analog input pin.
      * @return The calculated sensor resistance in KiloOhm.
      */
-    static float calculateSensorResistanceInKiloOhm(int rawAnalogValue);
+    static float calculateSensorResistanceInKiloOhm(const int rawAnalogValue);
 
     /**
      * @brief Reads the digital input pin (if configured) and updates the cached digital gas-detected state.
+     * This method modifies `cachedDigitalGasDetected`.
      */
-    void updateDigitalGasDetectedState() const;
+    void updateDigitalGasDetectedState(); // Removed const
 
     /**
      * @brief Handles the logic for the CalibratingMode.
      * Collects Rs readings and transitions to AccurateMode after calibration.
+     * This method modifies calibration state variables and `currentMode`.
      * @param event Mutable event request/response payload.
      * @param currentSensorResistanceInKiloOhm The most recent calculated sensor resistance.
      */
-    void handleCalibratingModeLogic(Event& event, float currentSensorResistanceInKiloOhm);
+    void handleCalibratingModeLogic(Event& event, const float currentSensorResistanceInKiloOhm); // Removed const
 
     /**
      * @brief Handles the logic for the AccurateMode.
      * Calculates Rs/R0 ratio and propagates events based on significant changes.
+     * This method modifies `cachedRsR0Ratio`.
      * @param event Mutable event request/response payload.
      * @param currentSensorResistanceInKiloOhm The most recent calculated sensor resistance.
      */
-    void handleAccurateModeLogic(Event& event, float currentSensorResistanceInKiloOhm);
+    void handleAccurateModeLogic(Event& event, const float currentSensorResistanceInKiloOhm); // Removed const
 
     /**
      * @brief Handles the logic for the RawMode.
      * Propagates events based on digital pin state or raw analog/Rs changes.
+     * This method modifies `cachedDigitalGasDetected` (via `updateDigitalGasDetectedState`).
      * @param event Mutable event request/response payload.
      * @param currentSensorResistanceInKiloOhm The most recent calculated sensor resistance.
      */
-    void handleRawModeLogic(Event& event, float currentSensorResistanceInKiloOhm) const;
+    void handleRawModeLogic(Event& event, const float currentSensorResistanceInKiloOhm); // Removed const
 
 protected:
     /**
@@ -228,7 +232,7 @@ public:
      * @param parentHandler Optional upstream handler for propagated events.
      * @param initialMode The initial operating mode of the sensor (default: RawMode).
      */
-    GasSensor(int analogInputGpioPin, int digitalInputGpioPin = -1, EventHandler* parentHandler = nullptr, OperatingMode initialMode = OperatingMode::RawMode);
+    GasSensor(const int analogInputGpioPin, const int digitalInputGpioPin = -1, EventHandler* const parentHandler = nullptr, const OperatingMode initialMode = OperatingMode::RawMode);
 
     /**
      * @brief Initiates the calibration process for the sensor.
@@ -244,7 +248,7 @@ public:
      * Setting R0 manually will switch the sensor to AccurateMode.
      * @param cleanAirResistanceInKiloOhm The R0 value in KiloOhm.
      */
-    void setR0(float cleanAirResistanceInKiloOhm);
+    void setR0(const float cleanAirResistanceInKiloOhm);
 
     /**
      * @brief Configures the sensor to target a specific gas type for PPM estimation.
@@ -253,7 +257,7 @@ public:
      * @param gasType The GasType to configure the sensor for.
      * @return True if the gas type is valid, false otherwise.
      */
-    bool setTargetGas(GasType gasType);
+    bool setTargetGas(const GasType gasType);
 
     /**
      * @brief Allows the developer to provide custom calibration parameters (slope and intercept)
@@ -263,7 +267,7 @@ public:
      * @param intercept The Y-intercept of the gas's calibration curve on a log-log plot.
      * @return True if the custom calibration parameters were successfully set, false otherwise.
      */
-    bool setGasCalibrationParameters(GasType gasType, float slope, float intercept);
+    bool setGasCalibrationParameters(const GasType gasType, const float slope, const float intercept);
 
     /**
      * @brief Returns the current operating mode of the sensor.
@@ -302,7 +306,7 @@ public:
      *
      * This method uses the internally stored calibration parameters (slope and intercept)
      * for the gas type set via `setTargetGas()`.
-     * The formula used is PPM = 10^((log10(Rs/R0) - intercept) / slope).
+     * The formula used is PPM = 10^((log10(Rs/R0) - intercept) / slope)).
      * Returns -1.0f if not in AccurateMode, Rs/R0 is invalid, R0 is not set,
      * or no target gas type has been configured.
      *
@@ -313,7 +317,7 @@ public:
     /**
      * @brief Determines if gas is currently detected based on the sensor's operating mode.
      * - In RawMode: Returns true if the digital pin indicates gas, or if no digital pin,
-     *   it returns false (as analog raw data alone isn't enough for 'detected').
+     *   it returns false (as analog raw data alone isn't sufficient for 'detected').
      * - In CalibratingMode: Always returns false.
      * - In AccurateMode: Returns true if the Rs/R0 ratio deviates significantly from 1.0.
      * @return `true` if gas is detected, `false` otherwise.
