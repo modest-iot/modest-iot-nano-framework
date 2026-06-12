@@ -30,7 +30,7 @@ public:
      * @brief Creates a Command with the provided identifier.
      * @param commandIdentifier Command type discriminator.
      */
-    explicit Command(int commandIdentifier) : identifier(commandIdentifier) {}
+    explicit Command(const int commandIdentifier) : identifier(commandIdentifier) {}
 
     /**
      * @brief Compares two commands by identifier.
