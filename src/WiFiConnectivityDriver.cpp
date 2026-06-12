@@ -15,7 +15,7 @@ WiFiConnectivityDriver::WiFiConnectivityDriver(const char* ssid, const char* pas
 {
     // Concrete allocation happens safely hidden away within the transport domain constructor
     hardwareSocket = new WiFiClient();
-    // Prevents the underlying Espressif SDK from writing WiFi credentials to the physical NVS flash sector
+    // Prevents the underlying Espressif SDK from writing Wi-Fi credentials to the physical NVS flash sector
     // during every connection loop.
     WiFi.persistent(false);
 }

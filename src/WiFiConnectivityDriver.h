@@ -35,7 +35,7 @@ private:
     bool provisioningRequested;
 
     // Encapsulated concrete socket footprint hidden from outer layers
-    WiFiClient* hardwareSocket;
+    WiFiClient* hardwareSocket{};
 
 public:
     /**
