@@ -41,7 +41,7 @@ void UltrasonicSensor::processEvent(Event& event) {
         cachedDistanceInCentimeters = calculatedDistance;
         
         // Mutates to the exact same base notification event!
-        event = DATA_READ_EVENT;
+        event = Event(DATA_READ_EVENT_IDENTIFIER, pin);
     }
 }
 
