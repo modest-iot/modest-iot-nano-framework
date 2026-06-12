@@ -12,7 +12,7 @@
  * @version 1.0
  */
 
-// --- 1. CORE ASYNCHRONOUS ENGINE & SIGNALING PRIMITIVES ---
+/// --- 1. CORE ASYNCHRONOUS ENGINE & SIGNALING PRIMITIVES ---
 #include "Event.h"
 #include "Command.h"
 #include "EventHandler.h"
@@ -20,13 +20,13 @@
 #include "TelemetryPackage.h"
 #include "Device.h"
 
-// --- 2. LAYER-ISOLATED NETWORK COMPREHENSION ---
+/// --- 2. LAYER-ISOLATED NETWORK COMPREHENSION ---
 #include "ConnectivityDriver.h"
 #include "WiFiConnectivityDriver.h"
 #include "HttpEdgeGatewayClient.h"
 #include "MqttGatewayClient.h"
 
-// --- 3. HARDWARE PERIPHERAL DRIVER SUBSYSTEMS ---
+/// --- 3. HARDWARE PERIPHERAL DRIVER SUBSYSTEMS ---
 #include "Button.h"
 #include "DhtSensor.h"
 #include "UltrasonicSensor.h"
