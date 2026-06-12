@@ -254,7 +254,7 @@ static const uint8_t LCD_ROWS = 2;
 
 /** @brief Network and MQTT Configuration */
 /// @brief WiFi SSID for network connection.
-static const char* WIFI_SSID = "Wokki-GUEST";
+static const char* WIFI_SSID = "Wokwi-GUEST";
 /// @brief WiFi password for network connection.
 static const char* WIFI_PASSWORD = "";
 /// @brief MQTT broker IP address.
