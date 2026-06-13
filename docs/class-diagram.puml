@@ -77,6 +77,7 @@ package "Core" #FAFAFA {
   abstract class TelemetryPackage {
     +serialize(serializationDestination : JsonDocument&) const : void
     +serialize() const : JsonDocument
+    +serializeAsString() const : String
   }
 }
 
@@ -309,6 +310,7 @@ package "Connectivity" #EDF3FF {
   interface ConnectivityDriver {
     +connect() : void
     +isConnected() : bool
+    +transmit(target : const char*, data : const char*) : bool
     +canTransmit() : bool
   }
 
@@ -330,25 +332,22 @@ package "Connectivity" #EDF3FF {
 ' ─────────────────────────────────────────────
 package "Gateway" #FFF8EE {
 
-  class EdgeGatewayClient {
-    -communicationTransportDriver : ConnectivityDriver&
-    -serviceEndpointUrl : const char*
-    +EdgeGatewayClient(transportDriver : ConnectivityDriver&,
+  abstract class GatewayClient {
+    #communicationTransportDriver : ConnectivityDriver&
+    #serviceEndpointUrl : const char*
+    +GatewayClient(transportDriver : ConnectivityDriver&,
+                   targetEndpoint : const char*)
+    +sendTelemetryRecord(abstractTelemetryPayload : const TelemetryPackage&) : bool
+  }
+
+  class HttpGatewayClient {
+    -contentTypeHeader : const char*
+    +HttpGatewayClient(transportDriver : ConnectivityDriver&,
                        targetEndpoint : const char*)
     +sendTelemetryRecord(abstractTelemetryPayload : const TelemetryPackage&) : bool
   }
 
-  class HttpEdgeGatewayClient {
-    -communicationTransportDriver : ConnectivityDriver&
-    -serviceEndpointUrl : const char*
-    -contentTypeHeader : const char*
-    +HttpEdgeGatewayClient(transportDriver : ConnectivityDriver&,
-                           targetEndpoint : const char*)
-    +sendTelemetryRecord(abstractTelemetryPayload : const TelemetryPackage&) : bool
-  }
-
   class MqttGatewayClient {
-    -communicationTransportDriver : ConnectivityDriver&
     -mqttClient : PubSubClient
     -clientIdentifier : const char*
     -publishTopic : const char*
@@ -396,6 +395,9 @@ Actuator <|-- Buzzer
 
 ConnectivityDriver <|.. WiFiConnectivityDriver : implements
 
+GatewayClient <|-- HttpGatewayClient
+GatewayClient <|-- MqttGatewayClient
+
 Device <|-- CustomDevice
 
 ' ─────────────────────────────────────────────
@@ -405,13 +407,8 @@ Sensor   "0..1" o--> EventHandler   : eventHandler
 Actuator "0..1" o--> CommandHandler : commandHandler
 Device   "0..8" o--> EventHandler   : scheduledSequences
 
-EdgeGatewayClient     --> ConnectivityDriver : uses
-HttpEdgeGatewayClient --> ConnectivityDriver : uses
-MqttGatewayClient     --> ConnectivityDriver : uses
-
-EdgeGatewayClient     ..> TelemetryPackage : serializes
-HttpEdgeGatewayClient ..> TelemetryPackage : serializes
-MqttGatewayClient     ..> TelemetryPackage : serializes
+GatewayClient     --> ConnectivityDriver : uses
+GatewayClient     ..> TelemetryPackage   : serializes
 
 MqttGatewayClient *-- PubSubClient : owns
 MqttGatewayClient --> Client       : uses socket
