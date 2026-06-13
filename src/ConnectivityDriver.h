@@ -36,6 +36,14 @@ public:
     virtual bool isConnected() = 0;
 
     /**
+     * @brief Transmits data over the transport.
+     * @param target The target URL/endpoint.
+     * @param data The payload data.
+     * @return `true` if successful, otherwise `false`.
+     */
+    virtual bool transmit(const char* target, const char* data) = 0;
+
+    /**
      * @brief INTENTION-REVEALING QUERY: Evaluates whether the underlying radio
      * link layer is clear, healthy, and ready to stream payload byte chunks.
      * @return `true` if the link is able to transmit payloads, otherwise `false`.

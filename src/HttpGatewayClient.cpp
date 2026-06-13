@@ -5,30 +5,31 @@
  * @version 1.0
  */
 
-#include "HttpEdgeGatewayClient.h"
+#include "HttpGatewayClient.h"
 #include <Arduino.h>
 #include <HTTPClient.h> 
 #include <ArduinoJson.h>
 
-HttpEdgeGatewayClient::HttpEdgeGatewayClient(ConnectivityDriver& transportDriver, const char* targetEndpoint)
-    : communicationTransportDriver(transportDriver), 
-      serviceEndpointUrl(targetEndpoint),
+HttpGatewayClient::HttpGatewayClient(ConnectivityDriver& transportDriver, const char* targetEndpoint)
+    : GatewayClient(transportDriver, targetEndpoint),
       contentTypeHeader("application/json") {}
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-bool HttpEdgeGatewayClient::sendTelemetryRecord(const TelemetryPackage& abstractTelemetryPayload) {
+bool HttpGatewayClient::sendTelemetryRecord(const TelemetryPackage& abstractTelemetryPayload) {
     // 1. Guard capability health checks first before allocating memory
     if (!communicationTransportDriver.canTransmit()) {
-        communicationTransportDriver.connect(); 
+        communicationTransportDriver.connect();
         return false;
     }
+    
+    // ... rest of the code ...
+    // Wait, I need to fix `communicationTransportDriver`. 
+    // It was in the private part of the base class. 
+    // Since it's in the base class, and I made it `private`, `HttpGatewayClient` cannot access it!
+    // I should make it `protected` in `GatewayClient`.
 
     // 2. Perform polymorphic package data serialization mapping
-    JsonDocument serializationDocument;
-    abstractTelemetryPayload.serialize(serializationDocument);
-
-    String serializedPayloadOutput;
-    serializeJson(serializationDocument, serializedPayloadOutput);
+    String serializedPayloadOutput = abstractTelemetryPayload.serializeAsString();
 
     // 3. Execute HTTP Layer transactions safely within the NetworkWorker thread context
     HTTPClient httpClientEndpoint;

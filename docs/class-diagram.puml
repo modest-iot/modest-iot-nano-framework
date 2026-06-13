@@ -5,16 +5,18 @@ skinparam classFontStyle bold
 skinparam packageStyle rectangle
 skinparam linetype ortho
 skinparam shadowing false
+title ModestIoT Nano-Framework Class Diagram (v1.0.0)
 
 package "Core" #FAFAFA {
   class Event <<struct>> {
     +identifier : int
-    +Event(eventIdentifier : int)
+    +sourceId : int
+    +Event(eventIdentifier : int, source : int = -1)
     +operator==(other : Event) : bool
   }
 
   class Command <<struct>> {
-    +identifier : int
+    +identifier : const int
     +Command(commandIdentifier : int)
     +operator==(other : Command) : bool
   }
@@ -64,12 +66,12 @@ package "Core" #FAFAFA {
     #initializeAsynchronousEngine(maximumQueueLength : uint8_t = 10) : void
     #enqueueTelemetryPayload(telemetryPackagePointerAddress : TelemetryPackage**) : bool
     #appendSensorToScheduler(targetSensorInstance : EventHandler*, requestedEventIdentifier : int) : bool
-    #processQueuedTelemetryData(rawQueueItemPayload : TelemetryPackage*) : void
+    #processQueuedTelemetryData(rawQueueItemPayload : const TelemetryPackage*) : void
   }
 
   abstract class TelemetryPackage {
-    +serialize(serializationDestination : JsonDocument&) : void
-    +serialize() : JsonDocument
+    +serialize(serializationDestination : JsonDocument&) const : void
+    +serialize() const : JsonDocument
   }
 }
 
@@ -123,6 +125,38 @@ package "Sensors" #EEF6EE {
     +startCalibration() : void
     +setR0(cleanAirResistanceInKiloOhm : float) : void
     +isGasDetected() : bool
+    #processEvent(event : Event&) : void
+  }
+
+  class LocationData <<struct>> {
+    +latitudeInDegrees : float
+    +longitudeInDegrees : float
+    +altitudeInMeters : float
+    +speedInKnots : float
+    +courseInDegrees : float
+    +fixQuality : int
+    +satellitesTracked : int
+    +horizontalDilutionOfPrecision : float
+    +year : int
+    +month : int
+    +day : int
+    +hour : int
+    +minute : int
+    +second : int
+    +milliseconds : int
+    +isDataValid : bool
+    +operator==(other : LocationData) : bool
+  }
+
+  class GeolocationSensor {
+    -transmitGpioPin : int
+    -gpsSerial : SoftwareSerial
+    -cachedLocation : LocationData
+    -lastNotifiedLocation : LocationData
+    +GeolocationSensor(receiveGpioPin : int, transmitGpioPin : int,
+                       baudRate : long = 9600,
+                       parentHandler : EventHandler* = nullptr)
+    +getLocationData() const : const LocationData&
     #processEvent(event : Event&) : void
   }
 }
@@ -209,11 +243,11 @@ package "Connectivity" #EDF3FF {
   }
 
   class WiFiConnectivityDriver {
-    -networkSsidIdentifier : char*
-    -networkPasswordCredential : char*
+    -networkSsidIdentifier : const char*
+    -networkPasswordCredential : const char*
     -provisioningRequested : bool
     -hardwareSocket : WiFiClient*
-    +WiFiConnectivityDriver(ssid : char*, password : char*)
+    +WiFiConnectivityDriver(ssid : const char*, password : const char*)
     +connect() : void
     +isConnected() : bool
     +canTransmit() : bool
@@ -222,30 +256,27 @@ package "Connectivity" #EDF3FF {
 }
 
 package "Gateway" #FFF8EE {
-  class EdgeGatewayClient {
-    -communicationTransportDriver : ConnectivityDriver&
-    -serviceEndpointUrl : char*
-    +EdgeGatewayClient(transportDriver : ConnectivityDriver&, targetEndpoint : char*)
-    +sendTelemetryRecord(abstractTelemetryPayload : TelemetryPackage&) : bool
+  abstract class GatewayClient {
+    #communicationTransportDriver : ConnectivityDriver&
+    #serviceEndpointUrl : const char*
+    +GatewayClient(transportDriver : ConnectivityDriver&, targetEndpoint : const char*)
+    +{abstract} sendTelemetryRecord(abstractTelemetryPayload : const TelemetryPackage&) : bool
   }
 
-  class HttpEdgeGatewayClient {
-    -communicationTransportDriver : ConnectivityDriver&
-    -serviceEndpointUrl : char*
-    -contentTypeHeader : char*
-    +HttpEdgeGatewayClient(transportDriver : ConnectivityDriver&, targetEndpoint : char*)
-    +sendTelemetryRecord(abstractTelemetryPayload : TelemetryPackage&) : bool
+  class HttpGatewayClient {
+    -contentTypeHeader : const char*
+    +HttpGatewayClient(transportDriver : ConnectivityDriver&, targetEndpoint : const char*)
+    +sendTelemetryRecord(abstractTelemetryPayload : const TelemetryPackage&) : bool
   }
 
   class MqttGatewayClient {
-    -communicationTransportDriver : ConnectivityDriver&
     -mqttClient : PubSubClient
-    -clientIdentifier : char*
-    -publishTopic : char*
+    -clientIdentifier : const char*
+    -publishTopic : const char*
     +MqttGatewayClient(transportDriver : ConnectivityDriver&, networkClient : Client&,
-                       brokerIpAddress : char*, brokerPort : uint16_t,
-                       topic : char*, deviceId : char* = "ModestIotNode")
-    +sendTelemetryRecord(abstractTelemetryPayload : TelemetryPackage&) : bool
+                       brokerIpAddress : const char*, brokerPort : uint16_t,
+                       topic : const char*, deviceId : const char* = "ModestIotNode")
+    +sendTelemetryRecord(abstractTelemetryPayload : const TelemetryPackage&) : bool
   }
 }
 
@@ -253,7 +284,7 @@ package "User Application (Sketch)" #FFFDF3 {
   class CustomDevice <<example subclass>> {
     +on(event : Event) : void
     +handle(command : Command) : void
-    #processQueuedTelemetryData(rawQueueItemPayload : TelemetryPackage*) : void
+    #processQueuedTelemetryData(rawQueueItemPayload : const TelemetryPackage*) : void
   }
 }
 
@@ -267,6 +298,7 @@ Sensor <|-- DhtSensor
 Sensor <|-- UltrasonicSensor
 Sensor <|-- PulseSensor
 Sensor <|-- GasSensor
+Sensor <|-- GeolocationSensor
 
 Actuator <|-- Led
 Actuator <|-- CharacterLcdDisplay
@@ -281,18 +313,23 @@ Sensor "0..1" o--> EventHandler : eventHandler
 Actuator "0..1" o--> CommandHandler : commandHandler
 Device "0..8" o--> EventHandler : scheduledSequences
 
-EdgeGatewayClient --> ConnectivityDriver : uses
-HttpEdgeGatewayClient --> ConnectivityDriver : uses
+GatewayClient <|-- HttpGatewayClient
+GatewayClient <|-- MqttGatewayClient
+
+GatewayClient --> ConnectivityDriver : uses
+HttpGatewayClient --> ConnectivityDriver : uses
 MqttGatewayClient --> ConnectivityDriver : uses
 
-EdgeGatewayClient ..> TelemetryPackage : serializes
-HttpEdgeGatewayClient ..> TelemetryPackage : serializes
+GatewayClient ..> TelemetryPackage : serializes
+HttpGatewayClient ..> TelemetryPackage : serializes
 MqttGatewayClient ..> TelemetryPackage : serializes
 
 MqttGatewayClient --> Client : uses socket
 MqttGatewayClient *-- PubSubClient : owns
 WiFiConnectivityDriver ..> WiFiClient : allocates
 WiFiConnectivityDriver ..> Client : exposes
+GeolocationSensor *-- LocationData : caches
+GeolocationSensor *-- SoftwareSerial : owns
 
 CustomDevice *--> Sensor : owns
 CustomDevice *--> Actuator : owns

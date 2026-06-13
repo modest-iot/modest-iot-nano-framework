@@ -9,6 +9,7 @@
  * @version 1.0
  */
 
+#include <Arduino.h>
 #include <ArduinoJson.h>
 
 /**
@@ -41,6 +42,17 @@ public:
         // Delegate directly to the virtual method implemented by subclasses
         this->serialize(standaloneDocument);
         return standaloneDocument;
+    }
+
+    /**
+     * @brief Convenience method to serialize telemetry to a JSON string.
+     * @return A String containing the serialized JSON representation.
+     */
+    [[nodiscard]] String serializeAsString() const {
+        JsonDocument doc = this->serialize();
+        String output;
+        serializeJson(doc, output);
+        return output;
     }
 };
 

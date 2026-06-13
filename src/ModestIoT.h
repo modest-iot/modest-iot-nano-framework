@@ -24,7 +24,7 @@
 /// --- 2. LAYER-ISOLATED NETWORK COMPREHENSION ---
 #include "ConnectivityDriver.h"
 #include "WiFiConnectivityDriver.h"
-#include "HttpEdgeGatewayClient.h"
+#include "HttpGatewayClient.h"
 #include "MqttGatewayClient.h"
 
 /// --- 3. HARDWARE PERIPHERAL DRIVER SUBSYSTEMS ---

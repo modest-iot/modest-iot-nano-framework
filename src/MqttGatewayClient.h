@@ -9,7 +9,7 @@
  * @version 1.0
  */
 
-#include "ConnectivityDriver.h"
+#include "GatewayClient.h"
 #include "TelemetryPackage.h"
 #include <PubSubClient.h>   // Extends standard PubSubClient compilation visibility
 
@@ -23,9 +23,8 @@
  * @brief Gateway adapter that publishes `TelemetryPackage` payloads to an MQTT topic.
  * @ingroup gateway_module
  */
-class MqttGatewayClient {
+class MqttGatewayClient : public GatewayClient {
 private:
-    ConnectivityDriver& communicationTransportDriver; ///< Reference to the connectivity driver.
     PubSubClient mqttClient; ///< Underlying MQTT client instance.
     
     const char* clientIdentifier; ///< Unique client identifier.
@@ -53,7 +52,7 @@ public:
      * @param abstractTelemetryPayload Polymorphic payload to serialize and publish.
      * @return True if the payload byte stream was successfully accepted and pushed by the broker.
      */
-    bool sendTelemetryRecord(const TelemetryPackage& abstractTelemetryPayload);
+    bool sendTelemetryRecord(const TelemetryPackage& abstractTelemetryPayload) override;
 };
 
 /** @} */ // End of Gateway: Protocol-Specific Implementations

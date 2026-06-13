@@ -11,7 +11,7 @@
 MqttGatewayClient::MqttGatewayClient(ConnectivityDriver& transportDriver, Client& networkClient, 
                                      const char* brokerIpAddress, uint16_t brokerPort, 
                                      const char* topic, const char* deviceId)
-    : communicationTransportDriver(transportDriver),
+    : GatewayClient(transportDriver, ""), // We don't use serviceEndpointUrl here, so pass ""
       mqttClient(networkClient),
       clientIdentifier(deviceId),
       publishTopic(topic) 
@@ -45,11 +45,7 @@ bool MqttGatewayClient::sendTelemetryRecord(const TelemetryPackage& abstractTele
     }
 
     // 3. Execute payload serialization polymorphically
-    JsonDocument serializationDocument;
-    abstractTelemetryPayload.serialize(serializationDocument);
-
-    String serializedPayloadOutput;
-    serializeJson(serializationDocument, serializedPayloadOutput);
+    String serializedPayloadOutput = abstractTelemetryPayload.serializeAsString();
 
     // 4. Publish telemetry payload onto the broker topic ring (Executed on priority 1 thread)
     bool publishSuccessStatus = mqttClient.publish(publishTopic, serializedPayloadOutput.c_str());

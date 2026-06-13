@@ -9,7 +9,7 @@
  * @version 1.0
  */
 
-#include "ConnectivityDriver.h"
+#include "GatewayClient.h"
 #include "TelemetryPackage.h"
 
 /**
@@ -22,10 +22,8 @@
  * @brief Gateway adapter that posts `TelemetryPackage` payloads to an HTTP endpoint.
  * @ingroup gateway_module
  */
-class HttpEdgeGatewayClient {
+class HttpGatewayClient : public GatewayClient {
 private:
-    ConnectivityDriver& communicationTransportDriver; ///< Reference to the connectivity driver.
-    const char* serviceEndpointUrl; ///< The HTTP service endpoint URL.
     const char* contentTypeHeader; ///< Content-Type header for the HTTP request.
 
 public:
@@ -33,15 +31,15 @@ public:
      * @param transportDriver Abstract reference handling physical link status.
      * @param targetEndpoint The RESTful API URL destination.
      */
-    HttpEdgeGatewayClient(ConnectivityDriver& transportDriver, const char* targetEndpoint);
-    ~HttpEdgeGatewayClient() = default;
+    HttpGatewayClient(ConnectivityDriver& transportDriver, const char* targetEndpoint);
+    ~HttpGatewayClient() = default;
 
     /**
      * @brief Polling contract hook: Serializes and ships the payload via HTTP POST.
      * @param abstractTelemetryPayload Polymorphic payload to serialize and transmit.
      * @return True if the server responded with a valid success status code.
      */
-    bool sendTelemetryRecord(const TelemetryPackage& abstractTelemetryPayload);
+    bool sendTelemetryRecord(const TelemetryPackage& abstractTelemetryPayload) override;
 };
 
 #endif // HTTP_EDGE_GATEWAY_CLIENT_H
