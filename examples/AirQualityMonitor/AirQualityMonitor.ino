@@ -31,7 +31,7 @@ public:
     AirQualityTelemetryPackage(float ppm, bool detected, GasSensor::OperatingMode mode)
         : gasConcentrationInPpm(ppm), gasDetected(detected), operatingMode(static_cast<int>(mode)) {}
 
-    virtual ~AirQualityTelemetryPackage() override = default;
+    ~AirQualityTelemetryPackage() override = default;
 
     /**
      * @brief Serializes the telemetry data into a JSON object.

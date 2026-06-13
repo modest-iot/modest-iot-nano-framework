@@ -29,7 +29,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC IRAM_ATTR= __xtensa__=1 __XTEN
 
 target_include_directories(${PROJECT_NAME} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
-        "${ARDUINO_LIBS}/ArduinoJson/src"
+        "/Users/angelvelasquez/Documents/Arduino/libraries/ArduinoJson/src"
         "${ARDUINO_LIBS}/PubSubClient/src"
         "${ARDUINO_LIBS}/LiquidCrystal_I2C"
         "${ARDUINO_LIBS}/EspSoftwareSerial/src"
@@ -66,7 +66,7 @@ target_include_directories(clion_indexer PRIVATE
     "/Users/angelvelasquez/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/Network/src"
     "${ARDUINO_LIBS}/LiquidCrystal_I2C"
     "${ARDUINO_LIBS}/DHT_sensor_library"
-    "${ARDUINO_LIBS}/ArduinoJson/src"
+    "/Users/angelvelasquez/Documents/Arduino/libraries/ArduinoJson/src"
     "${ARDUINO_LIBS}/PubSubClient/src"
     "${ARDUINO_CORE_PATH}"
     "${ARDUINO_ESP32_LIBS_INCLUDE_PATH}"

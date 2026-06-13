@@ -66,7 +66,7 @@ public:
     CharacterLcdDisplay(uint8_t i2cAddress, uint8_t columnCount, uint8_t rowCount,
                         bool backlightInitialState = true, CommandHandler* parentHandler = nullptr);
 
-    virtual ~CharacterLcdDisplay() override;
+    ~CharacterLcdDisplay() override;
 
     /**
      * @brief Stages a clean string into a target row index, automatically zero-padded.

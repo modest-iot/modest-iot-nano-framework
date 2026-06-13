@@ -47,7 +47,7 @@ public:
      * @param parentHandler Optional upstream handler for propagated events.
      */
     Button(int signalGpioPin, unsigned long debounceDelayInMilliseconds = 50, EventHandler* parentHandler = nullptr);
-    virtual ~Button() override = default;
+    ~Button() override = default;
 };
 
 /** @} */ // End of Sensors: Digital & Debounced Input

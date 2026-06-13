@@ -22,7 +22,7 @@ class SmartBandTelemetryPackage : public TelemetryPackage {
         skinTemperatureInCelsius(temperature),
         relativeHumidityInPercentage(humidity) {}
 
-    virtual ~SmartBandTelemetryPackage() override = default;
+    ~SmartBandTelemetryPackage() override = default;
 
     void serialize(JsonDocument& serializationDestination) const override {
         serializationDestination["heartBeatsPerMinute"]       = this->heartBeatsPerMinute;
@@ -80,7 +80,7 @@ class SmartBandDevice : public Device {
         appendSensorToScheduler(&userActionButton,      Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
     }
 
-    virtual ~SmartBandDevice() override = default;
+    ~SmartBandDevice() override = default;
 
     void on(Event event) override {
         if (event.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER) {

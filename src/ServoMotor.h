@@ -60,7 +60,7 @@ public:
      * @param parentHandler Optional upstream handler for propagated commands.
      */
     ServoMotor(int signalGpioPin, int initialAngleInDegrees = MINIMUM_PHYSICAL_ANGLE_IN_DEGREES, CommandHandler* parentHandler = nullptr);
-    virtual ~ServoMotor() override;
+    ~ServoMotor() override;
 
     /**
      * @brief Stores a target angle used by `DRIVE_TO_BUFFERED_ANGLE_COMMAND`.

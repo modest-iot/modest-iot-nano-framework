@@ -40,7 +40,7 @@ private:
         int targetEventIdentifier; ///< Event identifier requested from the sensor.
     };
 
-    static const uint8_t MAXIMUM_SCHEDULED_SLOTS = 8; ///< Maximum number of sensor slots.
+    static constexpr uint8_t MAXIMUM_SCHEDULED_SLOTS = 8; ///< Maximum number of sensor slots.
     ScheduledTaskSlot scheduledSequences[MAXIMUM_SCHEDULED_SLOTS] = {}; ///< Array of scheduled task slots.
     uint8_t registeredSlotCount; ///< Number of registered slots.
     uint8_t activeSequencePointer; ///< Index of the currently active sequence.
@@ -82,7 +82,7 @@ protected:
     /**
      * @brief Cleans up tasks, timer resources, and queue handles.
      */
-    virtual ~Device();
+    ~Device() override;
 
     /**
      * @brief Allocates queue/task infrastructure and starts asynchronous workers.

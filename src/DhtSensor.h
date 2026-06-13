@@ -19,7 +19,7 @@
  */
 
 /**
- * @brief Sensor adapter for DHT-family devices (temperature + humidity).
+ * @brief Sensor adapter for DHT-family devices (temperature and humidity).
  * @ingroup sensors_module
  */
 class DhtSensor : public Sensor {
@@ -28,7 +28,7 @@ private:
     float cachedTemperatureInCelsius; ///< Last successful temperature reading.
     float cachedRelativeHumidityInPercentage; ///< Last successful humidity reading.
 
-    static const int SENSOR_ERROR_SUPPRESSION_IDENTIFIER = -1; ///< Identifier used to suppress error events.
+    static constexpr int SENSOR_ERROR_SUPPRESSION_IDENTIFIER = -1; ///< Identifier used to suppress error events.
 
 protected:
     /**
@@ -50,13 +50,13 @@ public:
      * @brief Returns the most recent successful temperature reading.
      * @return Temperature in degrees Celsius.
      */
-    float getTemperatureInCelsius() const;
+    [[nodiscard]] float getTemperatureInCelsius() const;
 
     /**
      * @brief Returns the most recent successful relative humidity reading.
      * @return Relative humidity percentage (0-100).
      */
-    float getRelativeHumidityInPercentage() const;
+    [[nodiscard]] float getRelativeHumidityInPercentage() const;
 };
 
 /** @} */ // End of Sensors: Environmental & Distance

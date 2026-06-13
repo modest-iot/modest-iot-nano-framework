@@ -45,7 +45,7 @@ public:
      */
     WiFiConnectivityDriver(const char* ssid, const char* password);
 
-    virtual ~WiFiConnectivityDriver() override;
+    ~WiFiConnectivityDriver() override;
 
     /**
      * @brief Asynchronously initiates connection sequences to the wireless access point.
