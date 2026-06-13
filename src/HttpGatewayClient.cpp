@@ -1,5 +1,5 @@
 /**
- * @file HttpEdgeGatewayClient.cpp
+ * @file HttpGatewayClient.cpp
  * @brief Implements HTTP POST transport for serialized telemetry packages.
  * @date 2026-06-06
  * @version 1.0
@@ -7,8 +7,7 @@
 
 #include "HttpGatewayClient.h"
 #include <Arduino.h>
-#include <HTTPClient.h> 
-#include <ArduinoJson.h>
+#include <HTTPClient.h>
 
 HttpGatewayClient::HttpGatewayClient(ConnectivityDriver& transportDriver, const char* targetEndpoint)
     : GatewayClient(transportDriver, targetEndpoint),
