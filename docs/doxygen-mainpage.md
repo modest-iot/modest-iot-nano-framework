@@ -39,7 +39,7 @@ available built-in peripherals.
 
 ## Generating The Docs
 
-Run from repository root:
+Run from the repository root:
 
 ```sh
 doxygen docs/Doxyfile

@@ -50,7 +50,7 @@ This document contains user stories for the `ModestIoT` Nano-Framework, designed
 - **As an** IoT Developer, **I want** telemetry payload publication to be protocol-agnostic at the application level, **so that** I can switch transport strategies without changing device business logic.
 - **Acceptance Criteria**:
     - **Given** a telemetry payload object, **when** publication is requested, **then** it is serialized to a transportable representation and sent through the selected gateway.
-    - **Given** transient publication failure, **when** a publish attempt occurs, **then** the framework returns a clear success/failure result without crashing.
+    - **Given** transient publication failure, **when** a publication attempt occurs, **then** the framework returns a clear success/failure result without crashing.
     - **Given** both request/response and broker-style integrations, **when** the same payload contract is used, **then** both publication paths are supported.
 
 ### TS08: Orchestrate Asynchronous Sampling and Dispatch
