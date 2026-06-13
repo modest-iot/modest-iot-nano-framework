@@ -36,7 +36,7 @@ public:
      * @brief Convenience overload that creates and returns a standalone document.
      * @return A JSON document populated by `serialize(JsonDocument&)`.
      */
-    JsonDocument serialize() const {
+    [[nodiscard]] JsonDocument serialize() const {
         JsonDocument standaloneDocument;
         // Delegate directly to the virtual method implemented by subclasses
         this->serialize(standaloneDocument);

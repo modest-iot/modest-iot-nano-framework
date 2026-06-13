@@ -13,8 +13,8 @@ MqttGatewayClient::MqttGatewayClient(ConnectivityDriver& transportDriver, Client
                                      const char* topic, const char* deviceId)
     : communicationTransportDriver(transportDriver),
       mqttClient(networkClient),
-      publishTopic(topic),
-      clientIdentifier(deviceId) 
+      clientIdentifier(deviceId),
+      publishTopic(topic) 
 {
     mqttClient.setServer(brokerIpAddress, brokerPort);
 }

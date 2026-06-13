@@ -35,7 +35,7 @@ public:
      * @param eventIdentifier Event type discriminator.
      * @param source Optional source identifier for contextual disambiguation.
      */
-    explicit Event(int eventIdentifier, int source = -1) : identifier(eventIdentifier), sourceId(source) {}
+    constexpr explicit Event(int eventIdentifier, int source = -1) : identifier(eventIdentifier), sourceId(source) {}
 
     /**
      * @brief Compares two events by identifier.

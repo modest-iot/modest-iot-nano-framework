@@ -45,11 +45,11 @@ protected:
 
 public:
     /// --- FRAMEWORK-WIDE UNIFIED SENSOR SPECIFICATION EVENTS ---
-    static const int DATA_READ_EVENT_IDENTIFIER = 20;
-    static const int MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER = 21;
+    static constexpr int DATA_READ_EVENT_IDENTIFIER = 20;
+    static constexpr int MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER = 21;
 
-    static const Event DATA_READ_EVENT;
-    static const Event MEASURE_DATA_REQUESTED_EVENT;
+    static constexpr Event DATA_READ_EVENT = Event(DATA_READ_EVENT_IDENTIFIER);
+    static constexpr Event MEASURE_DATA_REQUESTED_EVENT = Event(MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
     /**
      * @brief Constructs a Sensor with a pin and optional event handler.
      * @param signalGpioPin The GPIO pin for the sensor.

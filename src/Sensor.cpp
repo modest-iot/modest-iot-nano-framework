@@ -21,10 +21,6 @@
 
 #include "Sensor.h"
 
-// Define the core global standard events once at the framework boundary layer
-const Event Sensor::DATA_READ_EVENT = Event(Sensor::DATA_READ_EVENT_IDENTIFIER);
-const Event Sensor::MEASURE_DATA_REQUESTED_EVENT = Event(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-
 /**
  * @brief Stores the target GPIO pin and optional event handler for this sensor.
  * @param signalGpioPin GPIO pin associated with the sensor.

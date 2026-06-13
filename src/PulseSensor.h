@@ -35,14 +35,14 @@ private:
     /// --- SCOPED EXPLICIT CONSTANTS (ELIMINATING MAGIC NUMBERS) ---
     static constexpr int DEFAULT_STABILIZATION_PEAK_BASELINE = 512; ///< Default stabilization peak baseline.
     static constexpr int HEARTBEAT_IGNITION_MINIMUM_AMPLITUDE = 100; ///< Minimum amplitude for heartbeat ignition.
-    static const unsigned long DEBOUNCE_HEARTBEAT_WINDOW_IN_MILLISECONDS = 300; ///< Debounce a heartbeat window in milliseconds.
-    static const int PROPAGATION_SUPPRESSION_IDENTIFIER = -1; ///< Identifier for propagation suppression.
+    static constexpr unsigned long DEBOUNCE_HEARTBEAT_WINDOW_IN_MILLISECONDS = 300; ///< Debounce a heartbeat window in milliseconds.
+    static constexpr int PROPAGATION_SUPPRESSION_IDENTIFIER = -1; ///< Identifier for propagation suppression.
     
     // Mathematical normalization scaling figures
-    static const int MILLISECONDS_PER_MINUTE_COEFFICIENT = 60000; ///< Milliseconds per minute coefficient.
-    static const int MINIMUM_PHYSIOLOGICAL_HEART_RATE_BPM = 30; ///< Minimum physiological heart rate in BPM.
-    static const int MAXIMUM_PHYSIOLOGICAL_HEART_RATE_BPM = 200; ///< Maximum physiological heart rate in BPM.
-    static const int DOUBLE_DEBOUNCE_MULTIPLIER = 2; ///< Multiplier for double debouncing.
+    static constexpr int MILLISECONDS_PER_MINUTE_COEFFICIENT = 60000; ///< Milliseconds per minute coefficient.
+    static constexpr int MINIMUM_PHYSIOLOGICAL_HEART_RATE_BPM = 30; ///< Minimum physiological heart rate in BPM.
+    static constexpr int MAXIMUM_PHYSIOLOGICAL_HEART_RATE_BPM = 200; ///< Maximum physiological heart rate in BPM.
+    static constexpr int DOUBLE_DEBOUNCE_MULTIPLIER = 2; ///< Multiplier for double debouncing.
 
 protected:
     /**

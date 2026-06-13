@@ -34,18 +34,18 @@ protected:
 
 public:
     /** @brief Command identifier for turning the LED on. */
-    static const int TURN_ON_COMMAND_IDENTIFIER = 100;
+    static constexpr int TURN_ON_COMMAND_IDENTIFIER = 100;
     /** @brief Command identifier for turning the LED off. */
-    static const int TURN_OFF_COMMAND_IDENTIFIER = 101;
+    static constexpr int TURN_OFF_COMMAND_IDENTIFIER = 101;
     /** @brief Command identifier for toggling the LED state. */
-    static const int TOGGLE_LED_COMMAND_IDENTIFIER = 102;
+    static constexpr int TOGGLE_LED_COMMAND_IDENTIFIER = 102;
 
     /** @brief Prebuilt command instance for turning the LED on. */
-    static const Command TURN_ON_COMMAND;
+    static constexpr Command TURN_ON_COMMAND{TURN_ON_COMMAND_IDENTIFIER};
     /** @brief Prebuilt command instance for turning the LED off. */
-    static const Command TURN_OFF_COMMAND;
+    static constexpr Command TURN_OFF_COMMAND{TURN_OFF_COMMAND_IDENTIFIER};
     /** @brief Prebuilt command instance for toggling LED state. */
-    static const Command TOGGLE_LED_COMMAND;
+    static constexpr Command TOGGLE_LED_COMMAND{TOGGLE_LED_COMMAND_IDENTIFIER};
 
     /**
      * @brief Constructs a LED actuator.
@@ -59,7 +59,7 @@ public:
      * @brief Reports the current logical LED state.
      * @return `true` if the LED is on, otherwise `false`.
      */
-    bool isActive() const;
+    [[nodiscard]] bool isActive() const;
 };
 
 /** @} */ // End of Actuators: Simple Digital Output

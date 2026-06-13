@@ -8,9 +8,6 @@
 #include "Led.h"
 #include <Arduino.h>
 
-const Command Led::TURN_ON_COMMAND = Command(Led::TURN_ON_COMMAND_IDENTIFIER);
-const Command Led::TURN_OFF_COMMAND = Command(Led::TURN_OFF_COMMAND_IDENTIFIER);
-const Command Led::TOGGLE_LED_COMMAND = Command(Led::TOGGLE_LED_COMMAND_IDENTIFIER);
 
 Led::Led(int signalGpioPin, bool initialState, CommandHandler* parentHandler)
     : Actuator(signalGpioPin, parentHandler), active(initialState) {

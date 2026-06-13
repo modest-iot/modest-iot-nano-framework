@@ -49,7 +49,7 @@ void PulseSensor::processEvent(Event& event) {
                 lastBeatTimestamp = currentTimestamp;
 
                 // Derive Beats Per Minute calculation based on millisecond window durations
-                int calculatedBeatsPerMinute = MILLISECONDS_PER_MINUTE_COEFFICIENT / localizedTimeDeltaInMilliseconds;
+                int calculatedBeatsPerMinute = static_cast<int>(MILLISECONDS_PER_MINUTE_COEFFICIENT / localizedTimeDeltaInMilliseconds);
                 
                 // Enforce safety boundary checks via physiological threshold constants
                 if (calculatedBeatsPerMinute > MINIMUM_PHYSIOLOGICAL_HEART_RATE_BPM && 

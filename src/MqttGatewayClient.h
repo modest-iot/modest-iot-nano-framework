@@ -11,7 +11,6 @@
 
 #include "ConnectivityDriver.h"
 #include "TelemetryPackage.h"
-#include <Client.h>         // Standard Arduino Network Client reference interface
 #include <PubSubClient.h>   // Extends standard PubSubClient compilation visibility
 
 /**

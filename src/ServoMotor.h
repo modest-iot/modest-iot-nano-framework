@@ -28,14 +28,14 @@ private:
     int currentActiveAngleInDegrees; ///< Currently active angle in degrees.       
     int bufferedTargetAngleInDegrees; ///< Buffered target angle in degrees.      
 
-    static const int MINIMUM_PHYSICAL_ANGLE_IN_DEGREES = 0; ///< Minimum physical angle.
-    static const int MAXIMUM_PHYSICAL_ANGLE_IN_DEGREES = 180; ///< Maximum physical angle.
-    static const int MINIMUM_PULSE_WIDTH_IN_MICROSECONDS = 500; ///< Minimum pulse width in microseconds.
-    static const int MAXIMUM_PULSE_WIDTH_IN_MICROSECONDS = 2400; ///< Maximum pulse width in microseconds.
-    static const int HARDWARE_PWM_FREQUENCY_IN_HERTZ = 50; ///< PWM frequency in Hz.
+    static constexpr int MINIMUM_PHYSICAL_ANGLE_IN_DEGREES = 0; ///< Minimum physical angle.
+    static constexpr int MAXIMUM_PHYSICAL_ANGLE_IN_DEGREES = 180; ///< Maximum physical angle.
+    static constexpr int MINIMUM_PULSE_WIDTH_IN_MICROSECONDS = 500; ///< Minimum pulse width in microseconds.
+    static constexpr int MAXIMUM_PULSE_WIDTH_IN_MICROSECONDS = 2400; ///< Maximum pulse width in microseconds.
+    static constexpr int HARDWARE_PWM_FREQUENCY_IN_HERTZ = 50; ///< PWM frequency in Hz.
 
-    static const int PRIMARY_HARDWARE_TIMER_CHANNEL = 0; ///< Primary hardware timer channel.
-    static const int SECONDARY_HARDWARE_TIMER_CHANNEL = 1; ///< Secondary hardware timer channel.
+    static constexpr int PRIMARY_HARDWARE_TIMER_CHANNEL = 0; ///< Primary hardware timer channel.
+    static constexpr int SECONDARY_HARDWARE_TIMER_CHANNEL = 1; ///< Secondary hardware timer channel.
 
 protected:
     /**
@@ -45,13 +45,13 @@ protected:
     void executeCommand(Command command) override;
 
 public:
-    static const int LOCK_TO_MINIMUM_LIMIT_COMMAND_IDENTIFIER = 150;
-    static const int LOCK_TO_MAXIMUM_LIMIT_COMMAND_IDENTIFIER = 151;
-    static const int DRIVE_TO_BUFFERED_ANGLE_COMMAND_IDENTIFIER = 152;
+    static constexpr int LOCK_TO_MINIMUM_LIMIT_COMMAND_IDENTIFIER = 150;
+    static constexpr int LOCK_TO_MAXIMUM_LIMIT_COMMAND_IDENTIFIER = 151;
+    static constexpr int DRIVE_TO_BUFFERED_ANGLE_COMMAND_IDENTIFIER = 152;
 
-    static const Command LOCK_TO_MINIMUM_LIMIT_COMMAND;
-    static const Command LOCK_TO_MAXIMUM_LIMIT_COMMAND;
-    static const Command DRIVE_TO_BUFFERED_ANGLE_COMMAND;
+    static constexpr Command LOCK_TO_MINIMUM_LIMIT_COMMAND = Command(LOCK_TO_MINIMUM_LIMIT_COMMAND_IDENTIFIER);
+    static constexpr Command LOCK_TO_MAXIMUM_LIMIT_COMMAND = Command(LOCK_TO_MAXIMUM_LIMIT_COMMAND_IDENTIFIER);
+    static constexpr Command DRIVE_TO_BUFFERED_ANGLE_COMMAND = Command(DRIVE_TO_BUFFERED_ANGLE_COMMAND_IDENTIFIER);
 
     /**
      * @brief Constructs a servo actuator.

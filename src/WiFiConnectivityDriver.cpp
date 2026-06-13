@@ -6,6 +6,7 @@
  */
 
 #include <Arduino.h>
+#include <WiFi.h>
 #include "WiFiConnectivityDriver.h"
 
 

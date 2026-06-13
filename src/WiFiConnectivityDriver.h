@@ -32,7 +32,7 @@ private:
     const char* networkPasswordCredential; ///< Password for the network.
 
     // Aligned Naming Rule: Variables represent properties without 'is' prefixes
-    bool provisioningRequested; ///< Flag indicating if provisioning was requested.
+    volatile bool provisioningRequested; ///< Flag indicating if provisioning was requested.
 
     // Encapsulated concrete socket footprint hidden from outer layers
     WiFiClient* hardwareSocket{}; ///< Pointer to the hardware socket.
@@ -56,20 +56,20 @@ public:
      * @brief Inquires whether the local interface is fully authenticated with an IP allocation.
      * @return `true` if Wi-Fi association and IP allocation are complete.
      */
-    bool isConnected() override;
+    [[nodiscard]] bool isConnected() override;
 
     /**
      * @brief Intention-Revealing Query: Verifies whether the link layer is clear and ready.
      * @return `true` if the adapter can transmit outbound payloads.
      */
-    bool canTransmit() override;
+    [[nodiscard]] bool canTransmit() override;
 
     /**
      * @brief Explicit Protocol Bridge: Exposes the internal socket interface
      * upcasted cleanly to the generic Arduino Client contract.
      * @return Reference to the underlying network socket.
      */
-    Client& getNetworkSocket();
+    [[nodiscard]] Client& getNetworkSocket();
 };
 
 /** @} */ // End of Connectivity: Concrete Drivers

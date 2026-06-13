@@ -87,7 +87,7 @@ public:
      * @brief Returns the full navigation state.
      * @return A constant reference to the current LocationData.
      */
-    const LocationData& getLocationData() const { return cachedLocation; }
+    [[nodiscard]] const LocationData& getLocationData() const { return cachedLocation; }
 };
 
 #endif // GEOLOCATION_SENSOR_H

@@ -26,13 +26,13 @@ private:
     int echoGpioPin; ///< GPIO pin for echo reception.
     float cachedDistanceInCentimeters; ///< Last successful distance reading in cm.
 
-    static const int TRIGGER_HIGH_DURATION_IN_MICROSECONDS = 10; ///< Trigger pulse duration.
-    static const int TRIGGER_LOW_INITIAL_DELAY_IN_MICROSECONDS = 2; ///< Pre-trigger delay.
-    static const long TIMEOUT_LIMIT_IN_MICROSECONDS = 30000; ///< Echo timeout limit.
+    static constexpr int TRIGGER_HIGH_DURATION_IN_MICROSECONDS = 10; ///< Trigger pulse duration.
+    static constexpr int TRIGGER_LOW_INITIAL_DELAY_IN_MICROSECONDS = 2; ///< Pre-trigger delay.
+    static constexpr long TIMEOUT_LIMIT_IN_MICROSECONDS = 30000; ///< Echo timeout limit.
     
     static constexpr float SOUND_SPEED_DISTANCE_COEFFICIENT = 0.01715f; ///< Sound speed distance coefficient.
-    static const int PROPAGATION_SUPPRESSION_IDENTIFIER = -1; ///< Propagation suppression ID.
-    static const long TRACKING_FAILURE_VALUATION = 0; ///< Valuation on failure.
+    static constexpr int PROPAGATION_SUPPRESSION_IDENTIFIER = -1; ///< Propagation suppression ID.
+    static constexpr long TRACKING_FAILURE_VALUATION = 0; ///< Valuation on failure.
 
 protected:
     /**
@@ -54,7 +54,7 @@ public:
      * @brief Returns the most recent successful distance estimate.
      * @return Distance in centimeters.
      */
-    float getDistanceInCentimeters() const;
+    [[nodiscard]] float getDistanceInCentimeters() const;
 };
 
 /** @} */ // End of Sensors: Environmental & Distance

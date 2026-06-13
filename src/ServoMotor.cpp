@@ -7,9 +7,6 @@
 
 #include "ServoMotor.h"
 
-const Command ServoMotor::LOCK_TO_MINIMUM_LIMIT_COMMAND = Command(ServoMotor::LOCK_TO_MINIMUM_LIMIT_COMMAND_IDENTIFIER);
-const Command ServoMotor::LOCK_TO_MAXIMUM_LIMIT_COMMAND = Command(ServoMotor::LOCK_TO_MAXIMUM_LIMIT_COMMAND_IDENTIFIER);
-const Command ServoMotor::DRIVE_TO_BUFFERED_ANGLE_COMMAND = Command(ServoMotor::DRIVE_TO_BUFFERED_ANGLE_COMMAND_IDENTIFIER);
 
 ServoMotor::ServoMotor(int signalGpioPin, int initialAngleInDegrees, CommandHandler* parentHandler)
     : Actuator(signalGpioPin, parentHandler),

@@ -24,7 +24,7 @@ void UltrasonicSensor::processEvent(Event& event) {
         delayMicroseconds(TRIGGER_HIGH_DURATION_IN_MICROSECONDS);
         digitalWrite(pin, LOW);
 
-        long pulseTravelDurationInMicroseconds = pulseIn(echoGpioPin, HIGH, TIMEOUT_LIMIT_IN_MICROSECONDS);
+        long pulseTravelDurationInMicroseconds = static_cast<long>(pulseIn(echoGpioPin, HIGH, TIMEOUT_LIMIT_IN_MICROSECONDS));
         
         if (pulseTravelDurationInMicroseconds == TRACKING_FAILURE_VALUATION) {
             event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;

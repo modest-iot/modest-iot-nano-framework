@@ -15,6 +15,7 @@ HttpEdgeGatewayClient::HttpEdgeGatewayClient(ConnectivityDriver& transportDriver
       serviceEndpointUrl(targetEndpoint),
       contentTypeHeader("application/json") {}
 
+// ReSharper disable once CppMemberFunctionMayBeConst
 bool HttpEdgeGatewayClient::sendTelemetryRecord(const TelemetryPackage& abstractTelemetryPayload) {
     // 1. Guard capability health checks first before allocating memory
     if (!communicationTransportDriver.canTransmit()) {
