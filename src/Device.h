@@ -41,7 +41,7 @@ private:
     };
 
     static const uint8_t MAXIMUM_SCHEDULED_SLOTS = 8; ///< Maximum number of sensor slots.
-    ScheduledTaskSlot scheduledSequences[MAXIMUM_SCHEDULED_SLOTS]; ///< Array of scheduled task slots. // NOLINT
+    ScheduledTaskSlot scheduledSequences[MAXIMUM_SCHEDULED_SLOTS] = {}; ///< Array of scheduled task slots.
     uint8_t registeredSlotCount; ///< Number of registered slots.
     uint8_t activeSequencePointer; ///< Index of the currently active sequence.
 
@@ -95,7 +95,7 @@ protected:
      * @param telemetryPackagePointerAddress Address of a payload pointer to enqueue.
      * @return `true` when enqueued successfully, otherwise `false`.
      */
-    bool enqueueTelemetryPayload(TelemetryPackage** telemetryPackagePointerAddress);
+    bool enqueueTelemetryPayload(TelemetryPackage** telemetryPackagePointerAddress) const;
 
     /**
      * @brief Registers a sensor/event pair in the round-robin scheduler.
@@ -109,7 +109,7 @@ protected:
      * @brief Subclass hook for converting queued payloads into network transmissions.
      * @param rawQueueItemPayload Pointer to the queued telemetry payload.
      */
-    virtual void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload);
+    virtual void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) const;
 public:
     /**
      * @brief Concrete fallback command interface fulfillment.

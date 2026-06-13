@@ -27,8 +27,8 @@ Device::Device(unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupI
       pollingIntervalInMilliseconds(samplingIntervalInMilliseconds),
       hardwareTimerIndex(timerGroupIndex)
 {
-    for (uint8_t i = 0; i < MAXIMUM_SCHEDULED_SLOTS; ++i) {
-        scheduledSequences[i] = { nullptr, -1 };
+    for (auto& slot : scheduledSequences) {
+        slot = { nullptr, -1 };
     }
 }
 
@@ -45,7 +45,7 @@ Device::~Device() {
 
 void IRAM_ATTR Device::handleHardwareTimerInterrupt(void* deviceInstance) {
     if (deviceInstance != nullptr) {
-        Device* self = static_cast<Device*>(deviceInstance);
+        auto* self = static_cast<Device*>(deviceInstance);
         BaseType_t higherPriorityTaskWoken = pdFALSE;
         vTaskNotifyGiveFromISR(self->hardwareSamplingTaskHandle, &higherPriorityTaskWoken);
         if (higherPriorityTaskWoken) portYIELD_FROM_ISR();
@@ -61,7 +61,7 @@ void Device::initializeAsynchronousEngine(uint8_t maximumQueueLength) {
     hardwareTimer = timerBegin(1000000);
     timerAttachInterruptArg(hardwareTimer, &Device::handleHardwareTimerInterrupt, this);
 
-    uint64_t alarmIntervalInMicroseconds = static_cast<uint64_t>(pollingIntervalInMilliseconds) * 1000;
+    auto alarmIntervalInMicroseconds = static_cast<uint64_t>(pollingIntervalInMilliseconds) * 1000;
     timerAlarm(hardwareTimer, alarmIntervalInMicroseconds, true, 0);
 }
 
@@ -74,13 +74,13 @@ bool Device::appendSensorToScheduler(EventHandler* targetSensorInstance, int req
     return true;
 }
 
-bool Device::enqueueTelemetryPayload(TelemetryPackage** telemetryPackagePointerAddress) {
+bool Device::enqueueTelemetryPayload(TelemetryPackage** telemetryPackagePointerAddress) const {
     if (telemetryQueueHandle == nullptr || telemetryPackagePointerAddress == nullptr) return false;
     return xQueueSend(telemetryQueueHandle, telemetryPackagePointerAddress, 0) == pdPASS;
 }
 
 void Device::executeHardwareSamplingContext(void* taskParameters) {
-    Device* self = static_cast<Device*>(taskParameters);
+    auto* self = static_cast<Device*>(taskParameters);
     while (true) {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
@@ -98,7 +98,7 @@ void Device::executeHardwareSamplingContext(void* taskParameters) {
 }
 
 void Device::executeNetworkDispatchContext(void* taskParameters) {
-    Device* self = static_cast<Device*>(taskParameters);
+    auto* self = static_cast<Device*>(taskParameters);
     TelemetryPackage* incomingPolymorphicPacketPointer = nullptr;
 
     while (true) {
@@ -124,6 +124,6 @@ void Device::handle(Command command) {
  * @brief Default fallback implementation of Telemetry Queue dispatcher hook.
  * Allows action/control-only nodes to ignore the network queue cycle seamlessly.
  */
-void Device::processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) {
+void Device::processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) const {
     // Intentional default no-op
 }
