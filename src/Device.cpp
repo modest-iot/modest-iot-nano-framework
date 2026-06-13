@@ -16,7 +16,6 @@
 #define traceISR_EXIT_TO_SCHEDULER()
 #endif
 
-
 Device::Device(unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupIndex)
     : registeredSlotCount(0),
       activeSequencePointer(0),
