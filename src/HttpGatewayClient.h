@@ -1,8 +1,8 @@
-#ifndef HTTP_EDGE_GATEWAY_CLIENT_H
-#define HTTP_EDGE_GATEWAY_CLIENT_H
+#ifndef HTTP_GATEWAY_CLIENT_H
+#define HTTP_GATEWAY_CLIENT_H
 
 /**
- * @file HttpEdgeGatewayClient.h
+ * @file HttpGatewayClient.h
  * @brief Declares an HTTP client for sending serialized telemetry payloads.
  * @ingroup gateway_module
  * @date 2026-06-06
@@ -42,4 +42,4 @@ public:
     bool sendTelemetryRecord(const TelemetryPackage& abstractTelemetryPayload) override;
 };
 
-#endif // HTTP_EDGE_GATEWAY_CLIENT_H
+#endif // HTTP_GATEWAY_CLIENT_H
