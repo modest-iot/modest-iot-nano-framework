@@ -32,6 +32,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         "/Users/angelvelasquez/Documents/Arduino/libraries/ArduinoJson/src"
         "${ARDUINO_LIBS}/PubSubClient/src"
         "${ARDUINO_LIBS}/LiquidCrystal_I2C"
+        "${ARDUINO_LIBS}/DHT_sensor_library"
         "${ARDUINO_LIBS}/EspSoftwareSerial/src"
         "${ARDUINO_LIBS}/ESP32Servo/src"
         "/Users/angelvelasquez/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/libraries/HTTPClient/src"
