@@ -27,6 +27,13 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 add_executable(clion_indexer main.cpp)
 target_link_libraries(clion_indexer PRIVATE ${PROJECT_NAME})
 
+# Add Arduino libraries for indexing
+target_include_directories(clion_indexer PRIVATE
+    "/Users/angelvelasquez/Documents/Arduino/libraries/EspSoftwareSerial/src"
+    "/Users/angelvelasquez/Documents/Arduino/libraries/LiquidCrystal_I2C"
+    "/Users/angelvelasquez/Documents/Arduino/libraries/DHT_sensor_library"
+)
+
 # 5. Dedicated arduino-cli Target Pipeline
 # Compiles your project using the esp32da compiler ecosystem safely isolated from host flags
 add_custom_target(arduino_compile
