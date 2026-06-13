@@ -1,9 +1,9 @@
 #ifndef GEOLOCATION_SENSOR_H
 #define GEOLOCATION_SENSOR_H
 
-#include "Sensor.h"
-#include "LocationData.h"
 #include <SoftwareSerial.h>
+#include "LocationData.h"
+#include "Sensor.h"
 
 /**
  * @brief GPS/Geolocation Sensor abstraction.

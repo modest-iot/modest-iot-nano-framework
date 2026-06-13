@@ -41,7 +41,7 @@ private:
     };
 
     static const uint8_t MAXIMUM_SCHEDULED_SLOTS = 8; ///< Maximum number of sensor slots.
-    ScheduledTaskSlot scheduledSequences[MAXIMUM_SCHEDULED_SLOTS]; ///< Array of scheduled task slots.
+    ScheduledTaskSlot scheduledSequences[MAXIMUM_SCHEDULED_SLOTS]; ///< Array of scheduled task slots. // NOLINT
     uint8_t registeredSlotCount; ///< Number of registered slots.
     uint8_t activeSequencePointer; ///< Index of the currently active sequence.
 

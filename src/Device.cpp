@@ -6,6 +6,15 @@
  */
 
 #include "Device.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "freertos/idf_additions.h"
+#include "esp_attr.h"
+
+#ifndef traceISR_EXIT_TO_SCHEDULER
+#define traceISR_EXIT_TO_SCHEDULER()
+#endif
 
 
 Device::Device(unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupIndex)

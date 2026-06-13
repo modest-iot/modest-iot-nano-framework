@@ -29,7 +29,7 @@ private:
 
 protected:
     /**
-     * @brief Samples and debounces input transitions for press detection.
+     * @brief Samples and debounce input transitions for press detection.
      * @param event Mutable event request/response payload.
      */
     void processEvent(Event& event) override;

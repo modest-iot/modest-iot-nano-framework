@@ -6,6 +6,7 @@
  */
 
 #include "HttpEdgeGatewayClient.h"
+#include <Arduino.h>
 #include <HTTPClient.h> 
 #include <ArduinoJson.h>
 

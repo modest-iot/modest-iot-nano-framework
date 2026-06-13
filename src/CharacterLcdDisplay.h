@@ -20,7 +20,7 @@
  */
 
 /**
- * @brief Actuator adapter for HD44780-compatible character LCD displays over I2C.
+ * @brief Actuator adapter for HD44780-compatible character Liquid Crystal displays over I2C.
  * @ingroup actuators_module
  */
 class CharacterLcdDisplay : public Actuator {
