@@ -10,6 +10,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(BOARD_FQBN "esp32:esp32:esp32da" CACHE STRING "Target hardware device FQBN selection identifier")
 set(PORT "/dev/ttyUSB0" CACHE STRING "Serial flash port for ESP32 layout deployment")
 set(ARDUINO_CLI_PATH "/opt/homebrew/bin/arduino-cli" CACHE FILEPATH "Local path to your executable binary")
+set(ARDUINO_LIBS "/Users/angelvelasquez/Documents/Arduino/libraries" CACHE FILEPATH "Path to Arduino libraries")
+set(ARDUINO_CORE_PATH "/Users/angelvelasquez/Library/Arduino15/packages/esp32/hardware/esp32/3.3.10/cores/esp32" CACHE FILEPATH "Path to Arduino ESP32 core")
+set(ARDUINO_ESP32_LIBS_INCLUDE_PATH "/Users/angelvelasquez/Library/Arduino15/packages/esp32/tools/esp32-libs/3.3.10/include" CACHE FILEPATH "Path to Arduino ESP32 tools include")
 set(SKETCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}") # Assumes main.cpp/main.ino acts as sketch root
 
 # 3. Native Source Target (Keeps CLion indexing perfect)
@@ -20,6 +23,11 @@ add_library(${PROJECT_NAME} STATIC ${LIB_SOURCES} ${LIB_HEADERS})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+        "${ARDUINO_LIBS}/ArduinoJson/src"
+        "${ARDUINO_LIBS}/PubSubClient/src"
+        "${ARDUINO_LIBS}/LiquidCrystal_I2C"
+        "${ARDUINO_CORE_PATH}"
+        "${ARDUINO_ESP32_LIBS_INCLUDE_PATH}"
 )
 
 # 4. IDE Code-Completion Indexer Targets
@@ -29,10 +37,13 @@ target_link_libraries(clion_indexer PRIVATE ${PROJECT_NAME})
 
 # Add Arduino libraries for indexing
 target_include_directories(clion_indexer PRIVATE
-    "/Users/angelvelasquez/Documents/Arduino/libraries/EspSoftwareSerial/src"
-    "/Users/angelvelasquez/Documents/Arduino/libraries/LiquidCrystal_I2C"
-    "/Users/angelvelasquez/Documents/Arduino/libraries/DHT_sensor_library"
-    "/Users/angelvelasquez/Documents/Arduino/libraries/ArduinoJson/src"
+    "${ARDUINO_LIBS}/EspSoftwareSerial/src"
+    "${ARDUINO_LIBS}/LiquidCrystal_I2C"
+    "${ARDUINO_LIBS}/DHT_sensor_library"
+    "${ARDUINO_LIBS}/ArduinoJson/src"
+    "${ARDUINO_LIBS}/PubSubClient/src"
+    "${ARDUINO_CORE_PATH}"
+    "${ARDUINO_ESP32_LIBS_INCLUDE_PATH}"
 )
 
 # 5. Dedicated arduino-cli Target Pipeline
