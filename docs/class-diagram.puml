@@ -5,9 +5,13 @@ skinparam classFontStyle bold
 skinparam packageStyle rectangle
 skinparam linetype ortho
 skinparam shadowing false
-title ModestIoT Nano-Framework Class Diagram (v1.0.0)
+title ModestIoT Nano-Framework — Class Diagram (v1.0.0)
 
+' ─────────────────────────────────────────────
+'  CORE
+' ─────────────────────────────────────────────
 package "Core" #FAFAFA {
+
   class Event <<struct>> {
     +identifier : int
     +sourceId : int
@@ -59,14 +63,15 @@ package "Core" #FAFAFA {
     -networkDispatcherTaskHandle : TaskHandle_t
     -telemetryQueueHandle : QueueHandle_t
     -hardwareTimer : hw_timer_t*
-    -pollingIntervalInMilliseconds : unsigned long
-    -hardwareTimerIndex : uint8_t
+    -pollingIntervalInMilliseconds : const unsigned long
+    -hardwareTimerIndex : const uint8_t
     #Device(samplingIntervalInMilliseconds : unsigned long,
             timerGroupIndex : uint8_t = 0)
     #initializeAsynchronousEngine(maximumQueueLength : uint8_t = 10) : void
     #enqueueTelemetryPayload(telemetryPackagePointerAddress : TelemetryPackage**) : bool
     #appendSensorToScheduler(targetSensorInstance : EventHandler*, requestedEventIdentifier : int) : bool
     #processQueuedTelemetryData(rawQueueItemPayload : const TelemetryPackage*) : void
+    +handle(command : Command) : void
   }
 
   abstract class TelemetryPackage {
@@ -75,14 +80,19 @@ package "Core" #FAFAFA {
   }
 }
 
+' ─────────────────────────────────────────────
+'  SENSORS
+' ─────────────────────────────────────────────
 package "Sensors" #EEF6EE {
+
   class Button {
     -lastStableTimestamp : unsigned long
-    -debounceDelayInMilliseconds : unsigned long
+    -debounceDelayInMilliseconds : const unsigned long
     -previousState : bool
     +{static} BUTTON_PRESSED_EVENT_IDENTIFIER : int = 10
     +{static} BUTTON_PRESSED_EVENT : Event
-    +Button(signalGpioPin : int, debounceDelayInMilliseconds : unsigned long = 50,
+    +Button(signalGpioPin : int,
+            debounceDelayInMilliseconds : unsigned long = 50,
             parentHandler : EventHandler* = nullptr)
     #processEvent(event : Event&) : void
   }
@@ -93,8 +103,8 @@ package "Sensors" #EEF6EE {
     -cachedRelativeHumidityInPercentage : float
     +DhtSensor(signalGpioPin : int, dhtModelType : uint8_t,
                parentHandler : EventHandler* = nullptr)
-    +getTemperatureInCelsius() : float
-    +getRelativeHumidityInPercentage() : float
+    +getTemperatureInCelsius() const : float
+    +getRelativeHumidityInPercentage() const : float
     #processEvent(event : Event&) : void
   }
 
@@ -103,7 +113,7 @@ package "Sensors" #EEF6EE {
     -cachedDistanceInCentimeters : float
     +UltrasonicSensor(triggerGpioPin : int, echoGpioPin : int,
                       parentHandler : EventHandler* = nullptr)
-    +getDistanceInCentimeters() : float
+    +getDistanceInCentimeters() const : float
     #processEvent(event : Event&) : void
   }
 
@@ -111,20 +121,70 @@ package "Sensors" #EEF6EE {
     -cachedBeatsPerMinute : int
     -sampleSignalValue : int
     -lastBeatTimestamp : unsigned long
-    +PulseSensor(analogInputGpioPin : int, parentHandler : EventHandler* = nullptr)
-    +getBeatsPerMinute() : int
-    +getRawSignalValue() : int
+    -searchForHeartbeat : bool
+    -runningSignalPeak : int
+    -runningSignalTrough : int
+    -adaptiveThresholdValue : int
+    +PulseSensor(analogInputGpioPin : int,
+                 parentHandler : EventHandler* = nullptr)
+    +getBeatsPerMinute() const : int
+    +getRawSignalValue() const : int
     #processEvent(event : Event&) : void
   }
 
+  ' --- GasSensor nested types ---
+  enum GasSensor_OperatingMode <<GasSensor::OperatingMode>> {
+    RawMode
+    CalibratingMode
+    AccurateMode
+  }
+
+  enum GasSensor_GasType <<GasSensor::GasType>> {
+    None
+    LPG
+    Methane
+    CarbonMonoxide
+    Alcohol
+    Propane
+    Hydrogen
+    Smoke
+    Ammonia
+    Benzene
+    Toluene
+    Acetone
+  }
+
+  class GasCalibrationParameters <<GasSensor::struct>> {
+    +slope : float
+    +intercept : float
+  }
+
   class GasSensor {
-    -pin : int
-    +GasSensor(analogInputGpioPin : int, digitalInputGpioPin : int,
+    -cachedRawAnalogValue : int
+    -cachedSensorResistanceInKiloOhm : float
+    -cachedRsR0Ratio : float
+    -r0InKiloOhm : float
+    -digitalInputPin : int
+    -cachedDigitalGasDetected : bool
+    -currentMode : OperatingMode
+    -targetGasType : GasType
+    +{static} DIGITAL_GAS_DETECTED_EVENT_IDENTIFIER : int = 40
+    +{static} DIGITAL_GAS_DETECTED_EVENT : Event
+    +GasSensor(analogInputGpioPin : int,
+               digitalInputGpioPin : int = -1,
                parentHandler : EventHandler* = nullptr,
-               initialMode : int = 0)
+               initialMode : OperatingMode = RawMode)
     +startCalibration() : void
     +setR0(cleanAirResistanceInKiloOhm : float) : void
-    +isGasDetected() : bool
+    +setTargetGas(gasType : GasType) : bool
+    +setGasCalibrationParameters(gasType : GasType, slope : float, intercept : float) : bool
+    +getOperatingMode() const : OperatingMode
+    +getTargetGasType() const : GasType
+    +getRawAnalogValue() const : int
+    +getSensorResistanceInKiloOhm() const : float
+    +getRsR0Ratio() const : float
+    +getGasConcentrationInPpm() const : float
+    +isGasDetected() const : bool
     #processEvent(event : Event&) : void
   }
 
@@ -161,7 +221,11 @@ package "Sensors" #EEF6EE {
   }
 }
 
+' ─────────────────────────────────────────────
+'  ACTUATORS
+' ─────────────────────────────────────────────
 package "Actuators" #EEF0FF {
+
   class Led {
     -active : bool
     +{static} TURN_ON_COMMAND_IDENTIFIER : int = 100
@@ -172,14 +236,14 @@ package "Actuators" #EEF0FF {
     +{static} TOGGLE_LED_COMMAND : Command
     +Led(signalGpioPin : int, initialState : bool = false,
          parentHandler : CommandHandler* = nullptr)
-    +isActive() : bool
+    +isActive() const : bool
     #executeCommand(command : Command) : void
   }
 
   class CharacterLcdDisplay {
     -physicalLcdScreen : LiquidCrystal_I2C
-    -maximumRowCount : uint8_t
-    -maximumColumnCount : uint8_t
+    -maximumRowCount : const uint8_t
+    -maximumColumnCount : const uint8_t
     -characterScreenMatrixBuffer : char*
     -backlightEnabled : bool
     +{static} UPDATE_TEXT_COMMAND_IDENTIFIER : int = 200
@@ -188,14 +252,15 @@ package "Actuators" #EEF0FF {
     +{static} UPDATE_TEXT_COMMAND : Command
     +{static} TURN_BACKLIGHT_ON_COMMAND : Command
     +{static} TURN_BACKLIGHT_OFF_COMMAND : Command
-    +CharacterLcdDisplay(i2cAddress : uint8_t, columnCount : uint8_t, rowCount : uint8_t,
+    +CharacterLcdDisplay(i2cAddress : uint8_t, columnCount : uint8_t,
+                         rowCount : uint8_t,
                          backlightInitialState : bool = true,
                          parentHandler : CommandHandler* = nullptr)
-    +setLineBuffer(rowIndex : uint8_t, nullTerminatedString : char*) : void
-    +setLineBuffer(multiLineArrayPointer : char*[]) : void
-    +isBacklightOn() : bool
-    +getMaximumRowCount() : uint8_t
-    +getMaximumColumnCount() : uint8_t
+    +setLineBuffer(rowIndex : uint8_t, nullTerminatedString : const char*) : void
+    +setLineBuffer(multiLineArrayPointer : const char*[]) : void
+    +isBacklightOn() const : bool
+    +getMaximumRowCount() const : uint8_t
+    +getMaximumColumnCount() const : uint8_t
     #executeCommand(command : Command) : void
   }
 
@@ -210,10 +275,10 @@ package "Actuators" #EEF0FF {
     +{static} LOCK_TO_MAXIMUM_LIMIT_COMMAND : Command
     +{static} DRIVE_TO_BUFFERED_ANGLE_COMMAND : Command
     +ServoMotor(signalGpioPin : int,
-               initialAngleInDegrees : int = 0,
-               parentHandler : CommandHandler* = nullptr)
+                initialAngleInDegrees : int = 0,
+                parentHandler : CommandHandler* = nullptr)
     +setTargetAngleBufferInDegrees(targetAngleInDegrees : int) : void
-    +getCurrentActiveAngleInDegrees() : int
+    +getCurrentActiveAngleInDegrees() const : int
     #executeCommand(command : Command) : void
   }
 
@@ -228,14 +293,19 @@ package "Actuators" #EEF0FF {
     +{static} TURN_OFF_COMMAND : Command
     +{static} PLAY_TONE_COMMAND : Command
     +Buzzer(signalGpioPin : int, parentHandler : CommandHandler* = nullptr)
-    +isActive() : bool
-    +getBufferedFrequency() : int
-    +getBufferedDuration() : unsigned long
+    +setTone(frequency : int, duration : unsigned long) : void
+    +isActive() const : bool
+    +getBufferedFrequency() const : int
+    +getBufferedDuration() const : unsigned long
     #executeCommand(command : Command) : void
   }
 }
 
+' ─────────────────────────────────────────────
+'  CONNECTIVITY
+' ─────────────────────────────────────────────
 package "Connectivity" #EDF3FF {
+
   interface ConnectivityDriver {
     +connect() : void
     +isConnected() : bool
@@ -245,7 +315,7 @@ package "Connectivity" #EDF3FF {
   class WiFiConnectivityDriver {
     -networkSsidIdentifier : const char*
     -networkPasswordCredential : const char*
-    -provisioningRequested : bool
+    -provisioningRequested : volatile bool
     -hardwareSocket : WiFiClient*
     +WiFiConnectivityDriver(ssid : const char*, password : const char*)
     +connect() : void
@@ -255,32 +325,48 @@ package "Connectivity" #EDF3FF {
   }
 }
 
+' ─────────────────────────────────────────────
+'  GATEWAY
+' ─────────────────────────────────────────────
 package "Gateway" #FFF8EE {
-  abstract class GatewayClient {
-    #communicationTransportDriver : ConnectivityDriver&
-    #serviceEndpointUrl : const char*
-    +GatewayClient(transportDriver : ConnectivityDriver&, targetEndpoint : const char*)
-    +{abstract} sendTelemetryRecord(abstractTelemetryPayload : const TelemetryPackage&) : bool
+
+  class EdgeGatewayClient {
+    -communicationTransportDriver : ConnectivityDriver&
+    -serviceEndpointUrl : const char*
+    +EdgeGatewayClient(transportDriver : ConnectivityDriver&,
+                       targetEndpoint : const char*)
+    +sendTelemetryRecord(abstractTelemetryPayload : const TelemetryPackage&) : bool
   }
 
-  class HttpGatewayClient {
+  class HttpEdgeGatewayClient {
+    -communicationTransportDriver : ConnectivityDriver&
+    -serviceEndpointUrl : const char*
     -contentTypeHeader : const char*
-    +HttpGatewayClient(transportDriver : ConnectivityDriver&, targetEndpoint : const char*)
+    +HttpEdgeGatewayClient(transportDriver : ConnectivityDriver&,
+                           targetEndpoint : const char*)
     +sendTelemetryRecord(abstractTelemetryPayload : const TelemetryPackage&) : bool
   }
 
   class MqttGatewayClient {
+    -communicationTransportDriver : ConnectivityDriver&
     -mqttClient : PubSubClient
     -clientIdentifier : const char*
     -publishTopic : const char*
-    +MqttGatewayClient(transportDriver : ConnectivityDriver&, networkClient : Client&,
-                       brokerIpAddress : const char*, brokerPort : uint16_t,
-                       topic : const char*, deviceId : const char* = "ModestIotNode")
+    +MqttGatewayClient(transportDriver : ConnectivityDriver&,
+                       networkClient : Client&,
+                       brokerIpAddress : const char*,
+                       brokerPort : uint16_t,
+                       topic : const char*,
+                       deviceId : const char* = "ModestIotNode")
     +sendTelemetryRecord(abstractTelemetryPayload : const TelemetryPackage&) : bool
   }
 }
 
+' ─────────────────────────────────────────────
+'  USER APPLICATION (SKETCH EXAMPLE)
+' ─────────────────────────────────────────────
 package "User Application (Sketch)" #FFFDF3 {
+
   class CustomDevice <<example subclass>> {
     +on(event : Event) : void
     +handle(command : Command) : void
@@ -288,10 +374,13 @@ package "User Application (Sketch)" #FFFDF3 {
   }
 }
 
-EventHandler <|.. Sensor : implements
-EventHandler <|.. Device : implements
+' ─────────────────────────────────────────────
+'  INHERITANCE / REALISATION
+' ─────────────────────────────────────────────
+EventHandler  <|.. Sensor    : implements
+EventHandler  <|.. Device    : implements
 CommandHandler <|.. Actuator : implements
-CommandHandler <|.. Device : implements
+CommandHandler <|.. Device   : implements
 
 Sensor <|-- Button
 Sensor <|-- DhtSensor
@@ -309,30 +398,35 @@ ConnectivityDriver <|.. WiFiConnectivityDriver : implements
 
 Device <|-- CustomDevice
 
-Sensor "0..1" o--> EventHandler : eventHandler
+' ─────────────────────────────────────────────
+'  ASSOCIATIONS
+' ─────────────────────────────────────────────
+Sensor   "0..1" o--> EventHandler   : eventHandler
 Actuator "0..1" o--> CommandHandler : commandHandler
-Device "0..8" o--> EventHandler : scheduledSequences
+Device   "0..8" o--> EventHandler   : scheduledSequences
 
-GatewayClient <|-- HttpGatewayClient
-GatewayClient <|-- MqttGatewayClient
+EdgeGatewayClient     --> ConnectivityDriver : uses
+HttpEdgeGatewayClient --> ConnectivityDriver : uses
+MqttGatewayClient     --> ConnectivityDriver : uses
 
-GatewayClient --> ConnectivityDriver : uses
-HttpGatewayClient --> ConnectivityDriver : uses
-MqttGatewayClient --> ConnectivityDriver : uses
+EdgeGatewayClient     ..> TelemetryPackage : serializes
+HttpEdgeGatewayClient ..> TelemetryPackage : serializes
+MqttGatewayClient     ..> TelemetryPackage : serializes
 
-GatewayClient ..> TelemetryPackage : serializes
-HttpGatewayClient ..> TelemetryPackage : serializes
-MqttGatewayClient ..> TelemetryPackage : serializes
-
-MqttGatewayClient --> Client : uses socket
 MqttGatewayClient *-- PubSubClient : owns
+MqttGatewayClient --> Client       : uses socket
+
 WiFiConnectivityDriver ..> WiFiClient : allocates
-WiFiConnectivityDriver ..> Client : exposes
-GeolocationSensor *-- LocationData : caches
+WiFiConnectivityDriver ..> Client     : exposes
+
+GasSensor +-- GasSensor_OperatingMode
+GasSensor +-- GasSensor_GasType
+GasSensor +-- GasCalibrationParameters
+
+GeolocationSensor *-- LocationData   : caches
 GeolocationSensor *-- SoftwareSerial : owns
 
-CustomDevice *--> Sensor : owns
+CustomDevice *--> Sensor   : owns
 CustomDevice *--> Actuator : owns
 
 @enduml
-
