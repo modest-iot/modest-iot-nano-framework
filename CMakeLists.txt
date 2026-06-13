@@ -32,6 +32,7 @@ target_include_directories(clion_indexer PRIVATE
     "/Users/angelvelasquez/Documents/Arduino/libraries/EspSoftwareSerial/src"
     "/Users/angelvelasquez/Documents/Arduino/libraries/LiquidCrystal_I2C"
     "/Users/angelvelasquez/Documents/Arduino/libraries/DHT_sensor_library"
+    "/Users/angelvelasquez/Documents/Arduino/libraries/ArduinoJson/src"
 )
 
 # 5. Dedicated arduino-cli Target Pipeline
