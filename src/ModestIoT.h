@@ -24,6 +24,7 @@
 /// --- 2. LAYER-ISOLATED NETWORK COMPREHENSION ---
 #include "ConnectivityDriver.h"
 #include "WiFiConnectivityDriver.h"
+#include "BluetoothConnectivityDriver.h"
 #include "HttpGatewayClient.h"
 #include "MqttGatewayClient.h"
 
