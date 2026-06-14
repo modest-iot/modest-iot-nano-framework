@@ -54,6 +54,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         "${ARDUINO_LIBS}/DHT_sensor_library"
         "${ARDUINO_LIBS}/EspSoftwareSerial/src"
         "${ARDUINO_LIBS}/ESP32Servo/src"
+        "${ESP32_PLATFORM_BASE}/libraries/BluetoothSerial/src"
         "${ESP32_PLATFORM_BASE}/libraries/HTTPClient/src"
         "${ESP32_PLATFORM_BASE}/libraries/WiFi/src"
         "${ESP32_PLATFORM_BASE}/libraries/Network/src"
