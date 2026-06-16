@@ -1,7 +1,7 @@
 #ifndef GEOLOCATION_SENSOR_H
 #define GEOLOCATION_SENSOR_H
 
-#include <SoftwareSerial.h>
+#include <HardwareSerial.h>
 #include "LocationData.h"
 #include "Sensor.h"
 
@@ -12,8 +12,8 @@
 class GeolocationSensor : public Sensor {
 private:
     // Constants to avoid magic strings
-    static constexpr auto           GPGGA_SENTENCE_HEADER               = "$GPGGA";
-    static constexpr auto           GPRMC_SENTENCE_HEADER               = "$GPRMC";
+    static constexpr char           GPGGA_SENTENCE_HEADER[]             = "$GPGGA";
+    static constexpr char           GPRMC_SENTENCE_HEADER[]             = "$GPRMC";
     static constexpr auto           NMEA_DELIMITER                      = ",";
     static constexpr int            MAX_NMEA_SIZE                       = 82;
     static constexpr int            NMEA_HEADER_LENGTH                  = 6;
@@ -28,7 +28,7 @@ private:
     static constexpr int            PROPAGATION_SUPPRESSION_IDENTIFIER  = -1;
 
     int transmitGpioPin;       ///< GPIO pin used for UART transmission.
-    SoftwareSerial gpsSerial;  ///< Software serial interface for GPS.
+    HardwareSerial& gpsSerial; ///< Reference to the hardware serial interface for GPS.
     
     char nmeaBuffer[MAX_NMEA_SIZE];
     int bufferIndex;
@@ -44,8 +44,9 @@ private:
 
     /**
      * @brief Dispatches the sentence to specific parser handlers.
+     * @return True if a valid sentence was parsed, false otherwise.
      */
-    void parseNmeaSentence(char* sentence);
+    bool parseNmeaSentence(char* sentence);
     
     /**
      * @brief Parses $GPGGA (Fix Data) sentence.
@@ -60,28 +61,28 @@ private:
     /**
      * @brief Helper to extract the next token from the NMEA sentence.
      */
-    char* getNextToken();
+    static char* getNextToken();
 
     /**
      * @brief Helper to extract the next token and convert to float.
      */
-    float getNextTokenAsFloat();
+    static float getNextTokenAsFloat();
 
     /**
      * @brief Helper to extract the next token and convert to int.
      */
-    int getNextTokenAsInt();
+    static int getNextTokenAsInt();
 
     /**
      * @brief Converts NMEA coordinate format (DDMM.MMMM) to decimal degrees.
      */
-    float convertToDecimalDegrees(float rawCoordinate, char direction);
+    static float convertToDecimalDegrees(float rawCoordinate, char direction);
 
 protected:
     void processEvent(Event& event) override;
 
 public:
-    GeolocationSensor(int receiveGpioPin, int transmitGpioPin, long baudRate = 9600, EventHandler* parentHandler = nullptr);
+    GeolocationSensor(HardwareSerial& serial, int receiveGpioPin, int transmitGpioPin, long baudRate = 9600, EventHandler* parentHandler = nullptr);
 
     /**
      * @brief Returns the full navigation state.
