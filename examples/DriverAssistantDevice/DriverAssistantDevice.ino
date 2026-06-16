@@ -10,7 +10,7 @@
 
 // Pin definitions
 
-static const int GPS_RECEIVE_PIN    = 16;
+static const int GPS_RX_PIN         = 16;
 static const int GPS_TX_PIN         = 17;
 static const int FRONT_TRIGGER_PIN  = 4;
 static const int FRONT_ECHO_PIN     = 5;
