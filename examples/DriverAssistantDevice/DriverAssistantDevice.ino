@@ -71,19 +71,24 @@ private:
     void updateStatusDisplay() {
         char locationStatusBuffer[17];
         char measureStatusBuffer[17];
-        
+
         // Speed in km/h: knots * factor
         float speedInKph = lastLocation.speedInKnots * KNOTS_TO_KPH_CONVERSION_FACTOR;
-        
+
         if (lastLocation.fixQuality == 0) {
-            snprintf(locationStatusBuffer, sizeof(locationStatusBuffer), "No GPS Fix");
-        } else {
-            snprintf(locationStatusBuffer, sizeof(locationStatusBuffer), "Pos:%.1f,%.1f",
-                lastLocation.latitudeInDegrees, lastLocation.longitudeInDegrees);
-        }
-        
-        snprintf(measureStatusBuffer, sizeof(measureStatusBuffer), "S:%.1f F:%.1fm R:%.1fm",
-            speedInKph, frontDistanceInMeters, rearDistanceInMeters);
+        snprintf(locationStatusBuffer, sizeof(locationStatusBuffer), "No GPS Fix");
+    } else {
+        // snprintf(locationStatusBuffer, sizeof(locationStatusBuffer), "Pos:%.1f,%.1f",
+        //    lastLocation.latitudeInDegrees, lastLocation.longitudeInDegrees);
+        snprintf(locationStatusBuffer, sizeof(locationStatusBuffer), "S:%.1fKmph", speedInKph);
+        // Show additional information by console
+        Serial.print(F("Latitude: ")); Serial.println(lastLocation.latitudeInDegrees, 6);
+        Serial.print(F("Longitude: "));Serial.println(lastLocation.longitudeInDegrees, 6);
+        Serial.print(F("Milliseconds: "));Serial.println(lastLocation.milliseconds, 6);
+    }
+
+        snprintf(measureStatusBuffer, sizeof(measureStatusBuffer), "F:%.1fm R:%.1fm",
+        frontDistanceInMeters, rearDistanceInMeters);
 
         statusDisplay.setLineBuffer(0, locationStatusBuffer);
         statusDisplay.setLineBuffer(1, measureStatusBuffer);
