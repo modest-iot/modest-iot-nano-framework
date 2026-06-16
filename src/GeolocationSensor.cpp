@@ -57,21 +57,22 @@ bool GeolocationSensor::parseNmeaSentence(char* sentence) {
 
 void GeolocationSensor::parseGgaSentence(char* sentence) {
     // $GPGGA,Time,Lat,N/S,Lon,E/W,FixQuality,Satellites,HDOP,Alt,M,GeoidSep,M,Age,RefStation
-    strtok(sentence, NMEA_DELIMITER); // Skip ID
-    getNextToken(); // Skip Time
+    char* saveptr;
+    strtok_r(sentence, NMEA_DELIMITER, &saveptr); // Skip ID
+    getNextToken(&saveptr); // Skip Time
     
-    float rawLatitude = getNextTokenAsFloat();
-    char* latitudeDirectionToken = getNextToken();
+    float rawLatitude = getNextTokenAsFloat(&saveptr);
+    char* latitudeDirectionToken = getNextToken(&saveptr);
     char latitudeDirection = (latitudeDirectionToken != nullptr) ? latitudeDirectionToken[0] : NMEA_NORTH;
     
-    float rawLongitude = getNextTokenAsFloat();
-    char* longitudeDirectionToken = getNextToken();
+    float rawLongitude = getNextTokenAsFloat(&saveptr);
+    char* longitudeDirectionToken = getNextToken(&saveptr);
     char longitudeDirection = (longitudeDirectionToken != nullptr) ? longitudeDirectionToken[0] : NMEA_EAST;
     
-    cachedLocation.fixQuality = getNextTokenAsInt();
-    cachedLocation.satellitesTracked = getNextTokenAsInt();
-    cachedLocation.horizontalDilutionOfPrecision = getNextTokenAsFloat();
-    cachedLocation.altitudeInMeters = getNextTokenAsFloat();
+    cachedLocation.fixQuality = getNextTokenAsInt(&saveptr);
+    cachedLocation.satellitesTracked = getNextTokenAsInt(&saveptr);
+    cachedLocation.horizontalDilutionOfPrecision = getNextTokenAsFloat(&saveptr);
+    cachedLocation.altitudeInMeters = getNextTokenAsFloat(&saveptr);
 
     cachedLocation.latitudeInDegrees = convertToDecimalDegrees(rawLatitude, latitudeDirection);
     cachedLocation.longitudeInDegrees = convertToDecimalDegrees(rawLongitude, longitudeDirection);
@@ -79,9 +80,10 @@ void GeolocationSensor::parseGgaSentence(char* sentence) {
 
 void GeolocationSensor::parseRmcSentence(char* sentence) {
     // $GPRMC,Time,Status,Lat,N/S,Lon,E/W,Speed,Course,Date,...
-    strtok(sentence, NMEA_DELIMITER); // Skip ID
-    char* timeToken = getNextToken();
-    char* statusToken = getNextToken();
+    char* saveptr;
+    strtok_r(sentence, NMEA_DELIMITER, &saveptr); // Skip ID
+    char* timeToken = getNextToken(&saveptr);
+    char* statusToken = getNextToken(&saveptr);
     
     cachedLocation.isDataValid = (statusToken != nullptr && statusToken[0] == NMEA_VALID_STATUS);
     
@@ -102,15 +104,15 @@ void GeolocationSensor::parseRmcSentence(char* sentence) {
         if (char* dot = strchr(timeToken, '.')) cachedLocation.milliseconds = static_cast<int>(strtol(dot + 1, nullptr, 10));
     }
     
-    getNextToken(); // Lat
-    getNextToken(); // N/S
-    getNextToken(); // Lon
-    getNextToken(); // E/W
+    getNextToken(&saveptr); // Lat
+    getNextToken(&saveptr); // N/S
+    getNextToken(&saveptr); // Lon
+    getNextToken(&saveptr); // E/W
     
-    cachedLocation.speedInKnots = getNextTokenAsFloat();
-    cachedLocation.courseInDegrees = getNextTokenAsFloat();
+    cachedLocation.speedInKnots = getNextTokenAsFloat(&saveptr);
+    cachedLocation.courseInDegrees = getNextTokenAsFloat(&saveptr);
     
-    char* dateToken = getNextToken();
+    char* dateToken = getNextToken(&saveptr);
     // Date (DDMMYY)
     if (dateToken != nullptr) {
         char buffer[TIME_DATE_PART_LENGTH + 1];
@@ -135,17 +137,17 @@ float GeolocationSensor::convertToDecimalDegrees(float rawCoordinate, char direc
     return decimal;
 }
 
-char* GeolocationSensor::getNextToken() {
-    return strtok(nullptr, NMEA_DELIMITER);
+char* GeolocationSensor::getNextToken(char** saveptr) {
+    return strtok_r(nullptr, NMEA_DELIMITER, saveptr);
 }
 
-float GeolocationSensor::getNextTokenAsFloat() {
-    char* token = getNextToken();
+float GeolocationSensor::getNextTokenAsFloat(char** saveptr) {
+    char* token = getNextToken(saveptr);
     return (token != nullptr) ? static_cast<float>(strtod(token, nullptr)) : 0.0f;
 }
 
-int GeolocationSensor::getNextTokenAsInt() {
-    char* token = getNextToken();
+int GeolocationSensor::getNextTokenAsInt(char** saveptr) {
+    char* token = getNextToken(saveptr);
     return (token != nullptr) ? static_cast<int>(strtol(token, nullptr, 10)) : 0;
 }
 

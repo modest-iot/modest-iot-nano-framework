@@ -61,17 +61,17 @@ private:
     /**
      * @brief Helper to extract the next token from the NMEA sentence.
      */
-    static char* getNextToken();
+    static char* getNextToken(char** saveptr);
 
     /**
      * @brief Helper to extract the next token and convert to float.
      */
-    static float getNextTokenAsFloat();
+    static float getNextTokenAsFloat(char** saveptr);
 
     /**
      * @brief Helper to extract the next token and convert to int.
      */
-    static int getNextTokenAsInt();
+    static int getNextTokenAsInt(char** saveptr);
 
     /**
      * @brief Converts NMEA coordinate format (DDMM.MMMM) to decimal degrees.

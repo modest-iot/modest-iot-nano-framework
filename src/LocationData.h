@@ -1,6 +1,8 @@
 #ifndef LOCATION_DATA_H
 #define LOCATION_DATA_H
 
+#include <cmath>
+
 /**
  * @brief Comprehensive container for GPS navigation data.
  * @ingroup sensors_module
@@ -38,14 +40,14 @@ struct LocationData {
      * @return True if all fields are identical, false otherwise.
      */
     bool operator==(const LocationData& other) const {
-        return (latitudeInDegrees == other.latitudeInDegrees &&
-                longitudeInDegrees == other.longitudeInDegrees &&
-                altitudeInMeters == other.altitudeInMeters &&
-                speedInKnots == other.speedInKnots &&
-                courseInDegrees == other.courseInDegrees &&
+        return (floatEquals(latitudeInDegrees, other.latitudeInDegrees) &&
+                floatEquals(longitudeInDegrees, other.longitudeInDegrees) &&
+                floatEquals(altitudeInMeters, other.altitudeInMeters) &&
+                floatEquals(speedInKnots, other.speedInKnots) &&
+                floatEquals(courseInDegrees, other.courseInDegrees) &&
                 fixQuality == other.fixQuality &&
                 satellitesTracked == other.satellitesTracked &&
-                horizontalDilutionOfPrecision == other.horizontalDilutionOfPrecision &&
+                floatEquals(horizontalDilutionOfPrecision, other.horizontalDilutionOfPrecision) &&
                 year == other.year &&
                 month == other.month &&
                 day == other.day &&
@@ -54,6 +56,11 @@ struct LocationData {
                 second == other.second &&
                 milliseconds == other.milliseconds &&
                 isDataValid == other.isDataValid);
+    }
+
+private:
+    static bool floatEquals(float a, float b) {
+        return std::fabs(a - b) < 0.0001f;
     }
 };
 
