@@ -11,6 +11,8 @@ LoadCellAmplifier::LoadCellAmplifier(int dataGpioPin, int clockGpioPin, float mi
       maxWeightInGrams(maxWeightInGrams),
       minRawValue(minRawValue),
       maxRawValue(maxRawValue),
+      tareOffsetRaw(0),
+      gainPulses(1),
       filterDepth((filterDepth > MAX_FILTER_SIZE) ? MAX_FILTER_SIZE : (filterDepth < 1 ? 1 : filterDepth)) {
     pinMode(dataGpioPin, INPUT);
     pinMode(clockGpioPin, OUTPUT);
@@ -98,17 +100,97 @@ long LoadCellAmplifier::readRawValue() const {
         delayMicroseconds(HX711_CLOCK_PULSE_DELAY_US);
     }
 
-    // HX711 pulse for gain/channel selection (here: gain 128)
-    digitalWrite(clockGpioPin, HIGH);
-    delayMicroseconds(HX711_CLOCK_PULSE_DELAY_US);
-    digitalWrite(clockGpioPin, LOW);
+    // HX711 pulse for gain/channel selection
+    for (int i = 0; i < gainPulses; ++i) {
+        digitalWrite(clockGpioPin, HIGH);
+        delayMicroseconds(HX711_CLOCK_PULSE_DELAY_US);
+        digitalWrite(clockGpioPin, LOW);
+        delayMicroseconds(HX711_CLOCK_PULSE_DELAY_US);
+    }
 
     // Sign extension for 24-bit to 32-bit (if negative)
     if (value & HX711_SIGN_BIT_MASK) {
         value |= HX711_SIGN_EXTENSION_MASK;
     }
     
-    return value;
+    return value - tareOffsetRaw;
+}
+
+void LoadCellAmplifier::setGain(int gain) {
+    if (gain == 128) gainPulses = 1;
+    else if (gain == 32) gainPulses = 2;
+    reset();
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void LoadCellAmplifier::powerDown()  {
+    digitalWrite(clockGpioPin, HIGH);
+    delayMicroseconds(100); // Datasheet says > 60us
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void LoadCellAmplifier::powerUp() {
+    digitalWrite(clockGpioPin, LOW);
+}
+
+void LoadCellAmplifier::tare() {
+    // Current raw value (already tared by offset)
+    // To set current weight to 0, I need to add current reading as offset
+    long currentRaw = readRawValue() + tareOffsetRaw;
+    if (currentRaw != -1) {
+        tareOffsetRaw = currentRaw;
+        reset();
+    }
+}
+
+bool LoadCellAmplifier::calibrate(float knownWeightInGrams) {
+    if (!isValidWeight(knownWeightInGrams)) {
+        return false;
+    }
+
+    int successfulSamples = 0;
+    const long averageRaw = calculateAverageRawValue(successfulSamples);
+    if (successfulSamples == 0) {
+        return false;
+    }
+
+    if (!isCalibrationStable(averageRaw)) {
+        return false;
+    }
+
+    applyCalibration(knownWeightInGrams, averageRaw);
+    reset();
+    return true;
+}
+
+bool LoadCellAmplifier::isValidWeight(float weightInGrams) {
+    return weightInGrams > 0;
+}
+
+long LoadCellAmplifier::calculateAverageRawValue(int& successfulSamples) const {
+    long totalRaw = 0;
+    successfulSamples = 0;
+    for (int i = 0; i < CALIBRATION_SAMPLES; ++i) {
+        const long currentRaw = readRawValue() + tareOffsetRaw;
+        if (currentRaw != -1) {
+            totalRaw += currentRaw;
+            successfulSamples++;
+        }
+    }
+
+    if (successfulSamples == 0) {
+        return 0;
+    }
+    return totalRaw / successfulSamples;
+}
+
+bool LoadCellAmplifier::isCalibrationStable(long averageRawValue) const {
+    return std::abs(averageRawValue - tareOffsetRaw) > CALIBRATION_STABILITY_THRESHOLD;
+}
+
+void LoadCellAmplifier::applyCalibration(float knownWeightInGrams, long rawValue) {
+    maxRawValue = rawValue;
+    maxWeightInGrams = knownWeightInGrams;
 }
 
 float LoadCellAmplifier::getWeightInGrams() const {

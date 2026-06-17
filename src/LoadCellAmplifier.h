@@ -30,9 +30,13 @@ private:
     float   maxWeightInGrams; ///< Maximum weight value for the LoadCell.
     long    minRawValue; ///< Minimum raw ADC value for calibration.
     long    maxRawValue; ///< Maximum raw ADC value for calibration.
+    long    tareOffsetRaw; ///< Offset for taring the sensor.
+    int     gainPulses; ///< Number of pulses for gain/channel selection.
 
     static constexpr int    PROPAGATION_SUPPRESSION_IDENTIFIER  = -1; ///< Identifier used to suppress error events.
     static constexpr float  WEIGHT_CHANGE_EPSILON               = 0.1f; ///< Epsilon for weight change detection.
+    static constexpr int    CALIBRATION_STABILITY_THRESHOLD     = 20; ///< Threshold for calibration stability.
+    static constexpr int    CALIBRATION_SAMPLES                 = 10; ///< Number of samples for calibration.
     static constexpr int    HX711_BIT_COUNT                     = 24; ///< Number of bits to read from HX711.
     static constexpr int    HX711_CLOCK_PULSE_DELAY_US          = 1; ///< Delay in microseconds for clock pulses.
     static constexpr long   HX711_SIGN_BIT_MASK                 = 0x800000; ///< Mask for 24-bit sign bit.
@@ -71,6 +75,34 @@ private:
      * @return Filtered raw ADC value.
      */
     long applyMovingAverageFilter(long rawValue);
+
+    /**
+     * @brief Checks if the weight value is valid for calibration.
+     * @param weightInGrams Weight in grams.
+     * @return True if valid, false otherwise.
+     */
+    [[nodiscard]] static bool isValidWeight(float weightInGrams);
+
+    /**
+     * @brief Computes the average raw value from calibration samples.
+     * @param successfulSamples Reference to store the number of successful samples.
+     * @return The average raw value.
+     */
+    long calculateAverageRawValue(int& successfulSamples) const;
+
+    /**
+     * @brief Checks if the calibration raw value is stable.
+     * @param averageRawValue The average raw value.
+     * @return True if stable, false otherwise.
+     */
+    [[nodiscard]] bool isCalibrationStable(long averageRawValue) const;
+
+    /**
+     * @brief Applies the calibration parameters.
+     * @param knownWeightInGrams The known weight.
+     * @param rawValue The raw ADC value.
+     */
+    void applyCalibration(float knownWeightInGrams, long rawValue);
 
 protected:
     /**
@@ -115,6 +147,34 @@ public:
      * @brief Resets the sensor, clearing cached measures, and re-calibrating.
      */
     void reset();
+
+    /**
+     * @brief Sets the gain and channel for the HX711.
+     * @param gain Gain value (128 or 32).
+     */
+    void setGain(int gain);
+
+    /**
+     * @brief Powers down the HX711 sensor.
+     */
+    void powerDown();
+
+    /**
+     * @brief Powers up the HX711 sensor.
+     */
+    void powerUp();
+
+    /**
+     * @brief Tares the sensor, setting the current weight to zero.
+     */
+    void tare();
+
+    /**
+     * @brief Calibrates the sensor with a known weight.
+     * @param knownWeightInGrams Weight currently on the scale in grams.
+     * @return True if calibration successful, false otherwise.
+     */
+    bool calibrate(float knownWeightInGrams);
 };
 
 /** @} */ // End of Sensors: Environmental & Mass
