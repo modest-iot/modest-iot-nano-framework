@@ -61,8 +61,8 @@ long LoadCellAmplifier::applyMovingAverageFilter(long rawValue) {
     rawValueBuffer[bufferIndex] = rawValue;
     bufferIndex = (bufferIndex + 1) % FILTER_SIZE;
     long sum = 0;
-    for (int i = 0; i < FILTER_SIZE; ++i) {
-        sum += rawValueBuffer[i];
+    for (const auto value : rawValueBuffer) {
+        sum += value;
     }
     return sum / FILTER_SIZE;
 }
@@ -71,8 +71,8 @@ void LoadCellAmplifier::reset() {
     cachedWeightInGrams = INITIAL_CACHED_WEIGHT;
     lastNotifiedWeightInGrams = INITIAL_LAST_NOTIFIED_WEIGHT;
     bufferIndex = 0;
-    for (int i = 0; i < FILTER_SIZE; ++i) {
-        rawValueBuffer[i] = 0;
+    for (auto& value : rawValueBuffer) {
+        value = 0;
     }
 }
 

@@ -42,8 +42,8 @@ private:
     static constexpr int    FILTER_SIZE                         = 5; ///< Size of the moving average filter.
     static constexpr unsigned long READ_TIMEOUT_MS              = 100; ///< Timeout for sensor readiness.
 
-    long    rawValueBuffer[FILTER_SIZE]; ///< Buffer for moving average filter.
-    int     bufferIndex; ///< Current index for the filter buffer.
+    long    rawValueBuffer[FILTER_SIZE]{}; ///< Buffer for moving average filter.
+    int     bufferIndex{}; ///< Current index for the filter buffer.
 
     /**
      * @brief Performs the HX711 bit-banging protocol to read the 24-bit raw value.
