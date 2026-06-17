@@ -39,11 +39,12 @@ private:
     static constexpr long   HX711_SIGN_EXTENSION_MASK           = 0xFF000000; ///< Mask for sign extension to 32-bit.
     static constexpr float  INITIAL_CACHED_WEIGHT               = 0.0f; ///< Initial value for cached weight.
     static constexpr float  INITIAL_LAST_NOTIFIED_WEIGHT        = -1.0f; ///< Initial value for the last notified weight.
-    static constexpr int    FILTER_SIZE                         = 5; ///< Size of the moving average filter.
+    static constexpr int    MAX_FILTER_SIZE                     = 10; ///< Maximum size of the moving average filter.
     static constexpr unsigned long READ_TIMEOUT_MS              = 100; ///< Timeout for sensor readiness.
 
-    long    rawValueBuffer[FILTER_SIZE]{}; ///< Buffer for moving average filter.
+    long    rawValueBuffer[MAX_FILTER_SIZE]{}; ///< Buffer for moving average filter.
     int     bufferIndex{}; ///< Current index for the filter buffer.
+    int     filterDepth; ///< Current depth of the moving average filter.
 
     /**
      * @brief Performs the HX711 bit-banging protocol to read the 24-bit raw value.
@@ -87,9 +88,10 @@ public:
      * @param maxWeightInGrams Maximum weight value in grams.
      * @param minRawValue Minimum raw ADC value for calibration.
      * @param maxRawValue Maximum raw ADC value for calibration.
+     * @param filterDepth Depth of the moving average filter (default: 5).
      * @param parentHandler Optional upstream handler for propagated events.
      */
-    LoadCellAmplifier(int dataGpioPin, int clockGpioPin, float minWeightInGrams, float maxWeightInGrams, long minRawValue, long maxRawValue, EventHandler* parentHandler = nullptr);
+    LoadCellAmplifier(int dataGpioPin, int clockGpioPin, float minWeightInGrams, float maxWeightInGrams, long minRawValue, long maxRawValue, int filterDepth = 5, EventHandler* parentHandler = nullptr);
 
     /**
      * @brief Returns the most recent successful weight reading.

@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include <cmath>
 
-LoadCellAmplifier::LoadCellAmplifier(int dataGpioPin, int clockGpioPin, float minWeightInGrams, float maxWeightInGrams, long minRawValue, long maxRawValue, EventHandler* parentHandler)
+LoadCellAmplifier::LoadCellAmplifier(int dataGpioPin, int clockGpioPin, float minWeightInGrams, float maxWeightInGrams, long minRawValue, long maxRawValue, int filterDepth, EventHandler* parentHandler)
     : Sensor(dataGpioPin, parentHandler),
       clockGpioPin(clockGpioPin),
       cachedWeightInGrams(INITIAL_CACHED_WEIGHT),
@@ -10,7 +10,8 @@ LoadCellAmplifier::LoadCellAmplifier(int dataGpioPin, int clockGpioPin, float mi
       minWeightInGrams(minWeightInGrams),
       maxWeightInGrams(maxWeightInGrams),
       minRawValue(minRawValue),
-      maxRawValue(maxRawValue) {
+      maxRawValue(maxRawValue),
+      filterDepth((filterDepth > MAX_FILTER_SIZE) ? MAX_FILTER_SIZE : (filterDepth < 1 ? 1 : filterDepth)) {
     pinMode(dataGpioPin, INPUT);
     pinMode(clockGpioPin, OUTPUT);
     reset();
@@ -59,20 +60,20 @@ bool LoadCellAmplifier::changeDetected() {
 
 long LoadCellAmplifier::applyMovingAverageFilter(long rawValue) {
     rawValueBuffer[bufferIndex] = rawValue;
-    bufferIndex = (bufferIndex + 1) % FILTER_SIZE;
+    bufferIndex = (bufferIndex + 1) % filterDepth;
     long sum = 0;
-    for (const auto value : rawValueBuffer) {
-        sum += value;
+    for (int i = 0; i < filterDepth; ++i) {
+        sum += rawValueBuffer[i];
     }
-    return sum / FILTER_SIZE;
+    return sum / filterDepth;
 }
 
 void LoadCellAmplifier::reset() {
     cachedWeightInGrams = INITIAL_CACHED_WEIGHT;
     lastNotifiedWeightInGrams = INITIAL_LAST_NOTIFIED_WEIGHT;
     bufferIndex = 0;
-    for (auto& value : rawValueBuffer) {
-        value = 0;
+    for (int i = 0; i < filterDepth; ++i) {
+        rawValueBuffer[i] = 0;
     }
 }
 
