@@ -19,14 +19,22 @@ LoadCellAmplifier::LoadCellAmplifier(int dataGpioPin, int clockGpioPin, float mi
 void LoadCellAmplifier::processEvent(Event& event) {
     if (event.identifier == MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER) {
         const long rawValue = readRawValue();
-        cachedWeightInGrams = calculateWeight(rawValue);
+        if (rawValue == -1) {
+            // Handle error, e.g., suppress event
+            event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
+            return;
+        }
 
-        event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
+        // Apply moving average filter
+        const long filteredRawValue = applyMovingAverageFilter(rawValue);
+        cachedWeightInGrams = calculateWeight(filteredRawValue);
 
         if (changeDetected()) {
-            // Mutates to the exact same base notification event!
             event = Event(DATA_READ_EVENT_IDENTIFIER, pin);
+            return;
         }
+
+        event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
     }
 }
 
@@ -49,17 +57,32 @@ bool LoadCellAmplifier::changeDetected() {
     return false;
 }
 
+long LoadCellAmplifier::applyMovingAverageFilter(long rawValue) {
+    rawValueBuffer[bufferIndex] = rawValue;
+    bufferIndex = (bufferIndex + 1) % FILTER_SIZE;
+    long sum = 0;
+    for (int i = 0; i < FILTER_SIZE; ++i) {
+        sum += rawValueBuffer[i];
+    }
+    return sum / FILTER_SIZE;
+}
+
 void LoadCellAmplifier::reset() {
     cachedWeightInGrams = INITIAL_CACHED_WEIGHT;
     lastNotifiedWeightInGrams = INITIAL_LAST_NOTIFIED_WEIGHT;
+    bufferIndex = 0;
+    for (int i = 0; i < FILTER_SIZE; ++i) {
+        rawValueBuffer[i] = 0;
+    }
 }
 
 long LoadCellAmplifier::readRawValue() const {
     // Wait for the HX711 to become ready (data line goes low).
-    // In a non-blocking context, we might need a timeout.
-    // For now, this is a simplified blocking wait.
+    const unsigned long startTime = millis();
     while (digitalRead(pin) != LOW) {
-        // yield(); // Allow other tasks to run if necessary
+        if (millis() - startTime > READ_TIMEOUT_MS) {
+            return -1; // Timeout
+        }
     }
 
     long value = 0;

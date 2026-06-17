@@ -39,6 +39,11 @@ private:
     static constexpr long   HX711_SIGN_EXTENSION_MASK           = 0xFF000000; ///< Mask for sign extension to 32-bit.
     static constexpr float  INITIAL_CACHED_WEIGHT               = 0.0f; ///< Initial value for cached weight.
     static constexpr float  INITIAL_LAST_NOTIFIED_WEIGHT        = -1.0f; ///< Initial value for the last notified weight.
+    static constexpr int    FILTER_SIZE                         = 5; ///< Size of the moving average filter.
+    static constexpr unsigned long READ_TIMEOUT_MS              = 100; ///< Timeout for sensor readiness.
+
+    long    rawValueBuffer[FILTER_SIZE]; ///< Buffer for moving average filter.
+    int     bufferIndex; ///< Current index for the filter buffer.
 
     /**
      * @brief Performs the HX711 bit-banging protocol to read the 24-bit raw value.
@@ -58,6 +63,13 @@ private:
      * @return True if weight changed significantly, false otherwise.
      */
     bool changeDetected();
+
+    /**
+     * @brief Applies a moving average filter to the raw ADC value.
+     * @param rawValue Raw ADC value from HX711.
+     * @return Filtered raw ADC value.
+     */
+    long applyMovingAverageFilter(long rawValue);
 
 protected:
     /**
