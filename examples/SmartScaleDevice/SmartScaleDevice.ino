@@ -9,39 +9,39 @@
 #include <ModestIoT.h>
 
 // Pin definitions
-static const int FRONT_LEFT_LOAD_CELL_DATA_PIN = 4;
-static const int FRONT_LEFT_LOAD_CELL_CLOCK_PIN = 5;
-static const int FRONT_RIGHT_LOAD_CELL_DATA_PIN = 18;
-static const int FRONT_RIGHT_LOAD_CELL_CLOCK_PIN = 19;
-static const int REAR_LEFT_LOAD_CELL_DATA_PIN = 21;
-static const int REAR_LEFT_LOAD_CELL_CLOCK_PIN = 22;
-static const int REAR_RIGHT_LOAD_CELL_DATA_PIN = 23;
-static const int REAR_RIGHT_LOAD_CELL_CLOCK_PIN = 25;
-static const int LCD_I2C_ADDRESS      = 0x27;
+static const int            FRONT_LEFT_LOAD_CELL_DATA_PIN   = 4;
+static const int            FRONT_LEFT_LOAD_CELL_CLOCK_PIN  = 5;
+static const int            FRONT_RIGHT_LOAD_CELL_DATA_PIN  = 18;
+static const int            FRONT_RIGHT_LOAD_CELL_CLOCK_PIN = 19;
+static const int            REAR_LEFT_LOAD_CELL_DATA_PIN    = 21;
+static const int            REAR_LEFT_LOAD_CELL_CLOCK_PIN   = 22;
+static const int            REAR_RIGHT_LOAD_CELL_DATA_PIN   = 23;
+static const int            REAR_RIGHT_LOAD_CELL_CLOCK_PIN  = 25;
+static const int            LCD_I2C_ADDRESS                 = 0x27;
 
 // Configuration constants
-static const float MINIMUM_WEIGHT_IN_GRAMS = 0.0f;
-static const float MAXIMUM_WEIGHT_IN_GRAMS = 50000.0f; // 50 Kg per load cell
-static const long MINIMUM_RAW_VALUE = 0;
-static const long MAXIMUM_RAW_VALUE = 1000000;
+static const float          MINIMUM_WEIGHT_IN_GRAMS         = 0.0f;
+static const float          MAXIMUM_WEIGHT_IN_GRAMS         = 50000.0f; // 50 Kg per load cell
+static const long           MINIMUM_RAW_VALUE               = 0;
+static const long           MAXIMUM_RAW_VALUE               = 1000000;
 
 // LCD dimensions
-static const int LCD_COLUMNS    = 16;
-static const int LCD_ROWS       = 2;
+static const int            LCD_COLUMNS                     = 16;
+static const int            LCD_ROWS                        = 2;
 
 // Timing constants
-static const unsigned long SERIAL_BAUD_RATE = 115200;
+static const unsigned long  SERIAL_BAUD_RATE                = 115200;
 
 // Asynchronous engine configuration
-static const int            ASYNC_ENGINE_QUEUE_DEPTH    = 16;
-static const unsigned long  SAMPLING_INTERVAL_MS        = 500;
-static const unsigned long  MAIN_LOOP_DELAY_MS          = 60000;
-static const int            TIMER_GROUP_INDEX           = 0;
+static const int            ASYNC_ENGINE_QUEUE_DEPTH        = 16;
+static const unsigned long  SAMPLING_INTERVAL_MS            = 500;
+static const unsigned long  MAIN_LOOP_DELAY_MS              = 60000;
+static const int            TIMER_GROUP_INDEX               = 0;
 
-static const char* STATUS_DISPLAY_TITLE = "Smart Scale";
-static const char* STATUS_DISPLAY_CALIBRATING = "Calibrating...";
-static const char* WEIGHT_DISPLAY_FORMAT = "Weight: %.2f Kg";
-static const char* SYSTEM_BOOT_MESSAGE = "[System Boot] Smart Scale active.";
+static const char*          STATUS_DISPLAY_TITLE            = "Smart Scale";
+static const char*          STATUS_DISPLAY_CALIBRATING      = "Calibrating...";
+static const char*          WEIGHT_DISPLAY_FORMAT           = "Weight: %.2f Kg";
+static const char*          SYSTEM_BOOT_MESSAGE             = "[System Boot] Smart Scale active.";
 
 /**
  * @brief Smart Scale Device.
@@ -78,23 +78,32 @@ private:
     }
 
 public:
-    SmartScaleDevice(int frontLeftDataPin, int frontLeftClockPin, int frontRightDataPin, int frontRightClockPin, int rearLeftDataPin, int rearLeftClockPin, int rearRightDataPin, int rearRightClockPin, uint8_t lcdI2cAddress)
+    SmartScaleDevice(   int frontLeftDataPin,   int frontLeftClockPin,
+                        int frontRightDataPin,  int frontRightClockPin,
+                        int rearLeftDataPin,    int rearLeftClockPin,
+                        int rearRightDataPin,   int rearRightClockPin,
+                        uint8_t lcdI2cAddress)
         : Device(SAMPLING_INTERVAL_MS, TIMER_GROUP_INDEX),
-          frontLeftLoadCell(frontLeftDataPin, frontLeftClockPin, MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS, MINIMUM_RAW_VALUE, MAXIMUM_RAW_VALUE, 5, this),
-          frontRightLoadCell(frontRightDataPin, frontRightClockPin, MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS, MINIMUM_RAW_VALUE, MAXIMUM_RAW_VALUE, 5, this),
-          rearLeftLoadCell(rearLeftDataPin, rearLeftClockPin, MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS, MINIMUM_RAW_VALUE, MAXIMUM_RAW_VALUE, 5, this),
-          rearRightLoadCell(rearRightDataPin, rearRightClockPin, MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS, MINIMUM_RAW_VALUE, MAXIMUM_RAW_VALUE, 5, this),
+          frontLeftLoadCell(frontLeftDataPin,   frontLeftClockPin,  MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS,
+                            MINIMUM_RAW_VALUE,  MAXIMUM_RAW_VALUE, 5, this),
+          frontRightLoadCell(frontRightDataPin, frontRightClockPin, MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS,
+                            MINIMUM_RAW_VALUE, MAXIMUM_RAW_VALUE, 5, this),
+          rearLeftLoadCell(rearLeftDataPin,     rearLeftClockPin,   MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS,
+                            MINIMUM_RAW_VALUE, MAXIMUM_RAW_VALUE, 5, this),
+          rearRightLoadCell(rearRightDataPin,   rearRightClockPin,  MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS,
+                            MINIMUM_RAW_VALUE, MAXIMUM_RAW_VALUE, 5, this),
           statusDisplay(lcdI2cAddress, LCD_COLUMNS, LCD_ROWS, this),
           totalWeightInGrams(0.0f),
           isCalibrated(false)
     {
         initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
 
-        appendSensorToScheduler(&frontLeftLoadCell, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-        appendSensorToScheduler(&frontRightLoadCell, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-        appendSensorToScheduler(&rearLeftLoadCell, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-        appendSensorToScheduler(&rearRightLoadCell, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+        appendSensorToScheduler(&frontLeftLoadCell,     Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+        appendSensorToScheduler(&frontRightLoadCell,    Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+        appendSensorToScheduler(&rearLeftLoadCell,      Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+        appendSensorToScheduler(&rearRightLoadCell,     Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
+        updateStatusDisplay();
         calibrate();
     }
 
