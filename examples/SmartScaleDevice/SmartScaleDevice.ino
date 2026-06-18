@@ -24,6 +24,7 @@ static const float          MINIMUM_WEIGHT_IN_GRAMS         = 0.0f;
 static const float          MAXIMUM_WEIGHT_IN_GRAMS         = 50000.0f; // 50 Kg per load cell
 static const long           MINIMUM_RAW_VALUE               = 0;
 static const long           MAXIMUM_RAW_VALUE               = 1000000;
+static const int            LOAD_CELL_FILTER_DEPTH          = 5;
 
 // LCD dimensions
 static const int            LCD_COLUMNS                     = 16;
@@ -60,6 +61,15 @@ private:
     bool isCalibrated;
 
     /**
+     * @brief Converts weight from grams to kilograms.
+     * @param weightInGrams Weight in grams.
+     * @return Weight in kilograms.
+     */
+    inline float convertGramsToKilograms(float weightInGrams) const {
+        return weightInGrams / 1000.0f;
+    }
+
+    /**
      * @brief Internal state maintenance and LCD interface update.
      * Updates the status display with the total weight on the scale or calibration status.
      */
@@ -70,7 +80,7 @@ private:
             statusDisplay.setLineBuffer(0, STATUS_DISPLAY_TITLE);
             statusDisplay.setLineBuffer(1, STATUS_DISPLAY_CALIBRATING);
         } else {
-            snprintf(weightBuffer, sizeof(weightBuffer), WEIGHT_DISPLAY_FORMAT, totalWeightInGrams / 1000.0f);
+            snprintf(weightBuffer, sizeof(weightBuffer), WEIGHT_DISPLAY_FORMAT, convertGramsToKilograms(totalWeightInGrams));
             statusDisplay.setLineBuffer(0, STATUS_DISPLAY_TITLE);
             statusDisplay.setLineBuffer(1, weightBuffer);
         }
@@ -85,13 +95,13 @@ public:
                         uint8_t lcdI2cAddress)
         : Device(SAMPLING_INTERVAL_MS, TIMER_GROUP_INDEX),
           frontLeftLoadCell(frontLeftDataPin,   frontLeftClockPin,  MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS,
-                            MINIMUM_RAW_VALUE,  MAXIMUM_RAW_VALUE, 5, this),
+                            MINIMUM_RAW_VALUE,  MAXIMUM_RAW_VALUE, LOAD_CELL_FILTER_DEPTH, this),
           frontRightLoadCell(frontRightDataPin, frontRightClockPin, MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS,
-                            MINIMUM_RAW_VALUE, MAXIMUM_RAW_VALUE, 5, this),
+                            MINIMUM_RAW_VALUE, MAXIMUM_RAW_VALUE, LOAD_CELL_FILTER_DEPTH, this),
           rearLeftLoadCell(rearLeftDataPin,     rearLeftClockPin,   MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS,
-                            MINIMUM_RAW_VALUE, MAXIMUM_RAW_VALUE, 5, this),
+                            MINIMUM_RAW_VALUE, MAXIMUM_RAW_VALUE, LOAD_CELL_FILTER_DEPTH, this),
           rearRightLoadCell(rearRightDataPin,   rearRightClockPin,  MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS,
-                            MINIMUM_RAW_VALUE, MAXIMUM_RAW_VALUE, 5, this),
+                            MINIMUM_RAW_VALUE, MAXIMUM_RAW_VALUE, LOAD_CELL_FILTER_DEPTH, this),
           statusDisplay(lcdI2cAddress, LCD_COLUMNS, LCD_ROWS, this),
           totalWeightInGrams(0.0f),
           isCalibrated(false)
