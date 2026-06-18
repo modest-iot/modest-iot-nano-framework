@@ -11,12 +11,12 @@
 // Pin definitions
 static const int            FRONT_LEFT_LOAD_CELL_DATA_PIN   = 4;
 static const int            FRONT_LEFT_LOAD_CELL_CLOCK_PIN  = 5;
-static const int            FRONT_RIGHT_LOAD_CELL_DATA_PIN  = 18;
-static const int            FRONT_RIGHT_LOAD_CELL_CLOCK_PIN = 19;
-static const int            REAR_LEFT_LOAD_CELL_DATA_PIN    = 21;
-static const int            REAR_LEFT_LOAD_CELL_CLOCK_PIN   = 22;
-static const int            REAR_RIGHT_LOAD_CELL_DATA_PIN   = 23;
-static const int            REAR_RIGHT_LOAD_CELL_CLOCK_PIN  = 25;
+static const int            FRONT_RIGHT_LOAD_CELL_DATA_PIN  = 16;
+static const int            FRONT_RIGHT_LOAD_CELL_CLOCK_PIN = 17;
+static const int            REAR_LEFT_LOAD_CELL_DATA_PIN    = 26;
+static const int            REAR_LEFT_LOAD_CELL_CLOCK_PIN   = 27;
+static const int            REAR_RIGHT_LOAD_CELL_DATA_PIN   = 32;
+static const int            REAR_RIGHT_LOAD_CELL_CLOCK_PIN  = 33;
 static const int            LCD_I2C_ADDRESS                 = 0x27;
 
 // Configuration constants
