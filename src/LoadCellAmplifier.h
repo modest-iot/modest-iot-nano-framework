@@ -52,55 +52,55 @@ private:
 
     /**
      * @brief Performs the HX711 bit-banging protocol to read the 24-bit raw value.
-     * @return The 24-bit raw value read from the HX711.
+     * @return The 24-bit raw value read from the HX711, or -1 if a timeout occurs.
      */
     [[nodiscard]] long readRawValue() const;
 
     /**
-     * @brief Calculates the weight from the raw ADC value.
+     * @brief Calculates the weight from the raw ADC value using linear interpolation.
      * @param rawValue Raw ADC value from HX711.
      * @return Weight in grams.
      */
     [[nodiscard]] float calculateWeight(long rawValue) const;
 
     /**
-     * @brief Detects if the weight has changed significantly.
+     * @brief Detects if the weight change between the current and last notified reading exceeds the epsilon threshold.
      * @return True if weight changed significantly, false otherwise.
      */
     bool changeDetected();
 
     /**
-     * @brief Applies a moving average filter to the raw ADC value.
+     * @brief Applies a moving average filter to the raw ADC value to reduce noise.
      * @param rawValue Raw ADC value from HX711.
      * @return Filtered raw ADC value.
      */
     long applyMovingAverageFilter(long rawValue);
 
     /**
-     * @brief Checks if the weight value is valid for calibration.
+     * @brief Checks if the weight value is valid for calibration (must be positive).
      * @param weightInGrams Weight in grams.
      * @return True if valid, false otherwise.
      */
     [[nodiscard]] static bool isValidWeight(float weightInGrams);
 
     /**
-     * @brief Computes the average raw value from calibration samples.
-     * @param successfulSamples Reference to store the number of successful samples.
-     * @return The average raw value.
+     * @brief Computes the average raw ADC value from multiple calibration samples.
+     * @param successfulSamples Reference to store the number of successful samples collected.
+     * @return The average raw ADC value.
      */
     long calculateAverageRawValue(int& successfulSamples) const;
 
     /**
-     * @brief Checks if the calibration raw value is stable.
-     * @param averageRawValue The average raw value.
+     * @brief Checks if the calibration raw value is stable enough to be accepted.
+     * @param averageRawValue The average raw ADC value.
      * @return True if stable, false otherwise.
      */
     [[nodiscard]] bool isCalibrationStable(long averageRawValue) const;
 
     /**
-     * @brief Applies the calibration parameters.
-     * @param knownWeightInGrams The known weight.
-     * @param rawValue The raw ADC value.
+     * @brief Applies the calibration parameters based on a known weight and raw ADC value.
+     * @param knownWeightInGrams The known calibration weight.
+     * @param rawValue The corresponding raw ADC value.
      */
     void applyCalibration(float knownWeightInGrams, long rawValue);
 
@@ -114,14 +114,14 @@ protected:
 public:
     /**
      * @brief Constructs an HX711 load cell sensor wrapper.
-     * @param dataGpioPin Data pin connected to the HX711 Digital OUT.
-     * @param clockGpioPin Clock pin connected to the HX711 PD_SCK.
-     * @param minWeightInGrams Minimum weight value in grams.
-     * @param maxWeightInGrams Maximum weight value in grams.
-     * @param minRawValue Minimum raw ADC value for calibration.
-     * @param maxRawValue Maximum raw ADC value for calibration.
+     * @param dataGpioPin GPIO pin connected to the HX711 Data (DOUT) pin.
+     * @param clockGpioPin GPIO pin connected to the HX711 Clock (PD_SCK) pin.
+     * @param minWeightInGrams The lower bound for weight measurement in grams.
+     * @param maxWeightInGrams The upper bound for weight measurement in grams.
+     * @param minRawValue The raw ADC reading corresponding to minWeightInGrams.
+     * @param maxRawValue The raw ADC reading corresponding to maxWeightInGrams.
      * @param filterDepth Depth of the moving average filter (default: 5).
-     * @param parentHandler Optional upstream handler for propagated events.
+     * @param parentHandler Pointer to the parent handler that manages device events.
      */
     LoadCellAmplifier(int dataGpioPin, int clockGpioPin, float minWeightInGrams, float maxWeightInGrams, long minRawValue, long maxRawValue, int filterDepth = 5, EventHandler* parentHandler = nullptr);
 
