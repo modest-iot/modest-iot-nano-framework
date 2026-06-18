@@ -39,6 +39,7 @@
 #include "GasSensor.h"
 #include "Buzzer.h"
 #include "GeolocationSensor.h"
+#include "LoadCellAmplifier.h"
 
 
 #endif // MODEST_IOT_H
