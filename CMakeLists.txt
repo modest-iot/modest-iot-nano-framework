@@ -49,6 +49,7 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC IRAM_ATTR= __xtensa__=1 __XTEN
 target_include_directories(${PROJECT_NAME} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
         "${ARDUINO_LIBS}/ArduinoJson/src"
+        "${ARDUINO_LIBS}/HX711_Arduino_Library/src"
         "${ARDUINO_LIBS}/PubSubClient/src"
         "${ARDUINO_LIBS}/LiquidCrystal_I2C"
         "${ARDUINO_LIBS}/DHT_sensor_library"
