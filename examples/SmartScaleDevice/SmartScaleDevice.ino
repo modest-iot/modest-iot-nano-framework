@@ -11,8 +11,8 @@
 // Pin definitions
 static const int            FRONT_LEFT_LOAD_CELL_DATA_PIN   = 4;
 static const int            FRONT_LEFT_LOAD_CELL_CLOCK_PIN  = 5;
-static const int            FRONT_RIGHT_LOAD_CELL_DATA_PIN  = 16;
-static const int            FRONT_RIGHT_LOAD_CELL_CLOCK_PIN = 17;
+static const int            FRONT_RIGHT_LOAD_CELL_DATA_PIN  = 18;
+static const int            FRONT_RIGHT_LOAD_CELL_CLOCK_PIN = 19;
 static const int            REAR_LEFT_LOAD_CELL_DATA_PIN    = 26;
 static const int            REAR_LEFT_LOAD_CELL_CLOCK_PIN   = 27;
 static const int            REAR_RIGHT_LOAD_CELL_DATA_PIN   = 32;
@@ -81,6 +81,7 @@ private:
             statusDisplay.setLineBuffer(1, STATUS_DISPLAY_CALIBRATING);
         } else {
             snprintf(weightBuffer, sizeof(weightBuffer), WEIGHT_DISPLAY_FORMAT, convertGramsToKilograms(totalWeightInGrams));
+            //snprintf(weightBuffer, sizeof(weightBuffer), WEIGHT_DISPLAY_FORMAT, totalWeightInGrams);
             statusDisplay.setLineBuffer(0, STATUS_DISPLAY_TITLE);
             statusDisplay.setLineBuffer(1, weightBuffer);
         }
