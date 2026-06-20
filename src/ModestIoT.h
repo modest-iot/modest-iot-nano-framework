@@ -40,6 +40,6 @@
 #include "Buzzer.h"
 #include "GeolocationSensor.h"
 #include "LoadCellAmplifier.h"
-
+#include "PassiveInfraredSensor.h"
 
 #endif // MODEST_IOT_H
