@@ -21,8 +21,11 @@ protected:
 public:
     /** @brief Identifier emitted when motion is detected. */
     static constexpr int MOTION_DETECTED_EVENT_IDENTIFIER = 30;
+    static constexpr int MOTION_STOPPED_EVENT_IDENTIFIER = 31;
     /** @brief Prebuilt event instance for motion-detected notifications. */
     static const Event MOTION_DETECTED_EVENT;
+    /** @brief Prebuilt event instance for motion-stopped notifications. */
+    static const Event MOTION_STOPPED_EVENT;
     static constexpr int PROPAGATION_SUPPRESSION_IDENTIFIER = -1; ///< Identifier for propagation suppression.
     /**
      * @brief Constructs a PIR sensor with an optional propagation target.
