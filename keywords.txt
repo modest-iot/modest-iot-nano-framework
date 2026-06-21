@@ -1,31 +1,108 @@
 #######################################
 # Datatypes and Classes (KEYWORD1)
 #######################################
-Device	KEYWORD1
-Sensor	KEYWORD1
 Actuator	KEYWORD1
-TelemetryPackage	KEYWORD1
-ConnectivityDriver	KEYWORD1
-WiFiConnectivityDriver	KEYWORD1
-HttpEdgeGatewayClient	KEYWORD1
-MqttGatewayClient	KEYWORD1
+BluetoothConnectivityDriver	KEYWORD1
+Button	KEYWORD1
+Buzzer	KEYWORD1
 CharacterLcdDisplay	KEYWORD1
+Command	KEYWORD1
+CommandHandler	KEYWORD1
+ConnectivityDriver	KEYWORD1
+Device	KEYWORD1
+DhtSensor	KEYWORD1
+Event	KEYWORD1
+EventHandler	KEYWORD1
+GasSensor	KEYWORD1
+GatewayClient	KEYWORD1
+GeolocationSensor	KEYWORD1
+HttpGatewayClient	KEYWORD1
 Led	KEYWORD1
+LoadCellAmplifier	KEYWORD1
+LoadCellController	KEYWORD1
+LocationData	KEYWORD1
+MqttGatewayClient	KEYWORD1
+PassiveInfraredSensor	KEYWORD1
+PulseSensor	KEYWORD1
+Sensor	KEYWORD1
+ServoMotor	KEYWORD1
+TelemetryPackage	KEYWORD1
+UltrasonicSensor	KEYWORD1
+WiFiConnectivityDriver	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
-initializeAsynchronousEngine	KEYWORD2
 appendSensorToScheduler	KEYWORD2
-enqueueTelemetryPayload	KEYWORD2
+applyCalibration	KEYWORD2
+applyMovingAverageFilter	KEYWORD2
+calculateAverageRawValue	KEYWORD2
+calibrate	KEYWORD2
 canTransmit	KEYWORD2
+changeDetected	KEYWORD2
+commitBuffersToPhysicalScreen	KEYWORD2
+connect	KEYWORD2
+enqueueTelemetryPayload	KEYWORD2
+ensureBrokerSessionConnection	KEYWORD2
+executeCommand	KEYWORD2
+getCurrentActiveAngleInDegrees	KEYWORD2
+getMaximumColumnCount	KEYWORD2
+getMaximumRowCount	KEYWORD2
+getRelativeHumidityInPercentage	KEYWORD2
+getTemperatureInCelsius	KEYWORD2
+handle	KEYWORD2
+handleAccurateModeLogic	KEYWORD2
+handleCalibratingModeLogic	KEYWORD2
+handleRawModeLogic	KEYWORD2
+initializeAsynchronousEngine	KEYWORD2
+initializeHardwareRegisters	KEYWORD2
+isBacklightOn	KEYWORD2
+isConnected	KEYWORD2
+on	KEYWORD2
+parseGgaSentence	KEYWORD2
+parseNmeaSentence	KEYWORD2
+parseRmcSentence	KEYWORD2
+playBufferedTone	KEYWORD2
+playDefaultToneWithoutDuration	KEYWORD2
+powerDown	KEYWORD2
+powerUp	KEYWORD2
+processEvent	KEYWORD2
+processQueuedTelemetryData	KEYWORD2
+reset	KEYWORD2
 sendTelemetryRecord	KEYWORD2
-notifyHardwareTimerInterrupt	KEYWORD2
+setGain	KEYWORD2
+setGasCalibrationParameters	KEYWORD2
+setHandler	KEYWORD2
 setLineBuffer	KEYWORD2
+setR0	KEYWORD2
+setTargetAngleBufferInDegrees	KEYWORD2
+setTargetGas	KEYWORD2
+setTone	KEYWORD2
+startCalibration	KEYWORD2
+tare	KEYWORD2
+transmit	KEYWORD2
+turnBuzzerOff	KEYWORD2
+updateDigitalGasDetectedState	KEYWORD2
+updateInternalBuffer	KEYWORD2
 
 #######################################
 # Constants and Literals (LITERAL1)
 #######################################
+BUTTON_PRESSED_EVENT	LITERAL1
+BUTTON_PRESSED_EVENT_IDENTIFIER	LITERAL1
+DATA_READ_EVENT	LITERAL1
 DATA_READ_EVENT_IDENTIFIER	LITERAL1
+MEASURE_DATA_REQUESTED_EVENT	LITERAL1
 MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER	LITERAL1
+PLAY_TONE_COMMAND	LITERAL1
+PLAY_TONE_COMMAND_IDENTIFIER	LITERAL1
+TURN_BACKLIGHT_OFF_COMMAND	LITERAL1
+TURN_BACKLIGHT_OFF_COMMAND_IDENTIFIER	LITERAL1
+TURN_BACKLIGHT_ON_COMMAND	LITERAL1
+TURN_BACKLIGHT_ON_COMMAND_IDENTIFIER	LITERAL1
+TURN_OFF_COMMAND	LITERAL1
+TURN_OFF_COMMAND_IDENTIFIER	LITERAL1
+TURN_ON_COMMAND	LITERAL1
+TURN_ON_COMMAND_IDENTIFIER	LITERAL1
+UPDATE_TEXT_COMMAND	LITERAL1
 UPDATE_TEXT_COMMAND_IDENTIFIER	LITERAL1
