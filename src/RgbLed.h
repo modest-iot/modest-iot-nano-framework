@@ -34,13 +34,13 @@ private:
     int bluePin;  ///< PWM pin connected to the blue channel.
     bool commonAnode; ///< `true` when the LED shares a common anode (inverted drive).
 
-    uint8_t bufferedRed;   ///< Buffered red intensity (0-255).
-    uint8_t bufferedGreen; ///< Buffered green intensity (0-255).
-    uint8_t bufferedBlue;  ///< Buffered blue intensity (0-255).
+    uint8_t bufferedRedIntensity;   ///< Buffered red intensity (0-255).
+    uint8_t bufferedGreenIntensity; ///< Buffered green intensity (0-255).
+    uint8_t bufferedBlueIntensity;  ///< Buffered blue intensity (0-255).
 
-    uint8_t activeRed;   ///< Last applied red intensity (0-255).
-    uint8_t activeGreen; ///< Last applied green intensity (0-255).
-    uint8_t activeBlue;  ///< Last applied blue intensity (0-255).
+    uint8_t activeRedIntensity;   ///< Last applied red intensity (0-255).
+    uint8_t activeGreenIntensity; ///< Last applied green intensity (0-255).
+    uint8_t activeBlueIntensity;  ///< Last applied blue intensity (0-255).
 
     bool active; ///< Logical state: `true` when lit.
 
@@ -48,7 +48,7 @@ private:
     void applyState() const;
 
     /** @brief Writes one channel, applying the common-anode inversion when needed. */
-    void writeColorChannel(int gpioPin, uint8_t intensity) const;
+    void writeColorChannelIntensity(int gpioPin, uint8_t intensity) const;
 
 protected:
     /**
@@ -89,11 +89,11 @@ public:
 
     /**
      * @brief Buffers the color applied by the next `SET_COLOR_COMMAND`.
-     * @param red Red intensity (0-255).
-     * @param green Green intensity (0-255).
-     * @param blue Blue intensity (0-255).
+     * @param redIntensity Red intensity (0-255).
+     * @param greenIntensity Green intensity (0-255).
+     * @param blueIntensity Blue intensity (0-255).
      */
-    void setColor(uint8_t red, uint8_t green, uint8_t blue);
+    void setColor(uint8_t redIntensity, uint8_t greenIntensity, uint8_t blueIntensity);
 
     /**
      * @brief Reports whether the LED is currently lit.

@@ -17,8 +17,8 @@ RgbLed::RgbLed(const int redGpioPin, const int greenGpioPin, const int blueGpioP
                const bool isCommonAnode, CommandHandler *parentHandler)
     : Actuator(redGpioPin, parentHandler),
       greenPin(greenGpioPin), bluePin(blueGpioPin), commonAnode(isCommonAnode),
-      bufferedRed(MAXIMUM_INTENSITY), bufferedGreen(MAXIMUM_INTENSITY), bufferedBlue(MAXIMUM_INTENSITY),
-      activeRed(MAXIMUM_INTENSITY), activeGreen(MAXIMUM_INTENSITY), activeBlue(MAXIMUM_INTENSITY),
+      bufferedRedIntensity(MAXIMUM_INTENSITY), bufferedGreenIntensity(MAXIMUM_INTENSITY), bufferedBlueIntensity(MAXIMUM_INTENSITY),
+      activeRedIntensity(MAXIMUM_INTENSITY), activeGreenIntensity(MAXIMUM_INTENSITY), activeBlueIntensity(MAXIMUM_INTENSITY),
       active(false) {
     pinMode(pin, OUTPUT);
     pinMode(greenPin, OUTPUT);
@@ -26,14 +26,14 @@ RgbLed::RgbLed(const int redGpioPin, const int greenGpioPin, const int blueGpioP
     applyState();
 }
 
-void RgbLed::writeColorChannel(int gpioPin, const uint8_t intensity) const {
+void RgbLed::writeColorChannelIntensity(int gpioPin, const uint8_t intensity) const {
     analogWrite(gpioPin, commonAnode ? MAXIMUM_INTENSITY - intensity : intensity);
 }
 
 void RgbLed::applyState() const {
-    writeColorChannel(pin, active ? activeRed : 0);
-    writeColorChannel(greenPin, active ? activeGreen : 0);
-    writeColorChannel(bluePin, active ? activeBlue : 0);
+    writeColorChannelIntensity(pin, active ? activeRedIntensity : 0);
+    writeColorChannelIntensity(greenPin, active ? activeGreenIntensity : 0);
+    writeColorChannelIntensity(bluePin, active ? activeBlueIntensity : 0);
 }
 
 void RgbLed::executeCommand(Command command) {
@@ -44,9 +44,9 @@ void RgbLed::executeCommand(Command command) {
     } else if (command == TOGGLE_COMMAND) {
         active = !active;
     } else if (command == SET_COLOR_COMMAND) {
-        activeRed = bufferedRed;
-        activeGreen = bufferedGreen;
-        activeBlue = bufferedBlue;
+        activeRedIntensity = bufferedRedIntensity;
+        activeGreenIntensity = bufferedGreenIntensity;
+        activeBlueIntensity = bufferedBlueIntensity;
         active = true;
     } else {
         return;
@@ -54,13 +54,13 @@ void RgbLed::executeCommand(Command command) {
     applyState();
 }
 
-void RgbLed::setColor(uint8_t red, uint8_t green, uint8_t blue) {
-    bufferedRed = red;
-    bufferedGreen = green;
-    bufferedBlue = blue;
+void RgbLed::setColor(const uint8_t redIntensity, const uint8_t greenIntensity, const uint8_t blueIntensity) {
+    bufferedRedIntensity = redIntensity;
+    bufferedGreenIntensity = greenIntensity;
+    bufferedBlueIntensity = blueIntensity;
 }
 
 bool RgbLed::isActive() const { return active; }
-uint8_t RgbLed::getRedIntensity() const { return activeRed; }
-uint8_t RgbLed::getGreenIntensity() const { return activeGreen; }
-uint8_t RgbLed::getBlueIntensity() const { return activeBlue; }
+uint8_t RgbLed::getRedIntensity() const { return activeRedIntensity; }
+uint8_t RgbLed::getGreenIntensity() const { return activeGreenIntensity; }
+uint8_t RgbLed::getBlueIntensity() const { return activeBlueIntensity; }
