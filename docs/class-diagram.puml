@@ -241,6 +241,35 @@ package "Actuators" #EEF0FF {
     #executeCommand(command : Command) : void
   }
 
+  class RgbLed {
+    -greenPin : int
+    -bluePin : int
+    -commonAnode : bool
+    -bufferedRed : uint8_t
+    -bufferedGreen : uint8_t
+    -bufferedBlue : uint8_t
+    -activeRed : uint8_t
+    -activeGreen : uint8_t
+    -activeBlue : uint8_t
+    -active : bool
+    +{static} TURN_ON_COMMAND_IDENTIFIER : int = 300
+    +{static} TURN_OFF_COMMAND_IDENTIFIER : int = 301
+    +{static} TOGGLE_COMMAND_IDENTIFIER : int = 302
+    +{static} SET_COLOR_COMMAND_IDENTIFIER : int = 303
+    +{static} TURN_ON_COMMAND : Command
+    +{static} TURN_OFF_COMMAND : Command
+    +{static} TOGGLE_COMMAND : Command
+    +{static} SET_COLOR_COMMAND : Command
+    +RgbLed(redGpioPin : int, greenGpioPin : int, blueGpioPin : int,
+            isCommonAnode : bool = false, parentHandler : CommandHandler* = nullptr)
+    +setColor(red : uint8_t, green : uint8_t, blue : uint8_t) : void
+    +isActive() const : bool
+    +getRed() const : uint8_t
+    +getGreen() const : uint8_t
+    +getBlue() const : uint8_t
+    #executeCommand(command : Command) : void
+  }
+
   class CharacterLcdDisplay {
     -physicalLcdScreen : LiquidCrystal_I2C
     -maximumRowCount : const uint8_t
@@ -389,6 +418,7 @@ Sensor <|-- GasSensor
 Sensor <|-- GeolocationSensor
 
 Actuator <|-- Led
+Actuator <|-- RgbLed
 Actuator <|-- CharacterLcdDisplay
 Actuator <|-- ServoMotor
 Actuator <|-- Buzzer
