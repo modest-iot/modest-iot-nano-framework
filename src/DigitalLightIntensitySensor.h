@@ -60,7 +60,7 @@ public:
     /**
      * @brief Constructs a GY-302 / BH1750 sensor adapter.
      * @param signalGpioPin The GPIO pin connected to the sensor's signal line.
-     * @param i2cAddress Mapped to the base framework `pin` attribute via casting.
+     * @param i2cAddress The 7-bit I2C address of the sensor (0x23 or 0x5C).
      * @param lightDetectedThresholdInLux Illuminance threshold used for light/dark events.
      * @param parentHandler Optional upstream handler for propagated events.
      */
