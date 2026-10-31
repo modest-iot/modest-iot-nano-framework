@@ -27,14 +27,17 @@ else()
     set(ARDUINO_DATA_DIR "$ENV{HOME}/Library/Arduino15")
 endif()
 
-set(ESP32_PLATFORM_VERSION "3.3.10")
-set(ESP32_PLATFORM_BASE "${ARDUINO_DATA_DIR}/packages/esp32/hardware/esp32/${ESP32_PLATFORM_VERSION}")
+file(GLOB ESP32_PLATFORM_VERSIONS LIST_DIRECTORIES true
+        "${ARDUINO_DATA_DIR}/packages/esp32/hardware/esp32/*")
+list(SORT ESP32_PLATFORM_VERSIONS COMPARE NATURAL ORDER DESCENDING)
+list(GET ESP32_PLATFORM_VERSIONS 0 ESP32_PLATFORM_BASE)
+get_filename_component(ESP32_PLATFORM_VERSION "${ESP32_PLATFORM_BASE}" NAME)
 set(ESP32_TOOLS_BASE "${ARDUINO_DATA_DIR}/packages/esp32/tools/esp32-libs/${ESP32_PLATFORM_VERSION}")
-set(ARDUINO_CORE_PATH "${ESP32_PLATFORM_BASE}/cores/esp32" CACHE FILEPATH "Path to Arduino ESP32 core")
-set(ARDUINO_ESP32_LIBS_INCLUDE_PATH "${ESP32_TOOLS_BASE}/include" CACHE FILEPATH "Path to Arduino ESP32 tools include")
-set(ARDUINO_ESP32_FREERTOS_INCLUDE_PATH "${ESP32_TOOLS_BASE}/include/freertos/FreeRTOS-Kernel/include" CACHE FILEPATH "Path to Arduino ESP32 FreeRTOS include")
-set(ARDUINO_ESP32_FREERTOS_PORTABLE_INCLUDE_PATH "${ESP32_TOOLS_BASE}/include/freertos/FreeRTOS-Kernel/portable/xtensa/include" CACHE FILEPATH "Path to Arduino ESP32 FreeRTOS portable include")
-set(ARDUINO_ESP32_FREERTOS_CONFIG_INCLUDE_PATH "${ESP32_TOOLS_BASE}/include/freertos/config/include" CACHE FILEPATH "Path to Arduino ESP32 FreeRTOS config include")
+set(ARDUINO_CORE_PATH "${ESP32_PLATFORM_BASE}/cores/esp32")
+set(ARDUINO_ESP32_LIBS_INCLUDE_PATH "${ESP32_TOOLS_BASE}/include")
+set(ARDUINO_ESP32_FREERTOS_INCLUDE_PATH "${ESP32_TOOLS_BASE}/include/freertos/FreeRTOS-Kernel/include")
+set(ARDUINO_ESP32_FREERTOS_PORTABLE_INCLUDE_PATH "${ESP32_TOOLS_BASE}/include/freertos/FreeRTOS-Kernel/portable/xtensa/include")
+set(ARDUINO_ESP32_FREERTOS_CONFIG_INCLUDE_PATH "${ESP32_TOOLS_BASE}/include/freertos/config/include")
 set(SKETCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}") # Assumes main.cpp/main.ino acts as sketch root
 
 add_definitions(-DARDUINO)
@@ -58,6 +61,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         "${ESP32_PLATFORM_BASE}/libraries/BluetoothSerial/src"
         "${ESP32_PLATFORM_BASE}/libraries/HTTPClient/src"
         "${ESP32_PLATFORM_BASE}/libraries/WiFi/src"
+        "${ESP32_PLATFORM_BASE}/libraries/Wire/src"
         "${ESP32_PLATFORM_BASE}/libraries/Network/src"
         "${ARDUINO_CORE_PATH}"
         "${ARDUINO_ESP32_LIBS_INCLUDE_PATH}"
