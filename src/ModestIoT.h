@@ -41,5 +41,6 @@
 #include "GeolocationSensor.h"
 #include "LoadCellAmplifier.h"
 #include "PassiveInfraredSensor.h"
+#include "DigitalLightIntensitySensor.h"
 
 #endif // MODEST_IOT_H
