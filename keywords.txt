@@ -25,6 +25,7 @@ LocationData	KEYWORD1
 MqttGatewayClient	KEYWORD1
 PassiveInfraredSensor	KEYWORD1
 PulseSensor	KEYWORD1
+RgbLed	KEYWORD1
 Sensor	KEYWORD1
 ServoMotor	KEYWORD1
 TelemetryPackage	KEYWORD1
@@ -80,6 +81,7 @@ setLineBuffer	KEYWORD2
 setR0	KEYWORD2
 setTargetAngleBufferInDegrees	KEYWORD2
 setTargetGas	KEYWORD2
+setColor	KEYWORD2
 setTone	KEYWORD2
 startCalibration	KEYWORD2
 tare	KEYWORD2
