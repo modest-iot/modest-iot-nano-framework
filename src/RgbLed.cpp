@@ -13,6 +13,10 @@ namespace {
 }
 
 
+/**
+ * @details Buffered and active colors default to white, so a `TURN_ON_COMMAND` issued before
+ *          any color is set lights the LED white.
+ */
 RgbLed::RgbLed(const int redGpioPin, const int greenGpioPin, const int blueGpioPin,
                const bool isCommonAnode, CommandHandler *parentHandler)
     : Actuator(redGpioPin, parentHandler),
@@ -26,6 +30,10 @@ RgbLed::RgbLed(const int redGpioPin, const int greenGpioPin, const int blueGpioP
     applyState();
 }
 
+/**
+ * @details For common-anode LEDs the duty cycle is inverted (`255 - intensity`), so that
+ *          logical intensity 255 is always the brightest output.
+ */
 void RgbLed::writeColorChannelIntensity(int gpioPin, const uint8_t intensity) const {
     analogWrite(gpioPin, commonAnode ? MAXIMUM_INTENSITY - intensity : intensity);
 }
@@ -36,6 +44,10 @@ void RgbLed::applyState() const {
     writeColorChannelIntensity(bluePin, active ? activeBlueIntensity : 0);
 }
 
+/**
+ * @details `SET_COLOR_COMMAND` copies the buffered color to the active color and lights the LED.
+ *          Outputs are rewritten only for recognized commands.
+ */
 void RgbLed::executeCommand(Command command) {
     if (command == TURN_ON_COMMAND) {
         active = true;
