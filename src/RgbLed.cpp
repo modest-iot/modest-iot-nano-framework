@@ -41,7 +41,7 @@ void RgbLed::executeCommand(Command command) {
         active = true;
     } else if (command == TURN_OFF_COMMAND) {
         active = false;
-    } else if (command == TOGGLE_COMMAND) {
+    } else if (command == TOGGLE_LED_COMMAND) {
         active = !active;
     } else if (command == SET_COLOR_COMMAND) {
         activeRedIntensity = bufferedRedIntensity;

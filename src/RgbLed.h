@@ -35,7 +35,7 @@ struct RgbColor {
  *
  * The color is buffered through `setColor()` and applied when `SET_COLOR_COMMAND` is handled.
  * `TURN_ON_COMMAND` lights the LED with the last applied color (white by default),
- * `TURN_OFF_COMMAND` darkens it while remembering that color, and `TOGGLE_COMMAND` alternates both.
+ * `TURN_OFF_COMMAND` darkens it while remembering that color, and `TOGGLE_LED_COMMAND` alternates both.
  * Predefined colors (e.g. `RgbLed::ORANGE`) can be passed to `setColor()`.
  * Common-anode LEDs are supported by inverting the PWM duty cycle.
  *
@@ -76,7 +76,7 @@ public:
     /** @brief Command identifier for turning the LED off. */
     static constexpr int TURN_OFF_COMMAND_IDENTIFIER = 301;
     /** @brief Command identifier for toggling the LED state. */
-    static constexpr int TOGGLE_COMMAND_IDENTIFIER = 302;
+    static constexpr int TOGGLE_LED_COMMAND_IDENTIFIER = 302;
     /** @brief Command identifier for applying the buffered color. */
     static constexpr int SET_COLOR_COMMAND_IDENTIFIER = 303;
 
@@ -85,7 +85,7 @@ public:
     /** @brief Prebuilt command instance for turning the LED off. */
     static constexpr Command TURN_OFF_COMMAND{TURN_OFF_COMMAND_IDENTIFIER};
     /** @brief Prebuilt command instance for toggling the LED. */
-    static constexpr Command TOGGLE_COMMAND{TOGGLE_COMMAND_IDENTIFIER};
+    static constexpr Command TOGGLE_LED_COMMAND{TOGGLE_LED_COMMAND_IDENTIFIER};
     /** @brief Prebuilt command instance for applying the buffered color. */
     static constexpr Command SET_COLOR_COMMAND{SET_COLOR_COMMAND_IDENTIFIER};
 

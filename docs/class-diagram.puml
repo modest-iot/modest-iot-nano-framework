@@ -260,11 +260,11 @@ package "Actuators" #EEF0FF {
     -active : bool
     +{static} TURN_ON_COMMAND_IDENTIFIER : int = 300
     +{static} TURN_OFF_COMMAND_IDENTIFIER : int = 301
-    +{static} TOGGLE_COMMAND_IDENTIFIER : int = 302
+    +{static} TOGGLE_LED_COMMAND_IDENTIFIER : int = 302
     +{static} SET_COLOR_COMMAND_IDENTIFIER : int = 303
     +{static} TURN_ON_COMMAND : Command
     +{static} TURN_OFF_COMMAND : Command
-    +{static} TOGGLE_COMMAND : Command
+    +{static} TOGGLE_LED_COMMAND : Command
     +{static} SET_COLOR_COMMAND : Command
     +{static} RED : RgbColor
     +{static} GREEN : RgbColor
