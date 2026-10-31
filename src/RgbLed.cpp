@@ -23,14 +23,14 @@ RgbLed::RgbLed(const int redGpioPin, const int greenGpioPin, const int blueGpioP
     pinMode(pin, OUTPUT);
     pinMode(greenPin, OUTPUT);
     pinMode(bluePin, OUTPUT);
-    writeOutputs();
+    applyState();
 }
 
 void RgbLed::writeColorChannel(int gpioPin, const uint8_t intensity) const {
     analogWrite(gpioPin, commonAnode ? MAXIMUM_INTENSITY - intensity : intensity);
 }
 
-void RgbLed::writeOutputs() const {
+void RgbLed::applyState() const {
     writeColorChannel(pin, active ? activeRed : 0);
     writeColorChannel(greenPin, active ? activeGreen : 0);
     writeColorChannel(bluePin, active ? activeBlue : 0);
@@ -51,7 +51,7 @@ void RgbLed::executeCommand(Command command) {
     } else {
         return;
     }
-    writeOutputs();
+    applyState();
 }
 
 void RgbLed::setColor(uint8_t red, uint8_t green, uint8_t blue) {
@@ -61,6 +61,6 @@ void RgbLed::setColor(uint8_t red, uint8_t green, uint8_t blue) {
 }
 
 bool RgbLed::isActive() const { return active; }
-uint8_t RgbLed::getRed() const { return activeRed; }
-uint8_t RgbLed::getGreen() const { return activeGreen; }
-uint8_t RgbLed::getBlue() const { return activeBlue; }
+uint8_t RgbLed::getRedIntensity() const { return activeRed; }
+uint8_t RgbLed::getGreenIntensity() const { return activeGreen; }
+uint8_t RgbLed::getBlueIntensity() const { return activeBlue; }

@@ -45,7 +45,7 @@ private:
     bool active; ///< Logical state: `true` when lit.
 
     /** @brief Writes the active color (or darkness) to the three PWM channels. */
-    void writeOutputs() const;
+    void applyState() const;
 
     /** @brief Writes one channel, applying the common-anode inversion when needed. */
     void writeColorChannel(int gpioPin, uint8_t intensity) const;
@@ -102,11 +102,11 @@ public:
     [[nodiscard]] bool isActive() const;
 
     /** @brief Returns the last applied red intensity. */
-    [[nodiscard]] uint8_t getRed() const;
+    [[nodiscard]] uint8_t getRedIntensity() const;
     /** @brief Returns the last applied green intensity. */
-    [[nodiscard]] uint8_t getGreen() const;
+    [[nodiscard]] uint8_t getGreenIntensity() const;
     /** @brief Returns the last applied blue intensity. */
-    [[nodiscard]] uint8_t getBlue() const;
+    [[nodiscard]] uint8_t getBlueIntensity() const;
 };
 
 /** @} */ // End of Actuators: Color Output
