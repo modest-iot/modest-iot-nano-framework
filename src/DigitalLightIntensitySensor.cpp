@@ -1,6 +1,6 @@
 /**
  * @file DigitalLightIntensitySensor.cpp
- * @brief Implements GY-302 / BH1750 sampling and light-state transition events.
+ * @brief Implements BH1750 initialization, sampling, and transition-event handling.
  */
 
 #include "DigitalLightIntensitySensor.h"
@@ -26,6 +26,10 @@ DigitalLightIntensitySensor::DigitalLightIntensitySensor(
     initialize();
 }
 
+/**
+ * @details Each attempt clears the valid-sample flag. The conversion timer is
+ *          restarted only after the complete command sequence succeeds.
+ */
 bool DigitalLightIntensitySensor::initialize() {
     initialized = false;
     validSample = false;
@@ -45,6 +49,10 @@ bool DigitalLightIntensitySensor::writeInstruction(const uint8_t instruction) co
     return Wire.endTransmission() == 0;
 }
 
+/**
+ * @details The BH1750 returns the most significant byte first. Failed or
+ *          incomplete reads leave the output argument unchanged.
+ */
 bool DigitalLightIntensitySensor::readIlluminanceInLux(float &illuminanceInLux) const {
     if (constexpr uint8_t requestedByteCount = 2;
         Wire.requestFrom(i2cAddress, requestedByteCount) != requestedByteCount) {
@@ -63,6 +71,13 @@ bool DigitalLightIntensitySensor::readIlluminanceInLux(float &illuminanceInLux) 
     return true;
 }
 
+/**
+ * @details The first conversion is deferred for the BH1750's conversion interval.
+ *          Successful measurements update the cached lux value; an event is
+ *          propagated for the first successful measurement and whenever the
+ *          threshold classification changes. Other requests, premature reads,
+ *          failed reads, and unchanged states do not propagate.
+ */
 void DigitalLightIntensitySensor::processEvent(Event &event) {
     if (event.identifier != MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER) {
         return;
