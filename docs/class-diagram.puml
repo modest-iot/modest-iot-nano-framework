@@ -241,6 +241,12 @@ package "Actuators" #EEF0FF {
     #executeCommand(command : Command) : void
   }
 
+  class RgbColor <<struct>> {
+    +redIntensity : uint8_t
+    +greenIntensity : uint8_t
+    +blueIntensity : uint8_t
+  }
+
   class RgbLed {
     -greenPin : int
     -bluePin : int
@@ -260,10 +266,20 @@ package "Actuators" #EEF0FF {
     +{static} TURN_OFF_COMMAND : Command
     +{static} TOGGLE_COMMAND : Command
     +{static} SET_COLOR_COMMAND : Command
+    +{static} RED : RgbColor
+    +{static} GREEN : RgbColor
+    +{static} BLUE : RgbColor
+    +{static} YELLOW : RgbColor
+    +{static} CYAN : RgbColor
+    +{static} MAGENTA : RgbColor
+    +{static} WHITE : RgbColor
+    +{static} ORANGE : RgbColor
+    +{static} PURPLE : RgbColor
     +RgbLed(redGpioPin : int, greenGpioPin : int, blueGpioPin : int,
             isCommonAnode : bool = false, parentHandler : CommandHandler* = nullptr)
     +setColor(redIntensity : uint8_t, greenIntensity : uint8_t,
              blueIntensity : uint8_t) : void
+    +setColor(color : const RgbColor&) : void
     +isActive() const : bool
     +getRedIntensity() const : uint8_t
     +getGreenIntensity() const : uint8_t
@@ -422,6 +438,7 @@ Sensor <|-- GeolocationSensor
 
 Actuator <|-- Led
 Actuator <|-- RgbLed
+RgbLed ..> RgbColor : uses
 Actuator <|-- CharacterLcdDisplay
 Actuator <|-- ServoMotor
 Actuator <|-- Buzzer

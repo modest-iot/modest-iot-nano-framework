@@ -19,11 +19,24 @@
  */
 
 /**
+ * @brief Immutable red/green/blue color value with per-channel intensities (0-255).
+ *
+ * Colors are logical: common-anode inversion is applied by `RgbLed`, so the same value
+ * works for both LED types.
+ */
+struct RgbColor {
+    uint8_t redIntensity;   ///< Red intensity (0-255).
+    uint8_t greenIntensity; ///< Green intensity (0-255).
+    uint8_t blueIntensity;  ///< Blue intensity (0-255).
+};
+
+/**
  * @brief PWM actuator that drives a three-channel (red, green, blue) LED.
  *
  * The color is buffered through `setColor()` and applied when `SET_COLOR_COMMAND` is handled.
  * `TURN_ON_COMMAND` lights the LED with the last applied color (white by default),
  * `TURN_OFF_COMMAND` darkens it while remembering that color, and `TOGGLE_COMMAND` alternates both.
+ * Predefined colors (e.g. `RgbLed::ORANGE`) can be passed to `setColor()`.
  * Common-anode LEDs are supported by inverting the PWM duty cycle.
  *
  * @note The red channel pin is the pin registered with the base `Actuator`.
@@ -76,6 +89,20 @@ public:
     /** @brief Prebuilt command instance for applying the buffered color. */
     static constexpr Command SET_COLOR_COMMAND{SET_COLOR_COMMAND_IDENTIFIER};
 
+    /** @name Predefined colors
+     *  Approximate values; the perceived tint depends on the LED model.
+     *  @{ */
+    static constexpr RgbColor RED{255, 0, 0};       ///< Pure red.
+    static constexpr RgbColor GREEN{0, 255, 0};     ///< Pure green.
+    static constexpr RgbColor BLUE{0, 0, 255};      ///< Pure blue.
+    static constexpr RgbColor YELLOW{255, 255, 0};  ///< Red + green.
+    static constexpr RgbColor CYAN{0, 255, 255};    ///< Green + blue.
+    static constexpr RgbColor MAGENTA{255, 0, 255}; ///< Red + blue.
+    static constexpr RgbColor WHITE{255, 255, 255}; ///< All channels at full intensity.
+    static constexpr RgbColor ORANGE{255, 165, 0};  ///< Approximate orange.
+    static constexpr RgbColor PURPLE{128, 0, 128};  ///< Approximate purple.
+    /** @} */
+
     /**
      * @brief Constructs an RGB LED actuator. The LED starts off.
      * @param redGpioPin PWM-capable output pin for the red channel.
@@ -94,6 +121,12 @@ public:
      * @param blueIntensity Blue intensity (0-255).
      */
     void setColor(uint8_t redIntensity, uint8_t greenIntensity, uint8_t blueIntensity);
+
+    /**
+     * @brief Buffers a color applied by the next `SET_COLOR_COMMAND`.
+     * @param color Color to buffer, typically a predefined constant such as `RgbLed::ORANGE`.
+     */
+    void setColor(const RgbColor& color);
 
     /**
      * @brief Reports whether the LED is currently lit.

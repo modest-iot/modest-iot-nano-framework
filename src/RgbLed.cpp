@@ -60,6 +60,10 @@ void RgbLed::setColor(const uint8_t redIntensity, const uint8_t greenIntensity, 
     bufferedBlueIntensity = blueIntensity;
 }
 
+void RgbLed::setColor(const RgbColor& color) {
+    setColor(color.redIntensity, color.greenIntensity, color.blueIntensity);
+}
+
 bool RgbLed::isActive() const { return active; }
 uint8_t RgbLed::getRedIntensity() const { return activeRedIntensity; }
 uint8_t RgbLed::getGreenIntensity() const { return activeGreenIntensity; }
