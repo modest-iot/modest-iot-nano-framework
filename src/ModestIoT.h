@@ -34,6 +34,7 @@
 #include "UltrasonicSensor.h"
 #include "PulseSensor.h"
 #include "Led.h"
+#include "RgbLed.h"
 #include "CharacterLcdDisplay.h"
 #include "ServoMotor.h"
 #include "GasSensor.h"
