@@ -51,7 +51,14 @@ bool DigitalLightIntensitySensor::readIlluminanceInLux(float &illuminanceInLux) 
         return false;
     }
 
-    const uint16_t rawMeasurement = (static_cast<uint16_t>(Wire.read()) << 8) | static_cast<uint16_t>(Wire.read());
+    const int highByte = Wire.read();
+    const int lowByte = Wire.read();
+    if (highByte < 0 || lowByte < 0) {
+        return false;
+    }
+
+    const uint16_t rawMeasurement = (static_cast<uint16_t>(highByte) << 8) |
+                                    static_cast<uint16_t>(lowByte);
     illuminanceInLux = static_cast<float>(rawMeasurement) / BH1750_RAW_TO_LUX_DIVISOR;
     return true;
 }
