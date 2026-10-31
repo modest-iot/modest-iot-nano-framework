@@ -26,7 +26,7 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 - **`Device`**: Abstract base class combining event and command handling for complete IoT devices.
 - **`Button`**: A concrete sensor class for detecting button presses and generating events.
 - **`Led`**: A concrete actuator class for controlling an LED with toggle, on, and off commands.
-- **`RgbLed`**: A concrete actuator for a PWM-driven RGB LED with color, on, off, and toggle commands.
+- **`RgbLed`**: A concrete actuator for a PWM-driven RGB LED with color (per-channel 0-255 intensity), on, off, and toggle commands, including common-anode support.
 - **`DhtSensor`**: A concrete sensor for reading temperature and humidity from a DHT module.
 - **`LcdDisplay`**: A concrete actuator for driving a 16x2 I2C character LCD.
 
@@ -93,6 +93,8 @@ Then open `docs/build/html/index.html` in your browser.
       │   ├── Button.cpp
       │   ├── Led.h
       │   ├── Led.cpp
+      │   ├── RgbLed.h
+      │   ├── RgbLed.cpp
       │   ├── DhtSensor.h
       │   ├── DhtSensor.cpp
       │   ├── LcdDisplay.h
@@ -106,7 +108,7 @@ Include the library in your sketch:
 #include <ModestIoT.h> 
 ```
 - Extend `Device` to create a custom IoT device that owns and coordinates its sensors and actuators.
-- Use `Button`, `Led`, `DhtSensor`, and `LcdDisplay` as building blocks inside your device subclass, or derive your own from `Sensor` and `Actuator`.
+- Use `Button`, `Led`, `RgbLed`, `DhtSensor`, and `LcdDisplay` as building blocks inside your device subclass, or derive your own from `Sensor` and `Actuator`.
 - Have your sketch instantiate the custom device and interact with that device object; the device is responsible for wiring events and commands through `EventHandler` and `CommandHandler`.
 - For a complete example, refer to `ToggableLedDevice-Example-Cpp`.
 

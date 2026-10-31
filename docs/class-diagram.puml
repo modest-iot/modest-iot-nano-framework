@@ -245,12 +245,12 @@ package "Actuators" #EEF0FF {
     -greenPin : int
     -bluePin : int
     -commonAnode : bool
-    -bufferedRed : uint8_t
-    -bufferedGreen : uint8_t
-    -bufferedBlue : uint8_t
-    -activeRed : uint8_t
-    -activeGreen : uint8_t
-    -activeBlue : uint8_t
+    -bufferedRedIntensity : uint8_t
+    -bufferedGreenIntensity : uint8_t
+    -bufferedBlueIntensity : uint8_t
+    -activeRedIntensity : uint8_t
+    -activeGreenIntensity : uint8_t
+    -activeBlueIntensity : uint8_t
     -active : bool
     +{static} TURN_ON_COMMAND_IDENTIFIER : int = 300
     +{static} TURN_OFF_COMMAND_IDENTIFIER : int = 301
@@ -262,11 +262,14 @@ package "Actuators" #EEF0FF {
     +{static} SET_COLOR_COMMAND : Command
     +RgbLed(redGpioPin : int, greenGpioPin : int, blueGpioPin : int,
             isCommonAnode : bool = false, parentHandler : CommandHandler* = nullptr)
-    +setColor(red : uint8_t, green : uint8_t, blue : uint8_t) : void
+    +setColor(redIntensity : uint8_t, greenIntensity : uint8_t,
+             blueIntensity : uint8_t) : void
     +isActive() const : bool
-    +getRed() const : uint8_t
-    +getGreen() const : uint8_t
-    +getBlue() const : uint8_t
+    +getRedIntensity() const : uint8_t
+    +getGreenIntensity() const : uint8_t
+    +getBlueIntensity() const : uint8_t
+    -applyState() const : void
+    -writeColorChannel(gpioPin : int, intensity : uint8_t) const : void
     #executeCommand(command : Command) : void
   }
 
