@@ -26,6 +26,7 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 - **`Device`**: Abstract base class combining event and command handling for complete IoT devices.
 - **`Button`**: A concrete sensor class for detecting button presses and generating events.
 - **`Led`**: A concrete actuator class for controlling an LED with toggle, on, and off commands.
+- **`RgbLed`**: A concrete actuator for a PWM-driven RGB LED with color, on, off, and toggle commands.
 - **`DhtSensor`**: A concrete sensor for reading temperature and humidity from a DHT module.
 - **`LcdDisplay`**: A concrete actuator for driving a 16x2 I2C character LCD.
 
