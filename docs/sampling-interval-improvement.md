@@ -2,7 +2,9 @@
 
 Implementation brief for a future development session. It is self-contained: read it, then implement.
 
-Status: **proposed, not implemented.** Claims about performance are architectural reasoning, not measurements.
+Status: **proposed, not implemented.** Claims about performance are architectural reasoning, not measurements. The scheduler arithmetic in §4.1 was checked with a quick model simulation (steady 5-tick interval, staggered equal periods, no drift after `advance(7)`); it is not yet implemented or tested in C++.
+
+Related: [connectivity-improvement.md](connectivity-improvement.md), [telemetry-improvement.md](telemetry-improvement.md).
 
 ---
 
@@ -16,7 +18,7 @@ Consequences:
 |---|---|
 | Coupled rates | A sensor's period is `tick × registeredSlotCount`. Adding a sensor slows all others. |
 | No per-sensor timing | A button (needs ~20 ms) and a DHT22 (needs ≥ 2 s) cannot coexist at correct rates. |
-| Silent tick loss | `ulTaskNotifyTake(pdTRUE, …)` clears the count and returns it. Ticks missed while a handler blocks are coalesced and discarded. |
+| Silent tick loss | `ulTaskNotifyTake(pdTRUE, …)` clears the count and returns it. The current worker ignores that returned count, so ticks missed while a handler blocks are lost. |
 | Timing knowledge is implicit | Datasheet limits live in the developer's head, not in the library. |
 | Examples drift | Every example hard-codes a `SAMPLING_INTERVAL_MS` that is really "tick", with an implicit divisor. |
 
@@ -65,17 +67,19 @@ class SamplingScheduler {
 public:
     static constexpr uint8_t MAXIMUM_SLOTS = 8;
 
+    enum class AddResult : uint8_t { Ok, ClampedToMinimum, ClampedToTick, TableFull, InvalidArgument };
+
     struct Slot {
-        EventHandler* sensor = nullptr;
+        EventHandler* handler = nullptr;   // a Sensor, or any EventHandler (ClassicBlinker registers the Device itself)
         int eventIdentifier = -1;
         uint32_t periodInTicks = 1;
-        uint32_t ticksUntilDue = 0;
+        uint32_t ticksUntilDue = 1;        // always >= 1: ticks remaining until the slot fires
     };
 
     explicit SamplingScheduler(uint32_t baseTickInMilliseconds);
 
-    bool add(EventHandler* sensor, int eventIdentifier, uint32_t periodInMilliseconds,
-             uint32_t minimumPeriodInMilliseconds = 0);
+    AddResult add(EventHandler* handler, int eventIdentifier, uint32_t periodInMilliseconds,
+                  uint32_t minimumPeriodInMilliseconds = 0);
 
     // Advances time by `elapsedTicks` and invokes every due slot.
     // Returns the number of slots dispatched.
@@ -90,11 +94,12 @@ Rules:
 - `periodInTicks = max(1, ceil(periodMs / baseTickMs))`. Use integer ceiling, never float.
 - Period `0` means "every tick".
 - Period below the minimum: **clamp up to the minimum and report it** (see §6). Do not silently accept.
-- Initial phase: `ticksUntilDue = (slotIndex % periodInTicks)` so slots with equal periods do not all fire on the same tick (staggering).
-- `advance(n)`:
-  - For each slot, if `ticksUntilDue <= n`, the slot is due. Dispatch **once** (do not replay missed samples; a sensor read is a present-time observation, not a backlog).
-  - Re-arm: `ticksUntilDue = periodInTicks - ((n - ticksUntilDue) % periodInTicks)` so the cadence stays aligned to the original phase with no drift.
+- Countdown semantics: `ticksUntilDue` is the number of ticks remaining until the slot fires and is **always >= 1**. A slot fires on the tick on which its countdown reaches zero.
+- Initial phase: `ticksUntilDue = 1 + (offset % periodInTicks)`, where `offset` is the number of slots already registered with the **same period**. Equal-period slots therefore first fire on consecutive ticks (1, 2, 3, ...), and each then repeats every `periodInTicks`. The first sample is taken on the first tick (offset 0), which matches today's behaviour. A "warm-up" variant (first fire after one full period) is a possible per-slot option for slow sensors such as the DHT, not the default.
+- `advance(n)` (`n >= 1`; `advance(0)` is a no-op):
+  - If `n >= ticksUntilDue`, the slot is due. Dispatch **once** (do not replay missed samples; a sensor read is a present-time observation, not a backlog). Then set `overshoot = n - ticksUntilDue` and re-arm with `ticksUntilDue = periodInTicks - (overshoot % periodInTicks)`. This keeps the cadence aligned to the original phase with no drift, even when `n` spans several periods.
   - Otherwise `ticksUntilDue -= n`.
+- Worked example, period 5, offset 0: `ticksUntilDue = 1`. `advance(1)` fires (tick 1) and re-arms to 5, so the next fire is at tick 6: a steady five-tick interval. After that, `advance(7)` fires once, overshoot is 2, and the next fire comes 3 ticks later.
 - Overflow safety: all counters `uint32_t`, countdown only (no absolute-time comparisons), so `millis()` rollover is not an issue.
 - Dispatch order: slot registration order. Document it.
 - Reentrancy: a handler must not call `add()`. Registration is only valid before the engine starts (see §4.3).
@@ -118,9 +123,19 @@ self->scheduler.advance(elapsed);
 Keep the existing overload and add one:
 
 ```cpp
-bool appendSensorToScheduler(EventHandler* sensor, int eventId);                       // existing
-bool appendSensorToScheduler(EventHandler* sensor, int eventId, uint32_t periodMs);   // new
+bool appendSensorToScheduler(EventHandler* handler, int eventId);                                            // existing
+bool appendSensorToScheduler(EventHandler* handler, int eventId, uint32_t periodMs, uint32_t minimumMs = 0); // new
 ```
+
+The `minimumMs` parameter is what makes minimums enforceable: the `Device` overload forwards it to `SamplingScheduler::add`. Callers pass the sensor's constant:
+
+```cpp
+appendSensorToScheduler(&lightSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
+                        DigitalLightIntensitySensor::DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS,
+                        DigitalLightIntensitySensor::MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS);
+```
+
+That is verbose, so a convenience template is worth considering (compile-time, no virtuals): `appendSensorToScheduler<DigitalLightIntensitySensor>(&lightSensor, eventId)` uses `T::DEFAULT_…` and `T::MINIMUM_…`, and `appendSensorToScheduler<T>(&sensor, eventId, periodMs)` uses the explicit period but still enforces `T::MINIMUM_…`. It fails to compile for classes without the constants, which flags the missing information early. It does not apply to `DhtSensor` (see §4.4); the template needs a per-model hook there.
 
 Decision required (see §10): what does the **two-argument** form mean?
 
@@ -131,6 +146,8 @@ Decision required (see §10): what does the **two-argument** form mean?
 | C | Remove the overload | Cleanest API, breaks every example. |
 
 Recommendation: Option A via a `legacyPeriod` sentinel, mark the overload `[[deprecated]]` after one release, and migrate the examples in the same change.
+
+Legacy resolution rule (so that mixed registrations are well defined): at `initializeAsynchronousEngine()`, let `L` be the number of legacy (two-argument) slots. Each legacy slot gets `periodInTicks = L` and an initial `ticksUntilDue = 1 + legacyOrdinal`, which reproduces today's round-robin exactly (slot 0 on tick 1, slot 1 on tick 2, ..., then every `L` ticks). Slots with explicit periods are unaffected. With no explicit slots this equals `tick × slotCount`, the current behaviour. Note that `ClassicBlinker` registers the `Device` itself through the legacy overload, so it must keep working.
 
 Guards:
 - `appendSensorToScheduler` returns `false` after `initializeAsynchronousEngine()`. Track with a `bool engineStarted`.
@@ -149,23 +166,28 @@ Naming: use the framework's long-form `_IN_MILLISECONDS` suffix, consistent with
 
 Provisional values, **all must be checked against datasheets before committing** and each must carry a `@note` with its source:
 
-| Sensor | Default (ms) | Minimum (ms) | Basis to verify |
+Class names are the ones in `src/`:
+
+| Class | Default (ms) | Minimum (ms) | Basis to verify |
 |---|---|---|---|
 | `Button` | 20–50 | 10 | Debounce behaviour |
 | `PassiveInfraredSensor` | 50–100 | ~20 | Module hold time |
 | `DigitalLightIntensitySensor` (BH1750) | 1000 | 180 | Conversion time (high-res, up to ~180 ms) |
-| `HumidityAndTemperatureSensor` (DHT) | 2000 | 2000 | DHT22 limit 0.5 Hz (DHT11 is 1 Hz) |
+| `DhtSensor` | per model, see below | per model | DHT22 limit 0.5 Hz (2000 ms), DHT11 1 Hz (1000 ms) |
 | `UltrasonicSensor` | 100 | ~60 | Echo decay and cross-talk |
 | `PulseSensor` | 20 | 10 | Waveform resolution needed |
 | `GasSensor` | 1000 | ~100 | Warm-up and response time |
-| `LoadCellSensor` (HX711) | 100 | ~100 | 10 SPS mode (80 SPS mode is ~12.5 ms) |
-| `GpsSensor` | 1000 | 100 | Module update rate |
+| `LoadCellAmplifier` (HX711) | 100 | ~100 | Output rate depends on the RATE pin wiring: 10 SPS (100 ms) or 80 SPS (12.5 ms). Document the assumption. |
+| `GeolocationSensor` | 1000 | 100 | Module update rate (typically 1 Hz) |
+
+**`DhtSensor` is model-dependent.** The model (`DHT11`, `DHT22`, ...) is a constructor argument, so one pair of constants would be wrong for one of them. Expose per-model constants (`DHT11_MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS`, `DHT22_...`) plus a `static constexpr uint32_t minimumSamplingIntervalFor(uint8_t dhtModelType)` helper, or an instance getter that the example passes to `appendSensorToScheduler`. Choose when implementing and record the datasheet source for each model.
 
 Also needed: a way for `Device` to enforce minimums. Options:
-1. `add(..., minimumPeriodMs)` is passed explicitly by the caller (`Sensor::MINIMUM…`). Simple, no virtuals, ROM-free.
-2. A `virtual uint32_t minimumSamplingIntervalInMilliseconds() const` on `Sensor`. Automatic, but costs a vtable slot per sensor and changes the base interface.
+1. `minimumMs` passed explicitly by the caller (§4.3). Simple, no virtuals.
+2. A `virtual uint32_t minimumSamplingIntervalInMilliseconds() const` on `Sensor`. Automatic, and the flash cost is negligible (one vtable entry per sensor class). The real limit is that the scheduler holds an `EventHandler*`, and `EventHandler` is not a `Sensor`: handlers such as `ClassicBlinker` register the `Device` itself, so the scheduler would need a cast or a second registration path.
+3. A compile-time template overload (§4.3): automatic for sensors, no virtuals, and no change to `EventHandler`.
 
-Recommendation: start with option 1, revisit option 2 only if callers forget to pass the minimum.
+Recommendation: option 1 as the base mechanism, plus option 3 as the ergonomic layer. Revisit option 2 only if a runtime polymorphic need appears.
 
 DHT note: if the minimum cannot be met, the sensor should return the cached reading rather than hit the bus. This is a separate, optional hardening.
 
@@ -173,7 +195,8 @@ DHT note: if the minimum cannot be met, the sensor should return the cached read
 
 | Case | Required behaviour |
 |---|---|
-| Period shorter than tick | Clamped to one tick, reported |
+| Period shorter than tick | Clamped to one tick, reported (`ClampedToTick`) |
+| Period below the sensor minimum | Clamped to the minimum first, then rounded up to a whole tick, reported (`ClampedToMinimum`) |
 | Period not a multiple of tick | Rounded **up** to a whole tick. Document the effective period, expose it through `effectivePeriodInMilliseconds(slot)`. |
 | Handler blocks longer than one tick | Next wake receives `elapsed > 1`. Slots dispatch once, cadence stays phase-aligned, `missedTickCount` increases. |
 | Many slots due on the same tick | All dispatch in registration order within the same wake. Worst-case wake duration is the sum of their handlers, so document it. |
@@ -192,7 +215,8 @@ Silent clamping hides mistakes, so surface it:
 enum class AddResult : uint8_t { Ok, ClampedToMinimum, ClampedToTick, TableFull, InvalidArgument, EngineStarted };
 ```
 
-- `Device::appendSensorToScheduler` can still return `bool` (`true` for `Ok` and clamped), and log the clamp via the framework's logging facility if one exists. **Check for an existing logger before inventing one.**
+- `Device::appendSensorToScheduler` can still return `bool` (`true` for `Ok` and for either clamp, `false` for `TableFull`, `InvalidArgument`, or an engine already started), and log the clamp via the framework's logging facility if one exists. **Check for an existing logger before inventing one.** Because the bool cannot distinguish the two clamps from `Ok`, also add a protected `lastSchedulerResult()` accessor (or a second overload that returns `AddResult`) so tests and diagnostics can see it.
+- `EngineStarted` is a `Device`-level result (the scheduler does not know about the engine), so it is not in the scheduler's enum.
 
 ## 7. Concurrency and memory
 
@@ -227,11 +251,13 @@ Order matters. Each step should leave the tree compiling and the tests passing.
 |---|---|---|
 | 1 | Meaning of the two-argument overload | Option A (preserve old effective period), deprecate |
 | 2 | Constant suffix | `_IN_MILLISECONDS` (matches the existing long-name style) |
-| 3 | Minimum enforcement | Explicit parameter now, virtual getter later if needed |
-| 4 | Clamp reporting | `AddResult` enum internally, `bool` publicly |
+| 3 | Minimum enforcement | Explicit `minimumMs` parameter plus a compile-time template overload. No virtual getter (`EventHandler` is not a `Sensor`). |
+| 4 | Clamp reporting | `AddResult` enum in the scheduler, `bool` from `Device` plus a diagnostic accessor |
 | 5 | Replay vs coalesce missed samples | Coalesce (dispatch once) |
 | 6 | Scheduler as a public class or a private detail | Public header, documented as advanced API, so it is host-testable |
 | 7 | Raise `MAXIMUM_SLOTS` above 8 | Not yet, revisit after the table is cheap |
+| 8 | First sample timing | First tick (current behaviour), with optional per-slot warm-up later |
+| 9 | DHT minimum | Per-model constants and a helper, not one value |
 
 ## 11. Test plan (host)
 
@@ -247,13 +273,15 @@ Cases:
 3. Period rounding: 150 ms on a 100 ms tick becomes 2 ticks.
 4. Period below tick: clamped to 1 tick.
 5. Below-minimum request: clamped and reported.
-6. Equal periods are staggered (no tick where all fire if staggering is possible).
-7. `advance(7)` on a 5-tick slot: dispatched once, next due 3 ticks later (phase preserved, no drift).
+6. Two period-5 slots first fire on ticks 1 and 2, then every 5 ticks (staggered): fire ticks `[1, 6, 11]` and `[2, 7, 12]`.
+7. Single period-5 slot: after `advance(1)` (fired at tick 1), `advance(7)` fires once at elapsed tick 8 and the next fire is at tick 11 (phase preserved, no drift).
 8. `advance(0)`: no dispatch.
 9. Table full returns `TableFull`; null sensor and event `-1` return `InvalidArgument`.
-10. Counter wrap safety: run 2^32/… is impractical, so run with a large `ticksUntilDue` near `UINT32_MAX` and check no overflow.
+10. Large-count safety: `advance(UINT32_MAX)` and periods near `UINT32_MAX` do not overflow (use `uint64_t` in the intermediate arithmetic if needed) and keep `ticksUntilDue >= 1`.
 11. Dispatch order equals registration order.
-12. Legacy path (Option A): `N` legacy slots resolve to `periodInTicks = N` and reproduce the old round-robin cadence.
+12. Legacy path (Option A): `L` legacy slots resolve to `periodInTicks = L` with initial countdowns `1..L` and reproduce the old round-robin order. A mix of legacy and explicit slots leaves the explicit slots unaffected.
+13. `periodMs = 0` means every tick, and `baseTick = 0` is rejected at construction (or treated as 1; decide and test).
+14. Same event on a second slot or the same handler registered twice is allowed and dispatches twice.
 
 ## 12. Verification on hardware or simulator
 
@@ -283,7 +311,8 @@ Cases:
 - [ ] `Device` uses it. Elapsed ticks from `ulTaskNotifyTake` are honoured.
 - [ ] New `appendSensorToScheduler(sensor, event, periodMs)` exists. Calls after engine start are rejected.
 - [ ] Two-argument overload behaves as before, and is marked deprecated.
-- [ ] Every polled sensor has `DEFAULT_` and `MINIMUM_` constants with cited sources.
+- [ ] Every polled sensor has `DEFAULT_` and `MINIMUM_` constants with cited sources (`DhtSensor` per model).
+- [ ] Minimums are enforceable through `appendSensorToScheduler`, and a below-minimum request is observable.
 - [ ] All examples migrated, and `OutdoorSecurityLightController` constructor arguments fixed.
 - [ ] README, class diagram, `keywords.txt` and Doxygen updated, and Doxygen runs without warnings.
 - [ ] Existing `digital_light` and `rgb_led` tests still pass.
