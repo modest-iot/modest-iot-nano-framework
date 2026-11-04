@@ -24,7 +24,7 @@
 /// --- 2. LAYER-ISOLATED NETWORK COMPREHENSION ---
 #include "ConnectivityDriver.h"
 #include "WiFiConnectivityDriver.h"
-#include "BluetoothConnectivityDriver.h"
+#include "BleConnectivityDriver.h"
 #include "HttpGatewayClient.h"
 #include "MqttGatewayClient.h"
 
@@ -43,5 +43,6 @@
 #include "LoadCellAmplifier.h"
 #include "PassiveInfraredSensor.h"
 #include "DigitalLightIntensitySensor.h"
+#include "RfidSensor.h"
 
 #endif // MODEST_IOT_H
