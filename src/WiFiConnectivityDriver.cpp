@@ -50,6 +50,13 @@ bool WiFiConnectivityDriver::canTransmit() {
     return isConnected();
 }
 
+bool WiFiConnectivityDriver::transmit(const char* target, const char* data) {
+    (void)target;
+    (void)data;
+    // Wi-Fi telemetry transmission is mediated via getNetworkSocket() and GatewayClient instances.
+    return false;
+}
+
 Client& WiFiConnectivityDriver::getNetworkSocket() {
     // Returns the concrete reference upcasted implicitly to a generic Client reference interface.
     // Application layer components interact with it polymorphically without ever seeing <WiFi.h>.

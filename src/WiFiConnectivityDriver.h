@@ -65,6 +65,15 @@ public:
     [[nodiscard]] bool canTransmit() override;
 
     /**
+     * @brief Evaluates whether outbound transmission is possible.
+     * @note WiFiConnectivityDriver delegates actual payload transmission to socket-based GatewayClient instances.
+     * @param target Target identifier (unused).
+     * @param data Payload data string (unused).
+     * @return `false` as Wi-Fi telemetry is managed via Client socket gateways.
+     */
+    bool transmit(const char* target, const char* data) override;
+
+    /**
      * @brief Explicit Protocol Bridge: Exposes the internal socket interface
      * upcasted cleanly to the generic Arduino Client contract.
      * @return Reference to the underlying network socket.
