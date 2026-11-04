@@ -90,6 +90,7 @@ target_link_libraries(clion_indexer INTERFACE ${PROJECT_NAME})
 add_custom_target(arduino_compile
         COMMAND ${ARDUINO_CLI_PATH} compile
         --fqbn ${BOARD_FQBN}
+        --library "${CMAKE_CURRENT_SOURCE_DIR}"
         --build-path "${CMAKE_CURRENT_BINARY_DIR}/esp32_out"
         "${SKETCH_DIR}"
         COMMENT "Compiling IoT Firmware via arduino-cli for ${BOARD_FQBN}..."
