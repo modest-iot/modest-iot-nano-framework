@@ -44,6 +44,27 @@ public:
      * @return `true` when payload transmission succeeds, otherwise `false`.
      */
     virtual bool sendTelemetryRecord(const TelemetryPackage& abstractTelemetryPayload) = 0;
+
+    /**
+     * @brief Periodic background upkeep routine for network and session state (e.g. keep-alive ping).
+     * Subclasses override this method to perform non-blocking connection maintenance.
+     */
+    virtual void service() {}
+
+    /**
+     * @brief Ergonomic alias for service() to maintain parity with Arduino idioms.
+     */
+    virtual void loop() {
+        service();
+    }
+
+    /**
+     * @brief Inquires whether the gateway and underlying transport are connected.
+     * @return `true` if connected and capable of transmitting data.
+     */
+    [[nodiscard]] virtual bool isConnected() {
+        return communicationTransportDriver.isConnected();
+    }
 };
 
 /** @} */ // End of Gateway: Generic Abstraction
