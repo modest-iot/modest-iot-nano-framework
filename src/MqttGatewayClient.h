@@ -30,7 +30,10 @@ private:
     const char* clientIdentifier; ///< Unique client identifier.
     const char* publishTopic; ///< MQTT topic for publishing.
 
-    void ensureBrokerSessionConnection(); ///< Ensures broker session is active.
+    unsigned long lastReconnectAttemptTimestamp; ///< Timestamp of the last broker connection attempt.
+    unsigned long reconnectIntervalMilliseconds; ///< Minimum cooldown between reconnect attempts in milliseconds.
+
+    void ensureBrokerSessionConnection(); ///< Ensures broker session is active with rate-limited backoff.
 
 public:
     /**
@@ -45,7 +48,7 @@ public:
                       const char* brokerIpAddress, uint16_t brokerPort, 
                       const char* topic, const char* deviceId = "ModestIotNode");
     
-    ~MqttGatewayClient() = default;
+    ~MqttGatewayClient() override = default;
 
     /**
      * @brief Polymorphically serializes any payload inheriting from TelemetryPackage and publishes it.
@@ -53,6 +56,41 @@ public:
      * @return True if the payload byte stream was successfully accepted and pushed by the broker.
      */
     bool sendTelemetryRecord(const TelemetryPackage& abstractTelemetryPayload) override;
+
+    /**
+     * @brief Periodic background upkeep routine for MQTT ping packets and keep-alive handling.
+     * Maintains broker connection and executes PubSubClient loop processing.
+     */
+    void service() override;
+
+    /**
+     * @brief Ergonomic alias for service() matching standard Arduino loop conventions.
+     */
+    void loop() override;
+
+    /**
+     * @brief Inquires whether both the transport driver and the MQTT broker session are connected.
+     * @return `true` if connected to broker and ready for publishing.
+     */
+    [[nodiscard]] bool isConnected() override;
+
+    /**
+     * @brief Returns the internal state integer reported by PubSubClient.
+     * @return PubSubClient state integer (e.g. 0 = MQTT_CONNECTED).
+     */
+    [[nodiscard]] int getClientState();
+
+    /**
+     * @brief Sets the cooldown interval between broker reconnection attempts.
+     * @param intervalMs Cooldown period in milliseconds (default: 5000ms).
+     */
+    void setReconnectInterval(unsigned long intervalMs);
+
+    /**
+     * @brief Gets the configured cooldown interval between broker reconnection attempts.
+     * @return Cooldown period in milliseconds.
+     */
+    [[nodiscard]] unsigned long getReconnectInterval() const;
 };
 
 /** @} */ // End of Gateway: Protocol-Specific Implementations
