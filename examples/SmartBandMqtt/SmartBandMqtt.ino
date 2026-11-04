@@ -59,6 +59,10 @@ class SmartBandDevice : public Device {
         }
     }
 
+    void maintainNetworkServices() const override {
+        gatewayClient.service();
+    }
+
     public:
     SmartBandDevice(int pulsePin, int climatePin, int buttonPin, MqttGatewayClient& client,
     unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupIndex = 0)
