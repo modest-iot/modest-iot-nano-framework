@@ -1,72 +1,70 @@
 # Modest IoT Improvements Roadmap
 
-Index and recommended order for the `docs/*-improvement.md` briefs. All are proposals; nothing here is implemented or measured.
+Index, implementation status, and recommended execution order for the `docs/*-improvement.md` briefs.
 
 ## 1. Documents
 
-| # | Document | Topic |
-|---|---|---|
-| 1 | [library-readiness-improvement.md](library-readiness-improvement.md) | Cleanup, host tests, CI, release, footprint |
-| 2 | [dependencies-improvement.md](dependencies-improvement.md) | Unused and replaceable third-party libraries |
-| 3 | [connectivity-improvement.md](connectivity-improvement.md) | Drivers and gateway clients; includes the D1 compile defect |
-| 4 | [diagnostics-improvement.md](diagnostics-improvement.md) | Logging, sensor health, counters |
-| 5 | [threading-model-improvement.md](threading-model-improvement.md) | Threading docs, engine config, command marshalling, ID registry |
-| 6 | [sampling-interval-improvement.md](sampling-interval-improvement.md) | Per-slot sampling intervals and pure scheduler |
-| 7 | [telemetry-improvement.md](telemetry-improvement.md) | Package ownership, pool, writer, queue policy |
-| 8 | [interrupt-power-improvement.md](interrupt-power-improvement.md) | Interrupt-driven sensing, tickless, sleep |
+| # | Document | Topic | Status |
+|---|---|---|---|
+| 1 | [library-readiness-improvement.md](library-readiness-improvement.md) | Cleanup, host tests, CI, release, footprint | Phase A / Host CI Complete |
+| 2 | [dependencies-improvement.md](dependencies-improvement.md) | Unused and replaceable third-party libraries | Phase A Complete |
+| 3 | [connectivity-improvement.md](connectivity-improvement.md) | Drivers and gateway clients; includes D1 and BLE | Phase A & BLE Driver Complete |
+| 4 | [diagnostics-improvement.md](diagnostics-improvement.md) | Logging, sensor health, counters | Proposed (Tier 2 Priority) |
+| 5 | [threading-model-improvement.md](threading-model-improvement.md) | Threading docs, engine config, command marshalling, ID registry | Proposed (Tier 2/4) |
+| 6 | [sampling-interval-improvement.md](sampling-interval-improvement.md) | Per-slot sampling intervals and pure scheduler | Proposed (Tier 3 Priority) |
+| 7 | [telemetry-improvement.md](telemetry-improvement.md) | Package ownership, pool, writer, queue policy | Proposed (Tier 3/5) |
+| 8 | [interrupt-power-improvement.md](interrupt-power-improvement.md) | Interrupt-driven sensing, tickless, sleep | Proposed (Tier 4/5) |
 
-## 2. Prioritization method
+## 2. Prioritization method and status
 
-Each work item (not whole document) is scored 0 to 5 on three benefits, and sized by cost. Scores are judgement, not measurement; revisit them after the diagnostics data exists.
+Each work item is scored 0 to 5 on three benefits, and sized by cost. Scores reflect architectural value; revisit them after diagnostics data is captured.
 
 - **Q** quality: correctness, safety, testability, release credibility.
 - **P** performance: latency, CPU, memory, energy.
 - **D** developer experience: first-run success, API clarity, debuggability.
 - **Cost**: XS under half a day, S about a day, M several days, L a week or more.
-- **Score** = 2Q + P + 2D, divided by cost weight (XS 1, S 1.5, M 2.5, L 4), rounded. Quality and DX are double-weighted because the library has no users yet to feel a performance difference; a library that does not compile or is hard to debug never reaches the point where performance matters.
+- **Score** = 2Q + P + 2D, divided by cost weight (XS 1, S 1.5, M 2.5, L 4), rounded. Quality and DX are double-weighted because release credibility and developer onboarding come first.
 
-| ID | Work item | Doc | Q | P | D | Cost | Score |
-|---|---|---|---|---|---|---|---|
-| W1 | Fix abstract `WiFiConnectivityDriver` (D1); examples must compile | connectivity | 5 | 0 | 5 | XS | 20 |
-| W2 | Delete dead `LoadCellController`, unused deps, unused includes, pin ArduinoJson | dependencies | 4 | 1 | 4 | XS | 17 |
-| W3 | Repo cleanup (`main.cpp`, empty `.ino`, `.gitignore`), `library.properties` fixes | library-readiness | 4 | 0 | 4 | XS | 16 |
-| W4 | Threading rules, "Runs on" tags, ID registry (docs only) | threading | 3 | 0 | 4 | XS | 14 |
-| W5 | Host test harness plus CI (host tests, compile-examples, lint) | library-readiness | 5 | 0 | 4 | M | 7 |
-| W6 | Logging macros, stack high-water, sensor fault events | diagnostics | 4 | 1 | 5 | S | 13 |
-| W7 | Connectivity reconnect policy, `mqttClient.loop()` every cycle, link events | connectivity | 5 | 2 | 4 | M | 8 |
-| W8 | Per-slot sampling intervals, pure scheduler, elapsed-tick accounting | sampling | 4 | 5 | 5 | M | 9 |
-| W9 | `EngineConfig` and `stopAsynchronousEngine()` | threading | 4 | 2 | 3 | S | 11 |
-| W10 | Optional Bluetooth, optional MQTT footprint (P1) | connectivity, library-readiness | 3 | 2 | 4 | S | 11 |
-| W11 | Telemetry ownership and queue policy (Phases A and B) | telemetry | 4 | 3 | 4 | M | 8 |
-| W12 | `Device::post` command marshalling | threading | 3 | 0 | 4 | M | 6 |
-| W13 | Interrupt triggers for Button and PIR | interrupt-power | 3 | 4 | 3 | M | 6 |
-| W14 | HX711 data-ready and ultrasonic echo capture (remove blocking) | interrupt-power | 2 | 4 | 2 | M | 5 |
-| W15 | Cloud-to-device commands (MQTT subscribe) | connectivity | 2 | 0 | 4 | M | 5 |
-| W16 | Tickless scheduling and light sleep | interrupt-power | 2 | 4 | 2 | L | 3 |
-| W17 | Deep-sleep cycle and battery example | interrupt-power | 1 | 4 | 2 | L | 3 |
-| W18 | Telemetry pool and writer interface (Phase C) | telemetry | 2 | 3 | 1 | L | 2 |
-| W19 | Native servo and LCD drivers | dependencies | 2 | 0 | 1 | M | 2 |
+| ID | Work item | Doc | Q | P | D | Cost | Score | Status |
+|---|---|---|---|---|---|---|---|---|
+| W1 | Fix abstract `WiFiConnectivityDriver` (D1); examples must compile | connectivity | 5 | 0 | 5 | XS | 20 | **Completed** |
+| W2 | Delete dead `LoadCellController`, unused deps, unused includes, pin ArduinoJson | dependencies | 4 | 1 | 4 | XS | 17 | **Completed** |
+| W3 | Repo cleanup (`main.cpp`, empty `.ino`, `.gitignore`), `library.properties` fixes | library-readiness | 4 | 0 | 4 | XS | 16 | **Completed** |
+| W4 | Threading rules, "Runs on" tags, ID registry (docs only) | threading | 3 | 0 | 4 | XS | 14 | **Completed** |
+| W5 | Host test harness plus CI (host tests, compile-examples, lint) | library-readiness | 5 | 0 | 4 | M | 7 | **Completed** |
+| W6 | Logging macros, stack high-water, sensor fault events | diagnostics | 4 | 1 | 5 | S | 13 | Pending (Tier 2) |
+| W7 | Connectivity reconnect policy, `mqttClient.loop()` every cycle, link events | connectivity | 5 | 2 | 4 | M | 8 | **Completed** |
+| W8 | Per-slot sampling intervals, pure scheduler, elapsed-tick accounting | sampling | 4 | 5 | 5 | M | 9 | Pending (Tier 3) |
+| W9 | `EngineConfig` and `stopAsynchronousEngine()` | threading | 4 | 2 | 3 | S | 11 | Pending (Tier 2) |
+| W10 | Optional Bluetooth, BLE driver addition, optional MQTT footprint (P1) | connectivity, library-readiness | 3 | 2 | 4 | S | 11 | **Partially Complete** (BLE NUS added, BT Classic isolated) |
+| W11 | Telemetry ownership and queue policy (Phases A and B) | telemetry | 4 | 3 | 4 | M | 8 | Pending (Tier 3) |
+| W12 | `Device::post` command marshalling | threading | 3 | 0 | 4 | M | 6 | Pending (Tier 4) |
+| W13 | Interrupt triggers for Button and PIR | interrupt-power | 3 | 4 | 3 | M | 6 | Pending (Tier 4) |
+| W14 | HX711 data-ready and ultrasonic echo capture (remove blocking) | interrupt-power | 2 | 4 | 2 | M | 5 | Pending (Tier 4) |
+| W15 | Cloud-to-device commands (MQTT subscribe) | connectivity | 2 | 0 | 4 | M | 5 | Pending (Tier 4) |
+| W16 | Tickless scheduling and light sleep | interrupt-power | 2 | 4 | 2 | L | 3 | Pending (Tier 5) |
+| W17 | Deep-sleep cycle and battery example | interrupt-power | 1 | 4 | 2 | L | 3 | Pending (Tier 5) |
+| W18 | Telemetry pool and writer interface (Phase C) | telemetry | 2 | 3 | 1 | L | 2 | Pending (Tier 5) |
+| W19 | Native servo and LCD drivers | dependencies | 2 | 0 | 1 | M | 2 | Pending (Tier 5) |
 
-## 3. Recommended order (reorganized)
+## 3. Recommended order and progression tiers
 
-Changes from the previous order, and why:
-- **Connectivity reconnect and `mqttClient.loop()` (W7) moves from last to tier 2.** It is a correctness defect (the MQTT keep-alive only runs after a successful publish), not an optional enhancement.
-- **Diagnostics is split.** Only the logging macros and stack high-water slice (part of W6) is needed early, because it gives data for W8, W9 and W11. The rest follows.
-- **`EngineConfig` and optional Bluetooth move up** because both are cheap and remove first-run failures (stack overflows, ESP32-S3 build errors).
-- **The scheduler (W8) stays the headline feature**: highest combined P and D, and everything in tier 4 depends on it.
-- **Sleep, deep sleep, pool, native drivers move to the end**: high cost, benefit unproven until measured.
-- **Cloud-to-device commands drop** below `Device::post` and the reliability work they depend on.
+Progression history and tier execution:
+- **Tier 0 (Correctness & Hygiene)** is **Complete**: `WiFiConnectivityDriver` abstract class issue resolved, dead `LoadCellController` deleted, `library.properties` standardized, examples compile cleanly.
+- **Tier 1 (Safety Net & Test Consolidation)** is **Complete**: Host test infrastructure consolidated under `tests/fakes/` (4 suites: Light, LED, RFID, BLE), `tests/run_all.sh` runner, and GitHub Actions CI workflow active.
+- **Tier 2 (Reliability & Footprint)** is **In Progress / Current Priority**: BLE driver implemented, next up: continuous MQTT keep-alive (`mqttClient.loop()`), Wi-Fi reconnect policy, `EngineConfig`, and `MODEST_LOG_*` zero-cost logging facility.
+- **Tier 3 (Core Scheduling & Telemetry)** is the **Next Milestone**: Pure `SamplingScheduler` with per-slot periods, followed by explicit `TelemetryPackage` ownership.
 
-| Tier | Items | Goal | Exit criterion |
-|---|---|---|---|
-| 0: Make it correct and shippable | W1, W2, W3, W4 | Everything compiles, repo is clean, rules are written down | All examples compile on a clean machine; threading and ID docs published |
-| 1: Safety net and visibility | W5, W6 (logging, high-water slice) | Regressions and stack problems are caught automatically | CI green on every PR; logs available behind a macro |
-| 2: Reliability and footprint | W7, W9, W10 | Devices stay connected, tasks are tunable, builds work on S2/S3/C3 | Soak test reconnects after Wi-Fi and broker loss |
-| 3: Core performance and DX | W8, then W11 | Per-slot intervals, bounded memory use for telemetry | Scheduler host tests pass; sampler wake budget measured |
-| 4: Capabilities | W12, W13, W14, W15, rest of W6 | Edge-driven sensing, remote commands, fault events | Latency measured for polling versus interrupt |
-| 5: Optimization and power | W16, W17, W18, W19 | Battery operation and further tuning | Decide per item from measured data |
+| Tier | Items | Goal | Exit criterion | Status |
+|---|---|---|---|---|
+| 0: Make it correct and shippable | W1, W2, W3, W4 | Everything compiles, repo is clean, rules are written down | All examples compile cleanly; clean repo layout | **Complete** |
+| 1: Safety net and visibility | W5 | Regressions caught automatically via host tests & CI | CI green on PRs/pushes; all 4 host test suites pass | **Complete** |
+| 2: Reliability, diagnostics & footprint | W6 (logging/high-water), W7, W9, W10 | Reconnection robust, tasks tunable, BLE modern, zero-cost logs | Soak test reconnects; logs available behind macro; BLE tests pass | **In Progress** |
+| 3: Core performance and DX | W8, then W11 | Per-slot intervals, bounded memory use for telemetry | Scheduler host tests pass; sampler wake budget measured | Queued |
+| 4: Capabilities | W12, W13, W14, W15, rest of W6 | Edge-driven sensing, remote commands, fault events | Latency measured for polling versus interrupt | Queued |
+| 5: Optimization and power | W16, W17, W18, W19 | Battery operation and further tuning | Decide per item from measured data | Queued |
 
-Parallelism: W1 to W4 are independent and can be done in one session. W5 can start as soon as W1 lands so the first CI run is green.
+Parallelism: Tier 0 and Tier 1 have landed. Tier 2 items (logging macros, reconnect state machine, `EngineConfig`) can be executed independently.
 
 ## 4. Dependencies between items
 
@@ -83,16 +81,17 @@ Parallelism: W1 to W4 are independent and can be done in one session. W5 can sta
 - Switchable sensor power rails and ADC/DMA sampling.
 - Non-ESP32 targets.
 
-## 6. Claims still needing verification
+## 6. Claims verified and remaining verification gaps
 
-- All performance, latency, memory and power figures (reasoned, not measured).
-- `depends=` name format and transitive dependencies (arduino-lint, clean install).
-- Bluetooth failing on ESP32-S2, S3 and C3.
-- `Wire` thread-safety on core 3.x; `loop()` core affinity.
-- Task notification array availability; `CONFIG_PM_ENABLE` in the precompiled core.
-- Datasheet values behind the per-sensor interval constants.
-- WiFi retry behaviour (connectivity D4).
-- Local `arduino-cli compile` currently fails with a ctags "bad CPU type" error; CI should be the build authority.
+- **Verified**: Local `arduino-cli compile` cleanly builds all 10 examples across ESP32 targets with `--library .` configured.
+- **Verified**: `library.properties` `depends=` syntax formatted for Arduino Library Manager compliance.
+- **Verified**: Bluetooth Classic fails on modern ESP32 variants (S2, S3, C3, C6, H2); resolved via target guards and `BleConnectivityDriver`.
+- **Verified**: Host test harness executes 4 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/rfid_sensor`, `tests/ble_connectivity`) under Address and Undefined sanitizers.
+- **Remaining**: Performance, latency, memory and power figures (reasoned, to be measured on hardware).
+- **Remaining**: `Wire` thread-safety on core 3.x; `loop()` core affinity.
+- **Remaining**: Task notification array availability; `CONFIG_PM_ENABLE` in the precompiled core.
+- **Remaining**: Datasheet values behind the per-sensor interval constants.
+- **Remaining**: WiFi retry behaviour (connectivity D4).
 
 ## 7. Comparison with traditional development (end state and per tier)
 

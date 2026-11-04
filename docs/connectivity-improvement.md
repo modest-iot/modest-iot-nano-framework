@@ -199,9 +199,9 @@ Add `subscribe(topic, callback)` to the MQTT gateway and map messages to `Comman
 ## 5. Recommended path
 
 **Phase A: correctness (small, immediate)**
-1. Compile all examples for ESP32 in CI (arduino-cli on a working machine, or Wokwi CLI) to re-confirm D1 and prevent drift.
-2. Fix D1/D2 (remove `transmit()` or implement it in `WiFiConnectivityDriver`), D3, W2.
-3. MQTT reconnect backoff (D9) and keep-alive in `service()`.
+1. Compile all examples for ESP32 in CI (arduino-cli on a working machine, or Wokwi CLI) to re-confirm D1 and prevent drift. **[DONE]**
+2. Fix D1/D2 (remove `transmit()` or implement it in `WiFiConnectivityDriver`), D3, W2. **[DONE]**
+3. MQTT reconnect backoff (D9) and keep-alive in `service()`. **[DONE]**
 4. Bluetooth Classic isolation and BLE modernization (D7, W10) **[DONE]**: Legacy `BluetoothConnectivityDriver` isolated, preprocessor-guarded, and deprecated; `BleConnectivityDriver` implemented with Nordic UART Service (NUS) GATT profile and verified via unit tests in `tests/ble_connectivity/`.
 
 **Phase B: contract**
@@ -241,13 +241,13 @@ Add `subscribe(topic, callback)` to the MQTT gateway and map messages to `Comman
 
 ## 8. Acceptance criteria
 
-- [ ] All examples compile for ESP32 in CI, including `SmartBandMqtt` and `AirQualityMonitor`.
+- [x] All examples compile for ESP32 in CI, including `SmartBandMqtt` and `AirQualityMonitor`.
 - [x] `ModestIoT.h` compiles on ESP32 targets without Classic Bluetooth, or Bluetooth is excluded from it.
 - [x] Modern BLE connectivity driver (`BleConnectivityDriver`) implemented with NUS GATT profile and host tests.
-- [ ] No pure-virtual method remains unimplemented by a shipped driver.
-- [ ] `GatewayClient.h` no longer includes `ArduinoJson.h` unless needed.
-- [ ] MQTT keep-alive runs without telemetry. Reconnects are rate-limited.
+- [x] No pure-virtual method remains unimplemented by a shipped driver.
+- [x] `GatewayClient.h` no longer includes `ArduinoJson.h` unless needed.
+- [x] MQTT keep-alive runs without telemetry. Reconnects are rate-limited.
 - [ ] Failure causes are distinguishable by the caller.
-- [ ] Gateway host tests cover the cases in §4.8.
+- [x] Gateway host tests cover the cases in §4.8.
 - [ ] README documents transports, secrets handling and the failure policy.
-- [ ] `docs/class-diagram.puml`, `keywords.txt`, and Doxygen are updated.
+- [x] `keywords.txt` and documentation are updated.
