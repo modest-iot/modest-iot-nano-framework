@@ -53,7 +53,7 @@ class SmartBandDevice : public Device {
     }
 
     protected:
-    void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) override {
+    void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) const override {
         if (rawQueueItemPayload != nullptr) {
             gatewayClient.sendTelemetryRecord(*rawQueueItemPayload);
         }
