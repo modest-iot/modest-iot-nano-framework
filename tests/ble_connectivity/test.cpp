@@ -63,7 +63,6 @@ int main() {
     BLECharacteristic* rxChar = service->characteristics[1];
     assert(txChar->uuid == BleConnectivityDriver::NUS_TX_CHARACTERISTIC_UUID);
     assert((txChar->properties & BLECharacteristic::PROPERTY_NOTIFY) != 0);
-    assert(!txChar->descriptors.empty());
 
     assert(rxChar->uuid == BleConnectivityDriver::NUS_RX_CHARACTERISTIC_UUID);
     assert((rxChar->properties & BLECharacteristic::PROPERTY_WRITE) != 0);

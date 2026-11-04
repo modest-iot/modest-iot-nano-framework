@@ -43,9 +43,9 @@ public:
     using DataReceivedCallback = void (*)(const char* data, size_t length);
 
     // Nordic Semiconductor UART Service (NUS) 128-bit standard UUID constants
-    static constexpr const char* NUS_SERVICE_UUID           = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
-    static constexpr const char* NUS_RX_CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E";
-    static constexpr const char* NUS_TX_CHARACTERISTIC_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E";
+    static constexpr auto NUS_SERVICE_UUID           = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
+    static constexpr auto NUS_RX_CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E";
+    static constexpr auto NUS_TX_CHARACTERISTIC_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E";
 
 private:
     const char* localDeviceName;
@@ -147,7 +147,7 @@ public:
      * @param data Received byte buffer.
      * @param length Number of received bytes.
      */
-    void handleDataReceived(const uint8_t* data, size_t length);
+    void handleDataReceived(const uint8_t* data, size_t length) const;
 };
 
 /** @} */ // End of Connectivity: Concrete Drivers

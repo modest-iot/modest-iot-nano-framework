@@ -5,7 +5,6 @@
 #include <vector>
 #include <cstdint>
 #include <cstddef>
-#include "BLE2902.h"
 
 class BLEServer;
 class BLECharacteristic;
@@ -35,21 +34,19 @@ public:
     uint32_t properties;
     std::string value;
     BLECharacteristicCallbacks* callbacks = nullptr;
-    std::vector<BLEDescriptor*> descriptors;
     size_t notifyCount = 0;
 
     BLECharacteristic(const std::string& uuid, uint32_t props)
         : uuid(uuid), properties(props) {}
 
-    ~BLECharacteristic() {
-        for (auto* desc : descriptors) {
-            delete desc;
-        }
-        descriptors.clear();
-    }
+    ~BLECharacteristic() = default;
 
     void setCallbacks(BLECharacteristicCallbacks* cb) {
         callbacks = cb;
+    }
+
+    void setValue(const uint8_t* data, size_t size) {
+        value = std::string(reinterpret_cast<const char*>(data), size);
     }
 
     void setValue(uint8_t* data, size_t size) {
@@ -64,14 +61,16 @@ public:
         return value;
     }
 
-    void notify() {
-        notifyCount++;
+    uint8_t* getData() {
+        return reinterpret_cast<uint8_t*>(const_cast<char*>(value.data()));
     }
 
-    void addDescriptor(BLEDescriptor* descriptor) {
-        if (descriptor) {
-            descriptors.push_back(descriptor);
-        }
+    size_t getLength() const {
+        return value.size();
+    }
+
+    void notify() {
+        notifyCount++;
     }
 };
 

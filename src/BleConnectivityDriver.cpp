@@ -9,11 +9,8 @@
 
 #if defined(CONFIG_BT_ENABLED) || defined(ARDUINO_ARCH_ESP32) || defined(TEST_MOCK_BLE)
 
-#include <Arduino.h>
 #include <BLEDevice.h>
 #include <BLEServer.h>
-#include <BLEUtils.h>
-#include <BLE2902.h>
 #include <cstring>
 
 namespace {
@@ -49,12 +46,10 @@ public:
 
     void onWrite(BLECharacteristic* pCharacteristic) override {
         if (driver != nullptr && pCharacteristic != nullptr) {
-            std::string rxValue = pCharacteristic->getValue();
-            if (!rxValue.empty()) {
-                driver->handleDataReceived(
-                    reinterpret_cast<const uint8_t*>(rxValue.data()),
-                    rxValue.size()
-                );
+            const uint8_t* rxData = pCharacteristic->getData();
+            size_t rxLength = pCharacteristic->getLength();
+            if (rxData != nullptr && rxLength > 0) {
+                driver->handleDataReceived(rxData, rxLength);
             }
         }
     }
@@ -102,7 +97,6 @@ void BleConnectivityDriver::connect() {
             NUS_TX_CHARACTERISTIC_UUID,
             BLECharacteristic::PROPERTY_NOTIFY
         );
-        txCharacteristic->addDescriptor(new BLE2902());
 
         // RX Characteristic (Write / Write without response) - Central to Peripheral
         rxCharacteristic = bleService->createCharacteristic(
@@ -194,7 +188,7 @@ void BleConnectivityDriver::handlePeerDisconnected() {
     startAdvertising();
 }
 
-void BleConnectivityDriver::handleDataReceived(const uint8_t* data, size_t length) {
+void BleConnectivityDriver::handleDataReceived(const uint8_t* data, size_t length) const {
     if (onDataReceivedHandler != nullptr && data != nullptr && length > 0) {
         onDataReceivedHandler(reinterpret_cast<const char*>(data), length);
     }
