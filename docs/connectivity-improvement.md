@@ -2,7 +2,7 @@
 
 Analysis for a future development session. Status: **proposed, not implemented.** Nothing here was run on hardware. Source claims were checked by reading `src/`; D1 was additionally reproduced with a minimal host compile of the same class shape (error: *allocating an object of abstract class type*).
 
-Related: [sampling-interval-improvement.md](sampling-interval-improvement.md), [telemetry-improvement.md](telemetry-improvement.md).
+Related: [improvements-roadmap.md](improvements-roadmap.md), [diagnostics-improvement.md](diagnostics-improvement.md) (link-state events, counters, logging), [threading-model-improvement.md](threading-model-improvement.md) (cloud-to-device commands cross tasks), [library-readiness-improvement.md](library-readiness-improvement.md) (compile-every-example CI), [telemetry-improvement.md](telemetry-improvement.md), [sampling-interval-improvement.md](sampling-interval-improvement.md).
 
 ---
 
@@ -161,7 +161,7 @@ Pick one and document it. Combinations:
 | Requeue | Return the packet to the queue tail | Order changes, needs bounded count |
 | Store and forward | Ring buffer in RAM (or flash) with newest-wins eviction | Memory cost, best data fidelity |
 
-Recommended default: **bounded retry plus drop with a counter**, and a pluggable policy for advanced users. Failure statistics (`sentCount`, `droppedCount`, `lastStatus`) should be readable from `GatewayClient`.
+Recommended default: **bounded retry plus drop with a counter**, and a pluggable policy for advanced users. Failure statistics (`sentCount`, `droppedCount`, `lastStatus`) should be readable from `GatewayClient`, and reported through the shared counters and logger defined in [diagnostics-improvement.md](diagnostics-improvement.md) rather than a gateway-specific mechanism.
 
 ### 4.5 Link state as events
 
@@ -169,7 +169,7 @@ Introduce a framework event identifier for link transitions (for example `LINK_U
 
 Constraints:
 - The ESP32 WiFi events arrive on the system event task, not the sampler task. Delivery must be thread-safe: post to a queue or use a task notification rather than calling `Device::on()` directly.
-- Check the existing event identifier ranges (sensors use 21, 30, 31, 50, 51; commands 300 to 303) to pick a free block and document it.
+- Event identifiers are an unmanaged shared `int` space (see the identifier registry in [threading-model-improvement.md](threading-model-improvement.md)). Reserve a documented block for framework link events (for example 900 to 909) instead of choosing a number ad hoc.
 
 ### 4.6 Security
 
@@ -180,7 +180,7 @@ Constraints:
 
 ### 4.7 Cloud-to-device commands
 
-Add `subscribe(topic, callback)` to the MQTT gateway and map messages to `Command`s delivered to the `Device`. This closes the loop with the framework's `CommandHandler` model. Treat as phase 2, since it affects threading: callbacks arrive on the network worker, not the sampler, so a command forwarded to an actuator crosses tasks.
+Add `subscribe(topic, callback)` to the MQTT gateway and map messages to `Command`s delivered to the `Device`. This closes the loop with the framework's `CommandHandler` model. Treat as phase 2, since it affects threading: callbacks arrive on the network worker, not the sampler, so a command forwarded to an actuator crosses tasks. Actuators and their buffered setters are **not** thread-safe today; resolve that first (see the command-marshalling section of [threading-model-improvement.md](threading-model-improvement.md)).
 
 ### 4.8 Testability
 

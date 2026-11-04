@@ -2,7 +2,7 @@
 
 Analysis for a future development session. Status: **proposed, not implemented.** Memory and performance statements are architectural reasoning, not measurements.
 
-Related: [sampling-interval-improvement.md](sampling-interval-improvement.md), [connectivity-improvement.md](connectivity-improvement.md).
+Related: [improvements-roadmap.md](improvements-roadmap.md), [diagnostics-improvement.md](diagnostics-improvement.md) (the counters proposed here live in its shared facility), [threading-model-improvement.md](threading-model-improvement.md), [dependencies-improvement.md](dependencies-improvement.md) (ArduinoJson decision), [library-readiness-improvement.md](library-readiness-improvement.md) (host test harness for the golden tests), [sampling-interval-improvement.md](sampling-interval-improvement.md), [connectivity-improvement.md](connectivity-improvement.md).
 
 ---
 
@@ -177,7 +177,7 @@ For the JSON writer, serialize directly into a fixed buffer with `serializeJson(
 ## 5. Recommended path
 
 **Phase A: safe, small**
-1. Add counters (`enqueued`, `dropped`, high-water mark) to `Device`.
+1. Add counters (`enqueued`, `dropped`, high-water mark) to `Device`, using the shared counter facility from [diagnostics-improvement.md](diagnostics-improvement.md) so they are reported the same way as scheduler and gateway counters.
 2. Resolve the `serialize` overload hiding (T14): rename the helpers or add `using` guidance, and document it in Doxygen.
 3. Remove the two unneeded `ArduinoJson.h` includes and pin `ArduinoJson (>=7.0.0)` in `library.properties` (T5, T6).
 4. Add golden host tests for each example package's JSON. This needs ArduinoJson and the Arduino `String` on the host: a fake `Arduino.h` with a minimal `String`, and ArduinoJson fetched as a header-only dependency for the test build.
@@ -188,7 +188,7 @@ For the JSON writer, serialize directly into a fixed buffer with `serializeJson(
 7. Packet pool with placement-new, alignment and destructor handling, and a `static_assert` on size.
 8. Drop-oldest and an alarm lane.
 
-**Phase C: format decoupling**
+**Phase C: format decoupling.** Do this only after Phases A and B are measured on hardware: it breaks every package subclass, and the benefit should be justified by real heap and payload numbers, not by the analysis alone.
 9. `TelemetryWriter` interface with a JSON implementation, plus an adapter for the legacy `serialize(JsonDocument&)`.
 10. Bounded serialization into a caller-supplied buffer (removes the `JsonDocument` plus `String` allocations, T4) with a `PayloadTooLarge` result.
 11. Move the `ArduinoJson` include out of public headers.

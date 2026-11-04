@@ -4,7 +4,7 @@ Implementation brief for a future development session. It is self-contained: rea
 
 Status: **proposed, not implemented.** Claims about performance are architectural reasoning, not measurements. The scheduler arithmetic in §4.1 was checked with a quick model simulation (steady 5-tick interval, staggered equal periods, no drift after `advance(7)`); it is not yet implemented or tested in C++.
 
-Related: [connectivity-improvement.md](connectivity-improvement.md), [telemetry-improvement.md](telemetry-improvement.md).
+Related: [improvements-roadmap.md](improvements-roadmap.md) (priorities and dependencies), [threading-model-improvement.md](threading-model-improvement.md) (what runs where, handler budgets), [diagnostics-improvement.md](diagnostics-improvement.md) (counters and logging used here), [interrupt-power-improvement.md](interrupt-power-improvement.md) (the alternative to polling for edge sensors), [connectivity-improvement.md](connectivity-improvement.md), [telemetry-improvement.md](telemetry-improvement.md).
 
 ---
 
@@ -191,6 +191,25 @@ Recommendation: option 1 as the base mechanism, plus option 3 as the ergonomic l
 
 DHT note: if the minimum cannot be met, the sensor should return the cached reading rather than hit the bus. This is a separate, optional hardening.
 
+## 4.5 Handler time budget (new, from the source)
+
+All due slots run sequentially inside one wake, so the **sum of the worst-case handler times of the slots that can be due on the same tick must be shorter than the tick**, or `missedTickCount` grows. Worst cases measured from the source (not from hardware):
+
+| Handler | Worst-case blocking | Source |
+|---|---|---|
+| `LoadCellAmplifier` | up to 100 ms busy-wait for data-ready, then 24 bit-banged clock pulses | `READ_TIMEOUT_MS = 100`, `readRawValue()` loop on `digitalRead` |
+| `UltrasonicSensor` | up to 30 ms inside `pulseIn`, plus the trigger delays | `TIMEOUT_LIMIT_IN_MICROSECONDS = 30000` |
+| `DigitalLightIntensitySensor` | I²C transaction (sub-millisecond to a few ms; longer on a bus fault) | `Wire` reads |
+| `GeolocationSensor` | drains the serial buffer; time grows with the backlog | `updateInternalBuffer()` `while` loop |
+| `DhtSensor` | roughly 20 to 25 ms bit-banged read, with interrupts disabled during bit timing | DHT library |
+| `Button`, `PassiveInfraredSensor`, `PulseSensor`, `GasSensor` | microseconds (single read) | `digitalRead` / `analogRead` |
+
+Consequences for the design:
+- The **SmartScale** example registers four `LoadCellAmplifier` slots. With a 100 ms tick, four back-to-back worst-case reads could take about 400 ms in one wake. Explicit per-sensor periods must therefore be **staggered**, which the initial-phase rule does, and the document's default for `LoadCellAmplifier` (100 ms) should not be used for four load cells on one tick without staggering or a slower tick.
+- The scheduler should expose `worstCaseWakeInMicroseconds` (measured with `micros()` around each dispatch, high-water mark) so a developer sees the real budget. Records feed the diagnostics counters.
+- A later refinement is a per-handler declared budget (`MAXIMUM_BLOCKING_TIME_IN_MICROSECONDS` constant next to the interval constants) so that a build-time or start-up check can warn about an over-committed tick.
+- Blocking sensors (ultrasonic, HX711) are the strongest argument for the optional per-slot task or the interrupt/DMA approaches in [interrupt-power-improvement.md](interrupt-power-improvement.md).
+
 ## 5. Timing model and edge cases
 
 | Case | Required behaviour |
@@ -215,7 +234,7 @@ Silent clamping hides mistakes, so surface it:
 enum class AddResult : uint8_t { Ok, ClampedToMinimum, ClampedToTick, TableFull, InvalidArgument, EngineStarted };
 ```
 
-- `Device::appendSensorToScheduler` can still return `bool` (`true` for `Ok` and for either clamp, `false` for `TableFull`, `InvalidArgument`, or an engine already started), and log the clamp via the framework's logging facility if one exists. **Check for an existing logger before inventing one.** Because the bool cannot distinguish the two clamps from `Ok`, also add a protected `lastSchedulerResult()` accessor (or a second overload that returns `AddResult`) so tests and diagnostics can see it.
+- `Device::appendSensorToScheduler` can still return `bool` (`true` for `Ok` and for either clamp, `false` for `TableFull`, `InvalidArgument`, or an engine already started), and log the clamp via the framework's logging facility if one exists. There is **no logger in the framework today** (verified: no logging code in `src/`; `GasSensor` has its `Serial` calls commented out), so clamp reporting and `missedTickCount` depend on the logging and health facilities proposed in [diagnostics-improvement.md](diagnostics-improvement.md). Until those exist, expose the values through accessors only. Because the bool cannot distinguish the two clamps from `Ok`, also add a protected `lastSchedulerResult()` accessor (or a second overload that returns `AddResult`) so tests and diagnostics can see it.
 - `EngineStarted` is a `Device`-level result (the scheduler does not know about the engine), so it is not in the scheduler's enum.
 
 ## 7. Concurrency and memory
@@ -313,6 +332,7 @@ Cases:
 - [ ] Two-argument overload behaves as before, and is marked deprecated.
 - [ ] Every polled sensor has `DEFAULT_` and `MINIMUM_` constants with cited sources (`DhtSensor` per model).
 - [ ] Minimums are enforceable through `appendSensorToScheduler`, and a below-minimum request is observable.
+- [ ] A measured worst-case wake duration is available, and the SmartScale example is staggered so it stays within its tick.
 - [ ] All examples migrated, and `OutdoorSecurityLightController` constructor arguments fixed.
 - [ ] README, class diagram, `keywords.txt` and Doxygen updated, and Doxygen runs without warnings.
 - [ ] Existing `digital_light` and `rgb_led` tests still pass.
@@ -320,9 +340,9 @@ Cases:
 
 ## 15. Follow-ups (not part of this change)
 
-- Document the threading model (priorities, which task runs which handler).
-- Telemetry packet pool to reduce heap churn, and a blocking or counted enqueue instead of silent drops.
+- Document the threading model: see [threading-model-improvement.md](threading-model-improvement.md).
+- Telemetry pool and drop counters: see [telemetry-improvement.md](telemetry-improvement.md) and [diagnostics-improvement.md](diagnostics-improvement.md).
 - Actuator default constants.
 - Hardware benchmark sketch.
 - Wokwi projects and `wokwi-cli` CI scenarios.
-- Library-readiness cleanup (remove `main.cpp` and the empty `.ino`, ignore `.DS_Store` and `cmake-build-arduino/`, trim `depends=`, tag `v1.0.0`).
+- Library readiness, CI and host tests: see [library-readiness-improvement.md](library-readiness-improvement.md). **Do this first**: the scheduler needs the host test harness and CI described there.
