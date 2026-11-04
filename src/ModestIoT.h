@@ -13,6 +13,7 @@
  */
 
 /// --- 1. CORE ASYNCHRONOUS ENGINE & SIGNALING PRIMITIVES ---
+#include "ModestLog.h"
 #include "Event.h"
 #include "Command.h"
 #include "EventHandler.h"
