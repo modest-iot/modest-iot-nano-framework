@@ -11,7 +11,6 @@
 
 #include "ConnectivityDriver.h"
 #include "TelemetryPackage.h"
-#include <ArduinoJson.h>
 
 /**
  * @name Gateway: Generic Abstraction
