@@ -142,6 +142,13 @@ protected:
         }
     }
 
+    /**
+     * @brief Executes periodic background network maintenance.
+     */
+    void maintainNetworkServices() const override {
+        gatewayClient.service();
+    }
+
 public:
     /**
      * @brief Constructs the AirQualityMonitorDevice.
