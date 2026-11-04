@@ -1,0 +1,209 @@
+# Modest IoT Improvements Roadmap
+
+Index and recommended order for the `docs/*-improvement.md` briefs. All are proposals; nothing here is implemented or measured.
+
+## 1. Documents
+
+| # | Document | Topic |
+|---|---|---|
+| 1 | [library-readiness-improvement.md](library-readiness-improvement.md) | Cleanup, host tests, CI, release, footprint |
+| 2 | [dependencies-improvement.md](dependencies-improvement.md) | Unused and replaceable third-party libraries |
+| 3 | [connectivity-improvement.md](connectivity-improvement.md) | Drivers and gateway clients; includes the D1 compile defect |
+| 4 | [diagnostics-improvement.md](diagnostics-improvement.md) | Logging, sensor health, counters |
+| 5 | [threading-model-improvement.md](threading-model-improvement.md) | Threading docs, engine config, command marshalling, ID registry |
+| 6 | [sampling-interval-improvement.md](sampling-interval-improvement.md) | Per-slot sampling intervals and pure scheduler |
+| 7 | [telemetry-improvement.md](telemetry-improvement.md) | Package ownership, pool, writer, queue policy |
+| 8 | [interrupt-power-improvement.md](interrupt-power-improvement.md) | Interrupt-driven sensing, tickless, sleep |
+
+## 2. Prioritization method
+
+Each work item (not whole document) is scored 0 to 5 on three benefits, and sized by cost. Scores are judgement, not measurement; revisit them after the diagnostics data exists.
+
+- **Q** quality: correctness, safety, testability, release credibility.
+- **P** performance: latency, CPU, memory, energy.
+- **D** developer experience: first-run success, API clarity, debuggability.
+- **Cost**: XS under half a day, S about a day, M several days, L a week or more.
+- **Score** = 2Q + P + 2D, divided by cost weight (XS 1, S 1.5, M 2.5, L 4), rounded. Quality and DX are double-weighted because the library has no users yet to feel a performance difference; a library that does not compile or is hard to debug never reaches the point where performance matters.
+
+| ID | Work item | Doc | Q | P | D | Cost | Score |
+|---|---|---|---|---|---|---|---|
+| W1 | Fix abstract `WiFiConnectivityDriver` (D1); examples must compile | connectivity | 5 | 0 | 5 | XS | 20 |
+| W2 | Delete dead `LoadCellController`, unused deps, unused includes, pin ArduinoJson | dependencies | 4 | 1 | 4 | XS | 17 |
+| W3 | Repo cleanup (`main.cpp`, empty `.ino`, `.gitignore`), `library.properties` fixes | library-readiness | 4 | 0 | 4 | XS | 16 |
+| W4 | Threading rules, "Runs on" tags, ID registry (docs only) | threading | 3 | 0 | 4 | XS | 14 |
+| W5 | Host test harness plus CI (host tests, compile-examples, lint) | library-readiness | 5 | 0 | 4 | M | 7 |
+| W6 | Logging macros, stack high-water, sensor fault events | diagnostics | 4 | 1 | 5 | S | 13 |
+| W7 | Connectivity reconnect policy, `mqttClient.loop()` every cycle, link events | connectivity | 5 | 2 | 4 | M | 8 |
+| W8 | Per-slot sampling intervals, pure scheduler, elapsed-tick accounting | sampling | 4 | 5 | 5 | M | 9 |
+| W9 | `EngineConfig` and `stopAsynchronousEngine()` | threading | 4 | 2 | 3 | S | 11 |
+| W10 | Optional Bluetooth, optional MQTT footprint (P1) | connectivity, library-readiness | 3 | 2 | 4 | S | 11 |
+| W11 | Telemetry ownership and queue policy (Phases A and B) | telemetry | 4 | 3 | 4 | M | 8 |
+| W12 | `Device::post` command marshalling | threading | 3 | 0 | 4 | M | 6 |
+| W13 | Interrupt triggers for Button and PIR | interrupt-power | 3 | 4 | 3 | M | 6 |
+| W14 | HX711 data-ready and ultrasonic echo capture (remove blocking) | interrupt-power | 2 | 4 | 2 | M | 5 |
+| W15 | Cloud-to-device commands (MQTT subscribe) | connectivity | 2 | 0 | 4 | M | 5 |
+| W16 | Tickless scheduling and light sleep | interrupt-power | 2 | 4 | 2 | L | 3 |
+| W17 | Deep-sleep cycle and battery example | interrupt-power | 1 | 4 | 2 | L | 3 |
+| W18 | Telemetry pool and writer interface (Phase C) | telemetry | 2 | 3 | 1 | L | 2 |
+| W19 | Native servo and LCD drivers | dependencies | 2 | 0 | 1 | M | 2 |
+
+## 3. Recommended order (reorganized)
+
+Changes from the previous order, and why:
+- **Connectivity reconnect and `mqttClient.loop()` (W7) moves from last to tier 2.** It is a correctness defect (the MQTT keep-alive only runs after a successful publish), not an optional enhancement.
+- **Diagnostics is split.** Only the logging macros and stack high-water slice (part of W6) is needed early, because it gives data for W8, W9 and W11. The rest follows.
+- **`EngineConfig` and optional Bluetooth move up** because both are cheap and remove first-run failures (stack overflows, ESP32-S3 build errors).
+- **The scheduler (W8) stays the headline feature**: highest combined P and D, and everything in tier 4 depends on it.
+- **Sleep, deep sleep, pool, native drivers move to the end**: high cost, benefit unproven until measured.
+- **Cloud-to-device commands drop** below `Device::post` and the reliability work they depend on.
+
+| Tier | Items | Goal | Exit criterion |
+|---|---|---|---|
+| 0: Make it correct and shippable | W1, W2, W3, W4 | Everything compiles, repo is clean, rules are written down | All examples compile on a clean machine; threading and ID docs published |
+| 1: Safety net and visibility | W5, W6 (logging, high-water slice) | Regressions and stack problems are caught automatically | CI green on every PR; logs available behind a macro |
+| 2: Reliability and footprint | W7, W9, W10 | Devices stay connected, tasks are tunable, builds work on S2/S3/C3 | Soak test reconnects after Wi-Fi and broker loss |
+| 3: Core performance and DX | W8, then W11 | Per-slot intervals, bounded memory use for telemetry | Scheduler host tests pass; sampler wake budget measured |
+| 4: Capabilities | W12, W13, W14, W15, rest of W6 | Edge-driven sensing, remote commands, fault events | Latency measured for polling versus interrupt |
+| 5: Optimization and power | W16, W17, W18, W19 | Battery operation and further tuning | Decide per item from measured data |
+
+Parallelism: W1 to W4 are independent and can be done in one session. W5 can start as soon as W1 lands so the first CI run is green.
+
+## 4. Dependencies between items
+
+- Interrupt triggers and `Device::post` share one notification redesign (bit flags plus an atomic tick counter) and require the pure scheduler.
+- Tickless sleep requires `ticksUntilNextDue()` from the scheduler.
+- Cloud-to-device commands (connectivity) require `Device::post` (threading).
+- Stack-size defaults should come from diagnostics measurements.
+- Telemetry writer and pool work should follow the host test harness.
+
+## 5. Deliberately out of scope
+
+- Replacing DHT, PubSubClient, ArduinoJson or TLS.
+- Targeted (per-instance) commands until a use case appears.
+- Switchable sensor power rails and ADC/DMA sampling.
+- Non-ESP32 targets.
+
+## 6. Claims still needing verification
+
+- All performance, latency, memory and power figures (reasoned, not measured).
+- `depends=` name format and transitive dependencies (arduino-lint, clean install).
+- Bluetooth failing on ESP32-S2, S3 and C3.
+- `Wire` thread-safety on core 3.x; `loop()` core affinity.
+- Task notification array availability; `CONFIG_PM_ENABLE` in the precompiled core.
+- Datasheet values behind the per-sensor interval constants.
+- WiFi retry behaviour (connectivity D4).
+- Local `arduino-cli compile` currently fails with a ctags "bad CPU type" error; CI should be the build authority.
+
+## 7. Comparison with traditional development (end state and per tier)
+
+Compares three points: a traditional Arduino `loop()` app, Modest IoT today, and Modest IoT once Tiers 0 to 4 are done (Tier 5 is optional and measured separately). **All entries are reasoned from the source and the briefs, not measured.** Section 8 defines how to turn them into numbers.
+
+### 7.1 Developer experience
+
+| Aspect | Traditional `loop()` | Modest IoT today | Modest IoT after Tier 4 |
+|---|---|---|---|
+| First build | Works with the board package | Some examples do not compile (`WiFiConnectivityDriver` abstract); extra libraries to install | All examples compile in CI; only used libraries are declared; Bluetooth and MQTT optional |
+| Structure | One growing `loop()` with `millis()` flags and global state | Sensors emit events, a `Device` mediates, actuators take commands | Same, plus documented threading rules and an ID registry |
+| Adding a sensor | New globals, new timing variable, new branch in `loop()` | Subclass or reuse, register in the scheduler | One line with a per-sensor default period (`appendSensorToScheduler<T>`) |
+| Sampling rates | Hand-written per-sensor timers | One global tick for all slots (fixed rate) | Per-slot periods, minimums enforced, staggering handled |
+| Timing mistakes | Easy: a blocking call stalls everything | Same risk inside the single sampler task | Handler budgets documented; blocking HX711/ultrasonic reads removed from the sampler |
+| Debugging | `Serial.println` scattered | No logging, no counters | `MODEST_LOG_*`, stack high-water marks, sensor fault events, health snapshot |
+| Networking | Blocking connect/publish in `loop()` | Separate network task, but weak reconnect and a keep-alive defect | Reconnect policy, keep-alive each cycle, link-state events, send status |
+| Cloud-to-device | Hand-rolled callback | Not supported | Mediator-routed commands through `Device::post` |
+| Testing | Rarely possible off-device | Two host test suites | Host harness and CI on every change |
+| Learning curve | Lowest to start, steepest as the sketch grows | Moderate (events, commands, mediator) | Same concepts; fewer pitfalls, more to read |
+
+Honest cost: Modest IoT asks for more concepts up front than a 30-line blink sketch. The benefit appears once a sketch has several sensors, actuators and a network path.
+
+### 7.2 Performance
+
+| Aspect | Traditional `loop()` | Modest IoT today | Modest IoT after Tier 4 |
+|---|---|---|---|
+| Timing model | Cooperative polling; jitter grows with the slowest block in `loop()` | Timer ISR plus a sampler task at priority 3; one slot per tick, round-robin | Same engine; each slot runs at its own period, missed ticks are accounted for |
+| Sample period accuracy | Depends on `loop()` duration | Fixed tick shared by all slots (an N-slot sensor gets 1/N of the tick rate) | Per-slot periods independent of slot count |
+| Worst-case stall | Any blocking call, including network | HX711 up to 100 ms, ultrasonic up to 30 ms, DHT about 20 to 25 ms inside the sampler | Interrupt-driven HX711/ultrasonic and documented budgets; DHT stays as is |
+| Edge latency (button, PIR) | Up to one `loop()` pass | Up to one polling period | Interrupt mode: task wake-up latency instead of a period (to be measured) |
+| Network isolation | A slow publish blocks sensing | Isolated in the network task | Isolated, with bounded queue policy and no silent packet loss |
+| Heap behaviour | Usually static | One `new`/`delete` per packet | Ownership made explicit; pool only if measurement justifies it (Tier 5) |
+| CPU when idle | Spins in `loop()` at 100 % unless delays are added | Sleeps between ticks, but wakes at a fixed tick forever | Fewer idle wake-ups from per-slot periods and interrupt sensors; true sleep only in Tier 5 |
+| Energy | High unless hand-tuned | Same as traditional (no sleep path) | Modestly better; large savings only with Tier 5 sleep modes |
+
+Expected direction: Modest IoT will not beat a hand-tuned single-purpose `loop()` on raw cycles, because it adds an RTOS notification, a queue and virtual dispatch. The claim to test is narrower: **more predictable timing and better isolation from network stalls as the application grows**, at a small fixed overhead.
+
+### 7.3 Resource consumption
+
+| Resource | Traditional `loop()` | Modest IoT today | Modest IoT after Tier 4 |
+|---|---|---|---|
+| Task stacks | `loop()` task only | 4096 B sampler plus 8192 B network, fixed | Same defaults, configurable through `EngineConfig`; tuned from measured high-water marks |
+| Queue and packets | None | Queue of pointers plus one heap packet per reading | Same order of magnitude; bounded by queue policy |
+| Flash | Smallest | Larger: framework, Wi-Fi, Bluetooth driver pulled in by the umbrella header, plus unused dependencies | Smaller than today if Bluetooth/MQTT are optional and dead dependencies are gone; still larger than a bare sketch |
+| Static RAM | Small | Slot table, per-object state | Slot table gains a few words per slot (period, countdown, minimum); small |
+| Heap fragmentation risk | Low | Moderate over long runs (`new`/`delete` per packet, `String` in places) | Lower with explicit ownership; pool in Tier 5 if measured |
+| Third-party dependencies installed | As needed | 8 declared, 2 unused, 1 dead-code only | Only those used (DHT, LiquidCrystal_I2C, ESP32Servo, PubSubClient, ArduinoJson) |
+| Logging overhead | User-controlled | None | Zero when `MODEST_LOG_*` is compiled out; UART cost when on |
+
+### 7.4 Progression at the end of each tier
+
+Cumulative state after each tier, against a traditional `loop()` app. Same caveat: reasoned, not measured. "Trad." means a typical multi-sensor `loop()` sketch.
+
+#### Developer experience
+
+| After | State versus traditional |
+|---|---|
+| Today | Better structure, worse first run: some examples fail to compile, no logging, rules unwritten. Trad. wins on "it just builds" |
+| Tier 0 | Parity on first build (examples compile, clean repo, fewer installs). Structure advantage is now usable; threading and ID rules are documented, so fewer surprises than a growing `loop()` |
+| Tier 1 | Ahead on trust: CI and host tests catch regressions, which trad. sketches rarely have. Logging macros and stack high-water marks give debugging tools trad. users build by hand |
+| Tier 2 | Ahead on connected devices: reconnect, keep-alive and link events work out of the box where trad. users hand-write a state machine. Tunable stacks; builds on ESP32-S2/S3/C3 |
+| Tier 3 | Clearly ahead for multi-sensor apps: one line per sensor with a sensible default period, instead of a `millis()` flag per sensor. Explicit packet ownership removes leak and double-free guesswork |
+| Tier 4 | Ahead on features: interrupt sensors without writing ISRs, remote commands, sensor fault events. Cost: more concepts to learn than trad. |
+| Tier 5 | Battery operation through a policy setting instead of hand-built sleep code; optional, measured |
+
+#### Performance (versus a `loop()` app)
+
+| After | Timing and latency | Isolation | Idle CPU and energy |
+|---|---|---|---|
+| Today | Fixed shared tick; per-sensor rate falls as slots are added. Jitter from blocking handlers (HX711 up to 100 ms) | Network work is isolated; keep-alive defect can drop the MQTT session | Sleeps between ticks but ticks forever; about equal to trad. in energy |
+| Tier 0 | Unchanged | Unchanged | Unchanged |
+| Tier 1 | Unchanged (now observable) | Unchanged | Unchanged; log overhead only if enabled |
+| Tier 2 | Unchanged | Better: network faults recover and do not stall sensing; stack overflows avoided by tuning | Unchanged |
+| Tier 3 | Per-slot periods independent of slot count; missed ticks accounted for; worst-case handler budget documented | Bounded queue policy, no silent loss | Fewer needless sensor reads for slow sensors |
+| Tier 4 | Edge latency drops from one polling period to task wake-up time; HX711/ultrasonic no longer stall the sampler | Commands marshalled onto the sampler, no cross-task races | Idle button/PIR slots leave the periodic table |
+| Tier 5 | Same as Tier 4 | Same | Tickless and sleep modes can cut average current substantially; amount unknown until measured |
+
+Expected shape: trad. is faster per cycle but its jitter and stall exposure grow with application size. Modest IoT starts roughly level, falls behind slightly in overhead, then pulls ahead on predictability from Tier 3 and on latency from Tier 4.
+
+#### Resources (versus a `loop()` app)
+
+| After | Flash | RAM and stacks | Heap | Dependencies |
+|---|---|---|---|---|
+| Today | Larger than trad. (Bluetooth pulled in by the umbrella header, dead code) | 4 KB + 8 KB task stacks, fixed | `new`/`delete` per packet | 8 declared, 2 unused, 1 dead-code only |
+| Tier 0 | Slightly smaller (dead `LoadCellController` removed) | Unchanged | Unchanged | Unused ones removed, ArduinoJson pinned |
+| Tier 1 | Slightly larger with logs enabled; zero when compiled out | Unchanged; test code is host-only | Unchanged | Unchanged |
+| Tier 2 | Smaller when Bluetooth/MQTT are optional | Configurable; likely small rise for TLS-capable network stack | Unchanged | Optional libraries not installed unless used |
+| Tier 3 | Small rise for the scheduler | A few words per slot | Lower fragmentation risk from explicit ownership | Unchanged |
+| Tier 4 | Small rise (interrupt, command queue) | One extra small queue; ISR code in IRAM | Unchanged | Unchanged |
+| Tier 5 | Rise if sleep and pool code is included (opt-in) | Pool preallocates RAM (trade for no fragmentation) | Lowest | Possibly fewer if native drivers replace servo/LCD libraries |
+
+Expected shape: footprint is above trad. today, falls back toward it in Tiers 0 and 2, and then grows modestly with features. The framework should stay clearly larger than a bare sketch; the target is "fits comfortably on a 4 MB ESP32 with headroom", checked against measured size reports.
+
+## 8. How to validate the comparison
+
+Run the same three reference applications on the same ESP32 board, once per variant (plain `loop()`, current Modest IoT, post-Tier-4 Modest IoT):
+
+1. **Multi-sensor monitor:** DHT, BH1750 and a button, with a display and Wi-Fi/MQTT telemetry (similar to `AirConditioningDevice`).
+2. **Blocking-sensor stress:** the monitor plus an HX711 and an ultrasonic sensor.
+3. **Network fault:** the monitor with the broker unreachable for 60 seconds, then restored.
+
+| Metric | Method |
+|---|---|
+| Sample period jitter | GPIO toggle per sample on a logic analyzer, or `esp_timer_get_time` deltas logged to RAM |
+| Button and PIR edge-to-action latency | Logic analyzer: input edge to actuator output edge |
+| Sensing continuity during network fault | Count missed samples while the broker is down |
+| Reconnect time | Time from broker restore to first successful publish |
+| Stack use | `uxTaskGetStackHighWaterMark` for each task |
+| Heap | `ESP.getFreeHeap()` and `getMinFreeHeap()` after 24 hours; track fragmentation (`getMaxAllocHeap`) |
+| Flash and static RAM | Size report from the build for each variant |
+| Current draw | Inline current meter (Wokwi cannot measure it) |
+| Lines of application code | Count in the reference sketches, as a rough developer-experience proxy |
+
+Publish the table in the README with the board, core version and commit hashes. Capture measurements after each tier, not only at the end, and update the entries in 7.2 to 7.4 to measured values, and re-score the work items in section 2 from the results, particularly W16 to W19.
