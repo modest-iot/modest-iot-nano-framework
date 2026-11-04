@@ -20,12 +20,6 @@ bool HttpGatewayClient::sendTelemetryRecord(const TelemetryPackage& abstractTele
         communicationTransportDriver.connect();
         return false;
     }
-    
-    // ... rest of the code ...
-    // Wait, I need to fix `communicationTransportDriver`. 
-    // It was in the private part of the base class. 
-    // Since it's in the base class, and I made it `private`, `HttpGatewayClient` cannot access it!
-    // I should make it `protected` in `GatewayClient`.
 
     // 2. Perform polymorphic package data serialization mapping
     String serializedPayloadOutput = abstractTelemetryPayload.serializeAsString();
