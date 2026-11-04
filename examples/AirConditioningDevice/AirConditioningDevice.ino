@@ -10,7 +10,15 @@
 #include <Arduino.h>
 #include <ModestIoT.h>
 
-// --- 1. EVENT-DRIVEN APPLICATION MEDIATOR ---
+// --- 1. PIN DEFINITIONS & HARDWARE CONSTANTS ---
+
+static const int HUMIDITY_AND_TEMPERATURE_SENSOR_PIN    = 4;
+static const int TARGET_TEMPERATURE_UP_BUTTON_PIN       = 12;
+static const int TARGET_TEMPERATURE_DOWN_BUTTON_PIN     = 14;
+static const int STATUS_DISPLAY_ADDRESS                 = 0x27;
+static const int AIR_HANDLER_PIN                        = 13;
+
+// --- 2. EVENT-DRIVEN APPLICATION MEDIATOR ---
 
 class AirConditioningDevice : public Device {
     private:
@@ -133,13 +141,7 @@ class AirConditioningDevice : public Device {
     }
 };
 
-// --- 2. DECLARATIVE RUNTIME CANVAS ---
-
-static const int HUMIDITY_AND_TEMPERATURE_SENSOR_PIN    = 4;
-static const int TARGET_TEMPERATURE_UP_BUTTON_PIN       = 12;
-static const int TARGET_TEMPERATURE_DOWN_BUTTON_PIN     = 14;
-static const int STATUS_DISPLAY_ADDRESS                 = 0x27;
-static const int AIR_HANDLER_PIN                        = 13;
+// --- 3. DECLARATIVE RUNTIME CANVAS ---
 
 static AirConditioningDevice* airConditioningController = nullptr;
 
