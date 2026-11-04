@@ -47,7 +47,19 @@ file(GLOB_RECURSE LIB_SOURCES "src/*.cpp")
 file(GLOB_RECURSE LIB_HEADERS "src/*.h")
 
 add_library(${PROJECT_NAME} STATIC EXCLUDE_FROM_ALL ${LIB_SOURCES} ${LIB_HEADERS})
-target_compile_definitions(${PROJECT_NAME} PUBLIC IRAM_ATTR= __xtensa__=1 __XTENSA__=1)
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+        IRAM_ATTR=
+        __xtensa__=1
+        __XTENSA__=1
+        ESP32=1
+        ARDUINO_ARCH_ESP32=1
+        ESP_PLATFORM=1
+        SOC_WIFI_SUPPORTED=1
+        CONFIG_SOC_WIFI_SUPPORTED=1
+)
+
+file(GLOB ESP32_COMPONENT_INCLUDES "${ESP32_TOOLS_BASE}/include/*/include")
+file(GLOB ESP32_PORT_INCLUDES "${ESP32_TOOLS_BASE}/include/*/port/include")
 
 target_include_directories(${PROJECT_NAME} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
@@ -63,6 +75,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         "${ESP32_PLATFORM_BASE}/libraries/Wire/src"
         "${ESP32_PLATFORM_BASE}/libraries/Network/src"
         "${ARDUINO_CORE_PATH}"
+        ${ESP32_COMPONENT_INCLUDES}
+        ${ESP32_PORT_INCLUDES}
         "${ARDUINO_ESP32_LIBS_INCLUDE_PATH}"
         "${ARDUINO_ESP32_FREERTOS_INCLUDE_PATH}"
         "${ARDUINO_ESP32_FREERTOS_PORTABLE_INCLUDE_PATH}"
@@ -74,6 +88,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         "${ESP32_TOOLS_BASE}/include/xtensa/include"
         "${ESP32_TOOLS_BASE}/include/xtensa/esp32/include"
         "${ESP32_TOOLS_BASE}/include/freertos/esp_additions/include"
+        "${ESP32_TOOLS_BASE}/include/lwip/lwip/src/include"
         "${ESP32_TOOLS_BASE}/qio_qspi/include"
         "${ESP32_PLATFORM_BASE}/variants/esp32da"
         "${ESP32_TOOLS_BASE}/include/newlib/platform_include/"
@@ -82,7 +97,16 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 # 4. IDE Code-Completion Indexer Targets
 add_library(clion_indexer INTERFACE)
-target_compile_definitions(clion_indexer INTERFACE IRAM_ATTR= __xtensa__=1 __XTENSA__=1)
+target_compile_definitions(clion_indexer INTERFACE
+        IRAM_ATTR=
+        __xtensa__=1
+        __XTENSA__=1
+        ESP32=1
+        ARDUINO_ARCH_ESP32=1
+        ESP_PLATFORM=1
+        SOC_WIFI_SUPPORTED=1
+        CONFIG_SOC_WIFI_SUPPORTED=1
+)
 target_link_libraries(clion_indexer INTERFACE ${PROJECT_NAME})
 
 # 5. Dedicated arduino-cli Target Pipeline
@@ -146,13 +170,29 @@ add_executable(test_ble_connectivity
 target_compile_definitions(test_ble_connectivity PRIVATE TEST_MOCK_BLE)
 target_include_directories(test_ble_connectivity PRIVATE tests/fakes src)
 
+add_executable(test_log
+        tests/log/test.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_log PRIVATE tests/fakes src)
+
+add_executable(test_mqtt_gateway
+        tests/mqtt_gateway/test.cpp
+        src/MqttGatewayClient.cpp
+        src/WiFiConnectivityDriver.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_mqtt_gateway PRIVATE tests/fakes src)
+
 add_test(NAME DigitalLightTest COMMAND test_digital_light)
 add_test(NAME RgbLedTest COMMAND test_rgb_led)
 add_test(NAME RfidSensorTest COMMAND test_rfid_sensor)
 add_test(NAME BleConnectivityTest COMMAND test_ble_connectivity)
+add_test(NAME LogTest COMMAND test_log)
+add_test(NAME MqttGatewayTest COMMAND test_mqtt_gateway)
 
 add_custom_target(run_tests
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        DEPENDS test_digital_light test_rgb_led test_rfid_sensor test_ble_connectivity
+        DEPENDS test_digital_light test_rgb_led test_rfid_sensor test_ble_connectivity test_log test_mqtt_gateway
         COMMENT "Executing all native host test suites..."
 )
