@@ -33,6 +33,8 @@ private:
 
     // Aligned Naming Rule: Variables represent properties without 'is' prefixes
     volatile bool provisioningRequested; ///< Flag indicating if provisioning was requested.
+    unsigned long lastConnectAttemptTimestamp; ///< Timestamp of the last connection attempt.
+    unsigned long reconnectIntervalMilliseconds; ///< Cooldown interval between reconnection attempts in milliseconds.
 
     // Encapsulated concrete socket footprint hidden from outer layers
     WiFiClient* hardwareSocket{}; ///< Pointer to the hardware socket.
@@ -78,7 +80,19 @@ public:
      * upcasted cleanly to the generic Arduino Client contract.
      * @return Reference to the underlying network socket.
      */
-    [[nodiscard]] Client& getNetworkSocket();
+    [[nodiscard]] Client& getNetworkSocket() const;
+
+    /**
+     * @brief Sets the cooldown interval between Wi-Fi connection attempts.
+     * @param intervalMs Cooldown period in milliseconds (default: 10000ms).
+     */
+    void setReconnectInterval(unsigned long intervalMs);
+
+    /**
+     * @brief Gets the configured cooldown interval between Wi-Fi connection attempts.
+     * @return Cooldown period in milliseconds.
+     */
+    [[nodiscard]] unsigned long getReconnectInterval() const;
 };
 
 /** @} */ // End of Connectivity: Concrete Drivers

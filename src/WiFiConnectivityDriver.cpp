@@ -6,14 +6,15 @@
  */
 
 #include <Arduino.h>
-#include <WiFi.h>
 #include "WiFiConnectivityDriver.h"
-
+#include "ModestLog.h"
 
 WiFiConnectivityDriver::WiFiConnectivityDriver(const char* ssid, const char* password)
     : networkSsidIdentifier(ssid),
       networkPasswordCredential(password),
-      provisioningRequested(false)
+      provisioningRequested(false),
+      lastConnectAttemptTimestamp(0),
+      reconnectIntervalMilliseconds(10000)
 {
     // Concrete allocation happens safely hidden away within the transport domain constructor
     hardwareSocket = new WiFiClient();
@@ -31,9 +32,16 @@ WiFiConnectivityDriver::~WiFiConnectivityDriver() {
 
 void WiFiConnectivityDriver::connect() {
     // Avoid re-triggering allocation requests if connection handshakes are actively executing
-    if (WiFi.status() != WL_CONNECTED && !provisioningRequested) {
-        provisioningRequested = true;
-        WiFi.begin(networkSsidIdentifier, networkPasswordCredential);
+    // unless the cooldown period has expired to allow recovering from transient AP outages.
+    if (WiFi.status() != WL_CONNECTED) {
+        unsigned long currentTimestamp = millis();
+        if (!provisioningRequested || (lastConnectAttemptTimestamp == 0) || 
+            (currentTimestamp - lastConnectAttemptTimestamp >= reconnectIntervalMilliseconds)) {
+            provisioningRequested = true;
+            lastConnectAttemptTimestamp = currentTimestamp;
+            MODEST_LOG_I("WiFi", "Initiating Wi-Fi connection to SSID: %s", networkSsidIdentifier);
+            WiFi.begin(networkSsidIdentifier, networkPasswordCredential);
+        }
     }
 }
 
@@ -57,8 +65,16 @@ bool WiFiConnectivityDriver::transmit(const char* target, const char* data) {
     return false;
 }
 
-Client& WiFiConnectivityDriver::getNetworkSocket() {
+Client& WiFiConnectivityDriver::getNetworkSocket() const {
     // Returns the concrete reference upcasted implicitly to a generic Client reference interface.
     // Application layer components interact with it polymorphically without ever seeing <WiFi.h>.
     return *hardwareSocket;
+}
+
+void WiFiConnectivityDriver::setReconnectInterval(unsigned long intervalMs) {
+    reconnectIntervalMilliseconds = intervalMs;
+}
+
+unsigned long WiFiConnectivityDriver::getReconnectInterval() const {
+    return reconnectIntervalMilliseconds;
 }
