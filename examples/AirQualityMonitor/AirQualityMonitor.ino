@@ -136,7 +136,7 @@ protected:
      * @brief Processes telemetry data by sending it via MQTT.
      * @param rawQueueItemPayload Pointer to the queued telemetry payload.
      */
-    void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) override {
+    void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) const override {
         if (rawQueueItemPayload != nullptr) {
             gatewayClient.sendTelemetryRecord(*rawQueueItemPayload);
         }
