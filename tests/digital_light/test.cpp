@@ -1,18 +1,17 @@
 #include "DigitalLightIntensitySensor.h"
+#include <Arduino.h>
 #include <Wire.h>
 #include <cassert>
 #include <cmath>
 #include <vector>
 
-FakeWire Wire;
-unsigned long now = 0;
-unsigned long millis() { return now; }
-
+namespace {
 class Recorder : public EventHandler {
 public:
     std::vector<Event> events;
-    void on(Event event) override { events.push_back(event); }
+    void on(const Event event) override { events.push_back(event); }
 };
+} // namespace
 
 int main() {
     Recorder recorder;
@@ -21,10 +20,10 @@ int main() {
     assert(!sensor.hasValidSample());
     sensor.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
     assert(Wire.requests == 0);
-    now = 179;
+    fakeMillis = 179;
     sensor.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
     assert(Wire.requests == 0);
-    now = 180;
+    fakeMillis = 180;
     sensor.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
     assert(sensor.hasValidSample());
     assert(recorder.events.size() == 1);
@@ -63,7 +62,7 @@ int main() {
         assert(failed.isInitialized());
         failed.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
         assert(Wire.requests == 0);
-        now += 180;
+        fakeMillis += 180;
         Wire.raw = 12;
         failed.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
         assert(failed.hasValidSample());

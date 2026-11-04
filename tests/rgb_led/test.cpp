@@ -2,10 +2,12 @@
 #include <Arduino.h>
 #include "RgbLed.h"
 
+namespace {
 struct Recorder : CommandHandler {
     int count = 0;
-    void handle(Command) override { count++; }
+    void handle(const Command) override { count++; }
 };
+} // namespace
 
 int main() {
     Recorder parent;

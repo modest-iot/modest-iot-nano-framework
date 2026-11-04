@@ -1,23 +1,15 @@
 #include "RfidSensor.h"
+#include <Arduino.h>
 #include <SPI.h>
 #include <cassert>
 #include <cstring>
 #include <vector>
 
-SPIClass SPI;
-unsigned long now = 0;
-unsigned long millis() { return now; }
-void delay(unsigned long ms) { now += ms; }
-void delayMicroseconds(unsigned int us) { (void)us; }
-void pinMode(uint8_t, uint8_t) {}
-void digitalWrite(uint8_t, uint8_t) {}
-int digitalRead(uint8_t) { return HIGH; }
-void yield() {}
-
+namespace {
 class EventRecorder : public EventHandler {
 public:
     std::vector<Event> events;
-    void on(Event event) override {
+    void on(const Event event) override {
         events.push_back(event);
     }
 };
@@ -41,10 +33,10 @@ struct MockMFRC522State {
     }
 } mockState;
 
-uint8_t mockTransferHook(uint8_t data, SPIClass* spi) {
+uint8_t mockTransferHook(const uint8_t data, SPIClass* spi) {
     if (spi->transactionByteIndex == 0) {
         // Address byte
-        uint8_t reg = (data >> 1) & 0x3F;
+        const uint8_t reg = (data >> 1) & 0x3F;
         spi->selectedRegister = reg;
         spi->isRead = (data & 0x80) != 0;
         return 0;
@@ -52,10 +44,10 @@ uint8_t mockTransferHook(uint8_t data, SPIClass* spi) {
 
     // Data phase (byteIndex >= 1)
     if (spi->isRead) {
-        uint8_t reg = spi->selectedRegister;
+        const uint8_t reg = spi->selectedRegister;
         if (reg == RfidSensor::FIFODataReg) {
             if (!mockState.fifo.empty()) {
-                uint8_t val = mockState.fifo.front();
+                const uint8_t val = mockState.fifo.front();
                 mockState.fifo.erase(mockState.fifo.begin());
                 mockState.regs[RfidSensor::FIFOLevelReg] = static_cast<uint8_t>(mockState.fifo.size());
                 return val;
@@ -71,7 +63,7 @@ uint8_t mockTransferHook(uint8_t data, SPIClass* spi) {
         return 0;
     } else {
         // Write phase
-        uint8_t reg = spi->selectedRegister;
+        const uint8_t reg = spi->selectedRegister;
         if (reg == RfidSensor::FIFODataReg) {
             mockState.fifo.push_back(data);
             mockState.regs[RfidSensor::FIFOLevelReg] = static_cast<uint8_t>(mockState.fifo.size());
@@ -102,7 +94,7 @@ uint8_t mockTransferHook(uint8_t data, SPIClass* spi) {
                     mockState.fifo.clear();
                 } else {
                     if (!mockState.fifo.empty()) {
-                        uint8_t cmd = mockState.fifo[0];
+                        const uint8_t cmd = mockState.fifo[0];
                         if (cmd == RfidSensor::PICC_CMD_REQA || cmd == RfidSensor::PICC_CMD_WUPA) {
                             // ATQA response: 2 bytes
                             mockState.fifo.clear();
@@ -112,7 +104,7 @@ uint8_t mockTransferHook(uint8_t data, SPIClass* spi) {
                             mockState.regs[RfidSensor::FIFOLevelReg] = 2;
                             mockState.regs[RfidSensor::ControlReg] = 0x00;
                         } else if (cmd == RfidSensor::PICC_CMD_SEL_CL1) {
-                            uint8_t nvb = (mockState.fifo.size() > 1) ? mockState.fifo[1] : 0;
+                            const uint8_t nvb = (mockState.fifo.size() > 1) ? mockState.fifo[1] : 0;
                             if (nvb == 0x20) {
                                 // Anti-collision CL1: return 4 bytes UID + BCC
                                 mockState.fifo.clear();
@@ -137,19 +129,19 @@ uint8_t mockTransferHook(uint8_t data, SPIClass* spi) {
                             } else if (nvb == 0x70) {
                                 // Select CL1: return SAK (1 byte) + CRC (2 bytes)
                                 mockState.fifo.clear();
-                                uint8_t sak = (mockState.cardUid.size() == 4) ? 0x08 : 0x04;
+                                const uint8_t sak = (mockState.cardUid.size() == 4) ? 0x08 : 0x04;
                                 mockState.fifo.push_back(sak);
                                 uint16_t crc = 0x6363;
-                                uint8_t b = sak ^ static_cast<uint8_t>(crc & 0x00FF);
-                                b ^= (b << 4);
-                                crc = (crc >> 8) ^ (static_cast<uint16_t>(b) << 8) ^ (static_cast<uint16_t>(b) << 3) ^ (static_cast<uint16_t>(b) >> 4);
+                                const uint8_t b = sak ^ static_cast<uint8_t>(crc & 0x00FF);
+                                const uint8_t bShifted = b ^ (b << 4);
+                                crc = (crc >> 8) ^ (static_cast<uint16_t>(bShifted) << 8) ^ (static_cast<uint16_t>(bShifted) << 3) ^ (static_cast<uint16_t>(bShifted) >> 4);
                                 mockState.fifo.push_back(static_cast<uint8_t>(crc & 0xFF));
                                 mockState.fifo.push_back(static_cast<uint8_t>((crc >> 8) & 0xFF));
                                 mockState.regs[RfidSensor::ComIrqReg] = 0x20;
                                 mockState.regs[RfidSensor::FIFOLevelReg] = 3;
                             }
                         } else if (cmd == RfidSensor::PICC_CMD_SEL_CL2) {
-                            uint8_t nvb = (mockState.fifo.size() > 1) ? mockState.fifo[1] : 0;
+                            const uint8_t nvb = (mockState.fifo.size() > 1) ? mockState.fifo[1] : 0;
                             if (nvb == 0x20) {
                                 // Anti-collision CL2: return remaining 4 bytes UID + BCC
                                 mockState.fifo.clear();
@@ -164,12 +156,12 @@ uint8_t mockTransferHook(uint8_t data, SPIClass* spi) {
                             } else if (nvb == 0x70) {
                                 // Select CL2: return SAK (0x00 for Ultralight) + CRC
                                 mockState.fifo.clear();
-                                uint8_t sak = 0x00;
+                                const uint8_t sak = 0x00;
                                 mockState.fifo.push_back(sak);
                                 uint16_t crc = 0x6363;
-                                uint8_t b = sak ^ static_cast<uint8_t>(crc & 0x00FF);
-                                b ^= (b << 4);
-                                crc = (crc >> 8) ^ (static_cast<uint16_t>(b) << 8) ^ (static_cast<uint16_t>(b) << 3) ^ (static_cast<uint16_t>(b) >> 4);
+                                const uint8_t b = sak ^ static_cast<uint8_t>(crc & 0x00FF);
+                                const uint8_t bShifted = b ^ (b << 4);
+                                crc = (crc >> 8) ^ (static_cast<uint16_t>(bShifted) << 8) ^ (static_cast<uint16_t>(bShifted) << 3) ^ (static_cast<uint16_t>(bShifted) >> 4);
                                 mockState.fifo.push_back(static_cast<uint8_t>(crc & 0xFF));
                                 mockState.fifo.push_back(static_cast<uint8_t>((crc >> 8) & 0xFF));
                                 mockState.regs[RfidSensor::ComIrqReg] = 0x20;
@@ -188,6 +180,7 @@ uint8_t mockTransferHook(uint8_t data, SPIClass* spi) {
         return 0;
     }
 }
+} // namespace
 
 int main() {
     SPI.transferHook = mockTransferHook;

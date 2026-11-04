@@ -1,20 +1,19 @@
 #include "BleConnectivityDriver.h"
+#include <Arduino.h>
 #include <BLEDevice.h>
 #include <cassert>
 #include <cstring>
 #include <string>
 
-unsigned long now = 0;
-unsigned long millis() { return now; }
-void delay(unsigned long ms) { now += ms; }
+namespace {
+std::string lastReceivedPayload;
+size_t lastReceivedLen = 0;
 
-static std::string lastReceivedPayload;
-static size_t lastReceivedLen = 0;
-
-void testDataReceivedCallback(const char* data, size_t length) {
+void testDataReceivedCallback(const char* data, const size_t length) {
     lastReceivedPayload = std::string(data, length);
     lastReceivedLen = length;
 }
+} // namespace
 
 int main() {
     // 1. Initial State verification with default device name
