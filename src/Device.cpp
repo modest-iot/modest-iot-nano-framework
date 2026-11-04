@@ -101,13 +101,15 @@ void Device::executeNetworkDispatchContext(void* taskParameters) {
     TelemetryPackage* incomingPolymorphicPacketPointer = nullptr;
 
     while (true) {
-        if (xQueueReceive(self->telemetryQueueHandle, &incomingPolymorphicPacketPointer, portMAX_DELAY) == pdPASS) {
+        // Poll queue with a timeout so network maintenance (MQTT keep-alive, connection checks) executes regularly
+        if (xQueueReceive(self->telemetryQueueHandle, &incomingPolymorphicPacketPointer, pdMS_TO_TICKS(100)) == pdPASS) {
             if (incomingPolymorphicPacketPointer != nullptr) {
                 self->processQueuedTelemetryData(incomingPolymorphicPacketPointer);
                 delete incomingPolymorphicPacketPointer;
                 incomingPolymorphicPacketPointer = nullptr;
             }
         }
+        self->maintainNetworkServices();
     }
 }
 
@@ -124,5 +126,13 @@ void Device::handle(Command command) {
  * Allows action/control-only nodes to ignore the network queue cycle seamlessly.
  */
 void Device::processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) const {
+    // Intentional default no-op
+}
+
+/**
+ * @brief Default fallback implementation of background network services hook.
+ * Allows devices without background keep-alive requirements to ignore the service cycle seamlessly.
+ */
+void Device::maintainNetworkServices() const {
     // Intentional default no-op
 }

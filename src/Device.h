@@ -110,6 +110,12 @@ protected:
      * @param rawQueueItemPayload Pointer to the queued telemetry payload.
      */
     virtual void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) const;
+
+    /**
+     * @brief Subclass hook for background network and gateway upkeep (e.g., MQTT keep-alive).
+     * Invoked periodically by the network dispatcher task during idle queue periods.
+     */
+    virtual void maintainNetworkServices() const;
 public:
     /**
      * @brief Concrete fallback command interface fulfillment.
