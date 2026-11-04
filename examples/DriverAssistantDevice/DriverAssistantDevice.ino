@@ -29,12 +29,8 @@ static const int LCD_ROWS       = 2;
 
 // Conversion factors
 
-static const float KNOTS_TO_KPH_CONVERSION_FACTOR = 1.852f;
-static const float CENTIMETER_TO_METER_CONVERSION_FACTOR = 0.01f;
-
-inline constexpr float convertCentimetersToMeters(float measureInCentimeters) {
-    return measureInCentimeters * CENTIMETER_TO_METER_CONVERSION_FACTOR;
-}
+static constexpr float KNOTS_TO_KPH_CONVERSION_FACTOR = 1.852f;
+static constexpr float CENTIMETER_TO_METER_CONVERSION_FACTOR = 0.01f;
 
 // Timing constants
 
@@ -63,6 +59,10 @@ private:
     LocationData lastLocation;
     float frontDistanceInMeters;
     float rearDistanceInMeters;
+
+    static constexpr float convertCentimetersToMeters(float measureInCentimeters) {
+        return measureInCentimeters * CENTIMETER_TO_METER_CONVERSION_FACTOR;
+    }
 
     /**
      * @brief Internal state maintenance and LCD interface update.
