@@ -108,3 +108,51 @@ add_custom_target(arduino_upload
         COMMENT "Flashing firmware workspace layout to ESP32-WROOM-DA on ${PORT}..."
         VERBATIM
 )
+
+# 7. Native Host Unit Tests Target
+enable_testing()
+
+file(GLOB TEST_FAKES "tests/fakes/*.h")
+
+add_executable(test_digital_light
+        tests/digital_light/test.cpp
+        src/Sensor.cpp
+        src/DigitalLightIntensitySensor.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_digital_light PRIVATE tests/fakes src)
+
+add_executable(test_rgb_led
+        tests/rgb_led/test.cpp
+        src/Actuator.cpp
+        src/RgbLed.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_rgb_led PRIVATE tests/fakes src)
+
+add_executable(test_rfid_sensor
+        tests/rfid_sensor/test.cpp
+        src/Sensor.cpp
+        src/RfidSensor.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_rfid_sensor PRIVATE tests/fakes src)
+
+add_executable(test_ble_connectivity
+        tests/ble_connectivity/test.cpp
+        src/BleConnectivityDriver.cpp
+        ${TEST_FAKES}
+)
+target_compile_definitions(test_ble_connectivity PRIVATE TEST_MOCK_BLE)
+target_include_directories(test_ble_connectivity PRIVATE tests/fakes src)
+
+add_test(NAME DigitalLightTest COMMAND test_digital_light)
+add_test(NAME RgbLedTest COMMAND test_rgb_led)
+add_test(NAME RfidSensorTest COMMAND test_rfid_sensor)
+add_test(NAME BleConnectivityTest COMMAND test_ble_connectivity)
+
+add_custom_target(run_tests
+        COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
+        DEPENDS test_digital_light test_rgb_led test_rfid_sensor test_ble_connectivity
+        COMMENT "Executing all native host test suites..."
+)
