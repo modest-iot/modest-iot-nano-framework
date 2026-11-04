@@ -1,8 +1,10 @@
 #include "BluetoothConnectivityDriver.h"
 
+#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BLUEDROID_ENABLED)
+
 void BluetoothConnectivityDriver::connect() {
     // Start Bluetooth Serial with the device name
-    serialBT.begin("Modest-IoT-Device");
+    bluetoothSerial.begin("Modest-IoT-Device");
     connected = true;
 }
 
@@ -18,10 +20,12 @@ bool BluetoothConnectivityDriver::transmit(const char* target, const char* data)
     // BluetoothSerial can act as a Print stream;
     // target is currently unused for Bluetooth (assumed single peer connection),
     // but the signature requires it.
-    serialBT.println(data);
+    bluetoothSerial.println(data);
     return true;
 }
 
 bool BluetoothConnectivityDriver::canTransmit() {
     return connected;
 }
+
+#endif // CONFIG_BT_ENABLED && CONFIG_BLUEDROID_ENABLED
