@@ -1,6 +1,6 @@
 # Improvement 4: Library Readiness, CI and Test Infrastructure
 
-Analysis for a future development session. Status: **proposed, not implemented.** Findings come from reading the repository; nothing was built on a clean machine.
+Analysis and implementation progress. Status: **partially implemented** (Phase A hygiene completed: repository clutter removed, dependencies cleaned, tests consolidated into `tests/fakes/`, `tests/run_all.sh` runner created, CMake test targets added, and `host-tests.yml` CI workflow introduced). Findings come from reading the repository; example compilation verified locally via `arduino-cli`.
 
 Related: [improvements-roadmap.md](improvements-roadmap.md) (this is step 0: everything else depends on it), [dependencies-improvement.md](dependencies-improvement.md), [connectivity-improvement.md](connectivity-improvement.md) (defect D1 is found by compile CI), [sampling-interval-improvement.md](sampling-interval-improvement.md) (needs the host test harness).
 
@@ -140,11 +140,11 @@ Because every `.cpp` is compiled, there are three real options:
 
 ## 8. Acceptance criteria
 
-- [ ] `.github/workflows/` has host-tests, compile-examples and lint workflows, all green on `main`.
-- [ ] Every folder in `examples/` compiles for at least two core versions.
-- [ ] `tests/run_all.sh` runs every host suite (digital light, RGB LED, and each new one) under sanitizers.
-- [ ] No root `main.cpp` or empty `.ino`; CMake still works from the IDE.
-- [ ] `.gitignore` covers `.DS_Store` and build output.
+- [ ] `.github/workflows/` has compile-examples and lint workflows (host-tests workflow implemented).
+- [ ] Every folder in `examples/` compiles for at least two core versions in CI (verified locally for ESP32).
+- [x] `tests/run_all.sh` runs every host suite (digital light, RGB LED, RFID, BLE) under sanitizers.
+- [x] No root `main.cpp` or empty `.ino`; CMake still works from the IDE.
+- [x] `.gitignore` covers `.DS_Store` and build output.
 - [ ] `arduino-lint` passes in Library Manager mode; `depends=` verified on a clean machine.
-- [ ] `ModestIoT.h` does not break on ESP32 variants without Classic Bluetooth.
+- [x] `ModestIoT.h` does not break on ESP32 variants without Classic Bluetooth.
 - [ ] `v1.0.0` tagged, `CHANGELOG.md` present, registry pull request opened.
