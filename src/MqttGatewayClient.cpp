@@ -6,7 +6,6 @@
  */
 
 #include "MqttGatewayClient.h"
-#include <ArduinoJson.h>
 
 MqttGatewayClient::MqttGatewayClient(ConnectivityDriver& transportDriver, Client& networkClient, 
                                      const char* brokerIpAddress, uint16_t brokerPort, 
