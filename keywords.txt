@@ -21,12 +21,12 @@ GeolocationSensor	KEYWORD1
 HttpGatewayClient	KEYWORD1
 Led	KEYWORD1
 LoadCellAmplifier	KEYWORD1
-LoadCellController	KEYWORD1
 LocationData	KEYWORD1
 MqttGatewayClient	KEYWORD1
 PassiveInfraredSensor	KEYWORD1
 PulseSensor	KEYWORD1
 RfidSensor	KEYWORD1
+RgbColor	KEYWORD1
 RgbLed	KEYWORD1
 Sensor	KEYWORD1
 ServoMotor	KEYWORD1

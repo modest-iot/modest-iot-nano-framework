@@ -38,7 +38,7 @@ set(ARDUINO_ESP32_LIBS_INCLUDE_PATH "${ESP32_TOOLS_BASE}/include")
 set(ARDUINO_ESP32_FREERTOS_INCLUDE_PATH "${ESP32_TOOLS_BASE}/include/freertos/FreeRTOS-Kernel/include")
 set(ARDUINO_ESP32_FREERTOS_PORTABLE_INCLUDE_PATH "${ESP32_TOOLS_BASE}/include/freertos/FreeRTOS-Kernel/portable/xtensa/include")
 set(ARDUINO_ESP32_FREERTOS_CONFIG_INCLUDE_PATH "${ESP32_TOOLS_BASE}/include/freertos/config/include")
-set(SKETCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}") # Assumes main.cpp/main.ino acts as sketch root
+set(SKETCH_DIR "${CMAKE_CURRENT_SOURCE_DIR}/examples/ClassicBlinker" CACHE PATH "Path to sketch directory for arduino-cli compilation")
 
 add_definitions(-DARDUINO)
 
@@ -52,11 +52,9 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC IRAM_ATTR= __xtensa__=1 __XTEN
 target_include_directories(${PROJECT_NAME} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
         "${ARDUINO_LIBS}/ArduinoJson/src"
-        "${ARDUINO_LIBS}/HX711_Arduino_Library/src"
         "${ARDUINO_LIBS}/PubSubClient/src"
         "${ARDUINO_LIBS}/LiquidCrystal_I2C"
         "${ARDUINO_LIBS}/DHT_sensor_library"
-        "${ARDUINO_LIBS}/EspSoftwareSerial/src"
         "${ARDUINO_LIBS}/ESP32Servo/src"
         "${ESP32_PLATFORM_BASE}/libraries/BluetoothSerial/src"
         "${ESP32_PLATFORM_BASE}/libraries/BLE/src"
@@ -83,7 +81,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 
 # 4. IDE Code-Completion Indexer Targets
-# Added main.cpp to allow the IDE to discover full symbols across your static code base
 add_library(clion_indexer INTERFACE)
 target_compile_definitions(clion_indexer INTERFACE IRAM_ATTR= __xtensa__=1 __XTENSA__=1)
 target_link_libraries(clion_indexer INTERFACE ${PROJECT_NAME})

@@ -1,6 +1,6 @@
 # Improvement 2: Connectivity Drivers and Gateway Clients
 
-Analysis for a future development session. Status: **proposed, not implemented.** Nothing here was run on hardware. Source claims were checked by reading `src/`; D1 was additionally reproduced with a minimal host compile of the same class shape (error: *allocating an object of abstract class type*).
+Analysis and implementation progress. Status: **partially implemented** (Bluetooth isolation and BLE Nordic UART driver completed; transport contract and gateway reliability improvements proposed). Source claims were checked by reading `src/`; D1 was additionally reproduced with a minimal host compile of the same class shape (error: *allocating an object of abstract class type*).
 
 Related: [improvements-roadmap.md](improvements-roadmap.md), [diagnostics-improvement.md](diagnostics-improvement.md) (link-state events, counters, logging), [threading-model-improvement.md](threading-model-improvement.md) (cloud-to-device commands cross tasks), [library-readiness-improvement.md](library-readiness-improvement.md) (compile-every-example CI), [telemetry-improvement.md](telemetry-improvement.md), [sampling-interval-improvement.md](sampling-interval-improvement.md).
 
@@ -10,10 +10,10 @@ Related: [improvements-roadmap.md](improvements-roadmap.md), [diagnostics-improv
 
 Two layers sit between the `Device` network worker and the outside world:
 
-| Layer | Classes | Responsibility |
-|---|---|---|
-| Transport | `ConnectivityDriver` (interface), `WiFiConnectivityDriver`, `BluetoothConnectivityDriver` | Link lifecycle: `connect()`, `isConnected()`, `canTransmit()`, `transmit()` |
-| Gateway | `GatewayClient` (abstract), `MqttGatewayClient`, `HttpGatewayClient` | Protocol: serialize a `TelemetryPackage` and ship it |
+| Layer | Classes | Responsibility | Status |
+|---|---|---|---|
+| Transport | `ConnectivityDriver` (interface), `WiFiConnectivityDriver`, `BleConnectivityDriver`, `BluetoothConnectivityDriver` (deprecated) | Link lifecycle: `connect()`, `isConnected()`, `canTransmit()`, `transmit()` | `BleConnectivityDriver` active; `WiFiConnectivityDriver` needs D1 fix; `BluetoothConnectivityDriver` deprecated & guarded |
+| Gateway | `GatewayClient` (abstract), `MqttGatewayClient`, `HttpGatewayClient` | Protocol: serialize a `TelemetryPackage` and ship it | Socket-based via `Client&` |
 
 Flow: `NetworkWorker` dequeues a `TelemetryPackage*`, calls the device's `processQueuedTelemetryData()`, which the application overrides to call `gatewayClient.sendTelemetryRecord(*packet)`. The worker then `delete`s the packet.
 
@@ -27,6 +27,14 @@ gatewayClient   = new MqttGatewayClient(*transportDriver, transportDriver->getNe
 
 Note the second argument: the MQTT client needs the **socket** from the driver, obtained through a WiFi-specific method (`getNetworkSocket()`), which is not part of `ConnectivityDriver`.
 
+For BLE connectivity, `BleConnectivityDriver` implements the Nordic UART Service (NUS) GATT profile for peer-to-peer telemetry streaming:
+
+```cpp
+bleDriver = new BleConnectivityDriver("SmartBand-BLE");
+bleDriver->connect();
+bleDriver->transmit("central", telemetryJsonString);
+```
+
 ## 2. Findings
 
 ### 2.1 Defects
@@ -38,8 +46,8 @@ Note the second argument: the MQTT client needs the **socket** from the driver, 
 | D3 | `HttpGatewayClient.cpp` contains leftover drafting comments ("Wait, I need to fix...", "... rest of the code ...") | `HttpGatewayClient.cpp` step 1 to 2 | Stale, misleading, and the issue they describe is already fixed (`protected` base member). |
 | D4 | `ESP32` `WiFi.begin` is retried only once per outage | `provisioningRequested` is set on the first `connect()` and cleared only when `isConnected()` becomes true | If the first attempt fails (wrong signal, AP reboot), `connect()` never calls `WiFi.begin` again, so recovery relies on the ESP32 SDK's auto-reconnect alone. Verify behaviour on hardware. |
 | D5 | Credentials are held as raw `const char*` | `networkSsidIdentifier`, `networkPasswordCredential` | Caller must keep the strings alive. Fine for literals, a dangling-pointer risk for dynamic strings. Same for `topic` and `clientIdentifier` in MQTT. |
-| D6 | `BluetoothConnectivityDriver` reports `connected = true` right after `begin()` | `BluetoothConnectivityDriver.cpp` | `isConnected()` is true with no peer. `transmit` always returns `true` regardless of `println` outcome. Also hard-codes the device name `"Modest-IoT-Device"`. |
-| D7 | `BluetoothConnectivityDriver` is not usable by any gateway, yet it is compiled into every user | Gateways need a `Client&`, and Bluetooth exposes only `transmit()`. `ModestIoT.h:27` includes `BluetoothConnectivityDriver.h`, which includes `<BluetoothSerial.h>`. No example or gateway uses the class. | Nothing consumes it, but the umbrella header pulls Classic Bluetooth into every sketch. `BluetoothSerial` exists only on ESP32 variants with Classic BT and needs it enabled in the SDK config, so the umbrella include can fail to compile on ESP32-S2, S3 and C3 targets even for users who never touch Bluetooth. Verify per target; this is also a library-readiness issue (guard with `__has_include` or `#if`, or leave it out of the umbrella header). |
+| D6 | `BluetoothConnectivityDriver` reports `connected = true` right after `begin()` | `BluetoothConnectivityDriver.cpp` | `isConnected()` is true with no peer. `transmit` always returns `true` regardless of `println` outcome. Deprecated in favor of `BleConnectivityDriver` and guarded with preprocessor checks. |
+| D7 | `BluetoothConnectivityDriver` is not usable by any gateway, yet it is compiled into every user | Gateways need a `Client&`, and Bluetooth exposes only `transmit()`. `ModestIoT.h` included `BluetoothConnectivityDriver.h`. | **Resolved**: `BluetoothConnectivityDriver` was removed from `ModestIoT.h` and guarded with `#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BLUEDROID_ENABLED)`. Modern `BleConnectivityDriver` was introduced in `ModestIoT.h` using the Nordic UART Service (NUS) GATT profile with host unit tests. |
 | D8 | `connect()` returns `void` | `ConnectivityDriver.h` | No way to learn that a connection attempt failed or timed out. |
 | D9 | MQTT connect is not rate-limited | `ensureBrokerSessionConnection()` calls `mqttClient.connect()` on every send while disconnected | `PubSubClient::connect` blocks until its socket timeout. Under a broker outage each queued packet can block the network worker for seconds. |
 | D10 | `HTTPClient` is created per request | `HttpGatewayClient::sendTelemetryRecord` | No connection reuse, and each POST pays a TCP (and TLS) handshake. Also no timeout configuration. |
@@ -63,7 +71,7 @@ Note the second argument: the MQTT client needs the **socket** from the driver, 
 ## 3. Goals and non-goals
 
 **Goals**
-1. A transport abstraction that genuinely supports more than WiFi (Ethernet, cellular modem, BLE, loopback fake).
+1. A transport abstraction that genuinely supports more than WiFi (Ethernet, cellular modem, BLE [implemented in `BleConnectivityDriver`], loopback fake).
 2. Fix defects D1 to D3 immediately; address the rest as a coherent redesign.
 3. Make send results informative so the application can decide a failure policy.
 4. Make link state observable as framework events.
@@ -87,7 +95,7 @@ Note the second argument: the MQTT client needs the **socket** from the driver, 
 4. Rate-limit MQTT reconnection with a `lastAttemptMs` and a backoff (D9).
 5. Re-arm `WiFi.begin` after a timeout (D4).
 6. Add a compile check of every example to CI, since D1 shows the examples have drifted.
-7. Guard or remove `BluetoothConnectivityDriver` from the umbrella header (D7).
+7. Guard or remove `BluetoothConnectivityDriver` from the umbrella header (D7). **[DONE]**: `BluetoothConnectivityDriver` is removed from `ModestIoT.h`, preprocessor guarded (`#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BLUEDROID_ENABLED)`), and deprecated (`[[deprecated]]`). `BleConnectivityDriver` is now integrated into `ModestIoT.h`.
 8. Check and use the return value of `sendTelemetryRecord` in the examples (W4, W10), for example by logging a failure.
 
 ### 4.2 Transport contract redesign (options S1 to S3)
@@ -107,7 +115,7 @@ public:
 
 - `Client` is the standard Arduino abstraction, so `WiFiClient`, `WiFiClientSecure`, `EthernetClient`, `TinyGsmClient` all fit.
 - `MqttGatewayClient` could drop its separate `Client&` argument and ask the driver.
-- Bluetooth does not fit `Client` naturally (a `Stream`). Either wrap it in a `Client` adapter or treat it as a different driver family.
+- Bluetooth / BLE does not fit `Client` naturally (a stream/notification profile). Either wrap it in a `Client` adapter or treat it as a distinct stream-oriented driver family.
 
 Option **S2: driver exposes `send()` and gateways stop knowing about sockets.**
 
@@ -117,9 +125,9 @@ virtual SendResult send(const char* destination, const uint8_t* bytes, size_t le
 
 - Cleanest layering, but cannot reuse `PubSubClient` and `HTTPClient`, which both need a `Client`. Would force a custom MQTT and HTTP implementation. Not recommended for this version.
 
-Option **S3: keep both** with `socket()` optional (returns `nullptr` when unsupported) and a separate stream-style API for serial-like links.
+Option **S3: keep both** with `socket()` optional (returns `nullptr` when unsupported) and a separate stream-style API for serial/GATT notification links (as currently utilized by `BleConnectivityDriver`).
 
-**Recommendation: S1**, with the Bluetooth driver either adapted or moved to an "experimental" folder.
+**Recommendation: S1**, with stream/BLE drivers providing notification callbacks and telemetry transmit methods alongside standard socket drivers.
 
 ### 4.3 Gateway redesign
 
@@ -185,19 +193,20 @@ Add `subscribe(topic, callback)` to the MQTT gateway and map messages to `Comman
 ### 4.8 Testability
 
 - Define a tiny `Client` fake (records bytes, scripted `connected()` results) so `MqttGatewayClient` and `HttpGatewayClient` can be tested on the host. `PubSubClient` is pure C++ and compiles on the host with a fake `Arduino.h`. `HTTPClient` is ESP32-only, so hide it behind a small `HttpTransport` interface.
+- BLE connectivity is covered by native mock unit tests in `tests/ble_connectivity/test.cpp`.
 - Cases: link down, broker unavailable, publish fails, payload too large, reconnect backoff, keep-alive without telemetry.
 
 ## 5. Recommended path
 
 **Phase A: correctness (small, immediate)**
 1. Compile all examples for ESP32 in CI (arduino-cli on a working machine, or Wokwi CLI) to re-confirm D1 and prevent drift.
-2. Fix D1/D2 (remove `transmit()`), D3, W2, D7.
+2. Fix D1/D2 (remove `transmit()` or implement it in `WiFiConnectivityDriver`), D3, W2.
 3. MQTT reconnect backoff (D9) and keep-alive in `service()`.
+4. Bluetooth Classic isolation and BLE modernization (D7, W10) **[DONE]**: Legacy `BluetoothConnectivityDriver` isolated, preprocessor-guarded, and deprecated; `BleConnectivityDriver` implemented with Nordic UART Service (NUS) GATT profile and verified via unit tests in `tests/ble_connectivity/`.
 
 **Phase B: contract**
-4. Replace `bool` with `SendStatus`, keeping the `bool` wrapper.
-5. Add `socket()` to `ConnectivityDriver` (S1), and update `MqttGatewayClient` and the examples.
-6. Decide the fate of `BluetoothConnectivityDriver` (adapt or move).
+5. Replace `bool` with `SendStatus`, keeping the `bool` wrapper.
+6. Add `socket()` to `ConnectivityDriver` (S1), and update `MqttGatewayClient` and the examples.
 7. Host tests for both gateways with a fake `Client`.
 
 **Phase C: capabilities**
@@ -210,7 +219,7 @@ Add `subscribe(topic, callback)` to the MQTT gateway and map messages to `Comman
 
 | Risk | Mitigation |
 |---|---|
-| API break for users of `transmit()` | Only `BluetoothConnectivityDriver` implements it and nothing calls it. The WiFi driver cannot be instantiated today, so no working code depends on the method. Removing it also removes the Bluetooth override, so keep a deprecation note for that class. |
+| API break for users of `transmit()` | Only `BluetoothConnectivityDriver` and `BleConnectivityDriver` implement it. The WiFi driver cannot be instantiated today due to D1, so no working code depends on the method. |
 | Changing `MqttGatewayClient` constructor | Keep the existing overload and add a new one that takes only the driver. |
 | Blocking network worker | Backoff and timeouts. Document that `processQueuedTelemetryData` runs on a 8 KB stack, and TLS handshakes need much more (often 10 KB or more). Raise the stack size, or make it configurable. |
 | TLS memory on ESP32 | Measure free heap with TLS enabled before promising it. |
@@ -219,21 +228,22 @@ Add `subscribe(topic, callback)` to the MQTT gateway and map messages to `Comman
 
 ## 7. Open decisions
 
-| # | Decision | Recommended |
-|---|---|---|
-| 1 | Remove or implement `transmit()` | Remove |
-| 2 | Transport contract | S1 (`Client&` in the interface) |
-| 3 | `SendStatus` public or internal | Public, with `bool` wrapper |
-| 4 | Default failure policy | Bounded retry then drop, with counters |
-| 5 | Bluetooth driver | Adapt to `Client`, or mark experimental |
-| 6 | Link events | Yes, via queue, in Phase C |
-| 7 | MQTT subscribe | Phase C, after threading is documented |
-| 8 | Stack size of `NetworkWorker` | Make it a `Device` parameter |
+| # | Decision | Recommended | Status |
+|---|---|---|---|
+| 1 | Remove or implement `transmit()` | Remove from `WiFiConnectivityDriver` / interface | Open |
+| 2 | Transport contract | S1 (`Client&` in the interface) | Open |
+| 3 | `SendStatus` public or internal | Public, with `bool` wrapper | Open |
+| 4 | Default failure policy | Bounded retry then drop, with counters | Open |
+| 5 | Bluetooth driver | Modernize with BLE; isolate Classic BT | **Resolved** (`BleConnectivityDriver` added, `BluetoothConnectivityDriver` isolated) |
+| 6 | Link events | Yes, via queue, in Phase C | Open |
+| 7 | MQTT subscribe | Phase C, after threading is documented | Open |
+| 8 | Stack size of `NetworkWorker` | Make it a `Device` parameter | Open |
 
 ## 8. Acceptance criteria
 
 - [ ] All examples compile for ESP32 in CI, including `SmartBandMqtt` and `AirQualityMonitor`.
-- [ ] `ModestIoT.h` compiles on ESP32 targets without Classic Bluetooth, or Bluetooth is excluded from it.
+- [x] `ModestIoT.h` compiles on ESP32 targets without Classic Bluetooth, or Bluetooth is excluded from it.
+- [x] Modern BLE connectivity driver (`BleConnectivityDriver`) implemented with NUS GATT profile and host tests.
 - [ ] No pure-virtual method remains unimplemented by a shipped driver.
 - [ ] `GatewayClient.h` no longer includes `ArduinoJson.h` unless needed.
 - [ ] MQTT keep-alive runs without telemetry. Reconnects are rate-limited.

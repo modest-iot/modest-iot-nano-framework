@@ -1,5 +1,9 @@
 /cmake-build-debug/
+/cmake-build-arduino/
+/build/
 /.idea/
 /.junie/
 /cmake/
 /docs/build/
+.DS_Store
+*.o
