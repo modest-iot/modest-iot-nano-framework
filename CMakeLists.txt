@@ -79,15 +79,19 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         ${ESP32_PORT_INCLUDES}
         "${ARDUINO_ESP32_LIBS_INCLUDE_PATH}"
         "${ARDUINO_ESP32_FREERTOS_INCLUDE_PATH}"
+        "${ARDUINO_ESP32_FREERTOS_INCLUDE_PATH}/freertos"
         "${ARDUINO_ESP32_FREERTOS_PORTABLE_INCLUDE_PATH}"
+        "${ARDUINO_ESP32_FREERTOS_PORTABLE_INCLUDE_PATH}/freertos"
         "${ARDUINO_ESP32_FREERTOS_CONFIG_INCLUDE_PATH}"
         "${ARDUINO_ESP32_FREERTOS_CONFIG_INCLUDE_PATH}/freertos"
         "${ESP32_TOOLS_BASE}/include/freertos/config/xtensa/include"
+        "${ESP32_TOOLS_BASE}/include/freertos/config/xtensa/include/freertos"
+        "${ESP32_TOOLS_BASE}/include/freertos/esp_additions/include"
+        "${ESP32_TOOLS_BASE}/include/freertos/esp_additions/include/freertos"
         "${ESP32_TOOLS_BASE}/include/soc/esp32/include"
         "${ESP32_TOOLS_BASE}/include/esp_common/include"
         "${ESP32_TOOLS_BASE}/include/xtensa/include"
         "${ESP32_TOOLS_BASE}/include/xtensa/esp32/include"
-        "${ESP32_TOOLS_BASE}/include/freertos/esp_additions/include"
         "${ESP32_TOOLS_BASE}/include/lwip/lwip/src/include"
         "${ESP32_TOOLS_BASE}/qio_qspi/include"
         "${ESP32_PLATFORM_BASE}/variants/esp32da"
@@ -106,6 +110,26 @@ target_compile_definitions(clion_indexer INTERFACE
         ESP_PLATFORM=1
         SOC_WIFI_SUPPORTED=1
         CONFIG_SOC_WIFI_SUPPORTED=1
+)
+target_include_directories(clion_indexer INTERFACE
+        "${ARDUINO_ESP32_FREERTOS_INCLUDE_PATH}"
+        "${ARDUINO_ESP32_FREERTOS_INCLUDE_PATH}/freertos"
+        "${ARDUINO_ESP32_FREERTOS_PORTABLE_INCLUDE_PATH}"
+        "${ARDUINO_ESP32_FREERTOS_PORTABLE_INCLUDE_PATH}/freertos"
+        "${ARDUINO_ESP32_FREERTOS_CONFIG_INCLUDE_PATH}"
+        "${ARDUINO_ESP32_FREERTOS_CONFIG_INCLUDE_PATH}/freertos"
+        "${ESP32_TOOLS_BASE}/include/freertos/config/xtensa/include"
+        "${ESP32_TOOLS_BASE}/include/freertos/config/xtensa/include/freertos"
+        "${ESP32_TOOLS_BASE}/include/freertos/esp_additions/include"
+        "${ESP32_TOOLS_BASE}/include/freertos/esp_additions/include/freertos"
+        "${ESP32_TOOLS_BASE}/include/soc/esp32/include"
+        "${ESP32_TOOLS_BASE}/include/esp_common/include"
+        "${ESP32_TOOLS_BASE}/include/xtensa/include"
+        "${ESP32_TOOLS_BASE}/include/xtensa/esp32/include"
+        "${ESP32_TOOLS_BASE}/include/lwip/lwip/src/include"
+        "${ESP32_TOOLS_BASE}/qio_qspi/include"
+        "${ESP32_PLATFORM_BASE}/variants/esp32da"
+        "${ESP32_TOOLS_BASE}/include/newlib/platform_include/"
 )
 target_link_libraries(clion_indexer INTERFACE ${PROJECT_NAME})
 
