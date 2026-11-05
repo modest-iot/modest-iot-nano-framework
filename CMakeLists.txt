@@ -221,6 +221,13 @@ add_executable(test_diagnostics
 target_compile_definitions(test_diagnostics PRIVATE TEST_MOCK_DEVICE)
 target_include_directories(test_diagnostics PRIVATE tests/fakes src)
 
+add_executable(test_sensor_fault
+        tests/sensor_fault/test.cpp
+        src/Sensor.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_sensor_fault PRIVATE tests/fakes src)
+
 add_test(NAME DigitalLightTest COMMAND test_digital_light)
 add_test(NAME RgbLedTest COMMAND test_rgb_led)
 add_test(NAME RfidSensorTest COMMAND test_rfid_sensor)
@@ -229,9 +236,10 @@ add_test(NAME LogTest COMMAND test_log)
 add_test(NAME MqttGatewayTest COMMAND test_mqtt_gateway)
 add_test(NAME EngineConfigTest COMMAND test_engine_config)
 add_test(NAME DiagnosticsTest COMMAND test_diagnostics)
+add_test(NAME SensorFaultTest COMMAND test_sensor_fault)
 
 add_custom_target(run_tests
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        DEPENDS test_digital_light test_rgb_led test_rfid_sensor test_ble_connectivity test_log test_mqtt_gateway test_engine_config test_diagnostics
+        DEPENDS test_digital_light test_rgb_led test_rfid_sensor test_ble_connectivity test_log test_mqtt_gateway test_engine_config test_diagnostics test_sensor_fault
         COMMENT "Executing all native host test suites..."
 )
