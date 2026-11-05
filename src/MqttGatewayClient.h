@@ -37,6 +37,9 @@ private:
     uint32_t sendsFailedCount; ///< Failed telemetry transmissions.
     bool firstFailureLogged; ///< Tracks whether the first failure warning was emitted.
 
+    static constexpr size_t MAX_TELEMETRY_PAYLOAD_SIZE = 512; ///< Maximum serialized payload size in bytes.
+    char serializationBuffer[MAX_TELEMETRY_PAYLOAD_SIZE]; ///< Fixed-size buffer for JSON serialization.
+
     void ensureBrokerSessionConnection(); ///< Ensures broker session is active with rate-limited backoff.
 
 public:
@@ -86,9 +89,9 @@ public:
 
     /**
      * @brief Sets the cooldown interval between broker reconnection attempts.
-     * @param intervalMs Cooldown period in milliseconds (default: 5000ms).
+     * @param intervalMilliseconds Cooldown period in milliseconds (default: 5000ms).
      */
-    void setReconnectInterval(unsigned long intervalMs);
+    void setReconnectInterval(unsigned long intervalMilliseconds);
 
     /**
      * @brief Gets the configured cooldown interval between broker reconnection attempts.

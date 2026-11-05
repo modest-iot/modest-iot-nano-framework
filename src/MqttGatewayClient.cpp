@@ -9,7 +9,7 @@
 #include "ModestLog.h"
 
 MqttGatewayClient::MqttGatewayClient(ConnectivityDriver& transportDriver, Client& networkClient, 
-                                     const char* brokerIpAddress, uint16_t brokerPort, 
+                                     const char* brokerIpAddress, const uint16_t brokerPort,
                                      const char* topic, const char* deviceId)
     : GatewayClient(transportDriver, ""), // We don't use serviceEndpointUrl here, so pass ""
       mqttClient(networkClient),
@@ -19,7 +19,8 @@ MqttGatewayClient::MqttGatewayClient(ConnectivityDriver& transportDriver, Client
       reconnectIntervalMilliseconds(5000),
       sendsSucceededCount(0),
       sendsFailedCount(0),
-      firstFailureLogged(false)
+      firstFailureLogged(false),
+      serializationBuffer{}
 {
     mqttClient.setServer(brokerIpAddress, brokerPort);
 }
@@ -35,9 +36,8 @@ void MqttGatewayClient::ensureBrokerSessionConnection() {
     }
 
     // Rate-limit connection attempts to avoid blocking the network task during outages
-    unsigned long currentTimestamp = millis();
-    if (lastReconnectAttemptTimestamp == 0 || 
-        (currentTimestamp - lastReconnectAttemptTimestamp >= reconnectIntervalMilliseconds)) {
+    if (const unsigned long currentTimestamp = millis(); lastReconnectAttemptTimestamp == 0 ||
+                                                   (currentTimestamp - lastReconnectAttemptTimestamp >= reconnectIntervalMilliseconds)) {
         lastReconnectAttemptTimestamp = currentTimestamp;
         MODEST_LOG_I("MQTT", "Attempting connection to broker for client ID: %s", clientIdentifier);
 
@@ -73,8 +73,8 @@ int MqttGatewayClient::getClientState() {
     return mqttClient.state();
 }
 
-void MqttGatewayClient::setReconnectInterval(unsigned long intervalMs) {
-    reconnectIntervalMilliseconds = intervalMs;
+void MqttGatewayClient::setReconnectInterval(const unsigned long intervalMilliseconds) {
+    reconnectIntervalMilliseconds = intervalMilliseconds;
 }
 
 unsigned long MqttGatewayClient::getReconnectInterval() const {
@@ -104,11 +104,21 @@ bool MqttGatewayClient::sendTelemetryRecord(const TelemetryPackage& abstractTele
         return false;
     }
 
-    // 3. Execute payload serialization polymorphically
-    String serializedPayloadOutput = abstractTelemetryPayload.serializeAsString();
+    // 3. Execute payload serialization polymorphically into bounded buffer
+    JsonDocument doc;
+    abstractTelemetryPayload.serialize(doc);
+    if (const size_t serializedLength = serializeJson(doc, serializationBuffer, sizeof(serializationBuffer)); serializedLength == 0) {
+        MODEST_LOG_W("MQTT", "Payload too large for serialization buffer (%u bytes)", MAX_TELEMETRY_PAYLOAD_SIZE);
+        sendsFailedCount++;
+        if (!firstFailureLogged) {
+            MODEST_LOG_W("MQTT", "First send failure: payload exceeds buffer size");
+            firstFailureLogged = true;
+        }
+        return false;
+    }
 
     // 4. Publish telemetry payload onto the broker topic ring (Executed on priority 1 thread)
-    bool publishSuccessStatus = mqttClient.publish(publishTopic, serializedPayloadOutput.c_str());
+    const bool publishSuccessStatus = mqttClient.publish(publishTopic, serializationBuffer);
     if (!publishSuccessStatus) {
         sendsFailedCount++;
         if (!firstFailureLogged) {
