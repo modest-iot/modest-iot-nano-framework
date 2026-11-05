@@ -32,3 +32,11 @@ void PassiveInfraredSensor::processEvent(Event& event) {
         event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER; // Suppress
     }
 }
+
+uint32_t PassiveInfraredSensor::getDefaultSamplingIntervalInMilliseconds() const {
+    return DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}
+
+uint32_t PassiveInfraredSensor::getMinimalSamplingIntervalInMilliseconds() const {
+    return MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}

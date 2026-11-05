@@ -18,6 +18,9 @@ protected:
      */
     void processEvent(Event& event) override;
 
+    [[nodiscard]] uint32_t getDefaultSamplingIntervalInMilliseconds() const override;
+    [[nodiscard]] uint32_t getMinimalSamplingIntervalInMilliseconds() const override;
+
 public:
     /** @brief Identifier emitted when motion is detected. */
     static constexpr int MOTION_DETECTED_EVENT_IDENTIFIER = 30;
@@ -27,6 +30,14 @@ public:
     /** @brief Prebuilt event instance for motion-stopped notifications. */
     static const Event MOTION_STOPPED_EVENT;
     static constexpr int PROPAGATION_SUPPRESSION_IDENTIFIER = -1; ///< Identifier for propagation suppression.
+
+    /// Default sampling interval in milliseconds.
+    /// @note PIR module hold time typically requires ~50 ms polling.
+    static constexpr uint32_t DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS = 100;
+    /// Minimum sampling interval in milliseconds.
+    /// @note Below 20 ms the PIR output cannot settle reliably.
+    static constexpr uint32_t MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS = 20;
+
     /**
      * @brief Constructs a PIR sensor with an optional propagation target.
      * @param signalGpioPin Input GPIO pin connected to the PIR sensor output.
