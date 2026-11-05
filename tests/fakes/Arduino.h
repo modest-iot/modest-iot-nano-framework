@@ -1,11 +1,52 @@
 #ifndef FAKE_ARDUINO_H
 #define FAKE_ARDUINO_H
 
+#include <cstdint>
+#include <cstring>
 #include <iterator>
 #include <string>
 
 typedef std::uint8_t byte;
 typedef bool boolean;
+
+// Mock FreeRTOS types for host testing
+typedef std::int32_t BaseType_t;
+typedef void* TaskHandle_t;
+typedef void* QueueHandle_t;
+typedef std::uint32_t TickType_t;
+#define pdTRUE ((BaseType_t)1)
+#define pdFALSE ((BaseType_t)0)
+#define pdPASS ((BaseType_t)1)
+#define pdFAIL ((BaseType_t)0)
+#define portMAX_DELAY ((TickType_t)0xFFFFFFFFUL)
+#define portYIELD_FROM_ISR(x) ((void)(x))
+#define eSetValueWithOverwrite 1
+#define IRAM_ATTR
+struct hw_timer_s;
+typedef hw_timer_s* hw_timer_t;
+
+// Mock FreeRTOS task/queue APIs (no-ops for host testing)
+inline TaskHandle_t xTaskCreateStatic(void*, const char*, std::uint32_t, void*, std::uint8_t, TaskHandle_t*) { return nullptr; }
+inline void xTaskCreatePinnedToCore(void*, const char*, std::uint32_t, void*, std::uint8_t, TaskHandle_t*, BaseType_t) {}
+inline void vTaskDelete(TaskHandle_t) {}
+inline void vTaskDelay(TickType_t) {}
+inline uint32_t ulTaskNotifyTake(BaseType_t, TickType_t) { return 0; }
+inline BaseType_t xTaskNotifyGive(TaskHandle_t) { return pdPASS; }
+inline void vTaskNotifyGive(TaskHandle_t) {}
+inline BaseType_t xTaskNotify(TaskHandle_t, uint32_t, int) { return pdPASS; }
+inline BaseType_t xTaskNotifyWait(BaseType_t, BaseType_t, uint32_t*, TickType_t) { return pdFALSE; }
+inline QueueHandle_t xQueueCreate(std::uint32_t, std::uint32_t) { return nullptr; }
+inline BaseType_t xQueueSend(QueueHandle_t, const void*, TickType_t) { return pdFAIL; }
+inline BaseType_t xQueueReceive(QueueHandle_t, void*, TickType_t) { return pdFAIL; }
+inline void vQueueDelete(QueueHandle_t) {}
+inline TickType_t pdMS_TO_TICKS(std::uint32_t ms) { return ms; }
+
+// Mock timer APIs
+inline hw_timer_t* timerBegin(std::uint32_t) { return nullptr; }
+inline void timerEnd(hw_timer_t*) {}
+inline void timerAttachInterruptArg(hw_timer_t*, void*, void*) {}
+inline void timerDetachInterrupt(hw_timer_t*) {}
+inline void timerAlarm(hw_timer_t*, std::uint64_t, BaseType_t, std::uint32_t) {}
 
 class String : public std::string {
 public:

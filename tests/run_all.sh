@@ -94,6 +94,10 @@ run_test "test_mqtt_gateway" \
     src/WiFiConnectivityDriver.cpp \
     tests/mqtt_gateway/test.cpp
 
+# 7. EngineConfig and Device Configuration Suite
+run_test "test_engine_config" \
+    tests/engine_config/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="
