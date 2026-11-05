@@ -34,6 +34,28 @@ struct EngineConfig {
     uint8_t queueLength = 10; ///< Maximum telemetry queue depth.
 };
 
+/**
+ * @brief Runtime health snapshot containing stack, heap, queue, and timing metrics.
+ * @ingroup core_module
+ *
+ * Returned by value from `Device::diagnostics()`. Stack margins are reported in
+ * FreeRTOS `StackType_t` words (4 bytes on ESP32), not raw bytes.
+ */
+struct DiagnosticsSnapshot {
+    uint32_t missedTicks = 0; ///< Ticks missed by the sampler due to handler overrun.
+    uint32_t worstCaseWakeMicros = 0; ///< Highest observed sampler handler duration.
+    uint32_t packetsEnqueued = 0; ///< Total telemetry packets successfully enqueued.
+    uint32_t packetsDropped = 0; ///< Total telemetry packets dropped due to full queue.
+    uint8_t queueHighWaterMark = 0; ///< Maximum queue depth observed.
+    uint32_t sendsSucceeded = 0; ///< Successful gateway transmissions.
+    uint32_t sendsFailed = 0; ///< Failed gateway transmissions.
+    uint32_t freeHeapBytes = 0; ///< Current free heap in bytes.
+    uint32_t minFreeHeapBytes = 0; ///< Lowest free heap observed since boot.
+    uint16_t samplerStackFreeWords = 0; ///< Sampler task stack high-water mark (words).
+    uint16_t networkStackFreeWords = 0; ///< Network task stack high-water mark (words).
+    uint32_t uptimeSeconds = 0; ///< Device uptime in seconds.
+};
+
 
 /**
  * @name Core: Device Orchestration
@@ -66,6 +88,12 @@ private:
     TaskHandle_t hardwareSamplingTaskHandle; ///< Handle for the hardware sampling task.
     TaskHandle_t networkDispatcherTaskHandle; ///< Handle for the network dispatcher task.
     QueueHandle_t telemetryQueueHandle; ///< Handle for the telemetry queue.
+
+    // Shared diagnostic counters (single-writer rule: each counter written by one task)
+    mutable uint32_t packetsEnqueuedCount; ///< Total packets successfully enqueued.
+    mutable uint32_t packetsDroppedCount; ///< Total packets dropped due to full queue.
+    mutable uint8_t queueHighWaterMarkCount; ///< Maximum queue depth observed.
+    mutable uint32_t missedTickCount; ///< Ticks missed by the sampler.
 
     hw_timer_t* hardwareTimer; ///< Pointer to the hardware timer.
     const unsigned long pollingIntervalInMilliseconds; ///< Polling interval in milliseconds.
@@ -153,7 +181,16 @@ protected:
      * ~Device() executes, and a running task could access freed memory.
      */
     void stopAsynchronousEngine();
+
 public:
+    /**
+     * @brief Returns a snapshot of runtime health and diagnostic counters.
+     *
+     * Queries FreeRTOS stack high-water marks, heap statistics, and aggregates
+     * the shared counters (packets enqueued/dropped, missed ticks, queue high-water).
+     * Safe to call from any task; does not block.
+     */
+    [[nodiscard]] DiagnosticsSnapshot diagnostics() const;
     /**
      * @brief Concrete fallback command interface fulfillment.
      * Intercepts framework-wide actions; overrides CommandHandler.

@@ -3,6 +3,7 @@
 #######################################
 Actuator	KEYWORD1
 BleConnectivityDriver	KEYWORD1
+DiagnosticsSnapshot	KEYWORD1
 EngineConfig	KEYWORD1
 BluetoothConnectivityDriver	KEYWORD1
 Button	KEYWORD1
@@ -47,6 +48,7 @@ canTransmit	KEYWORD2
 changeDetected	KEYWORD2
 commitBuffersToPhysicalScreen	KEYWORD2
 connect	KEYWORD2
+diagnostics	KEYWORD2
 enqueueTelemetryPayload	KEYWORD2
 ensureBrokerSessionConnection	KEYWORD2
 executeCommand	KEYWORD2
