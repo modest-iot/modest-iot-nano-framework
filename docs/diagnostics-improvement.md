@@ -1,6 +1,6 @@
 # Improvement 5: Diagnostics, Logging and Sensor Health
 
-Analysis for a future development session. Status: **partially implemented** (Phase A logging and counters completed; sensor health and resilience proposed). Findings come from reading `src/`; memory and overhead figures are estimates, not measurements.
+Analysis for a future development session. Status: **Phase A complete** (logging, counters, diagnostics, and first-drop/failure logging implemented; sensor health and resilience proposed). Findings come from reading `src/`; memory and overhead figures are estimates, not measurements.
 
 Related: [improvements-roadmap.md](improvements-roadmap.md), [sampling-interval-improvement.md](sampling-interval-improvement.md) (`missedTickCount`, clamp reports), [telemetry-improvement.md](telemetry-improvement.md) (queue counters), [connectivity-improvement.md](connectivity-improvement.md) (send status, link events), [threading-model-improvement.md](threading-model-improvement.md), [interrupt-power-improvement.md](interrupt-power-improvement.md).
 
@@ -139,7 +139,7 @@ Offer an optional ready-made `DeviceHealthPackage` (a `TelemetryPackage` subclas
 1. `[DONE]` `MODEST_LOG_*` macros (L3), host capture sink, tests. Implemented in `src/ModestLog.h` with `MIOT_LOG_*` aliases. Host tests in `tests/log/test.cpp`.
 2. `[DONE]` Counters in `Device` (missed ticks, enqueued, dropped, high-water), the snapshot struct, `diagnostics()`. `DiagnosticsSnapshot` struct in `src/Device.h` with 12 fields. `Device::diagnostics()` queries FreeRTOS high-water marks and ESP heap stats. Host tests in `tests/diagnostics/test.cpp`.
 3. `[DONE]` Runtime health fields and `uxTaskGetStackHighWaterMark` reporting. `diagnostics()` returns `freeHeapBytes`, `minFreeHeapBytes`, `samplerStackFreeWords`, `networkStackFreeWords`, and `uptimeSeconds`.
-4. Log the first drop, the first clamp and the first send failure at warning level.
+4. `[DONE]` Log the first drop and the first send failure at warning level. `Device::enqueueTelemetryPayload()` logs once when `packetsDroppedCount` transitions from 0 to 1. `MqttGatewayClient::sendTelemetryRecord()` logs once on the first failure with a descriptive message. `GatewayStatistics` struct in `GatewayClient.h` with `getStatistics()` virtual method; `MqttGatewayClient` tracks `sendsSucceeded`/`sendsFailed` and reports them via `diagnostics()`. Host tests in `tests/mqtt_gateway/test.cpp`.
 
 **Phase B: sensor health**
 5. `Sensor` fault and recovery events, helpers, per-sensor counters (default off).
