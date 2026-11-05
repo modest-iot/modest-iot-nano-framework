@@ -32,14 +32,11 @@ Device::Device(unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupI
 }
 
 Device::~Device() {
-    if (hardwareTimer != nullptr) {
-        timerEnd(hardwareTimer);
-        timerDetachInterrupt(hardwareTimer);
-        hardwareTimer = nullptr;
-    }
-    if (hardwareSamplingTaskHandle != nullptr) vTaskDelete(hardwareSamplingTaskHandle);
-    if (networkDispatcherTaskHandle != nullptr) vTaskDelete(networkDispatcherTaskHandle);
-    if (telemetryQueueHandle != nullptr) vQueueDelete(telemetryQueueHandle);
+    // Note: Derived classes should call stopAsynchronousEngine() in their destructor
+    // before their own destructor body runs, because sensor/actuator members are
+    // destroyed before ~Device() executes. As a safety net, we stop the engine here
+    // if it's still running, but tasks may have already accessed freed members.
+    stopAsynchronousEngine();
 }
 
 void IRAM_ATTR Device::handleHardwareTimerInterrupt(void* deviceInstance) {
@@ -52,10 +49,24 @@ void IRAM_ATTR Device::handleHardwareTimerInterrupt(void* deviceInstance) {
 }
 
 void Device::initializeAsynchronousEngine(uint8_t maximumQueueLength) {
-    telemetryQueueHandle = xQueueCreate(maximumQueueLength, sizeof(TelemetryPackage*));
+    EngineConfig config;
+    config.queueLength = maximumQueueLength;
+    initializeAsynchronousEngine(config);
+}
 
-    xTaskCreatePinnedToCore(&Device::executeHardwareSamplingContext, "HardwareWorker", 4096, this, 3, &hardwareSamplingTaskHandle, 1);
-    xTaskCreatePinnedToCore(&Device::executeNetworkDispatchContext, "NetworkWorker", 8192, this, 1, &networkDispatcherTaskHandle, 1);
+void Device::initializeAsynchronousEngine(const EngineConfig& config) {
+    telemetryQueueHandle = xQueueCreate(config.queueLength, sizeof(TelemetryPackage*));
+
+    xTaskCreatePinnedToCore(
+        &Device::executeHardwareSamplingContext, "HardwareWorker",
+        config.samplerStackBytes, this, config.samplerPriority,
+        &hardwareSamplingTaskHandle, config.samplerCore
+    );
+    xTaskCreatePinnedToCore(
+        &Device::executeNetworkDispatchContext, "NetworkWorker",
+        config.networkStackBytes, this, config.networkPriority,
+        &networkDispatcherTaskHandle, config.networkCore
+    );
 
     hardwareTimer = timerBegin(1000000);
     timerAttachInterruptArg(hardwareTimer, &Device::handleHardwareTimerInterrupt, this);
@@ -81,7 +92,13 @@ bool Device::enqueueTelemetryPayload(TelemetryPackage** telemetryPackagePointerA
 void Device::executeHardwareSamplingContext(void* taskParameters) {
     auto* self = static_cast<Device*>(taskParameters);
     while (true) {
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        // Wait for timer tick or termination signal (bit 0 = tick, bit 1 = stop)
+        uint32_t notificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+        // Check termination signal (bit 1)
+        if (notificationValue & 0x2) {
+            break;
+        }
 
         if (self->registeredSlotCount > 0) {
             uint8_t currentSlotIndex = self->activeSequencePointer;
@@ -94,6 +111,7 @@ void Device::executeHardwareSamplingContext(void* taskParameters) {
             self->activeSequencePointer = (currentSlotIndex + 1) % self->registeredSlotCount;
         }
     }
+    vTaskDelete(nullptr);
 }
 
 void Device::executeNetworkDispatchContext(void* taskParameters) {
@@ -101,6 +119,14 @@ void Device::executeNetworkDispatchContext(void* taskParameters) {
     TelemetryPackage* incomingPolymorphicPacketPointer = nullptr;
 
     while (true) {
+        // Check for termination signal (bit 1 = stop) without clearing the notification
+        uint32_t notificationValue;
+        if (xTaskNotifyWait(pdFALSE, pdTRUE, &notificationValue, 0) == pdTRUE) {
+            if (notificationValue & 0x2) {
+                break;
+            }
+        }
+
         // Poll queue with a timeout so network maintenance (MQTT keep-alive, connection checks) executes regularly
         if (xQueueReceive(self->telemetryQueueHandle, &incomingPolymorphicPacketPointer, pdMS_TO_TICKS(100)) == pdPASS) {
             if (incomingPolymorphicPacketPointer != nullptr) {
@@ -111,6 +137,7 @@ void Device::executeNetworkDispatchContext(void* taskParameters) {
         }
         self->maintainNetworkServices();
     }
+    vTaskDelete(nullptr);
 }
 
 /**
@@ -135,4 +162,44 @@ void Device::processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayl
  */
 void Device::maintainNetworkServices() const {
     // Intentional default no-op
+}
+
+void Device::stopAsynchronousEngine() {
+    // Guard against double-stop
+    if (hardwareSamplingTaskHandle == nullptr && networkDispatcherTaskHandle == nullptr) {
+        return;
+    }
+
+    // 1. Stop the hardware timer first to prevent new sampler ticks
+    if (hardwareTimer != nullptr) {
+        timerEnd(hardwareTimer);
+        timerDetachInterrupt(hardwareTimer);
+        hardwareTimer = nullptr;
+    }
+
+    // 2. Signal both tasks to terminate cooperatively using bit 1 (0x2)
+    if (hardwareSamplingTaskHandle != nullptr) {
+        xTaskNotify(hardwareSamplingTaskHandle, 0x2, eSetValueWithOverwrite);
+    }
+    if (networkDispatcherTaskHandle != nullptr) {
+        xTaskNotify(networkDispatcherTaskHandle, 0x2, eSetValueWithOverwrite);
+    }
+
+    // 3. Wait for tasks to terminate (they call vTaskDelete(nullptr) at loop exit)
+    // Give them time to finish their current iteration and exit
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    // 4. Clean up task handles (tasks should have already deleted themselves)
+    hardwareSamplingTaskHandle = nullptr;
+    networkDispatcherTaskHandle = nullptr;
+
+    // 5. Drain and delete any pending telemetry packets in the queue
+    if (telemetryQueueHandle != nullptr) {
+        TelemetryPackage* pendingPacket = nullptr;
+        while (xQueueReceive(telemetryQueueHandle, &pendingPacket, 0) == pdPASS) {
+            delete pendingPacket;
+        }
+        vQueueDelete(telemetryQueueHandle);
+        telemetryQueueHandle = nullptr;
+    }
 }

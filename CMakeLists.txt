@@ -208,15 +208,22 @@ add_executable(test_mqtt_gateway
 )
 target_include_directories(test_mqtt_gateway PRIVATE tests/fakes src)
 
+add_executable(test_engine_config
+        tests/engine_config/test.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_engine_config PRIVATE tests/fakes src)
+
 add_test(NAME DigitalLightTest COMMAND test_digital_light)
 add_test(NAME RgbLedTest COMMAND test_rgb_led)
 add_test(NAME RfidSensorTest COMMAND test_rfid_sensor)
 add_test(NAME BleConnectivityTest COMMAND test_ble_connectivity)
 add_test(NAME LogTest COMMAND test_log)
 add_test(NAME MqttGatewayTest COMMAND test_mqtt_gateway)
+add_test(NAME EngineConfigTest COMMAND test_engine_config)
 
 add_custom_target(run_tests
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        DEPENDS test_digital_light test_rgb_led test_rfid_sensor test_ble_connectivity test_log test_mqtt_gateway
+        DEPENDS test_digital_light test_rgb_led test_rfid_sensor test_ble_connectivity test_log test_mqtt_gateway test_engine_config
         COMMENT "Executing all native host test suites..."
 )

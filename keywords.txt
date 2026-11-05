@@ -3,6 +3,7 @@
 #######################################
 Actuator	KEYWORD1
 BleConnectivityDriver	KEYWORD1
+EngineConfig	KEYWORD1
 BluetoothConnectivityDriver	KEYWORD1
 Button	KEYWORD1
 Buzzer	KEYWORD1
@@ -66,6 +67,7 @@ handleCalibratingModeLogic	KEYWORD2
 handleRawModeLogic	KEYWORD2
 initializeAsynchronousEngine	KEYWORD2
 initializeHardwareRegisters	KEYWORD2
+stopAsynchronousEngine	KEYWORD2
 isBacklightOn	KEYWORD2
 isAdvertising	KEYWORD2
 isConnected	KEYWORD2

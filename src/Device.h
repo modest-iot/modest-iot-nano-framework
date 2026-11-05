@@ -16,6 +16,24 @@
 
 struct hw_timer_s;
 
+/**
+ * @brief Configuration parameters for the asynchronous FreeRTOS engine.
+ * @ingroup core_module
+ *
+ * Allows tuning stack sizes, task priorities, and core pinning without modifying framework source.
+ * Default values match the original hard-coded parameters: sampler (4096 bytes, priority 3, core 1),
+ * network worker (8192 bytes, priority 1, core 1), queue length 10.
+ */
+struct EngineConfig {
+    uint32_t samplerStackBytes = 4096; ///< Stack size for the hardware sampling task.
+    uint32_t networkStackBytes = 8192; ///< Stack size for the network dispatcher task.
+    uint8_t samplerPriority = 3; ///< FreeRTOS priority for the sampler task.
+    uint8_t networkPriority = 1; ///< FreeRTOS priority for the network task.
+    BaseType_t samplerCore = 1; ///< Core pinning for the sampler task.
+    BaseType_t networkCore = 1; ///< Core pinning for the network task.
+    uint8_t queueLength = 10; ///< Maximum telemetry queue depth.
+};
+
 
 /**
  * @name Core: Device Orchestration
@@ -91,6 +109,12 @@ protected:
     void initializeAsynchronousEngine(uint8_t maximumQueueLength = 10);
 
     /**
+     * @brief Allocates queue/task infrastructure with full engine configuration.
+     * @param config Stack sizes, priorities, core pinning, and queue depth.
+     */
+    void initializeAsynchronousEngine(const EngineConfig& config);
+
+    /**
      * @brief Pushes a telemetry payload pointer into the internal queue.
      * @param telemetryPackagePointerAddress Address of a payload pointer to enqueue.
      * @return `true` when enqueued successfully, otherwise `false`.
@@ -116,6 +140,19 @@ protected:
      * Invoked periodically by the network dispatcher task during idle queue periods.
      */
     virtual void maintainNetworkServices() const;
+
+    /**
+     * @brief Gracefully stops the asynchronous engine and releases all resources.
+     *
+     * Stops the hardware timer, signals both FreeRTOS tasks to exit cooperatively,
+     * waits for them to terminate, drains and deletes any pending telemetry packets,
+     * and deletes the queue. After calling this method, the engine cannot be restarted.
+     *
+     * Derived classes must call this method in their destructor **before** their own
+     * destructor body runs, because sensor/actuator members are destroyed before
+     * ~Device() executes, and a running task could access freed memory.
+     */
+    void stopAsynchronousEngine();
 public:
     /**
      * @brief Concrete fallback command interface fulfillment.
