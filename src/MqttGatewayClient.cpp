@@ -16,7 +16,10 @@ MqttGatewayClient::MqttGatewayClient(ConnectivityDriver& transportDriver, Client
       clientIdentifier(deviceId),
       publishTopic(topic),
       lastReconnectAttemptTimestamp(0),
-      reconnectIntervalMilliseconds(5000)
+      reconnectIntervalMilliseconds(5000),
+      sendsSucceededCount(0),
+      sendsFailedCount(0),
+      firstFailureLogged(false)
 {
     mqttClient.setServer(brokerIpAddress, brokerPort);
 }
@@ -82,12 +85,22 @@ bool MqttGatewayClient::sendTelemetryRecord(const TelemetryPackage& abstractTele
     // 1. Guard capability status check before spending memory processing power
     if (!communicationTransportDriver.canTransmit()) {
         communicationTransportDriver.connect(); // Asynchronously attempt a link recovery
+        sendsFailedCount++;
+        if (!firstFailureLogged) {
+            MODEST_LOG_W("MQTT", "First send failure: transport not ready");
+            firstFailureLogged = true;
+        }
         return false;
     }
 
     // 2. Assure our application layer MQTT socket session state is established
     ensureBrokerSessionConnection();
     if (!mqttClient.connected()) {
+        sendsFailedCount++;
+        if (!firstFailureLogged) {
+            MODEST_LOG_W("MQTT", "First send failure: broker not connected");
+            firstFailureLogged = true;
+        }
         return false;
     }
 
@@ -97,8 +110,13 @@ bool MqttGatewayClient::sendTelemetryRecord(const TelemetryPackage& abstractTele
     // 4. Publish telemetry payload onto the broker topic ring (Executed on priority 1 thread)
     bool publishSuccessStatus = mqttClient.publish(publishTopic, serializedPayloadOutput.c_str());
     if (!publishSuccessStatus) {
-        MODEST_LOG_W("MQTT", "Failed to publish telemetry to topic: %s", publishTopic);
+        sendsFailedCount++;
+        if (!firstFailureLogged) {
+            MODEST_LOG_W("MQTT", "First send failure: publish to topic %s failed", publishTopic);
+            firstFailureLogged = true;
+        }
     } else {
+        sendsSucceededCount++;
         MODEST_LOG_D("MQTT", "Published telemetry payload to topic: %s", publishTopic);
     }
     
@@ -106,4 +124,11 @@ bool MqttGatewayClient::sendTelemetryRecord(const TelemetryPackage& abstractTele
     mqttClient.loop();
 
     return publishSuccessStatus;
+}
+
+GatewayStatistics MqttGatewayClient::getStatistics() const {
+    GatewayStatistics stats;
+    stats.sendsSucceeded = sendsSucceededCount;
+    stats.sendsFailed = sendsFailedCount;
+    return stats;
 }

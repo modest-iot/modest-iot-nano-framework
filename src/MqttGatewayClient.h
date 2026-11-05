@@ -33,6 +33,10 @@ private:
     unsigned long lastReconnectAttemptTimestamp; ///< Timestamp of the last broker connection attempt.
     unsigned long reconnectIntervalMilliseconds; ///< Minimum cooldown between reconnect attempts in milliseconds.
 
+    uint32_t sendsSucceededCount; ///< Successful telemetry transmissions.
+    uint32_t sendsFailedCount; ///< Failed telemetry transmissions.
+    bool firstFailureLogged; ///< Tracks whether the first failure warning was emitted.
+
     void ensureBrokerSessionConnection(); ///< Ensures broker session is active with rate-limited backoff.
 
 public:
@@ -91,6 +95,12 @@ public:
      * @return Cooldown period in milliseconds.
      */
     [[nodiscard]] unsigned long getReconnectInterval() const;
+
+    /**
+     * @brief Returns send success/failure counters for diagnostics aggregation.
+     * @return Statistics struct with cumulative send counts.
+     */
+    [[nodiscard]] GatewayStatistics getStatistics() const override;
 };
 
 /** @} */ // End of Gateway: Protocol-Specific Implementations
