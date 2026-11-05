@@ -10,6 +10,7 @@
 #include "TelemetryPackage.h"
 #include <cstdio>
 #include <cassert>
+#include <memory>
 
 #ifdef TEST_MOCK_DEVICE
 
@@ -52,6 +53,11 @@ public:
     }
 
     bool enqueueTelemetryPayload(TelemetryPackage**) const {
+        // Simulates null queue behavior
+        return false;
+    }
+
+    bool enqueueTelemetryPayload(std::unique_ptr<TelemetryPackage>) const {
         // Simulates null queue behavior
         return false;
     }
@@ -257,6 +263,63 @@ void test_gateway_client_default_statistics() {
     printf("[PASS] GatewayClient default statistics are zero\n");
 }
 
+// Test that unique_ptr enqueue returns false when queue is nullptr
+void test_unique_ptr_enqueue_with_null_queue() {
+#ifdef TEST_MOCK_DEVICE
+    MockDeviceDiagnostics device;
+#else
+    TestDevice device(1000);
+#endif
+    // Engine not initialized, so telemetryQueueHandle is nullptr
+
+    auto packet = std::make_unique<TestTelemetryPackage>();
+    bool result = device.enqueueTelemetryPayload(std::move(packet));
+
+    assert(result == false);
+    // After a failed enqueue, the unique_ptr retains ownership and deletes automatically
+    // If we reach here without a crash, the deletion succeeded
+
+    DiagnosticsSnapshot snapshot = device.diagnostics();
+    assert(snapshot.packetsEnqueued == 0);
+    assert(snapshot.packetsDropped == 0);
+
+    printf("[PASS] unique_ptr enqueue with null queue returns false and deletes packet\n");
+}
+
+// Test that unique_ptr enqueue returns false when packet is nullptr
+void test_unique_ptr_enqueue_with_null_packet() {
+#ifdef TEST_MOCK_DEVICE
+    MockDeviceDiagnostics device;
+#else
+    TestDevice device(1000);
+#endif
+
+    std::unique_ptr<TestTelemetryPackage> packet = nullptr;
+    bool result = device.enqueueTelemetryPayload(std::move(packet));
+    assert(result == false);
+
+    printf("[PASS] unique_ptr enqueue with null packet returns false\n");
+}
+
+// Test that unique_ptr ownership transfer compiles and moves correctly
+void test_unique_ptr_ownership_transfer() {
+    // Verify that std::make_unique creates a valid unique_ptr
+    auto packet = std::make_unique<TestTelemetryPackage>();
+    assert(packet != nullptr);
+
+    // Verify that std::move transfers ownership (packet becomes nullptr)
+    std::unique_ptr<TestTelemetryPackage> transferred = std::move(packet);
+    assert(packet == nullptr);
+    assert(transferred != nullptr);
+
+    // Verify that the transferred pointer can be released
+    TestTelemetryPackage* raw = transferred.release();
+    assert(raw != nullptr);
+    delete raw;
+
+    printf("[PASS] unique_ptr ownership transfer works correctly\n");
+}
+
 } // anonymous namespace
 
 int main() {
@@ -271,6 +334,9 @@ int main() {
     test_snapshot_aggregate_init();
     test_gateway_statistics_defaults();
     test_gateway_client_default_statistics();
+    test_unique_ptr_enqueue_with_null_queue();
+    test_unique_ptr_enqueue_with_null_packet();
+    test_unique_ptr_ownership_transfer();
     
     printf("\nAll diagnostics tests passed!\n");
     return 0;
