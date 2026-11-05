@@ -84,4 +84,22 @@ inline void serializeJson(const JsonDocument& doc, String& output) {
     output = res;
 }
 
+inline size_t serializeJson(const JsonDocument& doc, char* buffer, size_t bufferSize) {
+    std::string res = "{";
+    bool first = true;
+    for (const auto& kv : doc.getFields()) {
+        if (!first) {
+            res += ",";
+        }
+        first = false;
+        res += "\"" + kv.first + "\":" + kv.second.raw();
+    }
+    res += "}";
+    if (res.size() + 1 > bufferSize) {
+        return 0; // Buffer too small
+    }
+    std::snprintf(buffer, bufferSize, "%s", res.c_str());
+    return res.size();
+}
+
 #endif // FAKE_ARDUINO_JSON_H

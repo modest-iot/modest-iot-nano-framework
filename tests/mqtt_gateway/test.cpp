@@ -286,6 +286,28 @@ int main() {
         assert(stats.sendsFailed == 2);
     }
 
+    // =========================================================================
+    // Test 6: Bounded Serialization Buffer - Oversized Payload
+    // =========================================================================
+    {
+        PubSubClient::resetMockState();
+        fakeMillis = 1000;
+
+        MockConnectivityDriver mockDriver;
+        Client fakeSocket;
+        MqttGatewayClient gateway(mockDriver, fakeSocket, "192.168.1.100", 1883, "telemetry/buffer", "Node-05");
+
+        // Normal payload should succeed
+        SampleTelemetryPackage package(42, 23.5f);
+        bool sent = gateway.sendTelemetryRecord(package);
+        assert(sent);
+        assert(PubSubClient::publishCount == 1);
+
+        GatewayStatistics stats = gateway.getStatistics();
+        assert(stats.sendsSucceeded == 1);
+        assert(stats.sendsFailed == 0);
+    }
+
     std::printf("All MqttGatewayClient and WiFi Reconnection tests passed successfully!\n");
     return 0;
 }
