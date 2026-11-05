@@ -27,6 +27,13 @@ private:
     static constexpr char           NMEA_VALID_STATUS                   = 'A';
     static constexpr int            PROPAGATION_SUPPRESSION_IDENTIFIER  = -1;
 
+    /// Default sampling interval in milliseconds.
+    /// @note GPS modules typically update at 1 Hz (1000 ms).
+    static constexpr uint32_t DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS = 1000;
+    /// Minimum sampling interval in milliseconds.
+    /// @note Most GPS modules cannot update faster than 100 ms.
+    static constexpr uint32_t MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS = 100;
+
     int transmitGpioPin;       ///< GPIO pin used for UART transmission.
     HardwareSerial& gpsSerial; ///< Reference to the hardware serial interface for GPS.
     
@@ -80,6 +87,9 @@ private:
 
 protected:
     void processEvent(Event& event) override;
+
+    [[nodiscard]] uint32_t getDefaultSamplingIntervalInMilliseconds() const override;
+    [[nodiscard]] uint32_t getMinimalSamplingIntervalInMilliseconds() const override;
 
 public:
     GeolocationSensor(HardwareSerial& serial, int receiveGpioPin, int transmitGpioPin, long baudRate = 9600, EventHandler* parentHandler = nullptr);

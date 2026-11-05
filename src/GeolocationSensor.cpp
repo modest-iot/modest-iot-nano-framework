@@ -151,3 +151,11 @@ int GeolocationSensor::getNextTokenAsInt(char** saveptr) {
     return (token != nullptr) ? static_cast<int>(strtol(token, nullptr, 10)) : 0;
 }
 
+uint32_t GeolocationSensor::getDefaultSamplingIntervalInMilliseconds() const {
+    return DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}
+
+uint32_t GeolocationSensor::getMinimalSamplingIntervalInMilliseconds() const {
+    return MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}
+
