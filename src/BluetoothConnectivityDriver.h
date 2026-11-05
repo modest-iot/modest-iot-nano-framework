@@ -3,7 +3,7 @@
 
 #include "ConnectivityDriver.h"
 
-#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BLUEDROID_ENABLED)
+#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BLUEDROID_ENABLED) // NOLINT(readability-identifier-naming)
 #include <BluetoothSerial.h>
 
 /**
@@ -26,6 +26,7 @@ public:
     bool canTransmit() override;
 };
 
+// NOLINT(readability-identifier-naming)
 #endif // CONFIG_BT_ENABLED && CONFIG_BLUEDROID_ENABLED
 
 #endif // BLUETOOTH_CONNECTIVITY_DRIVER_H

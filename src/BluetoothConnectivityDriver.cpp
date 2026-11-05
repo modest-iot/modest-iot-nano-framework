@@ -1,6 +1,6 @@
 #include "BluetoothConnectivityDriver.h"
 
-#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BLUEDROID_ENABLED)
+#if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BLUEDROID_ENABLED) // NOLINT(readability-identifier-naming)
 
 void BluetoothConnectivityDriver::connect() {
     // Start Bluetooth Serial with the device name
@@ -28,4 +28,4 @@ bool BluetoothConnectivityDriver::canTransmit() {
     return connected;
 }
 
-#endif // CONFIG_BT_ENABLED && CONFIG_BLUEDROID_ENABLED
+#endif // CONFIG_BT_ENABLED && CONFIG_BLUEDROID_ENABLED // NOLINT(readability-identifier-naming)
