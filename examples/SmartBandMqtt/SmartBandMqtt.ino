@@ -6,6 +6,7 @@
  */
 
 #include <Arduino.h>
+#include <memory>
 #include "ModestIoT.h"
 
 /// --- CONCRETE APPLICATION DATA SCHEMA SPECIFICATION ---
@@ -41,15 +42,12 @@ class SmartBandDevice : public Device {
     MqttGatewayClient& gatewayClient;
 
     void packageAndQueueTelemetrySnapshot() {
-        TelemetryPackage* livePayloadSnapshot = new SmartBandTelemetryPackage(
+        auto packet = std::make_unique<SmartBandTelemetryPackage>(
             heartRateSensor.getBeatsPerMinute(),
             ambientClimateSensor.getTemperatureInCelsius(),
             ambientClimateSensor.getRelativeHumidityInPercentage()
         );
-
-        if (!enqueueTelemetryPayload(&livePayloadSnapshot)) {
-            delete livePayloadSnapshot;
-        }
+        enqueueTelemetryPayload(std::move(packet));
     }
 
     protected:
