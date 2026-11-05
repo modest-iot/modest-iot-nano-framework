@@ -103,6 +103,11 @@ run_test "test_diagnostics" \
     -DTEST_MOCK_DEVICE \
     tests/diagnostics/test.cpp
 
+# 9. Sensor Fault and Recovery Events Suite
+run_test "test_sensor_fault" \
+    src/Sensor.cpp \
+    tests/sensor_fault/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="
