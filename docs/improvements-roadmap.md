@@ -35,7 +35,7 @@ Each work item is scored 0 to 5 on three benefits, and sized by cost. Scores ref
 | W6 | Logging macros, stack high-water, sensor fault events | diagnostics | 4 | 1 | 5 | S | 13 | Pending (Tier 2) |
 | W7 | Connectivity reconnect policy, `mqttClient.loop()` every cycle, link events | connectivity | 5 | 2 | 4 | M | 8 | **Completed** |
 | W8 | Per-slot sampling intervals, pure scheduler, elapsed-tick accounting | sampling | 4 | 5 | 5 | M | 9 | Pending (Tier 3) |
-| W9 | `EngineConfig` and `stopAsynchronousEngine()` | threading | 4 | 2 | 3 | S | 11 | Pending (Tier 2) |
+| W9 | `EngineConfig` and `stopAsynchronousEngine()` | threading | 4 | 2 | 3 | S | 11 | **Completed** |
 | W10 | Optional Bluetooth, BLE driver addition, optional MQTT footprint (P1) | connectivity, library-readiness | 3 | 2 | 4 | S | 11 | **Partially Complete** (BLE NUS added, BT Classic isolated) |
 | W11 | Telemetry ownership and queue policy (Phases A and B) | telemetry | 4 | 3 | 4 | M | 8 | Pending (Tier 3) |
 | W12 | `Device::post` command marshalling | threading | 3 | 0 | 4 | M | 6 | Pending (Tier 4) |
@@ -52,7 +52,7 @@ Each work item is scored 0 to 5 on three benefits, and sized by cost. Scores ref
 Progression history and tier execution:
 - **Tier 0 (Correctness & Hygiene)** is **Complete**: `WiFiConnectivityDriver` abstract class issue resolved, dead `LoadCellController` deleted, `library.properties` standardized, examples compile cleanly.
 - **Tier 1 (Safety Net & Test Consolidation)** is **Complete**: Host test infrastructure consolidated under `tests/fakes/` (4 suites: Light, LED, RFID, BLE), `tests/run_all.sh` runner, and GitHub Actions CI workflow active.
-- **Tier 2 (Reliability & Footprint)** is **In Progress / Current Priority**: BLE driver implemented, next up: continuous MQTT keep-alive (`mqttClient.loop()`), Wi-Fi reconnect policy, `EngineConfig`, and `MODEST_LOG_*` zero-cost logging facility.
+- **Tier 2 (Reliability & Footprint)** is **In Progress / Current Priority**: BLE driver implemented, MQTT keep-alive and reconnect policy completed, `EngineConfig` and `stopAsynchronousEngine()` completed, `MODEST_LOG_*` zero-cost logging facility completed. Remaining: stack high-water diagnostics and sensor fault events (W6).
 - **Tier 3 (Core Scheduling & Telemetry)** is the **Next Milestone**: Pure `SamplingScheduler` with per-slot periods, followed by explicit `TelemetryPackage` ownership.
 
 | Tier | Items | Goal | Exit criterion | Status |
