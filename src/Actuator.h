@@ -47,15 +47,18 @@ public:
      * @param signalGpioPin The GPIO pin for the actuator.
      * @param parentHandler Pointer to a CommandHandler to receive commands (default: nullptr).
      */
-    Actuator(int signalGpioPin, CommandHandler* parentHandler = nullptr);
+    explicit Actuator(int signalGpioPin, CommandHandler* parentHandler = nullptr);
 
-    virtual ~Actuator() = default;
+    /**
+     * @brief Destructs the Actuator.
+     */
+    ~Actuator() override = default;
 
     /**
      * @brief Handles a command by propagating it to the assigned handler.
      * @param command The command to handle.
      */
-    void handle(Command command) override final;
+    void handle(Command command) final;
 
     /**
      * @brief Sets or updates the command handler for this actuator.
