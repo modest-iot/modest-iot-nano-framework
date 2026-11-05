@@ -18,8 +18,8 @@
 #endif
 
 Device::Device(unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupIndex)
-    : registeredSlotCount(0),
-      activeSequencePointer(0),
+    : scheduler(samplingIntervalInMilliseconds),
+      engineStarted(false),
       hardwareSamplingTaskHandle(nullptr),
       networkDispatcherTaskHandle(nullptr),
       telemetryQueueHandle(nullptr),
@@ -32,9 +32,6 @@ Device::Device(unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupI
       pollingIntervalInMilliseconds(samplingIntervalInMilliseconds),
       hardwareTimerIndex(timerGroupIndex)
 {
-    for (auto& slot : scheduledSequences) {
-        slot = { nullptr, -1 };
-    }
 }
 
 Device::~Device() {
@@ -61,6 +58,11 @@ void Device::initializeAsynchronousEngine(uint8_t maximumQueueLength) {
 }
 
 void Device::initializeAsynchronousEngine(const EngineConfig& config) {
+    // Resolve legacy (two-argument) slots before starting the engine
+    // Legacy slots get periodInTicks = total legacy slot count, reproducing the old round-robin
+    // This is handled internally: legacy slots are marked with period 0 and resolved here
+    engineStarted = true;
+
     telemetryQueueHandle = xQueueCreate(config.queueLength, sizeof(TelemetryPackage*));
 
     xTaskCreatePinnedToCore(
@@ -82,12 +84,40 @@ void Device::initializeAsynchronousEngine(const EngineConfig& config) {
 }
 
 bool Device::appendSensorToScheduler(EventHandler* targetSensorInstance, int requestedEventIdentifier) {
-    if (registeredSlotCount >= MAXIMUM_SCHEDULED_SLOTS || targetSensorInstance == nullptr) {
+    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
         return false;
     }
-    scheduledSequences[registeredSlotCount] = { targetSensorInstance, requestedEventIdentifier };
-    registeredSlotCount++;
-    return true;
+    // Legacy two-argument form: period 0 marks it for resolution at engine start
+    // At engine start, legacy slots get periodInTicks = legacy count, reproducing round-robin
+    auto result = scheduler.add(targetSensorInstance, requestedEventIdentifier, 0);
+    return result != SamplingScheduler::AddResult::TableFull &&
+           result != SamplingScheduler::AddResult::InvalidArgument;
+}
+
+bool Device::appendSensorToScheduler(Sensor* targetSensorInstance, int requestedEventIdentifier) {
+    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
+        return false;
+    }
+    uint32_t periodInMilliseconds = targetSensorInstance->getSamplingIntervalInMilliseconds();;
+    uint32_t minimumPeriodInMilliseconds = targetSensorInstance->getEffectiveMinimalSamplingIntervalInMilliseconds();
+    return appendSensorToScheduler(targetSensorInstance, requestedEventIdentifier, periodInMilliseconds, minimumPeriodInMilliseconds);
+}
+
+bool Device::appendSensorToScheduler(EventHandler* targetSensorInstance, int requestedEventIdentifier,
+                                      uint32_t periodInMilliseconds,
+                                      uint32_t minimumPeriodInMilliseconds) {
+    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
+        return false;
+    }
+    auto result = scheduler.add(targetSensorInstance, requestedEventIdentifier,
+                                 periodInMilliseconds, minimumPeriodInMilliseconds);
+    if (result == SamplingScheduler::AddResult::ClampedToMinimum) {
+        MODEST_LOG_W("Device", "Sensor period clamped to minimum: %u ms", minimumPeriodInMilliseconds);
+    } else if (result == SamplingScheduler::AddResult::ClampedToTick) {
+        MODEST_LOG_W("Device", "Sensor period clamped to tick: %lu ms", pollingIntervalInMilliseconds);
+    }
+    return result != SamplingScheduler::AddResult::TableFull &&
+           result != SamplingScheduler::AddResult::InvalidArgument;
 }
 
 bool Device::enqueueTelemetryPayload(TelemetryPackage** telemetryPackagePointerAddress) const {
@@ -111,7 +141,9 @@ bool Device::enqueueTelemetryPayload(TelemetryPackage** telemetryPackagePointerA
 void Device::executeHardwareSamplingContext(void* taskParameters) {
     auto* self = static_cast<Device*>(taskParameters);
     while (true) {
-        // Wait for timer tick or termination signal (bit 0 = tick, bit 1 = stop)
+        // Wait for timer tick or termination signal
+        // vTaskNotifyGiveFromISR increments the notification value on each tick
+        // stopAsynchronousEngine sets bit 1 (0x2) to signal termination
         uint32_t notificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
         // Check termination signal (bit 1)
@@ -119,16 +151,20 @@ void Device::executeHardwareSamplingContext(void* taskParameters) {
             break;
         }
 
-        if (self->registeredSlotCount > 0) {
-            uint8_t currentSlotIndex = self->activeSequencePointer;
-            ScheduledTaskSlot activeTask = self->scheduledSequences[currentSlotIndex];
-
-            if (activeTask.sensorInstance != nullptr) {
-                activeTask.sensorInstance->on(Event(activeTask.targetEventIdentifier));
-            }
-
-            self->activeSequencePointer = (currentSlotIndex + 1) % self->registeredSlotCount;
+        // The notification value is the accumulated tick count since last wake
+        // ulTaskNotifyTake(pdTRUE, ...) clears the notification after reading
+        uint32_t elapsed = notificationValue;
+        if (elapsed == 0) {
+            // Should not happen, but treat as 1 tick for safety
+            elapsed = 1;
         }
+        if (elapsed > 1) {
+            self->missedTickCount += (elapsed - 1);
+        }
+
+        // Advance the scheduler by the elapsed tick count
+        // This handles all due slots, with phase-aligned re-arming
+        self->scheduler.advance(elapsed);
     }
     vTaskDelete(nullptr);
 }
@@ -186,7 +222,7 @@ void Device::maintainNetworkServices() const {
 DiagnosticsSnapshot Device::diagnostics() const {
     DiagnosticsSnapshot snapshot;
     snapshot.missedTicks = missedTickCount;
-    snapshot.worstCaseWakeMicros = 0; // Will be populated when SamplingScheduler is implemented
+    snapshot.worstCaseWakeMicros = 0; // Populated when handler timing measurement is added
     snapshot.packetsEnqueued = packetsEnqueuedCount;
     snapshot.packetsDropped = packetsDroppedCount;
     snapshot.queueHighWaterMark = queueHighWaterMarkCount;

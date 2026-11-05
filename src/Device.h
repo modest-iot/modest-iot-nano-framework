@@ -10,9 +10,11 @@
  */
 
 #include "EventHandler.h"
+#include "Sensor.h"
 #include "CommandHandler.h"
 #include "TelemetryPackage.h"
 #include "GatewayClient.h"
+#include "SamplingScheduler.h"
 #include <Arduino.h>
 
 struct hw_timer_s;
@@ -73,18 +75,8 @@ struct DiagnosticsSnapshot {
  */
 class Device : public EventHandler, public CommandHandler {
 private:
-    /**
-     * @brief Internal scheduler slot that maps one sensor to one event request.
-     */
-    struct ScheduledTaskSlot {
-        EventHandler* sensorInstance; ///< Pointer to the sensor handler.
-        int targetEventIdentifier; ///< Event identifier requested from the sensor.
-    };
-
-    static constexpr uint8_t MAXIMUM_SCHEDULED_SLOTS = 8; ///< Maximum number of sensor slots.
-    ScheduledTaskSlot scheduledSequences[MAXIMUM_SCHEDULED_SLOTS] = {}; ///< Array of scheduled task slots.
-    uint8_t registeredSlotCount; ///< Number of registered slots.
-    uint8_t activeSequencePointer; ///< Index of the currently active sequence.
+    SamplingScheduler scheduler; ///< Per-slot sampling scheduler.
+    bool engineStarted; ///< Guards against registration after engine start.
 
     TaskHandle_t hardwareSamplingTaskHandle; ///< Handle for the hardware sampling task.
     TaskHandle_t networkDispatcherTaskHandle; ///< Handle for the network dispatcher task.
@@ -152,12 +144,49 @@ protected:
     bool enqueueTelemetryPayload(TelemetryPackage** telemetryPackagePointerAddress) const;
 
     /**
-     * @brief Registers a sensor/event pair in the round-robin scheduler.
+     * @brief Registers a sensor/event pair in the scheduler (two-argument fallback form).
      * @param targetSensorInstance Sensor (or any `EventHandler`) to poll.
      * @param requestedEventIdentifier Event identifier to request from that sensor.
      * @return `true` when the slot is registered, `false` when scheduler capacity is full.
+     *
+     * This overload passes a period of 0 to the scheduler, which treats it as "every tick."
+     * It serves as a valid fallback for non-Sensor `EventHandler` instances (e.g., a Device
+     * subclass polling itself). For Sensor arguments, the `Sensor*` overload is preferred
+     * because it resolves the sensor's own sampling interval defaults automatically.
      */
     bool appendSensorToScheduler(EventHandler* targetSensorInstance, int requestedEventIdentifier);
+
+    /**
+     * @brief Registers a sensor using its own sampling interval defaults.
+     * @param targetSensorInstance Sensor to poll; period is resolved via
+     *        `getSamplingIntervalInMilliseconds()` and `getMinimalSamplingIntervalInMilliseconds()`.
+     * @param requestedEventIdentifier Event identifier to request from that sensor.
+     * @return `true` when the slot is registered, `false` when the scheduler is full or
+     *        the engine has already started.
+     *
+     * This overload queries the sensor's effective sampling interval (per-instance override
+     * if set, otherwise the subclass default) and registers it with the scheduler.
+     * Calls after `initializeAsynchronousEngine()` are rejected.
+     */
+    bool appendSensorToScheduler(Sensor* targetSensorInstance, int requestedEventIdentifier);
+
+    /**
+     * @brief Registers a sensor/event pair with an explicit sampling period.
+     * @param targetSensorInstance Sensor (or any `EventHandler`) to poll.
+     * @param requestedEventIdentifier Event identifier to request from that sensor.
+     * @param periodInMilliseconds Desired sampling period in milliseconds.
+     * @param minimumPeriodInMilliseconds Optional minimum period; if the requested period
+     *        is below this value, it is clamped up.
+     * @return `true` when the slot is registered (including clamped periods), `false` when
+     *        the scheduler is full, the engine has already started, or arguments are invalid.
+     *
+     * Periods are rounded up to whole ticks. Equal-period slots are staggered so they
+     * first fire on consecutive ticks, then each repeats every period.
+     * Calls after `initializeAsynchronousEngine()` are rejected.
+     */
+    bool appendSensorToScheduler(EventHandler* targetSensorInstance, int requestedEventIdentifier,
+                                  uint32_t periodInMilliseconds,
+                                  uint32_t minimumPeriodInMilliseconds = 0);
 
     /**
      * @brief Optional gateway reference for diagnostics aggregation.
