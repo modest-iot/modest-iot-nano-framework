@@ -125,3 +125,11 @@ bool DigitalLightIntensitySensor::isLightDetected() const {
 float DigitalLightIntensitySensor::getIlluminanceInLux() const {
     return cachedIlluminanceInLux;
 }
+
+uint32_t DigitalLightIntensitySensor::getDefaultSamplingIntervalInMilliseconds() const {
+    return DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}
+
+uint32_t DigitalLightIntensitySensor::getMinimalSamplingIntervalInMilliseconds() const {
+    return MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}

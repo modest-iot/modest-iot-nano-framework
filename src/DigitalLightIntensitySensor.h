@@ -84,6 +84,9 @@ protected:
      */
     void processEvent(Event& event) override;
 
+    [[nodiscard]] uint32_t getDefaultSamplingIntervalInMilliseconds() const override;
+    [[nodiscard]] uint32_t getMinimalSamplingIntervalInMilliseconds() const override;
+
 public:
     /// Default BH1750 address when ADDR is low or left open.
     static constexpr uint8_t DEFAULT_I2C_ADDRESS = 0x23;
@@ -91,6 +94,13 @@ public:
     static constexpr uint8_t ALTERNATE_I2C_ADDRESS = 0x5C;
     /// Default inclusive threshold for classifying a reading as light, in lux.
     static constexpr float DEFAULT_LIGHT_DETECTED_THRESHOLD_IN_LUX = 10.0f;
+
+    /// Default sampling interval in milliseconds.
+    /// @note Based on BH1750 high-resolution conversion time (~180 ms minimum).
+    static constexpr uint32_t DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS = 1000;
+    /// Minimum sampling interval in milliseconds.
+    /// @note BH1750 continuous high-resolution mode requires ~180 ms per conversion.
+    static constexpr uint32_t MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS = 180;
 
     /// Event identifier emitted when illuminance is at or above the threshold.
     static constexpr int LIGHT_DETECTED_EVENT_IDENTIFIER = 50;
