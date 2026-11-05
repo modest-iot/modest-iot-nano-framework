@@ -108,6 +108,11 @@ run_test "test_sensor_fault" \
     src/Sensor.cpp \
     tests/sensor_fault/test.cpp
 
+# 10. SamplingScheduler Suite
+run_test "test_scheduler" \
+    src/SamplingScheduler.cpp \
+    tests/scheduler/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="

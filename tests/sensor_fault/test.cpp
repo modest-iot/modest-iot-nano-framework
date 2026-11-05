@@ -27,6 +27,14 @@ public:
         (void)event;
     }
 
+    uint32_t getDefaultSamplingIntervalInMilliseconds() const override {
+        return 1000;
+    }
+
+    uint32_t getMinimalSamplingIntervalInMilliseconds() const override {
+        return 500;
+    }
+
     // Expose protected methods for testing
     using Sensor::reportReadSuccess;
     using Sensor::reportReadFailure;
