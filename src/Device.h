@@ -50,6 +50,7 @@ struct DiagnosticsSnapshot {
     uint32_t worstCaseWakeMicros = 0; ///< Highest observed sampler handler duration.
     uint32_t packetsEnqueued = 0; ///< Total telemetry packets successfully enqueued.
     uint32_t packetsDropped = 0; ///< Total telemetry packets dropped due to full queue.
+    uint32_t packetsDroppedOldest = 0; ///< Total oldest packets dropped to make room for new ones.
     uint8_t queueHighWaterMark = 0; ///< Maximum queue depth observed.
     uint32_t sendsSucceeded = 0; ///< Successful gateway transmissions.
     uint32_t sendsFailed = 0; ///< Failed gateway transmissions.
@@ -86,6 +87,7 @@ private:
     // Shared diagnostic counters (single-writer rule: each counter written by one task)
     mutable uint32_t packetsEnqueuedCount; ///< Total packets successfully enqueued.
     mutable uint32_t packetsDroppedCount; ///< Total packets dropped due to full queue.
+    mutable uint32_t packetsDroppedOldestCount; ///< Total oldest packets dropped to make room for new ones.
     mutable uint8_t queueHighWaterMarkCount; ///< Maximum queue depth observed.
     mutable uint32_t missedTickCount; ///< Ticks missed by the sampler.
     mutable bool firstDropLogged; ///< Tracks whether the first drop warning was emitted.

@@ -26,6 +26,7 @@ Device::Device(const unsigned long samplingIntervalInMilliseconds, const uint8_t
       telemetryQueueHandle(nullptr),
       packetsEnqueuedCount(0),
       packetsDroppedCount(0),
+      packetsDroppedOldestCount(0),
       queueHighWaterMarkCount(0),
       missedTickCount(0),
       firstDropLogged(false),
@@ -137,6 +138,20 @@ bool Device::enqueueTelemetryPayload(TelemetryPackage **telemetryPackagePointerA
         }
         return true;
     }
+    // Queue is full: drop the oldest packet and insert the new one
+    TelemetryPackage* oldest = nullptr;
+    if (xQueueReceive(telemetryQueueHandle, &oldest, 0) == pdPASS && oldest != nullptr) {
+        delete oldest;
+        packetsDroppedOldestCount++;
+        if (xQueueSend(telemetryQueueHandle, telemetryPackagePointerAddress, 0) == pdPASS) {
+            packetsEnqueuedCount++;
+            if (const auto currentQueueSize = static_cast<uint8_t>(uxQueueMessagesWaiting(telemetryQueueHandle));
+                currentQueueSize > queueHighWaterMarkCount) {
+                queueHighWaterMarkCount = currentQueueSize;
+            }
+            return true;
+        }
+    }
     packetsDroppedCount++;
     if (!firstDropLogged) {
         MODEST_LOG_W("Device", "First packet dropped: telemetry queue full");
@@ -155,6 +170,20 @@ bool Device::enqueueTelemetryPayload(std::unique_ptr<TelemetryPackage> telemetry
             queueHighWaterMarkCount = currentQueueSize;
         }
         return true;
+    }
+    // Queue is full: drop the oldest packet and insert the new one
+    TelemetryPackage* oldest = nullptr;
+    if (xQueueReceive(telemetryQueueHandle, &oldest, 0) == pdPASS && oldest != nullptr) {
+        delete oldest;
+        packetsDroppedOldestCount++;
+        if (xQueueSend(telemetryQueueHandle, &rawPtr, 0) == pdPASS) {
+            packetsEnqueuedCount++;
+            if (const auto currentQueueSize = static_cast<uint8_t>(uxQueueMessagesWaiting(telemetryQueueHandle));
+                currentQueueSize > queueHighWaterMarkCount) {
+                queueHighWaterMarkCount = currentQueueSize;
+            }
+            return true;
+        }
     }
     // Restore ownership so the package is deleted automatically on failure.
     telemetryPackageStandardUniquePointer.reset(rawPtr);
@@ -254,6 +283,7 @@ DiagnosticsSnapshot Device::diagnostics() const {
     snapshot.worstCaseWakeMicros = 0; // Populated when handler timing measurement is added
     snapshot.packetsEnqueued = packetsEnqueuedCount;
     snapshot.packetsDropped = packetsDroppedCount;
+    snapshot.packetsDroppedOldest = packetsDroppedOldestCount;
     snapshot.queueHighWaterMark = queueHighWaterMarkCount;
 
     // Aggregate gateway send statistics if a gateway is registered
