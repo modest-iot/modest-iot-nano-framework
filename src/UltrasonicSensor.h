@@ -34,12 +34,22 @@ private:
     static constexpr int PROPAGATION_SUPPRESSION_IDENTIFIER = -1; ///< Propagation suppression ID.
     static constexpr long TRACKING_FAILURE_VALUATION = 0; ///< Valuation on failure.
 
+    /// Default sampling interval in milliseconds.
+    /// @note HC-SR04 echo decay and cross-talk require ~60 ms minimum between readings.
+    static constexpr uint32_t DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS = 100;
+    /// Minimum sampling interval in milliseconds.
+    /// @note Below 60 ms echo signals may interfere with subsequent readings.
+    static constexpr uint32_t MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS = 60;
+
 protected:
     /**
      * @brief Performs a ranging cycle and updates the cached distance value.
      * @param event Mutable event request/response payload.
      */
     void processEvent(Event& event) override;
+
+    [[nodiscard]] uint32_t getDefaultSamplingIntervalInMilliseconds() const override;
+    [[nodiscard]] uint32_t getMinimalSamplingIntervalInMilliseconds() const override;
 
 public:
     /**

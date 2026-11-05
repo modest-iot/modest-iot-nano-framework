@@ -46,3 +46,11 @@ void UltrasonicSensor::processEvent(Event& event) {
 }
 
 float UltrasonicSensor::getDistanceInCentimeters() const { return cachedDistanceInCentimeters; }
+
+uint32_t UltrasonicSensor::getDefaultSamplingIntervalInMilliseconds() const {
+    return DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}
+
+uint32_t UltrasonicSensor::getMinimalSamplingIntervalInMilliseconds() const {
+    return MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}
