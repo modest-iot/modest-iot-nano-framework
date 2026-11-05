@@ -1,6 +1,6 @@
 # Improvement 3: Telemetry Packages
 
-Analysis for a future development session. Status: **partially implemented** (Phase A items 1-3 completed: counters in Device, ArduinoJson cleanup, library.properties pinning; Phase B item 6 completed: `unique_ptr` enqueue overload implemented and examples migrated; golden tests, packet pool, and format decoupling proposed). Memory and performance statements are architectural reasoning, not measurements.
+Analysis for a future development session. Status: **partially implemented** (Phase A items 1-3 completed: counters in Device, ArduinoJson cleanup, library.properties pinning; Phase B item 6 completed: `unique_ptr` enqueue overload implemented and examples migrated; Phase B item 8 partial: drop-oldest queue policy implemented; golden tests, packet pool, and format decoupling proposed). Memory and performance statements are architectural reasoning, not measurements.
 
 Related: [improvements-roadmap.md](improvements-roadmap.md), [diagnostics-improvement.md](diagnostics-improvement.md) (the counters proposed here live in its shared facility), [threading-model-improvement.md](threading-model-improvement.md), [dependencies-improvement.md](dependencies-improvement.md) (ArduinoJson decision), [library-readiness-improvement.md](library-readiness-improvement.md) (host test harness for the golden tests), [sampling-interval-improvement.md](sampling-interval-improvement.md), [connectivity-improvement.md](connectivity-improvement.md).
 
@@ -43,7 +43,7 @@ Ownership is explicit: the `unique_ptr` overload guarantees no leak on the failu
 |---|---|---|---|
 | T1 | Per-packet heap allocation and free on two different tasks | `new` in the sampler task, `delete` in the network task | Heap fragmentation over long uptimes on a device that is expected to run for months. Also takes the allocator lock from the sampler task, which is the real-time path. |
 | T2 | ~~Raw owning pointer through a queue~~ | **Resolved:** `enqueueTelemetryPayload(std::unique_ptr<TelemetryPackage>)` overload provides explicit ownership transfer. On enqueue failure, the `unique_ptr` deletes automatically. The legacy raw-pointer overload remains for backward compatibility. | **Done** |
-| T3 | Unreported loss when the queue is full | Zero-timeout `xQueueSend`. `enqueueTelemetryPayload` returns `false`, and both examples just `delete` the packet | The failure is visible to the caller, but nothing records it: no counter, no log, no policy, and the backend cannot see a gap. Under a network outage the **newest** data is the data that is dropped, which is usually the wrong choice for telemetry. |
+| T3 | ~~Unreported loss when the queue is full~~ | **Resolved:** Drop-oldest queue policy implemented. When the queue is full, the oldest packet is dropped and the new one is inserted, ensuring the freshest data is transmitted. `packetsDroppedOldest` counter tracks this behavior. | **Done** |
 | T4 | Three-stage JSON construction | `JsonDocument` built, then `String` built, then `c_str()` | Several allocations per send. With ArduinoJson 7 `JsonDocument` is heap-allocated and grows dynamically. `String` heap growth adds fragmentation. |
 | T5 | ~~`JsonDocument serialize() const` returns by value, and the whole API assumes ArduinoJson 7~~ | **Resolved:** `library.properties` now pins `ArduinoJson (>=7.0.0)`. `TelemetryPackage.h` uses the unified `JsonDocument` type from v7. | **Done** |
 | T6 | ~~ArduinoJson leaks into the public interface~~ | **Resolved:** Unused `#include <ArduinoJson.h>` removed from `GatewayClient.h` and `MqttGatewayClient.cpp`. ArduinoJson now only appears in `TelemetryPackage.h` and example packages. | **Done** |
@@ -186,7 +186,7 @@ For the JSON writer, serialize directly into a fixed buffer with `serializeJson(
 **Phase B: ownership and memory**
 6. `[DONE]` `unique_ptr`-based enqueue overload, keeping the raw overload for compatibility. Examples `SmartBandMqtt` and `AirQualityMonitor` migrated to `std::make_unique`.
 7. Packet pool with placement-new, alignment and destructor handling, and a `static_assert` on size.
-8. Drop-oldest and an alarm lane.
+8. `[DONE]` Drop-oldest queue policy. When the queue is full, the oldest packet is dropped and the new one is inserted. `packetsDroppedOldest` counter in `DiagnosticsSnapshot` tracks this behavior. Alarm lane deferred.
 
 **Phase C: format decoupling.** Do this only after Phases A and B are measured on hardware: it breaks every package subclass, and the benefit should be justified by real heap and payload numbers, not by the analysis alone.
 9. `TelemetryWriter` interface with a JSON implementation, plus an adapter for the legacy `serialize(JsonDocument&)`.
@@ -222,7 +222,7 @@ For the JSON writer, serialize directly into a fixed buffer with `serializeJson(
 | 2 | Pool vs heap | Pool opt-in, with heap as the default until measured. Pool alone does not make the device heap-stable (serialization still allocates). |
 | 3 | Writer abstraction | Yes, with a JSON writer and a legacy adapter |
 | 4 | Metadata placement | `timestamp` at capture, `sequence` before the enqueue attempt |
-| 5 | Queue drop policy default | Drop oldest plus an alarm lane |
+| 5 | Queue drop policy default | `[RESOLVED]` Drop-oldest implemented for routine readings; alarm lane deferred. |
 | 6 | Time source | `millis()` default, pluggable |
 | 7 | Keep ArduinoJson as a dependency | Yes for now, but behind the writer |
 | 8 | Maximum payload size | Compile-time constant per device |

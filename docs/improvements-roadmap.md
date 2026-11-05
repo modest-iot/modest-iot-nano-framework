@@ -37,7 +37,7 @@ Each work item is scored 0 to 5 on three benefits, and sized by cost. Scores ref
 | W8 | Per-slot sampling intervals, pure scheduler, elapsed-tick accounting | sampling | 4 | 5 | 5 | M | 9 | **Completed** |
 | W9 | `EngineConfig` and `stopAsynchronousEngine()` | threading | 4 | 2 | 3 | S | 11 | **Completed** |
 | W10 | Optional Bluetooth, BLE driver addition, optional MQTT footprint (P1) | connectivity, library-readiness | 3 | 2 | 4 | S | 11 | **Partially Complete** (BLE NUS added, BT Classic isolated) |
-| W11 | Telemetry ownership and queue policy (Phases A and B) | telemetry | 4 | 3 | 4 | M | 8 | **Partially Complete** (Phase A done, `unique_ptr` overload done) |
+| W11 | Telemetry ownership and queue policy (Phases A and B) | telemetry | 4 | 3 | 4 | M | 8 | **Partially Complete** (Phase A done, `unique_ptr` overload done, drop-oldest policy done) |
 | W12 | `Device::post` command marshalling | threading | 3 | 0 | 4 | M | 6 | Pending (Tier 4) |
 | W13 | Interrupt triggers for Button and PIR | interrupt-power | 3 | 4 | 3 | M | 6 | Pending (Tier 4) |
 | W14 | HX711 data-ready and ultrasonic echo capture (remove blocking) | interrupt-power | 2 | 4 | 2 | M | 5 | Pending (Tier 4) |
