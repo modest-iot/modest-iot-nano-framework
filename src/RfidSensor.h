@@ -56,6 +56,13 @@ public:
     /// Special identifier used internally to suppress event propagation.
     static constexpr int PROPAGATION_SUPPRESSION_IDENTIFIER = -1;
 
+    /// Default sampling interval in milliseconds.
+    /// @note MFRC522 tag polling at 100 ms provides responsive detection without excessive SPI traffic.
+    static constexpr uint32_t DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS = 100;
+    /// Minimum sampling interval in milliseconds.
+    /// @note Below 50 ms the RF field may not stabilize between polling cycles.
+    static constexpr uint32_t MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS = 50;
+
     /// MFRC522 operation status codes.
     enum StatusCode : uint8_t {
         STATUS_OK = 0,
@@ -170,6 +177,9 @@ protected:
      * @param event Mutable event context.
      */
     void processEvent(Event& event) override;
+
+    [[nodiscard]] uint32_t getDefaultSamplingIntervalInMilliseconds() const override;
+    [[nodiscard]] uint32_t getMinimalSamplingIntervalInMilliseconds() const override;
 
 public:
     /**
