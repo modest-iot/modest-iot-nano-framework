@@ -46,6 +46,13 @@ private:
     static constexpr int    MAX_FILTER_SIZE                     = 10; ///< Maximum size of the moving average filter.
     static constexpr unsigned long READ_TIMEOUT_MS              = 100; ///< Timeout for sensor readiness.
 
+    /// Default sampling interval in milliseconds.
+    /// @note HX711 output rate is typically 10 SPS (100 ms) or 80 SPS (12.5 ms) depending on RATE pin wiring.
+    static constexpr uint32_t DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS = 100;
+    /// Minimum sampling interval in milliseconds.
+    /// @note At 10 SPS mode, readings faster than 100 ms will return stale data.
+    static constexpr uint32_t MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS = 100;
+
     long    rawValueBuffer[MAX_FILTER_SIZE]{}; ///< Buffer for moving average filter.
     int     bufferIndex{}; ///< Current index for the filter buffer.
     int     filterDepth; ///< Current depth of the moving average filter.
@@ -110,6 +117,9 @@ protected:
      * @param event Mutable event request/response payload.
      */
     void processEvent(Event& event) override;
+
+    [[nodiscard]] uint32_t getDefaultSamplingIntervalInMilliseconds() const override;
+    [[nodiscard]] uint32_t getMinimalSamplingIntervalInMilliseconds() const override;
 
 public:
     /**

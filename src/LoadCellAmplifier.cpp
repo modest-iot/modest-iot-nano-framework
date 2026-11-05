@@ -204,3 +204,11 @@ float LoadCellAmplifier::getMinWeightInGrams() const {
 float LoadCellAmplifier::getMaxWeightInGrams() const {
     return maxWeightInGrams;
 }
+
+uint32_t LoadCellAmplifier::getDefaultSamplingIntervalInMilliseconds() const {
+    return DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}
+
+uint32_t LoadCellAmplifier::getMinimalSamplingIntervalInMilliseconds() const {
+    return MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}
