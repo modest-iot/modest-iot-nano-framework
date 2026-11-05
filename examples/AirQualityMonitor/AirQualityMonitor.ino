@@ -10,6 +10,7 @@
  */
 
 #include <Arduino.h>
+#include <memory>
 #include "ModestIoT.h" // Umbrella header for framework components
 
 // --- 1. CONCRETE APPLICATION TELEMETRY SCHEMA ---
@@ -201,14 +202,12 @@ public:
             }
 
             // Enqueue telemetry
-            TelemetryPackage* telemetry = new AirQualityTelemetryPackage(
+            auto packet = std::make_unique<AirQualityTelemetryPackage>(
                 gasSensor.getGasConcentrationInPpm(),
                 gasSensor.isGasDetected(),
                 gasSensor.getOperatingMode()
             );
-            if (!enqueueTelemetryPayload(&telemetry)) {
-                delete telemetry; // Clean up if queue is full
-            }
+            enqueueTelemetryPayload(std::move(packet));
         }
 
         if (gasSensor.getOperatingMode() == GasSensor::OperatingMode::CalibratingMode) {
