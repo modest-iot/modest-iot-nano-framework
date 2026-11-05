@@ -2,7 +2,7 @@
 
 Implementation brief for a future development session. It is self-contained: read it, then implement.
 
-Status: **proposed, not implemented.** Claims about performance are architectural reasoning, not measurements. The scheduler arithmetic in §4.1 was checked with a quick model simulation (steady 5-tick interval, staggered equal periods, no drift after `advance(7)`); it is not yet implemented or tested in C++.
+Status: **Phase A complete** (SamplingScheduler implemented, wired into Device, interval constants added to all sensor headers, host tests passing). Phase B (example migration) and Phase C (docs, README, class diagram) remain.
 
 Related: [improvements-roadmap.md](improvements-roadmap.md) (priorities and dependencies), [threading-model-improvement.md](threading-model-improvement.md) (what runs where, handler budgets), [diagnostics-improvement.md](diagnostics-improvement.md) (counters and logging used here), [interrupt-power-improvement.md](interrupt-power-improvement.md) (the alternative to polling for edge sensors), [connectivity-improvement.md](connectivity-improvement.md), [telemetry-improvement.md](telemetry-improvement.md).
 
