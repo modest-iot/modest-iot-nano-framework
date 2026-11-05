@@ -34,11 +34,21 @@ protected:
      */
     void processEvent(Event& event) override;
 
+    [[nodiscard]] uint32_t getDefaultSamplingIntervalInMilliseconds() const override;
+    [[nodiscard]] uint32_t getMinimalSamplingIntervalInMilliseconds() const override;
+
 public:
     /** @brief Identifier emitted when a valid button press is detected. */
     static const int BUTTON_PRESSED_EVENT_IDENTIFIER = 10;
     /** @brief Prebuilt event instance for button press notifications. */
     static const Event BUTTON_PRESSED_EVENT;
+
+    /// Default sampling interval in milliseconds.
+    /// @note Button debounce typically needs 20-50 ms polling for responsive feel.
+    static constexpr uint32_t DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS = 50;
+    /// Minimum sampling interval in milliseconds.
+    /// @note Below 10 ms the debounce logic cannot settle reliably.
+    static constexpr uint32_t MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS = 10;
 
     /**
      * @brief Constructs a button sensor with an optional propagation target.

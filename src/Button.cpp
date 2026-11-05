@@ -38,3 +38,11 @@ void Button::processEvent(Event& event) {
         event.identifier = -1;
     }
 }
+
+uint32_t Button::getDefaultSamplingIntervalInMilliseconds() const {
+    return DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}
+
+uint32_t Button::getMinimalSamplingIntervalInMilliseconds() const {
+    return MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}
