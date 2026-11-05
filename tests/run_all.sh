@@ -98,6 +98,11 @@ run_test "test_mqtt_gateway" \
 run_test "test_engine_config" \
     tests/engine_config/test.cpp
 
+# 8. Diagnostics Snapshot and Shared Counters Suite
+run_test "test_diagnostics" \
+    -DTEST_MOCK_DEVICE \
+    tests/diagnostics/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="

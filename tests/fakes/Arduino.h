@@ -11,6 +11,7 @@ typedef bool boolean;
 
 // Mock FreeRTOS types for host testing
 typedef std::int32_t BaseType_t;
+typedef std::int32_t UBaseType_t;
 typedef void* TaskHandle_t;
 typedef void* QueueHandle_t;
 typedef std::uint32_t TickType_t;
@@ -39,7 +40,15 @@ inline QueueHandle_t xQueueCreate(std::uint32_t, std::uint32_t) { return nullptr
 inline BaseType_t xQueueSend(QueueHandle_t, const void*, TickType_t) { return pdFAIL; }
 inline BaseType_t xQueueReceive(QueueHandle_t, void*, TickType_t) { return pdFAIL; }
 inline void vQueueDelete(QueueHandle_t) {}
+inline UBaseType_t uxQueueMessagesWaiting(QueueHandle_t) { return 0; }
+inline UBaseType_t uxTaskGetStackHighWaterMark(TaskHandle_t) { return 0; }
 inline TickType_t pdMS_TO_TICKS(std::uint32_t ms) { return ms; }
+
+// Mock ESP32 heap diagnostics
+namespace ESP {
+inline std::uint32_t getFreeHeap() { return 100000; }
+inline std::uint32_t getMinFreeHeap() { return 50000; }
+} // namespace ESP
 
 // Mock timer APIs
 inline hw_timer_t* timerBegin(std::uint32_t) { return nullptr; }
