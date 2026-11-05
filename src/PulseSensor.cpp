@@ -87,3 +87,11 @@ int PulseSensor::getBeatsPerMinute() const {
 int PulseSensor::getRawSignalValue() const { 
     return sampleSignalValue; 
 }
+
+uint32_t PulseSensor::getDefaultSamplingIntervalInMilliseconds() const {
+    return DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}
+
+uint32_t PulseSensor::getMinimalSamplingIntervalInMilliseconds() const {
+    return MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}

@@ -44,12 +44,22 @@ private:
     static constexpr int MAXIMUM_PHYSIOLOGICAL_HEART_RATE_BPM = 200; ///< Maximum physiological heart rate in BPM.
     static constexpr int DOUBLE_DEBOUNCE_MULTIPLIER = 2; ///< Multiplier for double debouncing.
 
+    /// Default sampling interval in milliseconds.
+    /// @note Pulse waveform resolution requires ~20 ms sampling for accurate BPM detection.
+    static constexpr uint32_t DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS = 20;
+    /// Minimum sampling interval in milliseconds.
+    /// @note Below 10 ms the ADC cannot settle reliably on most ESP32 pins.
+    static constexpr uint32_t MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS = 10;
+
 protected:
     /**
      * @brief Intercepts the unified base-class event identifier to perform ADC sampling.
      * Mutates the event to Sensor::DATA_READ_EVENT only when a valid new heartbeat cycle is captured.
      */
     void processEvent(Event& event) override;
+
+    [[nodiscard]] uint32_t getDefaultSamplingIntervalInMilliseconds() const override;
+    [[nodiscard]] uint32_t getMinimalSamplingIntervalInMilliseconds() const override;
 
 public:
     /**
