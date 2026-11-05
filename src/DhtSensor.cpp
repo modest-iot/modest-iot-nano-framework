@@ -39,3 +39,19 @@ void DhtSensor::processEvent(Event& event) {
 
 float DhtSensor::getTemperatureInCelsius() const { return cachedTemperatureInCelsius; }
 float DhtSensor::getRelativeHumidityInPercentage() const { return cachedRelativeHumidityInPercentage; }
+
+uint32_t DhtSensor::minimumSamplingIntervalFor(uint8_t dhtModelType) {
+    if (dhtModelType == SENSOR_MODEL_DHT11) {
+        return DHT11_MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS;
+    }
+    // DHT22, DHT21, AM2301 all have 2000 ms minimum
+    return DHT22_MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}
+
+uint32_t DhtSensor::getDefaultSamplingIntervalInMilliseconds() const {
+    return DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}
+
+uint32_t DhtSensor::getMinimalSamplingIntervalInMilliseconds() const {
+    return DHT22_MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}
