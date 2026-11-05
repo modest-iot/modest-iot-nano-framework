@@ -174,14 +174,14 @@ private:
      * @param calibrationParameters Reference to a struct to populate with the loaded parameters.
      * @return True if default calibration parameters were found and loaded, false otherwise.
      */
-    static bool loadDefaultGasCalibrationParameters(const GasType gasType, GasCalibrationParameters& calibrationParameters);
+    static bool loadDefaultGasCalibrationParameters(GasType gasType, GasCalibrationParameters& calibrationParameters);
 
     /**
      * @brief Calculates the sensor resistance (Rs) in KiloOhm from a raw analog reading.
      * @param rawAnalogValue The raw ADC reading from the analog input pin.
      * @return The calculated sensor resistance in KiloOhm.
      */
-    static float calculateSensorResistanceInKiloOhm(const int rawAnalogValue);
+    static float calculateSensorResistanceInKiloOhm(int rawAnalogValue);
 
     /**
      * @brief Reads the digital input pin (if configured) and updates the cached digital gas-detected state.
@@ -196,7 +196,7 @@ private:
      * @param event Mutable event request/response payload.
      * @param currentSensorResistanceInKiloOhm The most recent calculated sensor resistance.
      */
-    void handleCalibratingModeLogic(Event& event, const float currentSensorResistanceInKiloOhm); // Removed const
+    void handleCalibratingModeLogic(Event& event, float currentSensorResistanceInKiloOhm); // Removed const
 
     /**
      * @brief Handles the logic for the AccurateMode.
@@ -205,7 +205,7 @@ private:
      * @param event Mutable event request/response payload.
      * @param currentSensorResistanceInKiloOhm The most recent calculated sensor resistance.
      */
-    void handleAccurateModeLogic(Event& event, const float currentSensorResistanceInKiloOhm); // Removed const
+    void handleAccurateModeLogic(Event& event, float currentSensorResistanceInKiloOhm); // Removed const
 
     /**
      * @brief Handles the logic for the RawMode.
@@ -214,7 +214,7 @@ private:
      * @param event Mutable event request/response payload.
      * @param currentSensorResistanceInKiloOhm The most recent calculated sensor resistance.
      */
-    void handleRawModeLogic(Event& event, const float currentSensorResistanceInKiloOhm); // Removed const
+    void handleRawModeLogic(Event& event, float currentSensorResistanceInKiloOhm); // Removed const
 
 protected:
     /**
@@ -242,7 +242,7 @@ public:
      * @param parentHandler Optional upstream handler for propagated events.
      * @param initialMode The initial operating mode of the sensor (default: RawMode).
      */
-    GasSensor(const int analogInputGpioPin, const int digitalInputGpioPin = -1, EventHandler* const parentHandler = nullptr, const OperatingMode initialMode = OperatingMode::RawMode);
+    explicit GasSensor(int analogInputGpioPin, int digitalInputGpioPin = -1, EventHandler*parentHandler = nullptr, OperatingMode initialMode = OperatingMode::RawMode);
 
     /**
      * @brief Initiates the calibration process for the sensor.
@@ -258,7 +258,7 @@ public:
      * Setting R0 manually will switch the sensor to AccurateMode.
      * @param cleanAirResistanceInKiloOhm The R0 value in KiloOhm.
      */
-    void setR0(const float cleanAirResistanceInKiloOhm);
+    void setR0(float cleanAirResistanceInKiloOhm);
 
     /**
      * @brief Configures the sensor to target a specific gas type for PPM estimation.
@@ -267,7 +267,7 @@ public:
      * @param gasType The GasType to configure the sensor for.
      * @return True if the gas type is valid, false otherwise.
      */
-    bool setTargetGas(const GasType gasType);
+    bool setTargetGas(GasType gasType);
 
     /**
      * @brief Allows the developer to provide custom calibration parameters (slope and intercept)
@@ -277,7 +277,7 @@ public:
      * @param intercept The Y-intercept of the gas's calibration curve on a log-log plot.
      * @return True if the custom calibration parameters were successfully set, false otherwise.
      */
-    bool setGasCalibrationParameters(const GasType gasType, const float slope, const float intercept);
+    bool setGasCalibrationParameters(GasType gasType, float slope, float intercept);
 
     /**
      * @brief Returns the current operating mode of the sensor.

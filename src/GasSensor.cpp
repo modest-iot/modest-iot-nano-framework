@@ -34,6 +34,8 @@ GasSensor::GasSensor(const int analogInputGpioPin, const int digitalInputGpioPin
       cachedDigitalGasDetected(false),
       currentMode(initialMode),
       targetGasType(GasType::None), // No target gas initially
+      customGasCalibrations{}, // Zero-initialize custom calibration parameters
+      customCalibrationSet{}, // Zero-initialize custom calibration flags
       calibrationStartTime(0),
       calibrationSumRs(0.0f),
       calibrationReadingsCount(0)
@@ -41,13 +43,6 @@ GasSensor::GasSensor(const int analogInputGpioPin, const int digitalInputGpioPin
     pinMode(pin, INPUT); // Configure analog input pin
     if (digitalInputPin != -1) {
         pinMode(digitalInputPin, INPUT); // Configure digital input pin
-    }
-    // currentGasCalibration is no longer directly set in constructor, it's loaded on demand
-
-    // Initialize custom calibration arrays
-    for (int i = 0; i < static_cast<int>(GasType::MAX_GAS_TYPE_COUNT); ++i) {
-        customCalibrationSet[i] = false;
-        customGasCalibrations[i] = {0.0f, 0.0f};
     }
 }
 
@@ -279,10 +274,10 @@ void GasSensor::handleRawModeLogic(Event& event, const float currentSensorResist
     } else {
         // Fallback for RawMode if no digital pin: propagate on Rs change
         bool changed = false;
-        if (fabs(currentSensorResistanceInKiloOhm - cachedSensorResistanceInKiloOhm) > 0.01f) { // Simple change detection for Rs
-             changed = true;
-        } else if (currentSensorResistanceInKiloOhm < 0.0f && currentSensorResistanceInKiloOhm > 0.0f) // First valid reading
-            changed = true;
+
+        // Compare current and cached sensor resistance with a small threshold to avoid noise-triggered events
+        changed = (fabs(currentSensorResistanceInKiloOhm - cachedSensorResistanceInKiloOhm) > 0.01f)
+        || (currentSensorResistanceInKiloOhm < 0.0f && cachedSensorResistanceInKiloOhm > 0.0f);
 
         if (changed) {
             event = DATA_READ_EVENT;
