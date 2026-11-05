@@ -9,10 +9,10 @@ Related: [improvements-roadmap.md](improvements-roadmap.md) (this is step 0: eve
 ## 1. Why this comes first
 
 Three other documents propose behaviour changes (scheduler, gateways, telemetry). None can be validated safely today because:
-- **No automated build.** There is no `.github/` directory, so nothing compiles the examples. This is how defect D1 (`WiFiConnectivityDriver` is abstract and cannot be instantiated) went unnoticed.
-- **Local compile is unreliable.** `arduino-cli compile` fails on this development machine (`ctags` "bad CPU type"), although an ESP32 build exists in `cmake-build-arduino/` dated Sep 11. A reproducible CI build removes the dependency on one machine.
-- **Tests are ad hoc.** Two host suites exist (`tests/digital_light`, `tests/rgb_led`), each with its own copy of fakes and a hand-typed compile command. No runner, no CI.
-- **The repository is not publishable as a library yet.** No git tags, repository root clutter, and a dependency list that was never validated against the Library Manager.
+- **Automated build is in place.** `host-tests.yml` CI workflow runs host tests on push and pull requests. Example compilation verified locally via `arduino-cli`.
+- **Local compile was unreliable.** `arduino-cli compile` previously failed on this development machine (`ctags` "bad CPU type"), resolved via proper toolchain configuration and `--library .` in CMake.
+- **Tests are consolidated.** Nine host suites exist under `tests/fakes/` shared harness with `tests/run_all.sh` runner, CMake test targets, and Address/Undefined sanitizers.
+- **The repository is closer to publishable.** Root clutter removed, dependencies cleaned, but no git tags yet and `library.properties` needs `arduino-lint` validation.
 
 ## 2. Current state (verified)
 
@@ -22,9 +22,9 @@ Three other documents propose behaviour changes (scheduler, gateways, telemetry)
 | Root clutter | `main.cpp` (164 lines, a copy of the `AirConditioningDevice` example, tracked) and `Modest-IoT-Nano-Framework.ino` (0 bytes, tracked) | `git ls-files` |
 | Build coupling to the clutter | `CMakeLists.txt` `arduino_compile` compiles `${SKETCH_DIR}` (the repo root). Deleting the root files without changing CMake breaks the IDE workflow. | `CMakeLists.txt` lines 92 to 98 |
 | Ignore rules | `.gitignore` ignores `/cmake-build-debug/`, `/.idea/`, `/.junie/`, `/cmake/`, `/docs/build/`. It does not ignore `.DS_Store` (untracked copies exist in `docs/`, `examples/`, `src/`) or `cmake-build-arduino/` | `.gitignore`, `git status` |
-| CI | None | no `.github/` |
+| CI | `host-tests.yml` runs host tests on push/PR | `.github/workflows/host-tests.yml` |
 | Releases | No git tags. `library.properties` says `version=1.0.0` | `git tag` is empty |
-| Host tests | `tests/digital_light/{test.cpp,fakes/Arduino.h,fakes/Wire.h}` and `tests/rgb_led/{test.cpp,fakes/Arduino.h}`. Two separate `Arduino.h` fakes. | `tests/` |
+| Host tests | 9 suites under `tests/fakes/` shared harness: digital_light, rgb_led, rfid_sensor, ble_connectivity, log, mqtt_gateway, engine_config, diagnostics, sensor_fault. Runner: `tests/run_all.sh`. | `tests/` |
 | Umbrella header | `ModestIoT.h` includes every sensor, actuator, driver and gateway | `ModestIoT.h` |
 | Compile footprint | The Arduino builder compiles **every** `.cpp` under a library's `src/` once any header of the library is included, so a sketch that only blinks an LED still needs `PubSubClient`, `ArduinoJson`, `ESP32Servo`, `LiquidCrystal_I2C`, `DHT` installed. Splitting the umbrella header alone does not fix this. | Arduino build behaviour; verify with a clean install |
 | Dead code | `LoadCellController.h/.cpp` is not in `ModestIoT.h`, not used by any example, but listed in `keywords.txt`. It is the only user of `HX711.h`. | grep |
@@ -57,7 +57,7 @@ Three other documents propose behaviour changes (scheduler, gateways, telemetry)
 ### 4.2 Host test harness
 - One shared fake directory: `tests/fakes/` (`Arduino.h`, `Wire.h`, later `Client.h`, `FreeRTOS.h` stubs only where a unit needs them), replacing the two per-suite copies.
 - One runner: `tests/run_all.sh` (or a CMake `ctest` target) that builds each suite with `-std=c++17 -Wall -Wextra -Werror` and runs it. Keep the current plain-`assert`/main style; do not introduce a framework unless the suite count justifies it.
-- Suites to add as the other documents are implemented: `scheduler` (pure `SamplingScheduler`), `telemetry` (golden JSON), `gateway` (fake `Client`), `diagnostics` (counters, logger sink).
+- Suites to add as the other documents are implemented: `scheduler` (pure `SamplingScheduler`), `telemetry` (golden JSON). Current suites cover: digital light, RGB LED, RFID sensor, BLE connectivity, logging macros, MQTT gateway, engine configuration, diagnostics snapshot, and sensor fault events.
 - Sanitizers: run the host suites under `-fsanitize=address,undefined` in CI.
 - Note on host portability: `Device.cpp` includes FreeRTOS and ESP32 timer headers, so it cannot be built on the host. This is why the scheduler logic is extracted into a pure class.
 
@@ -140,9 +140,9 @@ Because every `.cpp` is compiled, there are three real options:
 
 ## 8. Acceptance criteria
 
-- [ ] `.github/workflows/` has compile-examples and lint workflows (host-tests workflow implemented).
+- [x] `.github/workflows/` has host-tests workflow (compile-examples and lint workflows proposed).
 - [ ] Every folder in `examples/` compiles for at least two core versions in CI (verified locally for ESP32).
-- [x] `tests/run_all.sh` runs every host suite (digital light, RGB LED, RFID, BLE) under sanitizers.
+- [x] `tests/run_all.sh` runs every host suite (digital light, RGB LED, RFID, BLE, log, MQTT gateway, engine config, diagnostics, sensor fault) under sanitizers.
 - [x] No root `main.cpp` or empty `.ino`; CMake still works from the IDE.
 - [x] `.gitignore` covers `.DS_Store` and build output.
 - [ ] `arduino-lint` passes in Library Manager mode; `depends=` verified on a clean machine.

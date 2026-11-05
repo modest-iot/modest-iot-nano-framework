@@ -32,7 +32,7 @@ Each work item is scored 0 to 5 on three benefits, and sized by cost. Scores ref
 | W3 | Repo cleanup (`main.cpp`, empty `.ino`, `.gitignore`), `library.properties` fixes | library-readiness | 4 | 0 | 4 | XS | 16 | **Completed** |
 | W4 | Threading rules, "Runs on" tags, ID registry (docs only) | threading | 3 | 0 | 4 | XS | 14 | **Completed** |
 | W5 | Host test harness plus CI (host tests, compile-examples, lint) | library-readiness | 5 | 0 | 4 | M | 7 | **Completed** |
-| W6 | Logging macros, stack high-water, sensor fault events | diagnostics | 4 | 1 | 5 | S | 13 | Pending (Tier 2) |
+| W6 | Logging macros, stack high-water, sensor fault events | diagnostics | 4 | 1 | 5 | S | 13 | **Completed** |
 | W7 | Connectivity reconnect policy, `mqttClient.loop()` every cycle, link events | connectivity | 5 | 2 | 4 | M | 8 | **Completed** |
 | W8 | Per-slot sampling intervals, pure scheduler, elapsed-tick accounting | sampling | 4 | 5 | 5 | M | 9 | Pending (Tier 3) |
 | W9 | `EngineConfig` and `stopAsynchronousEngine()` | threading | 4 | 2 | 3 | S | 11 | **Completed** |
@@ -52,14 +52,14 @@ Each work item is scored 0 to 5 on three benefits, and sized by cost. Scores ref
 Progression history and tier execution:
 - **Tier 0 (Correctness & Hygiene)** is **Complete**: `WiFiConnectivityDriver` abstract class issue resolved, dead `LoadCellController` deleted, `library.properties` standardized, examples compile cleanly.
 - **Tier 1 (Safety Net & Test Consolidation)** is **Complete**: Host test infrastructure consolidated under `tests/fakes/` (4 suites: Light, LED, RFID, BLE), `tests/run_all.sh` runner, and GitHub Actions CI workflow active.
-- **Tier 2 (Reliability & Footprint)** is **In Progress / Current Priority**: BLE driver implemented, MQTT keep-alive and reconnect policy completed, `EngineConfig` and `stopAsynchronousEngine()` completed, `MODEST_LOG_*` zero-cost logging facility completed. Remaining: stack high-water diagnostics and sensor fault events (W6).
-- **Tier 3 (Core Scheduling & Telemetry)** is the **Next Milestone**: Pure `SamplingScheduler` with per-slot periods, followed by explicit `TelemetryPackage` ownership.
+- **Tier 2 (Reliability & Footprint)** is **Complete**: BLE driver implemented, MQTT keep-alive and reconnect policy completed, `EngineConfig` and `stopAsynchronousEngine()` completed, `MODEST_LOG_*` zero-cost logging facility completed, `DiagnosticsSnapshot` with shared counters completed, sensor fault and recovery events completed.
+- **Tier 3 (Core Scheduling & Telemetry)** is the **Current Priority / Next Milestone**: Pure `SamplingScheduler` with per-slot periods, followed by explicit `TelemetryPackage` ownership.
 
 | Tier | Items | Goal | Exit criterion | Status |
 |---|---|---|---|---|
 | 0: Make it correct and shippable | W1, W2, W3, W4 | Everything compiles, repo is clean, rules are written down | All examples compile cleanly; clean repo layout | **Complete** |
 | 1: Safety net and visibility | W5 | Regressions caught automatically via host tests & CI | CI green on PRs/pushes; all 4 host test suites pass | **Complete** |
-| 2: Reliability, diagnostics & footprint | W6 (logging/high-water), W7, W9, W10 | Reconnection robust, tasks tunable, BLE modern, zero-cost logs | Soak test reconnects; logs available behind macro; BLE tests pass | **In Progress** |
+| 2: Reliability, diagnostics & footprint | W6 (logging/high-water), W7, W9, W10 | Reconnection robust, tasks tunable, BLE modern, zero-cost logs, sensor fault events | Soak test reconnects; logs available behind macro; BLE tests pass; diagnostics snapshot works | **Complete** |
 | 3: Core performance and DX | W8, then W11 | Per-slot intervals, bounded memory use for telemetry | Scheduler host tests pass; sampler wake budget measured | Queued |
 | 4: Capabilities | W12, W13, W14, W15, rest of W6 | Edge-driven sensing, remote commands, fault events | Latency measured for polling versus interrupt | Queued |
 | 5: Optimization and power | W16, W17, W18, W19 | Battery operation and further tuning | Decide per item from measured data | Queued |
@@ -86,12 +86,11 @@ Parallelism: Tier 0 and Tier 1 have landed. Tier 2 items (logging macros, reconn
 - **Verified**: Local `arduino-cli compile` cleanly builds all 10 examples across ESP32 targets with `--library .` configured.
 - **Verified**: `library.properties` `depends=` syntax formatted for Arduino Library Manager compliance.
 - **Verified**: Bluetooth Classic fails on modern ESP32 variants (S2, S3, C3, C6, H2); resolved via target guards and `BleConnectivityDriver`.
-- **Verified**: Host test harness executes 4 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/rfid_sensor`, `tests/ble_connectivity`) under Address and Undefined sanitizers.
+- **Verified**: Host test harness executes 9 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`) under Address and Undefined sanitizers.
 - **Remaining**: Performance, latency, memory and power figures (reasoned, to be measured on hardware).
 - **Remaining**: `Wire` thread-safety on core 3.x; `loop()` core affinity.
 - **Remaining**: Task notification array availability; `CONFIG_PM_ENABLE` in the precompiled core.
 - **Remaining**: Datasheet values behind the per-sensor interval constants.
-- **Remaining**: WiFi retry behaviour (connectivity D4).
 
 ## 7. Comparison with traditional development (end state and per tier)
 

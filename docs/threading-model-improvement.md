@@ -127,6 +127,7 @@ Current identifiers (verified from source), all plain integers in class scope:
 |---|---|---|
 | Events | 10 | `Button::BUTTON_PRESSED` |
 | Events | 20, 21 | `Sensor::DATA_READ`, `MEASURE_DATA_REQUESTED` |
+| Events | 22, 23 | `Sensor::SENSOR_FAULT`, `SENSOR_RECOVERED` |
 | Events | 30, 31 | `PassiveInfraredSensor` motion detected, stopped |
 | Events | 40 | `GasSensor` digital gas detected |
 | Events | 50, 51 | `DigitalLightIntensitySensor` light detected, absent |

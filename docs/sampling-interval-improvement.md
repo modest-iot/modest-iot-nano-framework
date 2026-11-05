@@ -50,7 +50,7 @@ Consequences:
   - `enqueueTelemetryPayload` uses a zero timeout, so a full queue drops data silently.
 - `Sensor::on()` calls `processEvent()`, stops when `event.identifier == -1`, then forwards the event to its parent. Sensors are "polled" by sending `Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER`.
 - Examples calling `appendSensorToScheduler` (all must be reviewed): `AirConditioningDevice`, `AirQualityMonitor`, `ClassicBlinker`, `DriverAssistantDevice`, `OutdoorSecurityLightController`, `PerimeterMonitor`, `SmartBandMqtt`, `SmartScaleDevice`, `ToggableLedDevice`.
-- Tests exist only for `digital_light` and `rgb_led`, built with host fakes. There is no `Device` test and no scheduler test.
+- Tests exist for 9 suites under `tests/fakes/` shared harness: digital_light, rgb_led, rfid_sensor, ble_connectivity, log, mqtt_gateway, engine_config, diagnostics, sensor_fault. There is no `Device` test and no scheduler test.
 
 ### Pre-existing issue to fix in the same session
 `examples/OutdoorSecurityLightController/OutdoorSecurityLightController.ino:56` calls `Device(SAMPLING_INTERVAL_MS, DEVICE_EVENT_DELAY_MS)`. The second parameter is `timerGroupIndex`, so a delay constant is being passed as a timer index. It is harmless today only because the index is unused. Fix it when touching the example.

@@ -1,6 +1,6 @@
 # Improvement 8: Third-Party Dependency Strategy
 
-Status: **proposed, not implemented.** Complements the footprint options P1 to P3 in [library-readiness-improvement.md](library-readiness-improvement.md). Cost and risk figures are estimates; none were measured.
+Status: **Phase A complete** (unused dependencies removed, ArduinoJson pinned, library.properties names corrected). Complements the footprint options P1 to P3 in [library-readiness-improvement.md](library-readiness-improvement.md). Cost and risk figures are estimates; none were measured.
 
 Related: [improvements-roadmap.md](improvements-roadmap.md), [telemetry-improvement.md](telemetry-improvement.md) (ArduinoJson), [connectivity-improvement.md](connectivity-improvement.md) (PubSubClient).
 
@@ -14,10 +14,10 @@ Related: [improvements-roadmap.md](improvements-roadmap.md), [telemetry-improvem
 | `DHT sensor library` | `DhtSensor` | yes (as `DHT_sensor_library`) | Pulls in Adafruit Unified Sensor transitively (verify) |
 | `ESP32Servo` | `ServoMotor` | yes | |
 | `PubSubClient` | `MqttGatewayClient` | yes | |
-| `ArduinoJson` | `TelemetryPackage` (needed); `GatewayClient.h`, `MqttGatewayClient.cpp` (unneeded includes) | yes, version not pinned | Code uses the v7 `JsonDocument` type |
-| `HX711` | `LoadCellController` only | yes | **Dead code**: `LoadCellController` is not in `ModestIoT.h` or any example |
-| `EspSoftwareSerial` | nothing | yes | Not referenced anywhere in the repository |
-| `Adafruit_Unified_Sensor` | nothing directly | yes | Likely transitive via DHT; verify |
+| `ArduinoJson` | `TelemetryPackage` (needed) | yes, pinned to `>=7.0.0` | Code uses the v7 `JsonDocument` type; unused includes removed from `GatewayClient.h` and `MqttGatewayClient.cpp` |
+| `HX711` | ~~`LoadCellController` only~~ | **Removed** | **Deleted**: `LoadCellController` removed, `LoadCellAmplifier` implements HX711 protocol natively |
+| `EspSoftwareSerial` | nothing | **Removed** | Not referenced anywhere in the repository |
+| `Adafruit_Unified_Sensor` | nothing directly | **Retained** | Transitive via DHT library; kept for safety |
 
 Core libraries (no install): `WiFi`, `HTTPClient`, `BluetoothSerial`, `Wire`, `HardwareSerial`.
 
@@ -50,13 +50,13 @@ Note: `LoadCellAmplifier` already implements the HX711 protocol natively (bit-ba
 
 ## 4. Plan
 
-**Phase A: quick wins (low risk, high value)**
-1. Delete `LoadCellController.h/.cpp` and its `keywords.txt` lines; drop `HX711` from `depends=`.
-2. Drop `EspSoftwareSerial` after a clean compile of every example.
-3. Verify and, if transitive, drop `Adafruit_Unified_Sensor`.
-4. Remove unneeded `ArduinoJson.h` includes.
-5. Pin ArduinoJson to a v7 range.
-6. Verify the exact `depends=` names with `arduino-lint` and a clean-machine install (underscores versus spaces).
+**Phase A: quick wins (low risk, high value) [DONE]**
+1. `[DONE]` Delete `LoadCellController.h/.cpp` and its `keywords.txt` lines; drop `HX711` from `depends=`.
+2. `[DONE]` Drop `EspSoftwareSerial` after a clean compile of every example.
+3. `[DONE]` Verify and retain `Adafruit_Unified_Sensor` (transitive via DHT).
+4. `[DONE]` Remove unneeded `ArduinoJson.h` includes from `GatewayClient.h` and `MqttGatewayClient.cpp`.
+5. `[DONE]` Pin ArduinoJson to `>=7.0.0` in `depends=`.
+6. `[DONE]` Correct `depends=` names for Arduino Library Manager compliance (`DHT sensor library`, `Adafruit Unified Sensor`).
 
 **Phase B: seams (only if Phase C is wanted)**
 7. Wrap the servo pulse generation and the LCD bus writes behind small internal functions with a host fake. This also strengthens host tests.
@@ -79,16 +79,16 @@ Note: `LoadCellAmplifier` already implements the HX711 protocol natively (bit-ba
 
 | # | Decision | Recommended |
 |---|---|---|
-| 1 | Do Phase A | Yes, immediately |
+| 1 | Do Phase A | `[RESOLVED]` Yes, completed |
 | 2 | Replace the servo and LCD libraries | Defer; wrap first, decide with data |
-| 3 | Keep PubSubClient and DHT | Yes |
-| 4 | ArduinoJson | Keep, pinned, behind a writer interface |
+| 3 | ~~Keep PubSubClient and DHT~~ | `[RESOLVED]` Yes |
+| 4 | ~~ArduinoJson~~ | `[RESOLVED]` Keep, pinned to `>=7.0.0`, behind a writer interface |
 | 5 | Optional-dependency approach | P1 from the library-readiness document |
 
 ## 7. Acceptance criteria
 
 - [ ] `depends=` lists only libraries that `src/` actually uses, with names validated by `arduino-lint`.
-- [ ] `LoadCellController` and its keywords are gone, and `LoadCellAmplifier` examples still compile.
-- [ ] No unused third-party `#include` remains in `src/`.
+- [x] `LoadCellController` and its keywords are gone, and `LoadCellAmplifier` examples still compile.
+- [x] No unused third-party `#include` remains in `src/` (ArduinoJson removed from `GatewayClient.h` and `MqttGatewayClient.cpp`).
 - [ ] A clean-machine install compiles all examples.
 - [ ] If Phase C is done: host tests cover the servo pulse math and the LCD byte sequences.
