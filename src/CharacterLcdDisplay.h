@@ -48,9 +48,9 @@ protected:
     void executeCommand(Command command) override;
 
 public:
-    static const int UPDATE_TEXT_COMMAND_IDENTIFIER = 200;
-    static const int TURN_BACKLIGHT_ON_COMMAND_IDENTIFIER = 201;
-    static const int TURN_BACKLIGHT_OFF_COMMAND_IDENTIFIER = 202;
+    static constexpr int UPDATE_TEXT_COMMAND_IDENTIFIER = 200;
+    static constexpr int TURN_BACKLIGHT_ON_COMMAND_IDENTIFIER = 201;
+    static constexpr int TURN_BACKLIGHT_OFF_COMMAND_IDENTIFIER = 202;
 
     static const Command UPDATE_TEXT_COMMAND;
     static const Command TURN_BACKLIGHT_ON_COMMAND;
@@ -86,12 +86,12 @@ public:
      * @brief Reports whether the backlight is currently enabled.
      * @return `true` when backlight is on, otherwise `false`.
      */
-    bool isBacklightOn() const;
+    [[nodiscard]] bool isBacklightOn() const;
 
     /** @brief Returns the number of addressable rows on this display. */
-    uint8_t getMaximumRowCount() const;
+    [[nodiscard]] uint8_t getMaximumRowCount() const;
     /** @brief Returns the number of addressable columns on this display. */
-    uint8_t getMaximumColumnCount() const;
+    [[nodiscard]] uint8_t getMaximumColumnCount() const;
 };
 
 /** @} */ // End of Actuators: Display & Character Output
