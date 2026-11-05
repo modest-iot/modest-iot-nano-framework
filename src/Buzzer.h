@@ -70,11 +70,11 @@ protected:
 
 public:
     /** @brief Command identifier for turning the buzzer on (continuous sound). */
-    static const int TURN_ON_COMMAND_IDENTIFIER = 250;
+    static constexpr int TURN_ON_COMMAND_IDENTIFIER = 250;
     /** @brief Command identifier for turning the buzzer off. */
-    static const int TURN_OFF_COMMAND_IDENTIFIER = 251;
+    static constexpr int TURN_OFF_COMMAND_IDENTIFIER = 251;
     /** @brief Command identifier for playing a buffered tone. */
-    static const int PLAY_TONE_COMMAND_IDENTIFIER = 252;
+    static constexpr int PLAY_TONE_COMMAND_IDENTIFIER = 252;
 
     /** @brief Prebuilt command instance for turning the buzzer on. */
     static const Command TURN_ON_COMMAND;
@@ -89,7 +89,7 @@ public:
      * @param signalGpioPin Output GPIO pin connected to the buzzer.
      * @param parentHandler Optional upstream handler for propagated commands.
      */
-    Buzzer(const int signalGpioPin, CommandHandler* const parentHandler = nullptr);
+    explicit Buzzer(int signalGpioPin, CommandHandler* parentHandler = nullptr);
 
     /**
      * @brief Sets the frequency and duration for the next tone command.
@@ -97,7 +97,7 @@ public:
      * @param frequency The frequency of the tone in Hertz (Hz). Must be positive.
      * @param duration The duration of the tone in milliseconds (ms). Must be positive.
      */
-    void setTone(const int frequency, const unsigned long duration);
+    void setTone(int frequency, unsigned long duration);
 
     /**
      * @brief Reports if the buzzer is currently active (making sound).
