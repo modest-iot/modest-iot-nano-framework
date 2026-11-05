@@ -1,6 +1,6 @@
 # Improvement 5: Diagnostics, Logging and Sensor Health
 
-Analysis for a future development session. Status: **Phase A complete** (logging, counters, diagnostics, and first-drop/failure logging implemented; sensor health and resilience proposed). Findings come from reading `src/`; memory and overhead figures are estimates, not measurements.
+Analysis for a future development session. Status: **Phases A & B complete** (logging, counters, diagnostics, first-drop/failure logging, and sensor fault events implemented; resilience proposed). Findings come from reading `src/`; memory and overhead figures are estimates, not measurements.
 
 Related: [improvements-roadmap.md](improvements-roadmap.md), [sampling-interval-improvement.md](sampling-interval-improvement.md) (`missedTickCount`, clamp reports), [telemetry-improvement.md](telemetry-improvement.md) (queue counters), [connectivity-improvement.md](connectivity-improvement.md) (send status, link events), [threading-model-improvement.md](threading-model-improvement.md), [interrupt-power-improvement.md](interrupt-power-improvement.md).
 
@@ -142,7 +142,7 @@ Offer an optional ready-made `DeviceHealthPackage` (a `TelemetryPackage` subclas
 4. `[DONE]` Log the first drop and the first send failure at warning level. `Device::enqueueTelemetryPayload()` logs once when `packetsDroppedCount` transitions from 0 to 1. `MqttGatewayClient::sendTelemetryRecord()` logs once on the first failure with a descriptive message. `GatewayStatistics` struct in `GatewayClient.h` with `getStatistics()` virtual method; `MqttGatewayClient` tracks `sendsSucceeded`/`sendsFailed` and reports them via `diagnostics()`. Host tests in `tests/mqtt_gateway/test.cpp`.
 
 **Phase B: sensor health**
-5. `Sensor` fault and recovery events, helpers, per-sensor counters (default off).
+5. `[DONE]` `Sensor` fault and recovery events, helpers, per-sensor counters (default off). Implemented in `src/Sensor.h` and `src/Sensor.cpp`: `SENSOR_FAULT_EVENT_IDENTIFIER` (22) and `SENSOR_RECOVERED_EVENT_IDENTIFIER` (23), with `reportReadFailure()`, `reportReadSuccess()`, and `setFaultThreshold()` helpers. The debounced threshold state machine emits fault events exactly once when the threshold is reached, and recovery events exactly once on the next successful read. Default threshold is 0 (disabled) for backward compatibility. Host tests in `tests/sensor_fault/test.cpp`.
 6. Convert `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `DigitalLightIntensitySensor`; update tests (the light sensor already has `readFailureAt` in its fake).
 7. One example opts in (the security light: fault turns the LED to a safe state).
 
