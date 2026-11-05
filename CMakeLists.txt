@@ -73,6 +73,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         "${ESP32_PLATFORM_BASE}/libraries/HTTPClient/src"
         "${ESP32_PLATFORM_BASE}/libraries/WiFi/src"
         "${ESP32_PLATFORM_BASE}/libraries/Wire/src"
+        "${ESP32_PLATFORM_BASE}/libraries/SPI/src"
         "${ESP32_PLATFORM_BASE}/libraries/Network/src"
         "${ARDUINO_CORE_PATH}"
         ${ESP32_COMPONENT_INCLUDES}
@@ -130,6 +131,7 @@ target_include_directories(clion_indexer INTERFACE
         "${ESP32_TOOLS_BASE}/qio_qspi/include"
         "${ESP32_PLATFORM_BASE}/variants/esp32da"
         "${ESP32_TOOLS_BASE}/include/newlib/platform_include/"
+        "${ESP32_PLATFORM_BASE}/libraries/SPI/src"
 )
 target_link_libraries(clion_indexer INTERFACE ${PROJECT_NAME})
 
