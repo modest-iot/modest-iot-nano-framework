@@ -22,6 +22,10 @@ Device::Device(unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupI
       hardwareSamplingTaskHandle(nullptr),
       networkDispatcherTaskHandle(nullptr),
       telemetryQueueHandle(nullptr),
+      packetsEnqueuedCount(0),
+      packetsDroppedCount(0),
+      queueHighWaterMarkCount(0),
+      missedTickCount(0),
       hardwareTimer(nullptr),
       pollingIntervalInMilliseconds(samplingIntervalInMilliseconds),
       hardwareTimerIndex(timerGroupIndex)
@@ -86,7 +90,16 @@ bool Device::appendSensorToScheduler(EventHandler* targetSensorInstance, int req
 
 bool Device::enqueueTelemetryPayload(TelemetryPackage** telemetryPackagePointerAddress) const {
     if (telemetryQueueHandle == nullptr || telemetryPackagePointerAddress == nullptr) return false;
-    return xQueueSend(telemetryQueueHandle, telemetryPackagePointerAddress, 0) == pdPASS;
+    if (xQueueSend(telemetryQueueHandle, telemetryPackagePointerAddress, 0) == pdPASS) {
+        packetsEnqueuedCount++;
+        uint8_t currentQueueSize = static_cast<uint8_t>(uxQueueMessagesWaiting(telemetryQueueHandle));
+        if (currentQueueSize > queueHighWaterMarkCount) {
+            queueHighWaterMarkCount = currentQueueSize;
+        }
+        return true;
+    }
+    packetsDroppedCount++;
+    return false;
 }
 
 void Device::executeHardwareSamplingContext(void* taskParameters) {
@@ -162,6 +175,32 @@ void Device::processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayl
  */
 void Device::maintainNetworkServices() const {
     // Intentional default no-op
+}
+
+DiagnosticsSnapshot Device::diagnostics() const {
+    DiagnosticsSnapshot snapshot;
+    snapshot.missedTicks = missedTickCount;
+    snapshot.worstCaseWakeMicros = 0; // Will be populated when SamplingScheduler is implemented
+    snapshot.packetsEnqueued = packetsEnqueuedCount;
+    snapshot.packetsDropped = packetsDroppedCount;
+    snapshot.queueHighWaterMark = queueHighWaterMarkCount;
+    snapshot.sendsSucceeded = 0; // Populated by gateway clients
+    snapshot.sendsFailed = 0; // Populated by gateway clients
+    snapshot.freeHeapBytes = ESP.getFreeHeap();
+    snapshot.minFreeHeapBytes = ESP.getMinFreeHeap();
+    snapshot.uptimeSeconds = millis() / 1000;
+
+    // Query FreeRTOS stack high-water marks (returned in StackType_t words, not bytes)
+    if (hardwareSamplingTaskHandle != nullptr) {
+        snapshot.samplerStackFreeWords = static_cast<uint16_t>(
+            uxTaskGetStackHighWaterMark(hardwareSamplingTaskHandle));
+    }
+    if (networkDispatcherTaskHandle != nullptr) {
+        snapshot.networkStackFreeWords = static_cast<uint16_t>(
+            uxTaskGetStackHighWaterMark(networkDispatcherTaskHandle));
+    }
+
+    return snapshot;
 }
 
 void Device::stopAsynchronousEngine() {
