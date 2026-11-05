@@ -59,7 +59,7 @@ public:
      * @param initialAngleInDegrees Initial angle applied during setup.
      * @param parentHandler Optional upstream handler for propagated commands.
      */
-    ServoMotor(int signalGpioPin, int initialAngleInDegrees = MINIMUM_PHYSICAL_ANGLE_IN_DEGREES, CommandHandler* parentHandler = nullptr);
+    explicit ServoMotor(int signalGpioPin, int initialAngleInDegrees = MINIMUM_PHYSICAL_ANGLE_IN_DEGREES, CommandHandler* parentHandler = nullptr);
     ~ServoMotor() override;
 
     /**
