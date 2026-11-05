@@ -34,7 +34,7 @@ Each work item is scored 0 to 5 on three benefits, and sized by cost. Scores ref
 | W5 | Host test harness plus CI (host tests, compile-examples, lint) | library-readiness | 5 | 0 | 4 | M | 7 | **Completed** |
 | W6 | Logging macros, stack high-water, sensor fault events | diagnostics | 4 | 1 | 5 | S | 13 | **Completed** |
 | W7 | Connectivity reconnect policy, `mqttClient.loop()` every cycle, link events | connectivity | 5 | 2 | 4 | M | 8 | **Completed** |
-| W8 | Per-slot sampling intervals, pure scheduler, elapsed-tick accounting | sampling | 4 | 5 | 5 | M | 9 | Pending (Tier 3) |
+| W8 | Per-slot sampling intervals, pure scheduler, elapsed-tick accounting | sampling | 4 | 5 | 5 | M | 9 | **Partially Complete** |
 | W9 | `EngineConfig` and `stopAsynchronousEngine()` | threading | 4 | 2 | 3 | S | 11 | **Completed** |
 | W10 | Optional Bluetooth, BLE driver addition, optional MQTT footprint (P1) | connectivity, library-readiness | 3 | 2 | 4 | S | 11 | **Partially Complete** (BLE NUS added, BT Classic isolated) |
 | W11 | Telemetry ownership and queue policy (Phases A and B) | telemetry | 4 | 3 | 4 | M | 8 | Pending (Tier 3) |
