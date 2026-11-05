@@ -1,6 +1,6 @@
 # Improvement 7: Threading Model, Command Marshalling and Identifiers
 
-Analysis for a future development session. Status: **proposed, not implemented.** The "current model" below is read from the source; behaviours of the Arduino-ESP32 core marked "verify" were not tested.
+Status: **partially implemented** (Phase B: EngineConfig and stopAsynchronousEngine completed; Phase A documentation and Phase C command marshalling proposed). The "current model" below is read from the source; behaviours of the Arduino-ESP32 core marked "verify" were not tested.
 
 Related: [improvements-roadmap.md](improvements-roadmap.md), [sampling-interval-improvement.md](sampling-interval-improvement.md) (handler budgets), [connectivity-improvement.md](connectivity-improvement.md) (cloud-to-device commands, link events), [telemetry-improvement.md](telemetry-improvement.md), [diagnostics-improvement.md](diagnostics-improvement.md), [interrupt-power-improvement.md](interrupt-power-improvement.md).
 
@@ -31,9 +31,9 @@ The model breaks the moment anything else touches the same objects from another 
 | H2 | Buffered-setter-then-command actuator pattern is not atomic | `Buzzer::setTone` then `handle(PLAY_TONE)`; `RgbLed::setColor` then `handle(SET_COLOR)`; servo buffered angle then `DRIVE_TO_BUFFERED_ANGLE` | Safe on one task. With two tasks, an interleaving applies one task's parameters with another's command |
 | H3 | `Command` carries only an identifier | `Command.h`: `const int identifier` | Commands cannot carry an argument, which is why the buffered pattern exists, and why a remote command (MQTT payload) has no way to say "set colour to X" |
 | H4 | Commands have no target | One `Led::TURN_ON_COMMAND` (100) means "the LED" for every `Led` instance; the mediator picks the instance | A command arriving from the network cannot address a specific actuator without extra routing logic |
-| H5 | Stack sizes and priorities are hard-coded | `xTaskCreatePinnedToCore(..., 4096, ..., 3, ..., 1)` and `8192`, `1`, core `1` | The sampler runs arbitrary mediator code (string formatting, I²C, `new`) on 4 KB with no way to tune it; the network worker's 8 KB is below what a TLS handshake commonly needs (see the connectivity document, risk table) |
-| H6 | Both workers and the Arduino `loop()` task are pinned to core 1 | Core argument `1`; the Arduino-ESP32 `loop()` task also runs on core 1 by default (verify for the installed core) | The network worker (priority 1) time-slices with `loop()` (priority 1), and the sampler (priority 3) preempts both. Wi-Fi/BT stacks live on core 0. This is a reasonable layout, but it is undocumented and unconfigurable |
-| H7 | No engine shutdown path; destructor ordering is unsafe | `~Device()` deletes the tasks, but runs **after** derived-class members (sensors, actuators) are already destroyed, so a task mid-handler can touch freed members. The examples never delete a `Device`, so it is latent | Fine for "device lives forever"; wrong for tests and for anyone who deletes a device. Needs an explicit `stopAsynchronousEngine()` |
+| H5 | ~~Stack sizes and priorities are hard-coded~~ | **Resolved:** `EngineConfig` struct provides tunable stack sizes, priorities, and core pinning with original values as defaults. | **Done** |
+| H6 | ~~Both workers and the Arduino `loop()` task are pinned to core 1~~ | **Resolved:** `EngineConfig` makes core pinning configurable via `samplerCore` and `networkCore`. | **Done** |
+| H7 | ~~No engine shutdown path; destructor ordering is unsafe~~ | **Resolved:** `stopAsynchronousEngine()` provides cooperative task termination, queue drain, and timer cleanup. `~Device()` calls it as a safety net. | **Done** |
 | H8 | Event and command identifier spaces are unmanaged integers | All values are constants in the owning class (see 5) | Collisions inside one space are easy for user code to introduce; there is no reserved range for the framework |
 | H9 | Shared bus access | The BH1750 (`Wire`) and the I²C LCD (`LiquidCrystal_I2C`) share the I²C bus; today both run on the sampler | Safe as long as only the sampler uses `Wire`. A user sketch calling `Wire` from `loop()` races. Whether `Wire` is thread-safe depends on the core version: **verify** for core 3.x |
 | H10 | `registeredSlotCount` is written by the setup task and read by the sampler | `appendSensorToScheduler` after the engine starts is unguarded | Covered by the `engineStarted` guard in the sampling document |
@@ -110,9 +110,9 @@ Document that a bus is owned by the sampler context. If users need to share it, 
 1. Threading section in README and Doxygen, diagram, "Runs on" tags.
 2. Identifier registry document (section 5).
 
-**Phase B: configuration and lifetime**
-3. `EngineConfig` with unchanged defaults.
-4. `stopAsynchronousEngine()` and destructor handling.
+**Phase B: configuration and lifetime [DONE]**
+3. `[DONE]` `EngineConfig` with unchanged defaults — implemented in `src/Device.h`.
+4. `[DONE]` `stopAsynchronousEngine()` and destructor handling — implemented in `src/Device.cpp` with cooperative termination via notification bits (bit 1 = stop).
 
 **Phase C: cross-task commands (prerequisite: notification redesign from the interrupt document, and the pure scheduler)**
 5. `Device::post` and the command queue.
@@ -167,8 +167,8 @@ Proposal:
 |---|---|---|
 | 1 | Marshalling mechanism | M1 now, M2 for cross-task commands, M4 later |
 | 2 | Addressing | Mediator routing first, targeted commands only on demand |
-| 3 | Configuration | `EngineConfig` with current values as defaults |
-| 4 | Lifetime | `stopAsynchronousEngine()` plus documented destructor rule |
+| 3 | Configuration | `[RESOLVED]` `EngineConfig` with current values as defaults |
+| 4 | Lifetime | `[RESOLVED]` `stopAsynchronousEngine()` plus documented destructor rule |
 | 5 | User identifier range | 1000 and above |
 | 6 | `sourceId` meaning | Logical source id, defaulting to the pin |
 | 7 | Core pinning default | Keep both on core 1; make it configurable |
@@ -177,8 +177,8 @@ Proposal:
 
 - [ ] README and Doxygen contain the threading model, the rules, and "Runs on" tags for the public hooks.
 - [ ] The identifier registry is published, user range 1000+ is reserved, and `ClassicBlinker` follows it.
-- [ ] `EngineConfig` exists and the old overload still works.
-- [ ] `stopAsynchronousEngine()` exists with a documented destructor rule and a create/destroy test.
+- [x] `EngineConfig` exists and the old overload still works.
+- [x] `stopAsynchronousEngine()` exists with a documented destructor rule and a host test (`tests/engine_config/test.cpp`).
 - [ ] `Device::post` marshals a command onto the sampler task; a host test proves ordering and bounded queue behaviour.
 - [ ] Remote commands (if implemented) reach actuators only through the sampler context.
 - [ ] Class diagram updated.
