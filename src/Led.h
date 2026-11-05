@@ -53,7 +53,7 @@ public:
      * @param initialState Initial power state applied to the output pin.
      * @param parentHandler Optional upstream handler for propagated commands.
      */
-    Led(int signalGpioPin, bool initialState = false, CommandHandler* parentHandler = nullptr);
+    explicit Led(int signalGpioPin, bool initialState = false, CommandHandler* parentHandler = nullptr);
 
     /**
      * @brief Reports the current logical LED state.
