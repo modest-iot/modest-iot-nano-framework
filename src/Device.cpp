@@ -18,7 +18,7 @@
 #define traceISR_EXIT_TO_SCHEDULER()
 #endif
 
-Device::Device(unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupIndex)
+Device::Device(const unsigned long samplingIntervalInMilliseconds, const uint8_t timerGroupIndex)
     : scheduler(samplingIntervalInMilliseconds),
       engineStarted(false),
       hardwareSamplingTaskHandle(nullptr),
@@ -99,8 +99,8 @@ bool Device::appendSensorToScheduler(Sensor *targetSensorInstance, int requested
     if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
         return false;
     }
-    uint32_t periodInMilliseconds = targetSensorInstance->getSamplingIntervalInMilliseconds();
-    uint32_t minimumPeriodInMilliseconds = targetSensorInstance->getEffectiveMinimalSamplingIntervalInMilliseconds();
+    const uint32_t periodInMilliseconds = targetSensorInstance->getSamplingIntervalInMilliseconds();
+    const uint32_t minimumPeriodInMilliseconds = targetSensorInstance->getEffectiveMinimalSamplingIntervalInMilliseconds();
     return appendSensorToScheduler(targetSensorInstance, requestedEventIdentifier, periodInMilliseconds,
                                    minimumPeriodInMilliseconds);
 }
@@ -111,7 +111,7 @@ bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, int req
     if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
         return false;
     }
-    auto result = scheduler.add(targetSensorInstance, requestedEventIdentifier,
+    const auto result = scheduler.add(targetSensorInstance, requestedEventIdentifier,
                                 periodInMilliseconds, minimumPeriodInMilliseconds);
     if (result == SamplingScheduler::AddResult::ClampedToMinimum ||
         result == SamplingScheduler::AddResult::ClampedToTick) {
