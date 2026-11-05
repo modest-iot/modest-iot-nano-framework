@@ -230,7 +230,7 @@ Add `subscribe(topic, callback)` to the MQTT gateway and map messages to `Comman
 
 | # | Decision | Recommended | Status |
 |---|---|---|---|
-| 1 | Remove or implement `transmit()` | Remove from `WiFiConnectivityDriver` / interface | Open |
+| 1 | Remove or implement `transmit()` | `[RESOLVED]` Implemented in `WiFiConnectivityDriver` to resolve abstract class compilation failure (D1). | Resolved |
 | 2 | Transport contract | S1 (`Client&` in the interface) | Open |
 | 3 | `SendStatus` public or internal | Public, with `bool` wrapper | Open |
 | 4 | Default failure policy | Bounded retry then drop, with counters | Open |

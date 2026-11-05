@@ -2,7 +2,7 @@
 
 Implementation brief for a future development session. It is self-contained: read it, then implement.
 
-Status: **Phase A complete** (SamplingScheduler implemented, wired into Device, interval constants added to all sensor headers, host tests passing). Phase B (example migration) and Phase C (docs, README, class diagram) remain.
+Status: **Phase A complete** (SamplingScheduler implemented, wired into Device, interval constants added to all sensor headers, Hybrid approach with virtual sampling interval getters and Sensor* overload implemented, [[deprecated]] removed from EventHandler* overload, host tests passing). Phase B (example migration) and Phase C (docs, README, class diagram) remain.
 
 Related: [improvements-roadmap.md](improvements-roadmap.md) (priorities and dependencies), [threading-model-improvement.md](threading-model-improvement.md) (what runs where, handler budgets), [diagnostics-improvement.md](diagnostics-improvement.md) (counters and logging used here), [interrupt-power-improvement.md](interrupt-power-improvement.md) (the alternative to polling for edge sensors), [connectivity-improvement.md](connectivity-improvement.md), [telemetry-improvement.md](telemetry-improvement.md).
 
@@ -50,7 +50,7 @@ Consequences:
   - `enqueueTelemetryPayload` uses a zero timeout, so a full queue drops data silently.
 - `Sensor::on()` calls `processEvent()`, stops when `event.identifier == -1`, then forwards the event to its parent. Sensors are "polled" by sending `Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER`.
 - Examples calling `appendSensorToScheduler` (all must be reviewed): `AirConditioningDevice`, `AirQualityMonitor`, `ClassicBlinker`, `DriverAssistantDevice`, `OutdoorSecurityLightController`, `PerimeterMonitor`, `SmartBandMqtt`, `SmartScaleDevice`, `ToggableLedDevice`.
-- Tests exist for 9 suites under `tests/fakes/` shared harness: digital_light, rgb_led, rfid_sensor, ble_connectivity, log, mqtt_gateway, engine_config, diagnostics, sensor_fault. There is no `Device` test and no scheduler test.
+- Tests exist for 10 suites under `tests/fakes/` shared harness: digital_light, rgb_led, rfid_sensor, ble_connectivity, log, mqtt_gateway, engine_config, diagnostics, sensor_fault, scheduler. There is no `Device` test.
 
 ### Pre-existing issue to fix in the same session
 `examples/OutdoorSecurityLightController/OutdoorSecurityLightController.ino:56` calls `Device(SAMPLING_INTERVAL_MS, DEVICE_EVENT_DELAY_MS)`. The second parameter is `timerGroupIndex`, so a delay constant is being passed as a timer index. It is harmless today only because the index is unused. Fix it when touching the example.
@@ -268,9 +268,9 @@ Order matters. Each step should leave the tree compiling and the tests passing.
 
 | # | Decision | Recommended |
 |---|---|---|
-| 1 | Meaning of the two-argument overload | Option A (preserve old effective period), deprecate |
+| 1 | Meaning of the two-argument overload | `[RESOLVED]` `EventHandler*` overload is a valid fallback for non-Sensor handlers; `Sensor*` overload takes compiler precedence for Sensor arguments. `[[deprecated]]` removed. |
 | 2 | Constant suffix | `_IN_MILLISECONDS` (matches the existing long-name style) |
-| 3 | Minimum enforcement | Explicit `minimumMs` parameter plus a compile-time template overload. No virtual getter (`EventHandler` is not a `Sensor`). |
+| 3 | Minimum enforcement | `[RESOLVED]` Hybrid approach: virtual pure methods in `Sensor` base class (`getDefaultSamplingIntervalInMilliseconds`, `getMinimalSamplingIntervalInMilliseconds`) with per-instance override attributes. `Sensor*` overload queries the sensor's effective period polymorphically. |
 | 4 | Clamp reporting | `AddResult` enum in the scheduler, `bool` from `Device` plus a diagnostic accessor |
 | 5 | Replay vs coalesce missed samples | Coalesce (dispatch once) |
 | 6 | Scheduler as a public class or a private detail | Public header, documented as advanced API, so it is host-testable |
