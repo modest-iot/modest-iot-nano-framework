@@ -1,6 +1,6 @@
 # Improvement 5: Diagnostics, Logging and Sensor Health
 
-Analysis for a future development session. Status: **proposed, not implemented.** Findings come from reading `src/`; memory and overhead figures are estimates, not measurements.
+Analysis for a future development session. Status: **partially implemented** (Phase A logging and counters completed; sensor health and resilience proposed). Findings come from reading `src/`; memory and overhead figures are estimates, not measurements.
 
 Related: [improvements-roadmap.md](improvements-roadmap.md), [sampling-interval-improvement.md](sampling-interval-improvement.md) (`missedTickCount`, clamp reports), [telemetry-improvement.md](telemetry-improvement.md) (queue counters), [connectivity-improvement.md](connectivity-improvement.md) (send status, link events), [threading-model-improvement.md](threading-model-improvement.md), [interrupt-power-improvement.md](interrupt-power-improvement.md).
 
@@ -14,7 +14,8 @@ Verified in the source:
 
 | Finding | Evidence |
 |---|---|
-| No logger | No logging code in `src/`. The only `Serial` calls are `GeolocationSensor`'s port setup. `GasSensor` has its `Serial.println` calls commented out ("Removed Serial.println") |
+| Logger implemented | `ModestLog.h` provides `MODEST_LOG_*` macros with compile-time level filtering, ESP32 `esp32-hal-log` backend, host pluggable sink, and `MIOT_LOG_*` aliases. Host tests in `tests/log/test.cpp`. |
+| Shared counters implemented | `Device` tracks `packetsEnqueued`, `packetsDropped`, `queueHighWaterMark`, and `missedTicks`. `DiagnosticsSnapshot` struct returned by `Device::diagnostics()` includes heap, stack, and queue metrics. Host tests in `tests/diagnostics/test.cpp`. |
 | Sensor failures are indistinguishable from "no change" | `DhtSensor` (NaN readings), `LoadCellAmplifier` (100 ms ready timeout returns -1), `UltrasonicSensor` (echo timeout) all set `event.identifier = -1` and return, the same path used for "value unchanged". The DHT constant for this is even named `SENSOR_ERROR_SUPPRESSION_IDENTIFIER`, but it is the same `-1` |
 | Mediators cannot react to a dead sensor | A suppressed event never reaches the parent, so a disconnected DHT, a broken HX711 or a stuck I²C bus looks exactly like a stable room |
 | Partial exception | `DigitalLightIntensitySensor` exposes `isInitialized()` and validates reads, but only through polling a getter, not through an event |
@@ -135,9 +136,9 @@ Offer an optional ready-made `DeviceHealthPackage` (a `TelemetryPackage` subclas
 ## 4. Phases
 
 **Phase A: visibility (small, no behaviour change)**
-1. `MODEST_LOG_*` macros (L3), host capture sink, tests.
-2. Counters in `Device` (missed ticks, enqueued, dropped, high-water), the snapshot struct, `diagnostics()`.
-3. Runtime health fields and `uxTaskGetStackHighWaterMark` reporting.
+1. `[DONE]` `MODEST_LOG_*` macros (L3), host capture sink, tests. Implemented in `src/ModestLog.h` with `MIOT_LOG_*` aliases. Host tests in `tests/log/test.cpp`.
+2. `[DONE]` Counters in `Device` (missed ticks, enqueued, dropped, high-water), the snapshot struct, `diagnostics()`. `DiagnosticsSnapshot` struct in `src/Device.h` with 12 fields. `Device::diagnostics()` queries FreeRTOS high-water marks and ESP heap stats. Host tests in `tests/diagnostics/test.cpp`.
+3. `[DONE]` Runtime health fields and `uxTaskGetStackHighWaterMark` reporting. `diagnostics()` returns `freeHeapBytes`, `minFreeHeapBytes`, `samplerStackFreeWords`, `networkStackFreeWords`, and `uptimeSeconds`.
 4. Log the first drop, the first clamp and the first send failure at warning level.
 
 **Phase B: sensor health**
