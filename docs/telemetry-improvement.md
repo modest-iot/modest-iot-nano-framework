@@ -1,6 +1,6 @@
 # Improvement 3: Telemetry Packages
 
-Analysis for a future development session. Status: **partially implemented** (Phase A items 1-3 completed: counters in Device, ArduinoJson cleanup, library.properties pinning; Phase B item 6 completed: `unique_ptr` enqueue overload implemented and examples migrated; Phase B item 8 partial: drop-oldest queue policy implemented; golden tests, packet pool, and format decoupling proposed). Memory and performance statements are architectural reasoning, not measurements.
+Analysis for a future development session. Status: **partially implemented** (Phase A items 1-3 completed: counters in Device, ArduinoJson cleanup, library.properties pinning; Phase B item 6 completed: `unique_ptr` enqueue overload implemented and examples migrated; Phase B item 8 completed: drop-oldest queue policy and bounded serialization buffer implemented; golden tests, packet pool, and format decoupling proposed). Memory and performance statements are architectural reasoning, not measurements.
 
 Related: [improvements-roadmap.md](improvements-roadmap.md), [diagnostics-improvement.md](diagnostics-improvement.md) (the counters proposed here live in its shared facility), [threading-model-improvement.md](threading-model-improvement.md), [dependencies-improvement.md](dependencies-improvement.md) (ArduinoJson decision), [library-readiness-improvement.md](library-readiness-improvement.md) (host test harness for the golden tests), [sampling-interval-improvement.md](sampling-interval-improvement.md), [connectivity-improvement.md](connectivity-improvement.md).
 
@@ -44,7 +44,7 @@ Ownership is explicit: the `unique_ptr` overload guarantees no leak on the failu
 | T1 | Per-packet heap allocation and free on two different tasks | `new` in the sampler task, `delete` in the network task | Heap fragmentation over long uptimes on a device that is expected to run for months. Also takes the allocator lock from the sampler task, which is the real-time path. |
 | T2 | ~~Raw owning pointer through a queue~~ | **Resolved:** `enqueueTelemetryPayload(std::unique_ptr<TelemetryPackage>)` overload provides explicit ownership transfer. On enqueue failure, the `unique_ptr` deletes automatically. The legacy raw-pointer overload remains for backward compatibility. | **Done** |
 | T3 | ~~Unreported loss when the queue is full~~ | **Resolved:** Drop-oldest queue policy implemented. When the queue is full, the oldest packet is dropped and the new one is inserted, ensuring the freshest data is transmitted. `packetsDroppedOldest` counter tracks this behavior. | **Done** |
-| T4 | Three-stage JSON construction | `JsonDocument` built, then `String` built, then `c_str()` | Several allocations per send. With ArduinoJson 7 `JsonDocument` is heap-allocated and grows dynamically. `String` heap growth adds fragmentation. |
+| T4 | ~~Three-stage JSON construction~~ | **Resolved:** `MqttGatewayClient` uses a fixed 512-byte buffer with `serializeJson(doc, buffer, sizeof(buffer))`, eliminating the intermediate `String` allocation. `PayloadTooLarge` warning is logged when the buffer is insufficient. | **Done** |
 | T5 | ~~`JsonDocument serialize() const` returns by value, and the whole API assumes ArduinoJson 7~~ | **Resolved:** `library.properties` now pins `ArduinoJson (>=7.0.0)`. `TelemetryPackage.h` uses the unified `JsonDocument` type from v7. | **Done** |
 | T6 | ~~ArduinoJson leaks into the public interface~~ | **Resolved:** Unused `#include <ArduinoJson.h>` removed from `GatewayClient.h` and `MqttGatewayClient.cpp`. ArduinoJson now only appears in `TelemetryPackage.h` and example packages. | **Done** |
 | T7 | Format is hard-wired to JSON | Gateways call `serializeAsString()` | MQTT and HTTP in constrained networks often prefer compact binary. HTTP sets `Content-Type: application/json` unconditionally, so a different format cannot be advertised. |
@@ -52,7 +52,7 @@ Ownership is explicit: the `unique_ptr` overload guarantees no leak on the failu
 | T9 | No priority or QoS notion | One queue, FIFO | Alarm events (gas detected) wait behind routine readings during congestion. |
 | T10 | No backpressure toward producers | `enqueueTelemetryPayload` returns `bool` only | Producers cannot slow down or coalesce when the network is slow. |
 | T11 | Non-trivial copy cost at creation | Each subclass stores fields, then `serialize` copies them again into JSON | Acceptable for small payloads, wasteful for arrays (waveforms, scale arrays). |
-| T12 | Payload size is unbounded | Nothing constrains the document size | An oversized message exceeds the 256-byte default `PubSubClient` buffer and `publish` returns `false` with no distinct cause (see connectivity analysis, W10). |
+| T12 | ~~Payload size is unbounded~~ | **Resolved:** `MqttGatewayClient` serializes into a bounded 512-byte buffer (`MAX_TELEMETRY_PAYLOAD_SIZE`). Oversized payloads return `false` with a `PayloadTooLarge` warning. | **Done** |
 | T13 | ~~No host tests~~ | **Updated:** 10 host test suites exist under `tests/fakes/` shared harness. Serialization golden tests for telemetry packages are still pending. | Partial |
 | T14 | Overload set invites name hiding | Two methods are named `serialize` (the pure virtual `serialize(JsonDocument&)` and the non-virtual `serialize()`), plus `serializeAsString()` | A derived class that overrides `serialize(JsonDocument&)` hides the base's `serialize()` overload. Calls through a base reference (as the gateways do) are unaffected, so the issue is latent. |
 
@@ -187,6 +187,7 @@ For the JSON writer, serialize directly into a fixed buffer with `serializeJson(
 6. `[DONE]` `unique_ptr`-based enqueue overload, keeping the raw overload for compatibility. Examples `SmartBandMqtt` and `AirQualityMonitor` migrated to `std::make_unique`.
 7. Packet pool with placement-new, alignment and destructor handling, and a `static_assert` on size.
 8. `[DONE]` Drop-oldest queue policy. When the queue is full, the oldest packet is dropped and the new one is inserted. `packetsDroppedOldest` counter in `DiagnosticsSnapshot` tracks this behavior. Alarm lane deferred.
+9. `[DONE]` Bounded serialization buffer. `MqttGatewayClient` uses a fixed 512-byte buffer (`MAX_TELEMETRY_PAYLOAD_SIZE`) with `serializeJson(doc, buffer, sizeof(buffer))`, eliminating the intermediate `String` allocation. `PayloadTooLarge` warning logged when buffer is insufficient.
 
 **Phase C: format decoupling.** Do this only after Phases A and B are measured on hardware: it breaks every package subclass, and the benefit should be justified by real heap and payload numbers, not by the analysis alone.
 9. `TelemetryWriter` interface with a JSON implementation, plus an adapter for the legacy `serialize(JsonDocument&)`.
