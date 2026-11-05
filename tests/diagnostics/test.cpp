@@ -31,6 +31,7 @@ class MockDeviceDiagnostics {
 private:
     uint32_t packetsEnqueuedCount = 0;
     uint32_t packetsDroppedCount = 0;
+    uint32_t packetsDroppedOldestCount = 0;
     uint8_t queueHighWaterMarkCount = 0;
     uint32_t missedTickCount = 0;
 
@@ -41,6 +42,7 @@ public:
         snapshot.worstCaseWakeMicros = 0;
         snapshot.packetsEnqueued = packetsEnqueuedCount;
         snapshot.packetsDropped = packetsDroppedCount;
+        snapshot.packetsDroppedOldest = packetsDroppedOldestCount;
         snapshot.queueHighWaterMark = queueHighWaterMarkCount;
         snapshot.sendsSucceeded = 0;
         snapshot.sendsFailed = 0;
@@ -96,6 +98,7 @@ void test_snapshot_defaults() {
     assert(snapshot.worstCaseWakeMicros == 0);
     assert(snapshot.packetsEnqueued == 0);
     assert(snapshot.packetsDropped == 0);
+    assert(snapshot.packetsDroppedOldest == 0);
     assert(snapshot.queueHighWaterMark == 0);
     assert(snapshot.sendsSucceeded == 0);
     assert(snapshot.sendsFailed == 0);
@@ -120,6 +123,7 @@ void test_counter_initialization() {
     
     assert(snapshot.packetsEnqueued == 0);
     assert(snapshot.packetsDropped == 0);
+    assert(snapshot.packetsDroppedOldest == 0);
     assert(snapshot.queueHighWaterMark == 0);
     assert(snapshot.missedTicks == 0);
     
