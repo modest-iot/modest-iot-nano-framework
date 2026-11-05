@@ -38,11 +38,26 @@ protected:
     int pin; ///< GPIO pin assigned to the sensor.
     EventHandler* eventHandler; ///< Optional handler to receive propagated events.
 
+    uint32_t samplingIntervalInMilliseconds = 0; ///< Per-instance sampling interval override (0 = use subclass default).
+    uint32_t minimalSamplingIntervalInMilliseconds = 0; ///< Per-instance minimum interval override (0 = use subclass default).
+
     /**
      * @brief Template-method hook that lets subclasses transform or suppress an event before propagation.
      * @param event Event being processed.
      */
     virtual void processEvent(Event& event) = 0;
+
+    /**
+     * @brief Returns the subclass-specific default sampling interval constant.
+     * @return Default sampling interval in milliseconds.
+     */
+    [[nodiscard]] virtual uint32_t getDefaultSamplingIntervalInMilliseconds() const = 0;
+
+    /**
+     * @brief Returns the subclass-specific minimum sampling interval constant.
+     * @return Minimum sampling interval in milliseconds.
+     */
+    [[nodiscard]] virtual uint32_t getMinimalSamplingIntervalInMilliseconds() const = 0;
 
     /**
      * @brief Reports a successful read, potentially triggering a recovery event if previously faulted.
@@ -95,6 +110,42 @@ public:
      * @param parentHandler Pointer to the new EventHandler.
      */
     void setHandler(EventHandler* parentHandler);
+
+    /**
+     * @brief Returns the effective sampling interval.
+     * @return The per-instance override if set, otherwise the subclass default.
+     */
+    [[nodiscard]] uint32_t getSamplingIntervalInMilliseconds() const {
+        return samplingIntervalInMilliseconds
+            ? samplingIntervalInMilliseconds
+            : getDefaultSamplingIntervalInMilliseconds();
+    }
+
+    /**
+     * @brief Sets a per-instance sampling interval override.
+     * @param intervalMs Sampling interval in milliseconds (0 clears the override).
+     */
+    void setSamplingIntervalInMilliseconds(uint32_t intervalMs) {
+        samplingIntervalInMilliseconds = intervalMs;
+    }
+
+    /**
+     * @brief Returns the effective minimum sampling interval.
+     * @return The per-instance override if set, otherwise the subclass default.
+     */
+    [[nodiscard]] uint32_t getEffectiveMinimalSamplingIntervalInMilliseconds() const {
+        return minimalSamplingIntervalInMilliseconds
+            ? minimalSamplingIntervalInMilliseconds
+            : getMinimalSamplingIntervalInMilliseconds();
+    }
+
+    /**
+     * @brief Sets a per-instance minimum sampling interval override.
+     * @param intervalMs Minimum interval in milliseconds (0 clears the override).
+     */
+    void setMinimalSamplingIntervalInMilliseconds(uint32_t intervalMs) {
+        minimalSamplingIntervalInMilliseconds = intervalMs;
+    }
 };
 
 /** @} */ // End of Sensors: Base Abstraction
