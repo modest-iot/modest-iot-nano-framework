@@ -25,6 +25,7 @@
 
 #include "EventHandler.h"
 #include "Event.h"
+#include <cstdint>
 
 /**
  * @name Sensors: Base Abstraction
@@ -43,10 +44,35 @@ protected:
      */
     virtual void processEvent(Event& event) = 0;
 
+    /**
+     * @brief Reports a successful read, potentially triggering a recovery event if previously faulted.
+     * @param event The event to potentially modify.
+     */
+    void reportReadSuccess(Event& event);
+
+    /**
+     * @brief Reports a failed read, potentially triggering a fault event after threshold consecutive failures.
+     * @param event The event to potentially modify.
+     */
+    void reportReadFailure(Event& event);
+
+    /**
+     * @brief Sets the number of consecutive failures required before emitting a fault event.
+     * @param count Consecutive failure threshold (default: 0 = disabled for backward compatibility).
+     */
+    void setFaultThreshold(uint8_t count);
+
+private:
+    uint8_t consecutiveFailures; ///< Count of consecutive read failures.
+    uint8_t faultThreshold; ///< Number of consecutive failures before fault event (0 = disabled).
+    bool isFaulted; ///< Whether the sensor is currently in a faulted state.
+
 public:
     /// --- FRAMEWORK-WIDE UNIFIED SENSOR SPECIFICATION EVENTS ---
     static constexpr int DATA_READ_EVENT_IDENTIFIER = 20;
     static constexpr int MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER = 21;
+    static constexpr int SENSOR_FAULT_EVENT_IDENTIFIER = 22;
+    static constexpr int SENSOR_RECOVERED_EVENT_IDENTIFIER = 23;
 
     static constexpr Event DATA_READ_EVENT = Event(DATA_READ_EVENT_IDENTIFIER);
     static constexpr Event MEASURE_DATA_REQUESTED_EVENT = Event(MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
