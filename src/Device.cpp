@@ -7,6 +7,7 @@
 
 #include "Device.h"
 #include "ModestLog.h"
+#include <memory>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -30,8 +31,7 @@ Device::Device(unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupI
       firstDropLogged(false),
       hardwareTimer(nullptr),
       pollingIntervalInMilliseconds(samplingIntervalInMilliseconds),
-      hardwareTimerIndex(timerGroupIndex)
-{
+      hardwareTimerIndex(timerGroupIndex) {
 }
 
 Device::~Device() {
@@ -42,12 +42,13 @@ Device::~Device() {
     stopAsynchronousEngine();
 }
 
-void IRAM_ATTR Device::handleHardwareTimerInterrupt(void* deviceInstance) {
+void IRAM_ATTR Device::handleHardwareTimerInterrupt(void *deviceInstance) {
     if (deviceInstance != nullptr) {
-        auto* self = static_cast<Device*>(deviceInstance);
+        auto *self = static_cast<Device *>(deviceInstance);
         BaseType_t higherPriorityTaskWoken = pdFALSE;
         vTaskNotifyGiveFromISR(self->hardwareSamplingTaskHandle, &higherPriorityTaskWoken);
-        if (higherPriorityTaskWoken) portYIELD_FROM_ISR();
+        if (higherPriorityTaskWoken)
+        portYIELD_FROM_ISR();
     }
 }
 
@@ -57,7 +58,7 @@ void Device::initializeAsynchronousEngine(uint8_t maximumQueueLength) {
     initializeAsynchronousEngine(config);
 }
 
-void Device::initializeAsynchronousEngine(const EngineConfig& config) {
+void Device::initializeAsynchronousEngine(const EngineConfig &config) {
     // Resolve legacy (two-argument) slots before starting the engine
     // Legacy slots get periodInTicks = total legacy slot count, reproducing the old round-robin
     // This is handled internally: legacy slots are marked with period 0 and resolved here
@@ -83,7 +84,7 @@ void Device::initializeAsynchronousEngine(const EngineConfig& config) {
     timerAlarm(hardwareTimer, alarmIntervalInMicroseconds, true, 0);
 }
 
-bool Device::appendSensorToScheduler(EventHandler* targetSensorInstance, int requestedEventIdentifier) {
+bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, int requestedEventIdentifier) {
     if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
         return false;
     }
@@ -94,38 +95,44 @@ bool Device::appendSensorToScheduler(EventHandler* targetSensorInstance, int req
            result != SamplingScheduler::AddResult::InvalidArgument;
 }
 
-bool Device::appendSensorToScheduler(Sensor* targetSensorInstance, int requestedEventIdentifier) {
+bool Device::appendSensorToScheduler(Sensor *targetSensorInstance, int requestedEventIdentifier) {
     if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
         return false;
     }
-    uint32_t periodInMilliseconds = targetSensorInstance->getSamplingIntervalInMilliseconds();;
+    uint32_t periodInMilliseconds = targetSensorInstance->getSamplingIntervalInMilliseconds();
     uint32_t minimumPeriodInMilliseconds = targetSensorInstance->getEffectiveMinimalSamplingIntervalInMilliseconds();
-    return appendSensorToScheduler(targetSensorInstance, requestedEventIdentifier, periodInMilliseconds, minimumPeriodInMilliseconds);
+    return appendSensorToScheduler(targetSensorInstance, requestedEventIdentifier, periodInMilliseconds,
+                                   minimumPeriodInMilliseconds);
 }
 
-bool Device::appendSensorToScheduler(EventHandler* targetSensorInstance, int requestedEventIdentifier,
-                                      uint32_t periodInMilliseconds,
-                                      uint32_t minimumPeriodInMilliseconds) {
+bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, int requestedEventIdentifier,
+                                     uint32_t periodInMilliseconds,
+                                     uint32_t minimumPeriodInMilliseconds) {
     if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
         return false;
     }
     auto result = scheduler.add(targetSensorInstance, requestedEventIdentifier,
-                                 periodInMilliseconds, minimumPeriodInMilliseconds);
-    if (result == SamplingScheduler::AddResult::ClampedToMinimum) {
-        MODEST_LOG_W("Device", "Sensor period clamped to minimum: %u ms", minimumPeriodInMilliseconds);
-    } else if (result == SamplingScheduler::AddResult::ClampedToTick) {
-        MODEST_LOG_W("Device", "Sensor period clamped to tick: %lu ms", pollingIntervalInMilliseconds);
+                                periodInMilliseconds, minimumPeriodInMilliseconds);
+    if (result == SamplingScheduler::AddResult::ClampedToMinimum ||
+        result == SamplingScheduler::AddResult::ClampedToTick) {
+        const bool clampedToMinimum = result == SamplingScheduler::AddResult::ClampedToMinimum;
+        [[maybe_unused]] const char *clampReason = clampedToMinimum ? "minimum" : "tick";
+        [[maybe_unused]] const unsigned long clampPeriod = clampedToMinimum
+                                                               ? static_cast<unsigned long>(minimumPeriodInMilliseconds)
+                                                               : pollingIntervalInMilliseconds;
+        MODEST_LOG_W("Device", "Sensor period clamped to %s: %lu ms", clampReason, clampPeriod);
     }
     return result != SamplingScheduler::AddResult::TableFull &&
            result != SamplingScheduler::AddResult::InvalidArgument;
 }
 
-bool Device::enqueueTelemetryPayload(TelemetryPackage** telemetryPackagePointerAddress) const {
+bool Device::enqueueTelemetryPayload(TelemetryPackage **telemetryPackagePointerAddress) const {
     if (telemetryQueueHandle == nullptr || telemetryPackagePointerAddress == nullptr) return false;
     if (xQueueSend(telemetryQueueHandle, telemetryPackagePointerAddress, 0) == pdPASS) {
         packetsEnqueuedCount++;
-        uint8_t currentQueueSize = static_cast<uint8_t>(uxQueueMessagesWaiting(telemetryQueueHandle));
-        if (currentQueueSize > queueHighWaterMarkCount) {
+        // Update the high water mark if the current queue size is greater
+        if (const auto currentQueueSize = static_cast<uint8_t>(uxQueueMessagesWaiting(telemetryQueueHandle));
+            currentQueueSize > queueHighWaterMarkCount) {
             queueHighWaterMarkCount = currentQueueSize;
         }
         return true;
@@ -138,13 +145,34 @@ bool Device::enqueueTelemetryPayload(TelemetryPackage** telemetryPackagePointerA
     return false;
 }
 
-void Device::executeHardwareSamplingContext(void* taskParameters) {
-    auto* self = static_cast<Device*>(taskParameters);
+bool Device::enqueueTelemetryPayload(std::unique_ptr<TelemetryPackage> telemetryPackageStandardUniquePointer) const {
+    if (telemetryQueueHandle == nullptr || telemetryPackageStandardUniquePointer == nullptr) return false;
+    TelemetryPackage *rawPtr = telemetryPackageStandardUniquePointer.release();
+    if (xQueueSend(telemetryQueueHandle, &rawPtr, 0) == pdPASS) {
+        // Ownership transferred to the queue.
+        packetsEnqueuedCount++;
+        if (const auto currentQueueSize = static_cast<uint8_t>(uxQueueMessagesWaiting(telemetryQueueHandle)); currentQueueSize > queueHighWaterMarkCount) {
+            queueHighWaterMarkCount = currentQueueSize;
+        }
+        return true;
+    }
+    // Restore ownership so the package is deleted automatically on failure.
+    telemetryPackageStandardUniquePointer.reset(rawPtr);
+    packetsDroppedCount++;
+    if (!firstDropLogged) {
+        MODEST_LOG_W("Device", "First packet dropped: telemetry queue full");
+        firstDropLogged = true;
+    }
+    return false;
+}
+
+void Device::executeHardwareSamplingContext(void *taskParameters) {
+    auto *self = static_cast<Device *>(taskParameters);
     while (true) {
         // Wait for timer tick or termination signal
         // vTaskNotifyGiveFromISR increments the notification value on each tick
         // stopAsynchronousEngine sets bit 1 (0x2) to signal termination
-        uint32_t notificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        const uint32_t notificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
         // Check termination signal (bit 1)
         if (notificationValue & 0x2) {
@@ -169,9 +197,9 @@ void Device::executeHardwareSamplingContext(void* taskParameters) {
     vTaskDelete(nullptr);
 }
 
-void Device::executeNetworkDispatchContext(void* taskParameters) {
-    auto* self = static_cast<Device*>(taskParameters);
-    TelemetryPackage* incomingPolymorphicPacketPointer = nullptr;
+void Device::executeNetworkDispatchContext(void *taskParameters) {
+    const auto *self = static_cast<Device *>(taskParameters);
+    TelemetryPackage *incomingPolymorphicPacketPointer = nullptr;
 
     while (true) {
         // Check for termination signal (bit 1 = stop) without clearing the notification
@@ -183,7 +211,8 @@ void Device::executeNetworkDispatchContext(void* taskParameters) {
         }
 
         // Poll queue with a timeout so network maintenance (MQTT keep-alive, connection checks) executes regularly
-        if (xQueueReceive(self->telemetryQueueHandle, &incomingPolymorphicPacketPointer, pdMS_TO_TICKS(100)) == pdPASS) {
+        if (xQueueReceive(self->telemetryQueueHandle, &incomingPolymorphicPacketPointer, pdMS_TO_TICKS(100)) ==
+            pdPASS) {
             if (incomingPolymorphicPacketPointer != nullptr) {
                 self->processQueuedTelemetryData(incomingPolymorphicPacketPointer);
                 delete incomingPolymorphicPacketPointer;
@@ -207,7 +236,7 @@ void Device::handle(Command command) {
  * @brief Default fallback implementation of Telemetry Queue dispatcher hook.
  * Allows action/control-only nodes to ignore the network queue cycle seamlessly.
  */
-void Device::processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) const {
+void Device::processQueuedTelemetryData(const TelemetryPackage *rawQueueItemPayload) const {
     // Intentional default no-op
 }
 
@@ -226,7 +255,7 @@ DiagnosticsSnapshot Device::diagnostics() const {
     snapshot.packetsEnqueued = packetsEnqueuedCount;
     snapshot.packetsDropped = packetsDroppedCount;
     snapshot.queueHighWaterMark = queueHighWaterMarkCount;
-    
+
     // Aggregate gateway send statistics if a gateway is registered
     if (telemetryGateway != nullptr) {
         GatewayStatistics gwStats = telemetryGateway->getStatistics();
@@ -236,7 +265,7 @@ DiagnosticsSnapshot Device::diagnostics() const {
         snapshot.sendsSucceeded = 0;
         snapshot.sendsFailed = 0;
     }
-    
+
     snapshot.freeHeapBytes = ESP.getFreeHeap();
     snapshot.minFreeHeapBytes = ESP.getMinFreeHeap();
     snapshot.uptimeSeconds = millis() / 1000;
@@ -285,7 +314,7 @@ void Device::stopAsynchronousEngine() {
 
     // 5. Drain and delete any pending telemetry packets in the queue
     if (telemetryQueueHandle != nullptr) {
-        TelemetryPackage* pendingPacket = nullptr;
+        TelemetryPackage *pendingPacket = nullptr;
         while (xQueueReceive(telemetryQueueHandle, &pendingPacket, 0) == pdPASS) {
             delete pendingPacket;
         }

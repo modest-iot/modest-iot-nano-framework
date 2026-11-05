@@ -15,6 +15,7 @@
 #include "TelemetryPackage.h"
 #include "GatewayClient.h"
 #include "SamplingScheduler.h"
+#include <memory>
 #include <Arduino.h>
 
 struct hw_timer_s;
@@ -142,6 +143,17 @@ protected:
      * @return `true` when enqueued successfully, otherwise `false`.
      */
     bool enqueueTelemetryPayload(TelemetryPackage** telemetryPackagePointerAddress) const;
+
+    /**
+     * @brief Pushes a telemetry payload into the internal queue with safe ownership transfer.
+     * @param telemetryPackageStandardUniquePointer Unique pointer to the payload to enqueue.
+     * @return `true` when enqueued successfully, otherwise `false`.
+     *
+     * When the enqueue succeeds, ownership is transferred to the framework and the
+     * unique_ptr is released. When the enqueue fails (e.g., queue full), the unique_ptr
+     * retains ownership and the payload is deleted automatically — no manual cleanup needed.
+     */
+    bool enqueueTelemetryPayload(std::unique_ptr<TelemetryPackage> telemetryPackageStandardUniquePointer) const;
 
     /**
      * @brief Registers a sensor/event pair in the scheduler (two-argument fallback form).
