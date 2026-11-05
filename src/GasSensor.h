@@ -160,6 +160,13 @@ private:
      */
     static constexpr int PROPAGATION_SUPPRESSION_IDENTIFIER = -1;
 
+    /// Default sampling interval in milliseconds.
+    /// @note MQ-series gas sensors have slow response times (~100 ms warm-up per reading).
+    static constexpr uint32_t DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS = 1000;
+    /// Minimum sampling interval in milliseconds.
+    /// @note Below 100 ms the heating element cannot stabilize between readings.
+    static constexpr uint32_t MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS = 100;
+
     /**
      * @brief Loads the default calibration slope and intercept for a given gas type.
      * These are example values and should be overridden by developers for specific sensor models.
@@ -218,6 +225,9 @@ protected:
      *              reading occurs, or suppressed if no change.
      */
     void processEvent(Event& event) override;
+
+    [[nodiscard]] uint32_t getDefaultSamplingIntervalInMilliseconds() const override;
+    [[nodiscard]] uint32_t getMinimalSamplingIntervalInMilliseconds() const override;
 
 public:
     /** @brief Identifier emitted when a digital gas detection threshold is crossed. */

@@ -405,3 +405,11 @@ bool GasSensor::isGasDetected() const {
     // In CalibratingMode, gas is never "detected" for operational purposes
     return false;
 }
+
+uint32_t GasSensor::getDefaultSamplingIntervalInMilliseconds() const {
+    return DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}
+
+uint32_t GasSensor::getMinimalSamplingIntervalInMilliseconds() const {
+    return MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS;
+}
