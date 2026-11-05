@@ -232,6 +232,60 @@ int main() {
         assert(WiFiClass::beginCallCount == 3);
     }
 
+    // =========================================================================
+    // Test 5: Gateway Send Statistics Tracking
+    // =========================================================================
+    {
+        PubSubClient::resetMockState();
+        fakeMillis = 1000;
+
+        MockConnectivityDriver mockDriver;
+        Client fakeSocket;
+        MqttGatewayClient gateway(mockDriver, fakeSocket, "192.168.1.100", 1883, "telemetry/stats", "Node-04");
+
+        // Initial statistics should be zero
+        GatewayStatistics stats = gateway.getStatistics();
+        assert(stats.sendsSucceeded == 0);
+        assert(stats.sendsFailed == 0);
+
+        // Successful send
+        SampleTelemetryPackage package(1, 1.0f);
+        bool sent = gateway.sendTelemetryRecord(package);
+        assert(sent);
+        
+        stats = gateway.getStatistics();
+        assert(stats.sendsSucceeded == 1);
+        assert(stats.sendsFailed == 0);
+
+        // Another successful send
+        SampleTelemetryPackage package2(2, 2.0f);
+        sent = gateway.sendTelemetryRecord(package2);
+        assert(sent);
+        
+        stats = gateway.getStatistics();
+        assert(stats.sendsSucceeded == 2);
+        assert(stats.sendsFailed == 0);
+
+        // Simulate transport failure
+        mockDriver.setLinkConnected(false);
+        SampleTelemetryPackage package3(3, 3.0f);
+        sent = gateway.sendTelemetryRecord(package3);
+        assert(!sent);
+        
+        stats = gateway.getStatistics();
+        assert(stats.sendsSucceeded == 2);
+        assert(stats.sendsFailed == 1);
+
+        // Another failure
+        SampleTelemetryPackage package4(4, 4.0f);
+        sent = gateway.sendTelemetryRecord(package4);
+        assert(!sent);
+        
+        stats = gateway.getStatistics();
+        assert(stats.sendsSucceeded == 2);
+        assert(stats.sendsFailed == 2);
+    }
+
     std::printf("All MqttGatewayClient and WiFi Reconnection tests passed successfully!\n");
     return 0;
 }
