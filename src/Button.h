@@ -39,7 +39,7 @@ protected:
 
 public:
     /** @brief Identifier emitted when a valid button press is detected. */
-    static const int BUTTON_PRESSED_EVENT_IDENTIFIER = 10;
+    static constexpr int BUTTON_PRESSED_EVENT_IDENTIFIER = 10;
     /** @brief Prebuilt event instance for button press notifications. */
     static const Event BUTTON_PRESSED_EVENT;
 
