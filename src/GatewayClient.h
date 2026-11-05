@@ -19,6 +19,15 @@
  */
 
 /**
+ * @brief Send success/failure counters for gateway diagnostics.
+ * @ingroup gateway_module
+ */
+struct GatewayStatistics {
+    uint32_t sendsSucceeded = 0; ///< Successful telemetry transmissions.
+    uint32_t sendsFailed = 0; ///< Failed telemetry transmissions.
+};
+
+/**
  * @brief Generic gateway client that serializes telemetry and sends it through a connectivity driver.
  * @ingroup gateway_module
  */
@@ -64,6 +73,14 @@ public:
      */
     [[nodiscard]] virtual bool isConnected() {
         return communicationTransportDriver.isConnected();
+    }
+
+    /**
+     * @brief Returns send success/failure counters for diagnostics aggregation.
+     * @return Statistics struct with cumulative send counts.
+     */
+    [[nodiscard]] virtual GatewayStatistics getStatistics() const {
+        return {}; // Default: no tracking
     }
 };
 
