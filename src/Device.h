@@ -12,6 +12,7 @@
 #include "EventHandler.h"
 #include "CommandHandler.h"
 #include "TelemetryPackage.h"
+#include "GatewayClient.h"
 #include <Arduino.h>
 
 struct hw_timer_s;
@@ -94,6 +95,7 @@ private:
     mutable uint32_t packetsDroppedCount; ///< Total packets dropped due to full queue.
     mutable uint8_t queueHighWaterMarkCount; ///< Maximum queue depth observed.
     mutable uint32_t missedTickCount; ///< Ticks missed by the sampler.
+    mutable bool firstDropLogged; ///< Tracks whether the first drop warning was emitted.
 
     hw_timer_t* hardwareTimer; ///< Pointer to the hardware timer.
     const unsigned long pollingIntervalInMilliseconds; ///< Polling interval in milliseconds.
@@ -156,6 +158,12 @@ protected:
      * @return `true` when the slot is registered, `false` when scheduler capacity is full.
      */
     bool appendSensorToScheduler(EventHandler* targetSensorInstance, int requestedEventIdentifier);
+
+    /**
+     * @brief Optional gateway reference for diagnostics aggregation.
+     * Derived classes can set this so diagnostics() can query send statistics.
+     */
+    GatewayClient* telemetryGateway = nullptr;
 
     /**
      * @brief Subclass hook for converting queued payloads into network transmissions.

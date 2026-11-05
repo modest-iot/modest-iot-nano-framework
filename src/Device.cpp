@@ -6,6 +6,7 @@
  */
 
 #include "Device.h"
+#include "ModestLog.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -26,6 +27,7 @@ Device::Device(unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupI
       packetsDroppedCount(0),
       queueHighWaterMarkCount(0),
       missedTickCount(0),
+      firstDropLogged(false),
       hardwareTimer(nullptr),
       pollingIntervalInMilliseconds(samplingIntervalInMilliseconds),
       hardwareTimerIndex(timerGroupIndex)
@@ -99,6 +101,10 @@ bool Device::enqueueTelemetryPayload(TelemetryPackage** telemetryPackagePointerA
         return true;
     }
     packetsDroppedCount++;
+    if (!firstDropLogged) {
+        MODEST_LOG_W("Device", "First packet dropped: telemetry queue full");
+        firstDropLogged = true;
+    }
     return false;
 }
 
@@ -184,8 +190,17 @@ DiagnosticsSnapshot Device::diagnostics() const {
     snapshot.packetsEnqueued = packetsEnqueuedCount;
     snapshot.packetsDropped = packetsDroppedCount;
     snapshot.queueHighWaterMark = queueHighWaterMarkCount;
-    snapshot.sendsSucceeded = 0; // Populated by gateway clients
-    snapshot.sendsFailed = 0; // Populated by gateway clients
+    
+    // Aggregate gateway send statistics if a gateway is registered
+    if (telemetryGateway != nullptr) {
+        GatewayStatistics gwStats = telemetryGateway->getStatistics();
+        snapshot.sendsSucceeded = gwStats.sendsSucceeded;
+        snapshot.sendsFailed = gwStats.sendsFailed;
+    } else {
+        snapshot.sendsSucceeded = 0;
+        snapshot.sendsFailed = 0;
+    }
+    
     snapshot.freeHeapBytes = ESP.getFreeHeap();
     snapshot.minFreeHeapBytes = ESP.getMinFreeHeap();
     snapshot.uptimeSeconds = millis() / 1000;

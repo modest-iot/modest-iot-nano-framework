@@ -5,6 +5,7 @@ Actuator	KEYWORD1
 BleConnectivityDriver	KEYWORD1
 DiagnosticsSnapshot	KEYWORD1
 EngineConfig	KEYWORD1
+GatewayStatistics	KEYWORD1
 BluetoothConnectivityDriver	KEYWORD1
 Button	KEYWORD1
 Buzzer	KEYWORD1
