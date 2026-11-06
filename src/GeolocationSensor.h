@@ -1,12 +1,26 @@
 #ifndef GEOLOCATION_SENSOR_H
 #define GEOLOCATION_SENSOR_H
 
+/**
+ * @file GeolocationSensor.h
+ * @brief Declares a GPS/NMEA geolocation sensor that parses serial NMEA sentences.
+ * @ingroup sensors_module
+ * @date 2026-06-06
+ * @version 1.0
+ */
+
 #include <HardwareSerial.h>
 #include "LocationData.h"
 #include "Sensor.h"
 
 /**
- * @brief GPS/Geolocation Sensor abstraction.
+ * @name Sensors: Environmental & Distance
+ * @ingroup sensors_module
+ * @{
+ */
+
+/**
+ * @brief GPS/NMEA geolocation sensor that parses serial NMEA sentences.
  * @ingroup sensors_module
  */
 class GeolocationSensor : public Sensor {
@@ -92,6 +106,14 @@ protected:
     [[nodiscard]] uint32_t getMinimalSamplingIntervalInMilliseconds() const override;
 
 public:
+    /**
+     * @brief Constructs a GPS sensor that reads NMEA sentences over a hardware serial port.
+     * @param serial Hardware serial instance connected to the GPS module.
+     * @param receiveGpioPin GPIO pin for UART receive (RX).
+     * @param transmitGpioPin GPIO pin for UART transmit (TX).
+     * @param baudRate Serial baud rate, typically 9600 for GPS modules.
+     * @param parentHandler Optional upstream handler for propagated events.
+     */
     GeolocationSensor(HardwareSerial& serial, int receiveGpioPin, int transmitGpioPin, long baudRate = 9600, EventHandler* parentHandler = nullptr);
 
     /**
@@ -100,5 +122,7 @@ public:
      */
     [[nodiscard]] const LocationData& getLocationData() const { return cachedLocation; }
 };
+
+/** @} */ // End of Sensors: Environmental & Distance
 
 #endif // GEOLOCATION_SENSOR_H
