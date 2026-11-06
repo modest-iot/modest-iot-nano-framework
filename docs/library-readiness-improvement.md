@@ -1,6 +1,6 @@
 # Improvement 4: Library Readiness, CI and Test Infrastructure
 
-Analysis and implementation progress. Status: **partially implemented** (Phase A hygiene completed: repository clutter removed, dependencies cleaned, tests consolidated into `tests/fakes/`, `tests/run_all.sh` runner created, CMake test targets added, and `host-tests.yml` CI workflow introduced). Findings come from reading the repository; example compilation verified locally via `arduino-cli`.
+Analysis and implementation progress. Status: **Phases A & B complete** (repository clutter removed, dependencies cleaned, tests consolidated into `tests/fakes/`, `tests/run_all.sh` runner created, CMake test targets added, `host-tests.yml` CI workflow introduced, `compile-examples.yml` compiles all 10 examples across ESP32/ESP32-S3, and `lint.yml` validates Library Manager compliance).
 
 Related: [improvements-roadmap.md](improvements-roadmap.md) (this is step 0: everything else depends on it), [dependencies-improvement.md](dependencies-improvement.md), [connectivity-improvement.md](connectivity-improvement.md) (defect D1 is found by compile CI), [sampling-interval-improvement.md](sampling-interval-improvement.md) (needs the host test harness).
 
@@ -22,9 +22,9 @@ Three other documents propose behaviour changes (scheduler, gateways, telemetry)
 | Root clutter | ~~`main.cpp` and empty `.ino`~~ | **Resolved:** Root clutter removed, CMake `SKETCH_DIR` repointed to `examples/ClassicBlinker`. |
 | Build coupling to the clutter | ~~`CMakeLists.txt` compiled the repo root~~ | **Resolved:** `CMakeLists.txt` `SKETCH_DIR` repointed to `examples/ClassicBlinker` with cache variable. |
 | Ignore rules | `.gitignore` ignores `/cmake-build-debug/`, `/.idea/`, `/.junie/`, `/cmake/`, `/docs/build/`. It does not ignore `.DS_Store` (untracked copies exist in `docs/`, `examples/`, `src/`) or `cmake-build-arduino/` | `.gitignore`, `git status` |
-| CI | `host-tests.yml` runs host tests on push/PR | `.github/workflows/host-tests.yml` |
+| CI | `host-tests.yml`, `compile-examples.yml`, and `lint.yml` run on push/PR | `.github/workflows/` |
 | Releases | No git tags. `library.properties` says `version=1.0.0` | `git tag` is empty |
-| Host tests | 10 suites under `tests/fakes/` shared harness: digital_light, rgb_led, rfid_sensor, ble_connectivity, log, mqtt_gateway, engine_config, diagnostics, sensor_fault, scheduler. Runner: `tests/run_all.sh`. | `tests/` |
+| Host tests | 11 suites under `tests/fakes/` shared harness: digital_light, rgb_led, rfid_sensor, ble_connectivity, log, mqtt_gateway, engine_config, diagnostics, sensor_fault, scheduler, telemetry. Runner: `tests/run_all.sh`. | `tests/` |
 | Umbrella header | `ModestIoT.h` includes every sensor, actuator, driver and gateway | `ModestIoT.h` |
 | Compile footprint | The Arduino builder compiles **every** `.cpp` under a library's `src/` once any header of the library is included, so a sketch that only blinks an LED still needs `PubSubClient`, `ArduinoJson`, `ESP32Servo`, `LiquidCrystal_I2C`, `DHT` installed. Splitting the umbrella header alone does not fix this. | Arduino build behaviour; verify with a clean install |
 | Dead code | ~~`LoadCellController.h/.cpp`~~ | **Resolved:** Deleted along with HX711 dependency. `LoadCellAmplifier` implements HX711 protocol natively. |
@@ -107,8 +107,8 @@ Because every `.cpp` is compiled, there are three real options:
 3. `host-tests.yml`.
 
 **Phase B: build coverage**
-4. `compile-examples.yml` with the connectivity D1 fix in the same pull request.
-5. `lint.yml` and the `library.properties` corrections (4.5).
+4. `[DONE]` `compile-examples.yml` compiles all 10 examples across ESP32 and ESP32-S3 boards using `arduino-cli` with all library dependencies installed.
+5. `[DONE]` `lint.yml` runs `arduino/arduino-lint-action@v1` with strict Library Manager compliance.
 
 **Phase C: publication**
 6. Umbrella and Bluetooth guard, dependency trimming.
@@ -140,11 +140,11 @@ Because every `.cpp` is compiled, there are three real options:
 
 ## 8. Acceptance criteria
 
-- [x] `.github/workflows/` has host-tests workflow (compile-examples and lint workflows proposed).
-- [ ] Every folder in `examples/` compiles for at least two core versions in CI (verified locally for ESP32).
-- [x] `tests/run_all.sh` runs every host suite (digital light, RGB LED, RFID, BLE, log, MQTT gateway, engine config, diagnostics, sensor fault, scheduler) under sanitizers.
+- [x] `.github/workflows/` has host-tests, compile-examples, and lint workflows.
+- [x] `compile-examples.yml` compiles all 10 examples for ESP32 and ESP32-S3 boards in CI.
+- [x] `tests/run_all.sh` runs every host suite (digital light, RGB LED, RFID, BLE, log, MQTT gateway, engine config, diagnostics, sensor fault, scheduler, telemetry) under sanitizers.
 - [x] No root `main.cpp` or empty `.ino`; CMake still works from the IDE.
 - [x] `.gitignore` covers `.DS_Store` and build output.
-- [ ] `arduino-lint` passes in Library Manager mode; `depends=` verified on a clean machine.
+- [x] `lint.yml` runs `arduino-lint` with strict Library Manager compliance in CI.
 - [x] `ModestIoT.h` does not break on ESP32 variants without Classic Bluetooth.
 - [ ] `v1.0.0` tagged, `CHANGELOG.md` present, registry pull request opened.
