@@ -22,14 +22,14 @@ bool HttpGatewayClient::sendTelemetryRecord(const TelemetryPackage& abstractTele
     }
 
     // 2. Perform polymorphic package data serialization mapping
-    String serializedPayloadOutput = abstractTelemetryPayload.serializeAsString();
+    const String serializedPayloadOutput = abstractTelemetryPayload.toJsonString();
 
     // 3. Execute HTTP Layer transactions safely within the NetworkWorker thread context
     HTTPClient httpClientEndpoint;
     httpClientEndpoint.begin(serviceEndpointUrl);
     httpClientEndpoint.addHeader("Content-Type", contentTypeHeader);
 
-    int httpResponseStatusCode = httpClientEndpoint.POST(serializedPayloadOutput);
+    const int httpResponseStatusCode = httpClientEndpoint.POST(serializedPayloadOutput);
     httpClientEndpoint.end();
 
     // Standard HTTP Success Range definition (200 OK through 299)
