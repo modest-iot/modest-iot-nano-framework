@@ -1,10 +1,24 @@
 #ifndef BLUETOOTH_CONNECTIVITY_DRIVER_H
 #define BLUETOOTH_CONNECTIVITY_DRIVER_H
 
+/**
+ * @file BluetoothConnectivityDriver.h
+ * @brief Declares a deprecated Bluetooth Classic SPP connectivity driver.
+ * @ingroup connectivity_module
+ * @date 2026-06-06
+ * @version 1.0
+ */
+
 #include "ConnectivityDriver.h"
 
 #if defined(CONFIG_BT_ENABLED) && defined(CONFIG_BLUEDROID_ENABLED) // NOLINT(readability-identifier-naming)
 #include <BluetoothSerial.h>
+
+/**
+ * @name Connectivity: Legacy Drivers
+ * @ingroup connectivity_module
+ * @{
+ */
 
 /**
  * @brief Bluetooth Classic SPP implementation of the ConnectivityDriver.
@@ -28,5 +42,7 @@ public:
 
 // NOLINT(readability-identifier-naming)
 #endif // CONFIG_BT_ENABLED && CONFIG_BLUEDROID_ENABLED
+
+/** @} */ // End of Connectivity: Legacy Drivers
 
 #endif // BLUETOOTH_CONNECTIVITY_DRIVER_H
