@@ -34,7 +34,7 @@ public:
      * @param sequence Monotonically increasing sequence number.
      * @note Called by Device before enqueueing to assign metadata.
      */
-    void setEnvelopeMetadata(uint32_t timestamp, uint32_t sequence) {
+    void setEnvelopeMetadata(const uint32_t timestamp, const uint32_t sequence) {
         captureTimestamp = timestamp;
         sequenceNumber = sequence;
     }
@@ -55,15 +55,17 @@ public:
      * @brief Serializes fields into an existing JSON document instance.
      * @param serializationDestination Destination document to populate.
      * @note Envelope metadata (timestamp, sequence) is added automatically by
-     *   the `serialize()` convenience overload before calling this method.
+     *   the `toDocument()` and `toJsonString()` convenience methods.
      */
     virtual void serialize(JsonDocument& serializationDestination) const = 0;
 
     /**
-     * @brief Convenience overload that creates and returns a standalone document.
+     * @brief Creates and returns a standalone JSON document with all fields.
      * @return A JSON document with envelope metadata followed by subclass fields.
+     * @note Renamed from `serialize()` to avoid name hiding when subclasses
+     *   override the pure virtual `serialize(JsonDocument&)` method.
      */
-    [[nodiscard]] JsonDocument serialize() const {
+    [[nodiscard]] JsonDocument toDocument() const {
         JsonDocument standaloneDocument;
         this->addEnvelopeMetadata(standaloneDocument);
         this->serialize(standaloneDocument);
@@ -71,14 +73,16 @@ public:
     }
 
     /**
-     * @brief Convenience method to serialize telemetry to a JSON string.
+     * @brief Serializes telemetry to a JSON string.
      * @return A String containing the serialized JSON representation.
+     * @note Renamed from `serializeAsString()` to avoid name hiding when
+     *   subclasses override the pure virtual `serialize(JsonDocument&)` method.
      */
-    [[nodiscard]] String serializeAsString() const {
-        JsonDocument doc = this->serialize();
-        String output;
-        serializeJson(doc, output);
-        return output;
+    [[nodiscard]] String toJsonString() const {
+        const JsonDocument sourceDocument = this->toDocument();
+        String serializedJsonString;
+        serializeJson(sourceDocument, serializedJsonString);
+        return serializedJsonString;
     }
 };
 
