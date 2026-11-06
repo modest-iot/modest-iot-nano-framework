@@ -4,7 +4,21 @@
 #include <cmath>
 
 /**
- * @brief Comprehensive container for GPS navigation data.
+ * @file LocationData.h
+ * @brief Declares the LocationData struct for GPS navigation state.
+ * @ingroup sensors_module
+ * @date 2026-06-06
+ * @version 1.0
+ */
+
+/**
+ * @name Sensors: Data Types
+ * @ingroup sensors_module
+ * @{
+ */
+
+/**
+ * @brief Comprehensive container for GPS navigation data parsed from NMEA sentences.
  * @ingroup sensors_module
  */
 struct LocationData {
@@ -63,5 +77,7 @@ private:
         return std::fabs(a - b) < 0.0001f;
     }
 };
+
+/** @} */ // End of Sensors: Data Types
 
 #endif // LOCATION_DATA_H
