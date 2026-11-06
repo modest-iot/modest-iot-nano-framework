@@ -59,7 +59,9 @@ class ClassicBlinker : public Device {
         // 2. Register this device context to receive automated clock alarm notifications
         // mapped directly to our clean event identity token
         // Capture and evaluate scheduler capacity bounds gracefully
-        bool registered = appendSensorToScheduler(this, TIMER_EVENT_IDENTIFIER);
+        // Note: `this` is a Device, not a Sensor, so the EventHandler* overload is used with
+        // an explicit period matching the timer tick interval.
+        bool registered = appendSensorToScheduler(this, TIMER_EVENT_IDENTIFIER, blinkIntervalMs, 0);
         if (!registered) {
             Serial.println(F("[ERROR] Blinker registration failed: Scheduler capacity full!"));
         }
@@ -100,7 +102,7 @@ static const int SYSTEM_DIAGNOSTIC_LED_PIN = 2;
 /**
  * @brief Defines the blink rate for the LED in milliseconds.
  */
-static const unsigned long BLINK_RATE_MS = 500;
+static const unsigned long BLINK_RATE_MILLISECONDS = 500;
 
 /**
  * @brief Defines the hardware core timer channel to be used.
@@ -128,7 +130,7 @@ void setup() {
 
     // Boot the framework application.
     // Background execution queues, FreeRTOS tasks, and hardware alarm vectors launch automatically!
-    blinkerApplication = new ClassicBlinker(SYSTEM_DIAGNOSTIC_LED_PIN, BLINK_RATE_MS, CORE_TIMER_CHANNEL);
+    blinkerApplication = new ClassicBlinker(SYSTEM_DIAGNOSTIC_LED_PIN, BLINK_RATE_MILLISECONDS, CORE_TIMER_CHANNEL);
 
     Serial.println("[Blinker Node] Loop-less, event-driven command routing active.");
 }
