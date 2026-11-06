@@ -40,6 +40,7 @@ private:
     static constexpr size_t MAX_TELEMETRY_PAYLOAD_SIZE = 512; ///< Maximum serialized payload size in bytes.
     char serializationBuffer[MAX_TELEMETRY_PAYLOAD_SIZE]; ///< Fixed-size buffer for JSON serialization.
 
+    static constexpr uint16_t DEFAULT_RECONNECT_INTERVAL_MILLISECONDS = 5000; ///< Default cooldown between broker reconnection attempts.
     void ensureBrokerSessionConnection(); ///< Ensures broker session is active with rate-limited backoff.
 
 public:
@@ -52,7 +53,7 @@ public:
      * @param deviceId Unique identification literal used during broker handshakes.
      */
     MqttGatewayClient(ConnectivityDriver& transportDriver, Client& networkClient, 
-                      const char* brokerIpAddress, uint16_t brokerPort, 
+                      const char* brokerIpAddress, uint16_t brokerPort,
                       const char* topic, const char* deviceId = "ModestIotNode");
     
     ~MqttGatewayClient() override = default;

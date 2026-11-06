@@ -16,7 +16,7 @@ MqttGatewayClient::MqttGatewayClient(ConnectivityDriver& transportDriver, Client
       clientIdentifier(deviceId),
       publishTopic(topic),
       lastReconnectAttemptTimestamp(0),
-      reconnectIntervalMilliseconds(5000),
+      reconnectIntervalMilliseconds(DEFAULT_RECONNECT_INTERVAL_MILLISECONDS),
       sendsSucceededCount(0),
       sendsFailedCount(0),
       firstFailureLogged(false),
@@ -73,7 +73,7 @@ int MqttGatewayClient::getClientState() {
     return mqttClient.state();
 }
 
-void MqttGatewayClient::setReconnectInterval(const unsigned long intervalMilliseconds) {
+void MqttGatewayClient::setReconnectInterval(unsigned long intervalMilliseconds) {
     reconnectIntervalMilliseconds = intervalMilliseconds;
 }
 
@@ -105,9 +105,10 @@ bool MqttGatewayClient::sendTelemetryRecord(const TelemetryPackage& abstractTele
     }
 
     // 3. Execute payload serialization polymorphically into bounded buffer
-    JsonDocument doc;
-    abstractTelemetryPayload.serialize(doc);
-    if (const size_t serializedLength = serializeJson(doc, serializationBuffer, sizeof(serializationBuffer)); serializedLength == 0) {
+    JsonDocument payload;
+    abstractTelemetryPayload.addEnvelopeMetadata(payload);
+    abstractTelemetryPayload.serialize(payload);
+    if (const size_t serializedLength = serializeJson(payload, serializationBuffer, sizeof(serializationBuffer)); serializedLength == 0) {
         MODEST_LOG_W("MQTT", "Payload too large for serialization buffer (%u bytes)", MAX_TELEMETRY_PAYLOAD_SIZE);
         sendsFailedCount++;
         if (!firstFailureLogged) {
