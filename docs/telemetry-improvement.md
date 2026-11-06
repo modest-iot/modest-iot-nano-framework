@@ -1,6 +1,6 @@
 # Improvement 3: Telemetry Packages
 
-Analysis for a future development session. Status: **partially implemented** (Phase A items 1-3 completed: counters in Device, ArduinoJson cleanup, library.properties pinning; Phase B item 6 completed: `unique_ptr` enqueue overload implemented and examples migrated; Phase B item 8 completed: drop-oldest queue policy and bounded serialization buffer implemented; golden tests, packet pool, and format decoupling proposed). Memory and performance statements are architectural reasoning, not measurements.
+Analysis for a future development session. Status: **partially implemented** (Phase A items 1-3 completed: counters in Device, ArduinoJson cleanup, library.properties pinning; Phase B items 6, 8, 9 completed: `unique_ptr` enqueue overload, drop-oldest queue policy, bounded serialization buffer; T8 completed: envelope metadata with timestamp and sequence number; golden tests, packet pool, and format decoupling proposed). Memory and performance statements are architectural reasoning, not measurements.
 
 Related: [improvements-roadmap.md](improvements-roadmap.md), [diagnostics-improvement.md](diagnostics-improvement.md) (the counters proposed here live in its shared facility), [threading-model-improvement.md](threading-model-improvement.md), [dependencies-improvement.md](dependencies-improvement.md) (ArduinoJson decision), [library-readiness-improvement.md](library-readiness-improvement.md) (host test harness for the golden tests), [sampling-interval-improvement.md](sampling-interval-improvement.md), [connectivity-improvement.md](connectivity-improvement.md).
 
@@ -48,7 +48,7 @@ Ownership is explicit: the `unique_ptr` overload guarantees no leak on the failu
 | T5 | ~~`JsonDocument serialize() const` returns by value, and the whole API assumes ArduinoJson 7~~ | **Resolved:** `library.properties` now pins `ArduinoJson (>=7.0.0)`. `TelemetryPackage.h` uses the unified `JsonDocument` type from v7. | **Done** |
 | T6 | ~~ArduinoJson leaks into the public interface~~ | **Resolved:** Unused `#include <ArduinoJson.h>` removed from `GatewayClient.h` and `MqttGatewayClient.cpp`. ArduinoJson now only appears in `TelemetryPackage.h` and example packages. | **Done** |
 | T7 | Format is hard-wired to JSON | Gateways call `serializeAsString()` | MQTT and HTTP in constrained networks often prefer compact binary. HTTP sets `Content-Type: application/json` unconditionally, so a different format cannot be advertised. |
-| T8 | No metadata in the base class | No timestamp, device ID, sequence number, schema version | Each application re-invents these. Without a timestamp, a delayed or retried message loses its true time. The queue adds latency, so receive time is not sample time. |
+| T8 | ~~No metadata in the base class~~ | **Resolved:** `TelemetryPackage` base class includes `captureTimestamp` (from `millis()`) and `sequenceNumber` (monotonically increasing). `Device` assigns sequence before enqueue so drops are visible as gaps. `MqttGatewayClient` includes both fields in serialized JSON. | **Done** |
 | T9 | No priority or QoS notion | One queue, FIFO | Alarm events (gas detected) wait behind routine readings during congestion. |
 | T10 | No backpressure toward producers | `enqueueTelemetryPayload` returns `bool` only | Producers cannot slow down or coalesce when the network is slow. |
 | T11 | Non-trivial copy cost at creation | Each subclass stores fields, then `serialize` copies them again into JSON | Acceptable for small payloads, wasteful for arrays (waveforms, scale arrays). |
@@ -188,12 +188,13 @@ For the JSON writer, serialize directly into a fixed buffer with `serializeJson(
 7. Packet pool with placement-new, alignment and destructor handling, and a `static_assert` on size.
 8. `[DONE]` Drop-oldest queue policy. When the queue is full, the oldest packet is dropped and the new one is inserted. `packetsDroppedOldest` counter in `DiagnosticsSnapshot` tracks this behavior. Alarm lane deferred.
 9. `[DONE]` Bounded serialization buffer. `MqttGatewayClient` uses a fixed 512-byte buffer (`MAX_TELEMETRY_PAYLOAD_SIZE`) with `serializeJson(doc, buffer, sizeof(buffer))`, eliminating the intermediate `String` allocation. `PayloadTooLarge` warning logged when buffer is insufficient.
+10. `[DONE]` Envelope metadata. `TelemetryPackage` base class includes `captureTimestamp` (from `millis()`) and `sequenceNumber` (monotonically increasing). `Device` assigns sequence before enqueue so drops are visible as gaps. `MqttGatewayClient` includes both fields in serialized JSON.
 
 **Phase C: format decoupling.** Do this only after Phases A and B are measured on hardware: it breaks every package subclass, and the benefit should be justified by real heap and payload numbers, not by the analysis alone.
 9. `TelemetryWriter` interface with a JSON implementation, plus an adapter for the legacy `serialize(JsonDocument&)`.
 10. Bounded serialization into a caller-supplied buffer (removes the `JsonDocument` plus `String` allocations, T4) with a `PayloadTooLarge` result.
 11. Move the `ArduinoJson` include out of public headers.
-12. Envelope metadata (`deviceId`, `sequence` before enqueue, capture-time `timestamp`).
+12. ~~Envelope metadata~~ — **Resolved** in Phase B item 10.
 13. Optional compact writer (CBOR or key=value) and `Content-Type` negotiation in the gateways.
 
 ## 6. Interaction with the other improvements
