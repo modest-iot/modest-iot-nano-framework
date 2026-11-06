@@ -7,7 +7,7 @@
 
 #include "DhtSensor.h"
 
-DhtSensor::DhtSensor(int signalGpioPin, uint8_t dhtModelType, EventHandler* parentHandler)
+DhtSensor::DhtSensor(const int signalGpioPin, const uint8_t dhtModelType, EventHandler* parentHandler)
     : Sensor(signalGpioPin, parentHandler),
       physicalDhtSensor(signalGpioPin, dhtModelType),
       cachedTemperatureInCelsius(-999.0f),
@@ -18,19 +18,24 @@ DhtSensor::DhtSensor(int signalGpioPin, uint8_t dhtModelType, EventHandler* pare
 
 void DhtSensor::processEvent(Event& event) {
     if (event.identifier == MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER) {
-        float rawHumidity = physicalDhtSensor.readHumidity();
-        float rawTemperature = physicalDhtSensor.readTemperature();
+        const float rawHumidity = physicalDhtSensor.readHumidity();
+        const float rawTemperature = physicalDhtSensor.readTemperature();
 
         if (isnan(rawHumidity) || isnan(rawTemperature)) {
-            event.identifier = SENSOR_ERROR_SUPPRESSION_IDENTIFIER;
+            reportReadFailure(event);
+            if (event.identifier != Sensor::SENSOR_FAULT_EVENT_IDENTIFIER) {
+                event.identifier = SENSOR_ERROR_SUPPRESSION_IDENTIFIER;
+            }
             return;
         }
 
         if (rawTemperature == cachedTemperatureInCelsius && rawHumidity == cachedRelativeHumidityInPercentage) {
+            reportReadSuccess(event);
             event.identifier = SENSOR_ERROR_SUPPRESSION_IDENTIFIER;
             return;
         }
 
+        reportReadSuccess(event);
         cachedTemperatureInCelsius = rawTemperature;
         cachedRelativeHumidityInPercentage = rawHumidity;
         event = Event(DATA_READ_EVENT_IDENTIFIER);
