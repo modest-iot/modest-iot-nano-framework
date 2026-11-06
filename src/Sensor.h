@@ -71,12 +71,6 @@ protected:
      */
     void reportReadFailure(Event& event);
 
-    /**
-     * @brief Sets the number of consecutive failures required before emitting a fault event.
-     * @param count Consecutive failure threshold (default: 0 = disabled for backward compatibility).
-     */
-    void setFaultThreshold(uint8_t count);
-
 private:
     uint8_t consecutiveFailures; ///< Count of consecutive read failures.
     uint8_t faultThreshold; ///< Number of consecutive failures before fault event (0 = disabled).
@@ -110,6 +104,13 @@ public:
      * @param parentHandler Pointer to the new EventHandler.
      */
     void setHandler(EventHandler* parentHandler);
+
+    /**
+     * @brief Sets the number of consecutive failures required before emitting a fault event.
+     * @param count Consecutive failure threshold (default: 0 = disabled for backward compatibility).
+     * @note Call this from the sketch to opt in to sensor fault detection.
+     */
+    void setFaultThreshold(uint8_t count);
 
     /**
      * @brief Returns the effective sampling interval.

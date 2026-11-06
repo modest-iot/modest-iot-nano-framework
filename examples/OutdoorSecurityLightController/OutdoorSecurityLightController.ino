@@ -6,6 +6,10 @@
  * The device mediator keeps the two latest conditions (darkness and motion) and drives the
  * light from their combination, so the light is on only while both are true.
  *
+ * Sensor fault detection is enabled: after 3 consecutive read failures a sensor emits a fault
+ * event and the light turns off as a safe default. When the sensor recovers, normal operation
+ * resumes.
+ *
  * Wiring (ESP32): BH1750 SDA -> GPIO 21, SCL -> GPIO 22, ADDR floating or low (0x23).
  * Mount the light sensor so the controlled light does not illuminate it; otherwise turning
  * the light on can be read as daylight and switch it off again.
@@ -22,6 +26,9 @@ static const uint8_t LIGHT_SENSOR_I2C_ADDRESS   = DigitalLightIntensitySensor::D
 
 // Behavior
 static const float   DARKNESS_THRESHOLD_IN_LUX  = 10.0f;
+
+// Fault detection: emit fault event after this many consecutive read failures
+static const uint8_t SENSOR_FAULT_THRESHOLD     = 3;
 
 // Timing
 static const unsigned long SAMPLING_INTERVAL_MS     = 200;
@@ -47,7 +54,16 @@ private:
     bool isDark;
     bool isMotionPresent;
 
+    // Track sensor health for safe-state behavior
+    bool lightSensorFaulted = false;
+    bool motionSensorFaulted = false;
+
     void updateSecurityLight() {
+        // If either sensor is faulted, turn light off as a safe default
+        if (lightSensorFaulted || motionSensorFaulted) {
+            securityLight.handle(Led::TURN_OFF_COMMAND);
+            return;
+        }
         securityLight.handle(isDark && isMotionPresent ? Led::TURN_ON_COMMAND : Led::TURN_OFF_COMMAND);
     }
 
@@ -61,6 +77,10 @@ public:
           isMotionPresent(INITIAL_IS_MOTION_PRESENT)
     {
         initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
+
+        // Enable fault detection on both sensors
+        lightSensor.setFaultThreshold(SENSOR_FAULT_THRESHOLD);
+        motionSensor.setFaultThreshold(SENSOR_FAULT_THRESHOLD);
 
         appendSensorToScheduler(&lightSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
         appendSensorToScheduler(&motionSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
@@ -79,6 +99,22 @@ public:
                 break;
             case PassiveInfraredSensor::MOTION_STOPPED_EVENT_IDENTIFIER:
                 isMotionPresent = false;
+                break;
+            case Sensor::SENSOR_FAULT_EVENT_IDENTIFIER:
+                // React to sensor fault by tracking which sensor failed
+                if (event.sourceId == LIGHT_SENSOR_SOURCE_ID) {
+                    lightSensorFaulted = true;
+                } else if (event.sourceId == MOTION_SENSOR_PIN) {
+                    motionSensorFaulted = true;
+                }
+                break;
+            case Sensor::SENSOR_RECOVERED_EVENT_IDENTIFIER:
+                // React to sensor recovery by clearing fault state
+                if (event.sourceId == LIGHT_SENSOR_SOURCE_ID) {
+                    lightSensorFaulted = false;
+                } else if (event.sourceId == MOTION_SENSOR_PIN) {
+                    motionSensorFaulted = false;
+                }
                 break;
             default:
                 return;
