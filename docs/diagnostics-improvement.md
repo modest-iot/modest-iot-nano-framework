@@ -1,6 +1,6 @@
 # Improvement 5: Diagnostics, Logging and Sensor Health
 
-Analysis for a future development session. Status: **Phases A & B complete** (logging, counters, diagnostics, first-drop/failure logging, and sensor fault events implemented; resilience proposed). Findings come from reading `src/`; memory and overhead figures are estimates, not measurements.
+Analysis for a future development session. Status: **Phases A & B complete** (logging, counters, diagnostics, first-drop/failure logging, sensor fault events, and sensor fault conversion implemented; resilience proposed). Findings come from reading `src/`; memory and overhead figures are estimates, not measurements.
 
 Related: [improvements-roadmap.md](improvements-roadmap.md), [sampling-interval-improvement.md](sampling-interval-improvement.md) (`missedTickCount`, clamp reports), [telemetry-improvement.md](telemetry-improvement.md) (queue counters), [connectivity-improvement.md](connectivity-improvement.md) (send status, link events), [threading-model-improvement.md](threading-model-improvement.md), [interrupt-power-improvement.md](interrupt-power-improvement.md).
 
@@ -16,9 +16,7 @@ Verified in the source:
 |---|---|
 | Logger implemented | `ModestLog.h` provides `MODEST_LOG_*` macros with compile-time level filtering, ESP32 `esp32-hal-log` backend, host pluggable sink, and `MIOT_LOG_*` aliases. Host tests in `tests/log/test.cpp`. |
 | Shared counters implemented | `Device` tracks `packetsEnqueued`, `packetsDropped`, `queueHighWaterMark`, and `missedTicks`. `DiagnosticsSnapshot` struct returned by `Device::diagnostics()` includes heap, stack, and queue metrics. Host tests in `tests/diagnostics/test.cpp`. |
-| Sensor failures are indistinguishable from "no change" | `DhtSensor` (NaN readings), `LoadCellAmplifier` (100 ms ready timeout returns -1), `UltrasonicSensor` (echo timeout) all set `event.identifier = -1` and return, the same path used for "value unchanged". The DHT constant for this is even named `SENSOR_ERROR_SUPPRESSION_IDENTIFIER`, but it is the same `-1` |
-| Mediators cannot react to a dead sensor | A suppressed event never reaches the parent, so a disconnected DHT, a broken HX711 or a stuck I²C bus looks exactly like a stable room |
-| Partial exception | `DigitalLightIntensitySensor` exposes `isInitialized()` and validates reads, but only through polling a getter, not through an event |
+| Sensor failures report health events | `DhtSensor` (NaN readings), `LoadCellAmplifier` (100 ms ready timeout), `UltrasonicSensor` (echo timeout), and `DigitalLightIntensitySensor` (I²C read failure) all call `reportReadFailure()`. Valid reads call `reportReadSuccess()`. Fault events (ID 22) and recovery events (ID 23) are emitted based on configurable thresholds. |
 | Runtime health is invisible | Nothing reports free heap, task stack high-water marks, uptime, reset reason, or Wi-Fi signal strength |
 | Silent resource failures | Queue full, packet allocation failure, MQTT publish false: each is a `bool` that the examples ignore |
 | Sampler hang is undetected | The sampler task blocks on `ulTaskNotifyTake(..., portMAX_DELAY)`; if a handler hangs, nothing resets the device |
@@ -143,8 +141,8 @@ Offer an optional ready-made `DeviceHealthPackage` (a `TelemetryPackage` subclas
 
 **Phase B: sensor health**
 5. `[DONE]` `Sensor` fault and recovery events, helpers, per-sensor counters (default off). Implemented in `src/Sensor.h` and `src/Sensor.cpp`: `SENSOR_FAULT_EVENT_IDENTIFIER` (22) and `SENSOR_RECOVERED_EVENT_IDENTIFIER` (23), with `reportReadFailure()`, `reportReadSuccess()`, and `setFaultThreshold()` helpers. The debounced threshold state machine emits fault events exactly once when the threshold is reached, and recovery events exactly once on the next successful read. Default threshold is 0 (disabled) for backward compatibility. Host tests in `tests/sensor_fault/test.cpp`.
-6. Convert `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `DigitalLightIntensitySensor`; update tests (the light sensor already has `readFailureAt` in its fake).
-7. One example opts in (the security light: fault turns the LED to a safe state).
+6. `[DONE]` Convert `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `DigitalLightIntensitySensor`. Each sensor's `processEvent()` calls `reportReadFailure()` on read errors (NaN, timeout, I²C failure) and `reportReadSuccess()` on valid reads (including unchanged values). Suppressions for unchanged values still call `reportReadSuccess()` so the failure counter resets.
+7. `[DONE]` One example opts in. `OutdoorSecurityLightController` sets `setFaultThreshold(3)` on both the light sensor and PIR sensor. When either sensor faults, the light turns off as a safe default. When the sensor recovers, normal operation resumes.
 
 **Phase C: resilience**
 8. Optional `DeviceHealthPackage` and periodic diagnostics log.
