@@ -12,7 +12,7 @@ Index, implementation status, and recommended execution order for the `docs/*-im
 | 4 | [diagnostics-improvement.md](diagnostics-improvement.md) | Logging, sensor health, counters | Proposed (Tier 2 Priority) |
 | 5 | [threading-model-improvement.md](threading-model-improvement.md) | Threading docs, engine config, command marshalling, ID registry | Proposed (Tier 2/4) |
 | 6 | [sampling-interval-improvement.md](sampling-interval-improvement.md) | Per-slot sampling intervals and pure scheduler | Proposed (Tier 3 Priority) |
-| 7 | [telemetry-improvement.md](telemetry-improvement.md) | Package ownership, pool, writer, queue policy | Proposed (Tier 3/5) |
+| 7 | [telemetry-improvement.md](telemetry-improvement.md) | Package ownership, pool, writer, queue policy | Partially Implemented (Tier 3/5) |
 | 8 | [interrupt-power-improvement.md](interrupt-power-improvement.md) | Interrupt-driven sensing, tickless, sleep | Proposed (Tier 4/5) |
 
 ## 2. Prioritization method and status
@@ -37,7 +37,7 @@ Each work item is scored 0 to 5 on three benefits, and sized by cost. Scores ref
 | W8 | Per-slot sampling intervals, pure scheduler, elapsed-tick accounting | sampling | 4 | 5 | 5 | M | 9 | **Completed** |
 | W9 | `EngineConfig` and `stopAsynchronousEngine()` | threading | 4 | 2 | 3 | S | 11 | **Completed** |
 | W10 | Optional Bluetooth, BLE driver addition, optional MQTT footprint (P1) | connectivity, library-readiness | 3 | 2 | 4 | S | 11 | **Partially Complete** (BLE NUS added, BT Classic isolated) |
-| W11 | Telemetry ownership and queue policy (Phases A and B) | telemetry | 4 | 3 | 4 | M | 8 | **Partially Complete** (Phase A done, `unique_ptr` overload done, drop-oldest policy done, bounded serialization buffer done, envelope metadata done) |
+| W11 | Telemetry ownership and queue policy (Phases A and B) | telemetry | 4 | 3 | 4 | M | 8 | **Partially Complete** (Phase A done, `unique_ptr` overload done, drop-oldest policy done, bounded serialization buffer done, envelope metadata done, T14 name hiding resolved) |
 | W12 | `Device::post` command marshalling | threading | 3 | 0 | 4 | M | 6 | Pending (Tier 4) |
 | W13 | Interrupt triggers for Button and PIR | interrupt-power | 3 | 4 | 3 | M | 6 | Pending (Tier 4) |
 | W14 | HX711 data-ready and ultrasonic echo capture (remove blocking) | interrupt-power | 2 | 4 | 2 | M | 5 | Pending (Tier 4) |
