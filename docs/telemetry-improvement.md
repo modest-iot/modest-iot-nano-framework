@@ -1,6 +1,6 @@
 # Improvement 3: Telemetry Packages
 
-Analysis for a future development session. Status: **partially implemented** (Phase A items 1-3 completed: counters in Device, ArduinoJson cleanup, library.properties pinning; Phase B items 6, 8, 9 completed: `unique_ptr` enqueue overload, drop-oldest queue policy, bounded serialization buffer; T8 completed: envelope metadata with timestamp and sequence number; golden tests, packet pool, and format decoupling proposed). Memory and performance statements are architectural reasoning, not measurements.
+Analysis for a future development session. Status: **partially implemented** (Phase A items 1-3 completed: counters in Device, ArduinoJson cleanup, library.properties pinning; Phase B items 6, 8, 9 completed: `unique_ptr` enqueue overload, drop-oldest queue policy, bounded serialization buffer; T8 completed: envelope metadata with timestamp and sequence number; T14 completed: `serialize` overload name hiding resolved by renaming to `toDocument()` and `toJsonString()`; golden tests, packet pool, and format decoupling proposed). Memory and performance statements are architectural reasoning, not measurements.
 
 Related: [improvements-roadmap.md](improvements-roadmap.md), [diagnostics-improvement.md](diagnostics-improvement.md) (the counters proposed here live in its shared facility), [threading-model-improvement.md](threading-model-improvement.md), [dependencies-improvement.md](dependencies-improvement.md) (ArduinoJson decision), [library-readiness-improvement.md](library-readiness-improvement.md) (host test harness for the golden tests), [sampling-interval-improvement.md](sampling-interval-improvement.md), [connectivity-improvement.md](connectivity-improvement.md).
 
@@ -15,8 +15,8 @@ class TelemetryPackage {
 public:
     virtual ~TelemetryPackage() = default;
     virtual void serialize(JsonDocument& destination) const = 0;
-    JsonDocument serialize() const;      // convenience, returns by value
-    String serializeAsString() const;    // JSON text
+    JsonDocument toDocument() const;      // convenience, returns by value
+    String toJsonString() const;          // JSON text
 };
 ```
 
@@ -26,7 +26,7 @@ Lifecycle in the examples (`SmartBandMqtt`, `AirQualityMonitor`):
 2. `enqueueTelemetryPayload(std::move(ptr))` transfers ownership into a FreeRTOS queue (`xQueueSend`, zero timeout).
 3. If the queue is full, the `unique_ptr` retains ownership and deletes the packet automatically — no manual cleanup needed.
 4. `NetworkWorker` receives the pointer, calls `processQueuedTelemetryData(ptr)`, then `delete`s it.
-5. The gateway calls `serializeAsString()`, which builds a `JsonDocument`, serializes it into an Arduino `String`, and hands `c_str()` to MQTT or HTTP.
+5. The gateway calls `toJsonString()`, which builds a `JsonDocument`, serializes it into an Arduino `String`, and hands `c_str()` to MQTT or HTTP.
 
 Ownership is explicit: the `unique_ptr` overload guarantees no leak on the failure path. The legacy raw-pointer overload remains for backward compatibility.
 
@@ -47,21 +47,21 @@ Ownership is explicit: the `unique_ptr` overload guarantees no leak on the failu
 | T4 | ~~Three-stage JSON construction~~ | **Resolved:** `MqttGatewayClient` uses a fixed 512-byte buffer with `serializeJson(doc, buffer, sizeof(buffer))`, eliminating the intermediate `String` allocation. `PayloadTooLarge` warning is logged when the buffer is insufficient. | **Done** |
 | T5 | ~~`JsonDocument serialize() const` returns by value, and the whole API assumes ArduinoJson 7~~ | **Resolved:** `library.properties` now pins `ArduinoJson (>=7.0.0)`. `TelemetryPackage.h` uses the unified `JsonDocument` type from v7. | **Done** |
 | T6 | ~~ArduinoJson leaks into the public interface~~ | **Resolved:** Unused `#include <ArduinoJson.h>` removed from `GatewayClient.h` and `MqttGatewayClient.cpp`. ArduinoJson now only appears in `TelemetryPackage.h` and example packages. | **Done** |
-| T7 | Format is hard-wired to JSON | Gateways call `serializeAsString()` | MQTT and HTTP in constrained networks often prefer compact binary. HTTP sets `Content-Type: application/json` unconditionally, so a different format cannot be advertised. |
+| T7 | Format is hard-wired to JSON | Gateways call `toJsonString()` | MQTT and HTTP in constrained networks often prefer compact binary. HTTP sets `Content-Type: application/json` unconditionally, so a different format cannot be advertised. |
 | T8 | ~~No metadata in the base class~~ | **Resolved:** `TelemetryPackage` base class includes `captureTimestamp` (from `millis()`) and `sequenceNumber` (monotonically increasing). `Device` assigns sequence before enqueue so drops are visible as gaps. `MqttGatewayClient` includes both fields in serialized JSON. | **Done** |
 | T9 | No priority or QoS notion | One queue, FIFO | Alarm events (gas detected) wait behind routine readings during congestion. |
 | T10 | No backpressure toward producers | `enqueueTelemetryPayload` returns `bool` only | Producers cannot slow down or coalesce when the network is slow. |
 | T11 | Non-trivial copy cost at creation | Each subclass stores fields, then `serialize` copies them again into JSON | Acceptable for small payloads, wasteful for arrays (waveforms, scale arrays). |
 | T12 | ~~Payload size is unbounded~~ | **Resolved:** `MqttGatewayClient` serializes into a bounded 512-byte buffer (`MAX_TELEMETRY_PAYLOAD_SIZE`). Oversized payloads return `false` with a `PayloadTooLarge` warning. | **Done** |
 | T13 | ~~No host tests~~ | **Updated:** 10 host test suites exist under `tests/fakes/` shared harness. Serialization golden tests for telemetry packages are still pending. | Partial |
-| T14 | Overload set invites name hiding | Two methods are named `serialize` (the pure virtual `serialize(JsonDocument&)` and the non-virtual `serialize()`), plus `serializeAsString()` | A derived class that overrides `serialize(JsonDocument&)` hides the base's `serialize()` overload. Calls through a base reference (as the gateways do) are unaffected, so the issue is latent. |
+| T14 | ~~Overload set invites name hiding~~ | **Resolved:** Renamed convenience overloads to `toDocument()` and `toJsonString()` so they can't be hidden when subclasses override `serialize(JsonDocument&)`. | **Done** |
 
 Verify T1 and T4 with measurements before acting on them: capture `ESP.getFreeHeap()` and `ESP.getMaxAllocHeap()` over a long run.
 
 Source check for T6: `ArduinoJson.h` is included by exactly one file: `TelemetryPackage.h` (needed). The two unnecessary includes in `GatewayClient.h` and `MqttGatewayClient.cpp` have been removed. The dependency then lives only in `TelemetryPackage.h` and the example packages.
 
-### 2.3 Name hiding detail (T14)
-A derived class that overrides `serialize(JsonDocument&)` hides the base's `serialize()` overload unless it adds `using TelemetryPackage::serialize;`. The bug only appears when someone calls `packet.serialize()` on a concrete package type. Simplest fixes: rename the convenience overloads (`toDocument()`, `toJsonString()`) or make the helpers free functions, so the virtual method has no overloaded siblings.
+### 2.3 Name hiding detail (T14) — **Resolved**
+A derived class that overrides `serialize(JsonDocument&)` hides the base's `serialize()` overload unless it adds `using TelemetryPackage::serialize;`. The bug only appears when someone calls `packet.serialize()` on a concrete package type. **Resolved by renaming** the convenience overloads to `toDocument()` and `toJsonString()`, so the virtual method has no overloaded siblings.
 
 ## 3. Goals and non-goals
 
@@ -178,7 +178,7 @@ For the JSON writer, serialize directly into a fixed buffer with `serializeJson(
 
 **Phase A: safe, small**
 1. Add counters (`enqueued`, `dropped`, high-water mark) to `Device`, using the shared counter facility from [diagnostics-improvement.md](diagnostics-improvement.md) so they are reported the same way as scheduler and gateway counters.
-2. Resolve the `serialize` overload hiding (T14): rename the helpers or add `using` guidance, and document it in Doxygen.
+2. `[DONE]` Resolve the `serialize` overload hiding (T14): renamed the helpers to `toDocument()` and `toJsonString()`, and documented the reason in Doxygen.
 3. Remove the two unneeded `ArduinoJson.h` includes and pin `ArduinoJson (>=7.0.0)` in `library.properties` (T5, T6).
 4. Add golden host tests for each example package's JSON. This needs ArduinoJson and the Arduino `String` on the host: a fake `Arduino.h` with a minimal `String`, and ArduinoJson fetched as a header-only dependency for the test build.
 5. Compile the examples (shared with the connectivity plan).
