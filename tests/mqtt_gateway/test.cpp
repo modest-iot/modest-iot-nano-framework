@@ -87,6 +87,9 @@ int main() {
         assert(PubSubClient::lastTopic == "telemetry/vitals");
         assert(PubSubClient::lastPayload.find("\"id\":42") != std::string::npos);
         assert(PubSubClient::lastPayload.find("\"value\":23.5") != std::string::npos);
+        // Verify envelope metadata is present
+        assert(PubSubClient::lastPayload.find("\"timestamp\":") != std::string::npos);
+        assert(PubSubClient::lastPayload.find("\"sequence\":") != std::string::npos);
         assert(PubSubClient::loopCount == 1);
 
         // Verify service() / loop() executes keep-alive without publishing new data

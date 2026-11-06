@@ -91,6 +91,7 @@ private:
     mutable uint8_t queueHighWaterMarkCount; ///< Maximum queue depth observed.
     mutable uint32_t missedTickCount; ///< Ticks missed by the sampler.
     mutable bool firstDropLogged; ///< Tracks whether the first drop warning was emitted.
+    mutable uint32_t nextSequenceNumber; ///< Monotonically increasing sequence for telemetry envelope.
 
     hw_timer_t* hardwareTimer; ///< Pointer to the hardware timer.
     const unsigned long pollingIntervalInMilliseconds; ///< Polling interval in milliseconds.

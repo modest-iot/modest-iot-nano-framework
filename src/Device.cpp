@@ -30,6 +30,7 @@ Device::Device(const unsigned long samplingIntervalInMilliseconds, const uint8_t
       queueHighWaterMarkCount(0),
       missedTickCount(0),
       firstDropLogged(false),
+      nextSequenceNumber(0),
       hardwareTimer(nullptr),
       pollingIntervalInMilliseconds(samplingIntervalInMilliseconds),
       hardwareTimerIndex(timerGroupIndex) {
@@ -129,6 +130,11 @@ bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, int req
 
 bool Device::enqueueTelemetryPayload(TelemetryPackage **telemetryPackagePointerAddress) const {
     if (telemetryQueueHandle == nullptr || telemetryPackagePointerAddress == nullptr) return false;
+    
+    // Assign envelope metadata before enqueue attempt so drops are visible as gaps
+    TelemetryPackage* packet = *telemetryPackagePointerAddress;
+    packet->setEnvelopeMetadata(static_cast<uint32_t>(millis()), nextSequenceNumber++);
+    
     if (xQueueSend(telemetryQueueHandle, telemetryPackagePointerAddress, 0) == pdPASS) {
         packetsEnqueuedCount++;
         // Update the high water mark if the current queue size is greater
@@ -162,6 +168,10 @@ bool Device::enqueueTelemetryPayload(TelemetryPackage **telemetryPackagePointerA
 
 bool Device::enqueueTelemetryPayload(std::unique_ptr<TelemetryPackage> telemetryPackageStandardUniquePointer) const {
     if (telemetryQueueHandle == nullptr || telemetryPackageStandardUniquePointer == nullptr) return false;
+    
+    // Assign envelope metadata before enqueue attempt so drops are visible as gaps
+    telemetryPackageStandardUniquePointer->setEnvelopeMetadata(static_cast<uint32_t>(millis()), nextSequenceNumber++);
+    
     TelemetryPackage *rawPtr = telemetryPackageStandardUniquePointer.release();
     if (xQueueSend(telemetryQueueHandle, &rawPtr, 0) == pdPASS) {
         // Ownership transferred to the queue.

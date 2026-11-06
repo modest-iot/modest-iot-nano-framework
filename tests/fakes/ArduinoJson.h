@@ -18,6 +18,11 @@ public:
         return *this;
     }
 
+    JsonVariant& operator=(uint32_t v) {
+        val = std::to_string(v);
+        return *this;
+    }
+
     JsonVariant& operator=(float v) {
         std::ostringstream ss;
         ss << v;
