@@ -1,6 +1,6 @@
 # Improvement 3: Telemetry Packages
 
-Analysis for a future development session. Status: **partially implemented** (Phase A items 1-3 completed: counters in Device, ArduinoJson cleanup, library.properties pinning; Phase B items 6, 8, 9 completed: `unique_ptr` enqueue overload, drop-oldest queue policy, bounded serialization buffer; T8 completed: envelope metadata with timestamp and sequence number; T14 completed: `serialize` overload name hiding resolved by renaming to `toDocument()` and `toJsonString()`; golden tests, packet pool, and format decoupling proposed). Memory and performance statements are architectural reasoning, not measurements.
+Analysis for a future development session. Status: **partially implemented** (Phase A items 1-3 completed: counters in Device, ArduinoJson cleanup, library.properties pinning; Phase B items 6, 8, 9 completed: `unique_ptr` enqueue overload, drop-oldest queue policy, bounded serialization buffer; T8 completed: envelope metadata with timestamp and sequence number; T13 completed: golden host tests for telemetry serialization; T14 completed: `serialize` overload name hiding resolved by renaming to `toDocument()` and `toJsonString()`; packet pool and format decoupling proposed). Memory and performance statements are architectural reasoning, not measurements.
 
 Related: [improvements-roadmap.md](improvements-roadmap.md), [diagnostics-improvement.md](diagnostics-improvement.md) (the counters proposed here live in its shared facility), [threading-model-improvement.md](threading-model-improvement.md), [dependencies-improvement.md](dependencies-improvement.md) (ArduinoJson decision), [library-readiness-improvement.md](library-readiness-improvement.md) (host test harness for the golden tests), [sampling-interval-improvement.md](sampling-interval-improvement.md), [connectivity-improvement.md](connectivity-improvement.md).
 
@@ -53,7 +53,7 @@ Ownership is explicit: the `unique_ptr` overload guarantees no leak on the failu
 | T10 | No backpressure toward producers | `enqueueTelemetryPayload` returns `bool` only | Producers cannot slow down or coalesce when the network is slow. |
 | T11 | Non-trivial copy cost at creation | Each subclass stores fields, then `serialize` copies them again into JSON | Acceptable for small payloads, wasteful for arrays (waveforms, scale arrays). |
 | T12 | ~~Payload size is unbounded~~ | **Resolved:** `MqttGatewayClient` serializes into a bounded 512-byte buffer (`MAX_TELEMETRY_PAYLOAD_SIZE`). Oversized payloads return `false` with a `PayloadTooLarge` warning. | **Done** |
-| T13 | ~~No host tests~~ | **Updated:** 10 host test suites exist under `tests/fakes/` shared harness. Serialization golden tests for telemetry packages are still pending. | Partial |
+| T13 | ~~No host tests~~ | **Resolved:** Golden host tests in `tests/telemetry/test.cpp` verify exact JSON output for `SmartBandTelemetryPackage` and `AirQualityTelemetryPackage`, including envelope metadata, bounded buffer overflow detection, and field count validation. 10 test cases, all passing. | **Done** |
 | T14 | ~~Overload set invites name hiding~~ | **Resolved:** Renamed convenience overloads to `toDocument()` and `toJsonString()` so they can't be hidden when subclasses override `serialize(JsonDocument&)`. | **Done** |
 
 Verify T1 and T4 with measurements before acting on them: capture `ESP.getFreeHeap()` and `ESP.getMaxAllocHeap()` over a long run.
@@ -180,7 +180,7 @@ For the JSON writer, serialize directly into a fixed buffer with `serializeJson(
 1. Add counters (`enqueued`, `dropped`, high-water mark) to `Device`, using the shared counter facility from [diagnostics-improvement.md](diagnostics-improvement.md) so they are reported the same way as scheduler and gateway counters.
 2. `[DONE]` Resolve the `serialize` overload hiding (T14): renamed the helpers to `toDocument()` and `toJsonString()`, and documented the reason in Doxygen.
 3. Remove the two unneeded `ArduinoJson.h` includes and pin `ArduinoJson (>=7.0.0)` in `library.properties` (T5, T6).
-4. Add golden host tests for each example package's JSON. This needs ArduinoJson and the Arduino `String` on the host: a fake `Arduino.h` with a minimal `String`, and ArduinoJson fetched as a header-only dependency for the test build.
+4. `[DONE]` Add golden host tests for each example package's JSON. `tests/telemetry/test.cpp` verifies exact JSON output for `SmartBandTelemetryPackage` and `AirQualityTelemetryPackage`, including envelope metadata, bounded buffer overflow detection, and field count validation. 10 test cases, all passing.
 5. Compile the examples (shared with the connectivity plan).
 
 **Phase B: ownership and memory**

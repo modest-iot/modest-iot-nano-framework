@@ -30,14 +30,14 @@ Each work item is scored 0 to 5 on three benefits, and sized by cost. Scores ref
 | W1 | Fix abstract `WiFiConnectivityDriver` (D1); examples must compile | connectivity | 5 | 0 | 5 | XS | 20 | **Completed** |
 | W2 | Delete dead `LoadCellController`, unused deps, unused includes, pin ArduinoJson | dependencies | 4 | 1 | 4 | XS | 17 | **Completed** |
 | W3 | Repo cleanup (`main.cpp`, empty `.ino`, `.gitignore`), `library.properties` fixes | library-readiness | 4 | 0 | 4 | XS | 16 | **Completed** |
-| W4 | Threading rules, "Runs on" tags, ID registry (docs only) | threading | 3 | 0 | 4 | XS | 14 | **Completed** |
+| W4 | Threading rules, "Runs on" tags, ID registry (docs only) | threading | 3 | 0 | 4 | XS | 14 | **Completed** (README updated, `@runs_on` tags added) |
 | W5 | Host test harness plus CI (host tests, compile-examples, lint) | library-readiness | 5 | 0 | 4 | M | 7 | **Completed** |
 | W6 | Logging macros, stack high-water, sensor fault events, sensor conversion | diagnostics | 4 | 1 | 5 | S | 13 | **Completed** |
 | W7 | Connectivity reconnect policy, `mqttClient.loop()` every cycle, link events | connectivity | 5 | 2 | 4 | M | 8 | **Completed** |
 | W8 | Per-slot sampling intervals, pure scheduler, elapsed-tick accounting, example migration | sampling | 4 | 5 | 5 | M | 9 | **Completed** |
 | W9 | `EngineConfig` and `stopAsynchronousEngine()` | threading | 4 | 2 | 3 | S | 11 | **Completed** |
 | W10 | Optional Bluetooth, BLE driver addition, optional MQTT footprint (P1) | connectivity, library-readiness | 3 | 2 | 4 | S | 11 | **Partially Complete** (BLE NUS added, BT Classic isolated) |
-| W11 | Telemetry ownership and queue policy (Phases A and B) | telemetry | 4 | 3 | 4 | M | 8 | **Partially Complete** (Phase A done, `unique_ptr` overload done, drop-oldest policy done, bounded serialization buffer done, envelope metadata done, T14 name hiding resolved) |
+| W11 | Telemetry ownership and queue policy (Phases A and B) | telemetry | 4 | 3 | 4 | M | 8 | **Partially Complete** (Phase A done, `unique_ptr` overload done, drop-oldest policy done, bounded serialization buffer done, envelope metadata done, T13 golden tests done, T14 name hiding resolved) |
 | W12 | `Device::post` command marshalling | threading | 3 | 0 | 4 | M | 6 | Pending (Tier 4) |
 | W13 | Interrupt triggers for Button and PIR | interrupt-power | 3 | 4 | 3 | M | 6 | Pending (Tier 4) |
 | W14 | HX711 data-ready and ultrasonic echo capture (remove blocking) | interrupt-power | 2 | 4 | 2 | M | 5 | Pending (Tier 4) |
@@ -86,7 +86,7 @@ Parallelism: Tier 0 and Tier 1 have landed. Tier 2 items (logging macros, reconn
 - **Verified**: Local `arduino-cli compile` cleanly builds all 10 examples across ESP32 targets with `--library .` configured.
 - **Verified**: `library.properties` `depends=` syntax formatted for Arduino Library Manager compliance.
 - **Verified**: Bluetooth Classic fails on modern ESP32 variants (S2, S3, C3, C6, H2); resolved via target guards and `BleConnectivityDriver`.
-- **Verified**: Host test harness executes 10 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`) under Address and Undefined sanitizers.
+- **Verified**: Host test harness executes 11 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`) under Address and Undefined sanitizers.
 - **Remaining**: Performance, latency, memory and power figures (reasoned, to be measured on hardware).
 - **Remaining**: `Wire` thread-safety on core 3.x; `loop()` core affinity.
 - **Remaining**: Task notification array availability; `CONFIG_PM_ENABLE` in the precompiled core.

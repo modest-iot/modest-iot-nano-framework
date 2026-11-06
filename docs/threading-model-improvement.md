@@ -1,6 +1,6 @@
 # Improvement 7: Threading Model, Command Marshalling and Identifiers
 
-Status: **partially implemented** (Phase B: EngineConfig and stopAsynchronousEngine completed; Phase A documentation and Phase C command marshalling proposed). The "current model" below is read from the source; behaviours of the Arduino-ESP32 core marked "verify" were not tested.
+Status: **partially implemented** (Phase A: threading documentation and "Runs on" tags completed; Phase B: EngineConfig and stopAsynchronousEngine completed; Phase C command marshalling proposed). The "current model" below is read from the source; behaviours of the Arduino-ESP32 core marked "verify" were not tested.
 
 Related: [improvements-roadmap.md](improvements-roadmap.md), [sampling-interval-improvement.md](sampling-interval-improvement.md) (handler budgets), [connectivity-improvement.md](connectivity-improvement.md) (cloud-to-device commands, link events), [telemetry-improvement.md](telemetry-improvement.md), [diagnostics-improvement.md](diagnostics-improvement.md), [interrupt-power-improvement.md](interrupt-power-improvement.md).
 
@@ -106,9 +106,9 @@ Document that a bus is owned by the sampler context. If users need to share it, 
 
 ## 4. Phases
 
-**Phase A: documentation (small, no risk)**
-1. Threading section in README and Doxygen, diagram, "Runs on" tags.
-2. Identifier registry document (section 5).
+**Phase A: documentation (small, no risk) [DONE]**
+1. `[DONE]` Threading section in README and Doxygen, diagram, "Runs on" tags — README contains threading model table, rules, Engine Configuration, and Identifier Registry. `@runs_on` tags added to `Device.h` (`processQueuedTelemetryData`, `maintainNetworkServices`), `Sensor.h` (`on`, `processEvent`), `Actuator.h` (`handle`, `executeCommand`), and `GatewayClient.h` (`sendTelemetryRecord`, `service`).
+2. `[DONE]` Identifier registry document (section 5) — published in README and maintained here.
 
 **Phase B: configuration and lifetime [DONE]**
 3. `[DONE]` `EngineConfig` with unchanged defaults — implemented in `src/Device.h`.
@@ -176,7 +176,7 @@ Proposal:
 
 ## 8. Acceptance criteria
 
-- [ ] README and Doxygen contain the threading model, the rules, and "Runs on" tags for the public hooks.
+- [x] README and Doxygen contain the threading model, the rules, and "Runs on" tags for the public hooks.
 - [ ] The identifier registry is published, user range 1000+ is reserved, and `ClassicBlinker` follows it.
 - [x] `EngineConfig` exists and the old overload still works.
 - [x] `stopAsynchronousEngine()` exists with a documented destructor rule and a host test (`tests/engine_config/test.cpp`).
