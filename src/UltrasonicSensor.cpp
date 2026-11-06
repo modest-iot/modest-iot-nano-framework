@@ -8,7 +8,7 @@
 #include "UltrasonicSensor.h"
 #include <Arduino.h>
 
-UltrasonicSensor::UltrasonicSensor(int triggerGpioPin, int echoGpioPin, EventHandler* parentHandler)
+UltrasonicSensor::UltrasonicSensor(const int triggerGpioPin, const int echoGpioPin, EventHandler* parentHandler)
     : Sensor(triggerGpioPin, parentHandler), echoGpioPin(echoGpioPin), cachedDistanceInCentimeters(-1.0f) {
     pinMode(pin, OUTPUT);
     pinMode(echoGpioPin, INPUT);
@@ -24,20 +24,25 @@ void UltrasonicSensor::processEvent(Event& event) {
         delayMicroseconds(TRIGGER_HIGH_DURATION_IN_MICROSECONDS);
         digitalWrite(pin, LOW);
 
-        long pulseTravelDurationInMicroseconds = static_cast<long>(pulseIn(echoGpioPin, HIGH, TIMEOUT_LIMIT_IN_MICROSECONDS));
+        const long pulseTravelDurationInMicroseconds = static_cast<long>(pulseIn(echoGpioPin, HIGH, TIMEOUT_LIMIT_IN_MICROSECONDS));
         
         if (pulseTravelDurationInMicroseconds == TRACKING_FAILURE_VALUATION) {
-            event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
+            reportReadFailure(event);
+            if (event.identifier != Sensor::SENSOR_FAULT_EVENT_IDENTIFIER) {
+                event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
+            }
             return;
         }
 
-        float calculatedDistance = static_cast<float>(pulseTravelDurationInMicroseconds) * SOUND_SPEED_DISTANCE_COEFFICIENT;
+        const float calculatedDistance = static_cast<float>(pulseTravelDurationInMicroseconds) * SOUND_SPEED_DISTANCE_COEFFICIENT;
 
         if (calculatedDistance == cachedDistanceInCentimeters) {
+            reportReadSuccess(event);
             event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
             return;
         }
 
+        reportReadSuccess(event);
         cachedDistanceInCentimeters = calculatedDistance;
         
         // Mutates to the exact same base notification event!
