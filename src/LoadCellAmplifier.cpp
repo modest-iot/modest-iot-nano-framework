@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include <cmath>
 
-LoadCellAmplifier::LoadCellAmplifier(int dataGpioPin, int clockGpioPin, float minWeightInGrams, float maxWeightInGrams, long minRawValue, long maxRawValue, int filterDepth, EventHandler* parentHandler)
+LoadCellAmplifier::LoadCellAmplifier(const int dataGpioPin, const int clockGpioPin, const float minWeightInGrams, const float maxWeightInGrams, const long minRawValue, const long maxRawValue, const int filterDepth, EventHandler* parentHandler)
     : Sensor(dataGpioPin, parentHandler),
       clockGpioPin(clockGpioPin),
       cachedWeightInGrams(INITIAL_CACHED_WEIGHT),
@@ -23,8 +23,10 @@ void LoadCellAmplifier::processEvent(Event& event) {
     if (event.identifier == MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER) {
         const long rawValue = readRawValue();
         if (rawValue == -1) {
-            // Handle error, e.g., suppress event
-            event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
+            reportReadFailure(event);
+            if (event.identifier != Sensor::SENSOR_FAULT_EVENT_IDENTIFIER) {
+                event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
+            }
             return;
         }
 
@@ -33,15 +35,17 @@ void LoadCellAmplifier::processEvent(Event& event) {
         cachedWeightInGrams = calculateWeight(filteredRawValue);
 
         if (changeDetected()) {
+            reportReadSuccess(event);
             event = Event(DATA_READ_EVENT_IDENTIFIER, pin);
             return;
         }
 
+        reportReadSuccess(event);
         event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
     }
 }
 
-float LoadCellAmplifier::calculateWeight(long rawValue) const {
+float LoadCellAmplifier::calculateWeight(const long rawValue) const {
     // Linear interpolation for weight calculation
     if (maxRawValue != minRawValue) {
         return minWeightInGrams + static_cast<float>(rawValue - minRawValue) *
@@ -60,7 +64,7 @@ bool LoadCellAmplifier::changeDetected() {
     return false;
 }
 
-long LoadCellAmplifier::applyMovingAverageFilter(long rawValue) {
+long LoadCellAmplifier::applyMovingAverageFilter(const long rawValue) {
     rawValueBuffer[bufferIndex] = rawValue;
     bufferIndex = (bufferIndex + 1) % filterDepth;
     long sum = 0;
@@ -116,7 +120,7 @@ long LoadCellAmplifier::readRawValue() const {
     return value - tareOffsetRaw;
 }
 
-void LoadCellAmplifier::setGain(int gain) {
+void LoadCellAmplifier::setGain(const int gain) {
     if (gain == 128) gainPulses = 1;
     else if (gain == 32) gainPulses = 2;
     reset();
@@ -143,7 +147,7 @@ void LoadCellAmplifier::tare() {
     }
 }
 
-bool LoadCellAmplifier::calibrate(float knownWeightInGrams) {
+bool LoadCellAmplifier::calibrate(const float knownWeightInGrams) {
     if (!isValidWeight(knownWeightInGrams)) {
         return false;
     }
@@ -163,7 +167,7 @@ bool LoadCellAmplifier::calibrate(float knownWeightInGrams) {
     return true;
 }
 
-bool LoadCellAmplifier::isValidWeight(float weightInGrams) {
+bool LoadCellAmplifier::isValidWeight(const float weightInGrams) {
     return weightInGrams > 0;
 }
 
@@ -188,7 +192,7 @@ bool LoadCellAmplifier::isCalibrationStable(long averageRawValue) const {
     return std::abs(averageRawValue - tareOffsetRaw) > CALIBRATION_STABILITY_THRESHOLD;
 }
 
-void LoadCellAmplifier::applyCalibration(float knownWeightInGrams, long rawValue) {
+void LoadCellAmplifier::applyCalibration(const float knownWeightInGrams, const long rawValue) {
     maxRawValue = rawValue;
     maxWeightInGrams = knownWeightInGrams;
 }
