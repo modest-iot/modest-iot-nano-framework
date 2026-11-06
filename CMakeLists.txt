@@ -237,6 +237,12 @@ add_executable(test_scheduler
 )
 target_include_directories(test_scheduler PRIVATE tests/fakes src)
 
+add_executable(test_telemetry
+        tests/telemetry/test.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_telemetry PRIVATE tests/fakes src)
+
 add_test(NAME DigitalLightTest COMMAND test_digital_light)
 add_test(NAME RgbLedTest COMMAND test_rgb_led)
 add_test(NAME RfidSensorTest COMMAND test_rfid_sensor)
@@ -247,9 +253,10 @@ add_test(NAME EngineConfigTest COMMAND test_engine_config)
 add_test(NAME DiagnosticsTest COMMAND test_diagnostics)
 add_test(NAME SensorFaultTest COMMAND test_sensor_fault)
 add_test(NAME SchedulerTest COMMAND test_scheduler)
+add_test(NAME TelemetryTest COMMAND test_telemetry)
 
 add_custom_target(run_tests
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        DEPENDS test_digital_light test_rgb_led test_rfid_sensor test_ble_connectivity test_log test_mqtt_gateway test_engine_config test_diagnostics test_sensor_fault test_scheduler
+        DEPENDS test_digital_light test_rgb_led test_rfid_sensor test_ble_connectivity test_log test_mqtt_gateway test_engine_config test_diagnostics test_sensor_fault test_scheduler test_telemetry
         COMMENT "Executing all native host test suites..."
 )

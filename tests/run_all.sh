@@ -113,6 +113,10 @@ run_test "test_scheduler" \
     src/SamplingScheduler.cpp \
     tests/scheduler/test.cpp
 
+# 11. Telemetry Serialization Golden Tests Suite
+run_test "test_telemetry" \
+    tests/telemetry/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="
