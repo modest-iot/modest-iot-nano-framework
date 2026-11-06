@@ -90,13 +90,17 @@ void DigitalLightIntensitySensor::processEvent(Event &event) {
 
     float currentIlluminanceInLux = 0.0f;
     if (!readIlluminanceInLux(currentIlluminanceInLux)) {
-        event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
+        reportReadFailure(event);
+        if (event.identifier != Sensor::SENSOR_FAULT_EVENT_IDENTIFIER) {
+            event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
+        }
         return;
     }
 
     cachedIlluminanceInLux = currentIlluminanceInLux;
     if (const bool currentState = currentIlluminanceInLux >= lightDetectedThresholdInLux;
         !validSample || currentState != lastState) {
+        reportReadSuccess(event);
         validSample = true;
         lastState = currentState;
         if (currentState) {
@@ -107,6 +111,7 @@ void DigitalLightIntensitySensor::processEvent(Event &event) {
         return;
     }
 
+    reportReadSuccess(event);
     event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
 }
 
