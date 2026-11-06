@@ -1,10 +1,24 @@
 #ifndef PASSIVE_INFRARED_SENSOR_H
 #define PASSIVE_INFRARED_SENSOR_H
 
+/**
+ * @file PassiveInfraredSensor.h
+ * @brief Declares a passive infrared (PIR) motion sensor.
+ * @ingroup sensors_module
+ * @date 2026-06-06
+ * @version 1.0
+ */
+
 #include "Sensor.h"
 
 /**
- * @brief Passive Infrared (PIR) motion sensor.
+ * @name Sensors: Digital & Debounced Input
+ * @ingroup sensors_module
+ * @{
+ */
+
+/**
+ * @brief Passive Infrared (PIR) motion sensor that detects motion transitions.
  * @ingroup sensors_module
  */
 class PassiveInfraredSensor : public Sensor {
@@ -46,5 +60,7 @@ public:
     PassiveInfraredSensor(int signalGpioPin, EventHandler* parentHandler = nullptr);
     ~PassiveInfraredSensor() override = default;
 };
+
+/** @} */ // End of Sensors: Digital & Debounced Input
 
 #endif // PASSIVE_INFRARED_SENSOR_H
