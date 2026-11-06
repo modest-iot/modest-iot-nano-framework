@@ -212,12 +212,14 @@ protected:
     /**
      * @brief Subclass hook for converting queued payloads into network transmissions.
      * @param rawQueueItemPayload Pointer to the queued telemetry payload.
+     * @runs_on network
      */
     virtual void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) const;
 
     /**
      * @brief Subclass hook for background network and gateway upkeep (e.g., MQTT keep-alive).
      * Invoked periodically by the network dispatcher task during idle queue periods.
+     * @runs_on network
      */
     virtual void maintainNetworkServices() const;
 
