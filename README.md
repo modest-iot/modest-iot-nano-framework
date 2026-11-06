@@ -2,33 +2,275 @@
 
 **Version**: 1.0.0  
 **Author**: Angel Velasquez  
-
-**Date created**: 2025-03-23
-
-**Last updated**: 2026-06-05
+**Date created**: 2025-03-23  
+**Last updated**: 2026-11-06
 
 ## Overview
 
-ModestIoT Nano-Framework (C++ Edition) is a lightweight, object-oriented, event-driven, and CQRS-inspired Arduino library for resource-constrained IoT projects such as ESP32-based devices. It provides a small set of reusable abstractions for events, commands, sensors, actuators, and complete devices, making it easy to assemble small IoT applications with clear separation of concerns.
+ModestIoT Nano-Framework (C++ Edition) is a lightweight, object-oriented, event-driven, and CQRS-inspired Arduino library for resource-constrained IoT projects on ESP32-based devices. It provides reusable abstractions for events, commands, sensors, actuators, connectivity drivers, gateway clients, and complete devices — all orchestrated by an asynchronous FreeRTOS engine with per-slot sampling intervals, zero-cost logging, and runtime diagnostics.
 
-This repository contains the C++ edition of the framework. A MicroPython edition is planned as a separate distribution for MicroPython-compatible devices. For a practical usage example, see [`ToggableLedDevice-Example-Cpp`](https://github.com/avelasquezn/ToggableLedDevice-Example-Cpp).
+The framework uses a **Mediator pattern** where a `Device` subclass owns and coordinates its sensors and actuators. Sensors emit events that propagate synchronously through the mediator, which issues commands to actuators. Telemetry flows through a queue-based pipeline from the sampler task to the network task, keeping sensor polling and network transmission isolated.
+
+This repository contains the C++ edition of the framework. A MicroPython edition is planned as a separate distribution. For a practical usage example, see [`ToggableLedDevice-Example-Cpp`](https://github.com/avelasquezn/ToggableLedDevice-Example-Cpp).
 
 ## Key Characteristics
+
 - **Object-Oriented**: Built with C++ classes, inheritance, and encapsulation for maintainable code.
 - **Event-Driven**: Uses an `Event`/`EventHandler` system for asynchronous, reactive behavior.
-- **CQRS-Inspired**: Separates `Command` (control) and `Event` (notification) pathways, mirroring Command Query Responsibility Segregation principles.
+- **CQRS-Inspired**: Separates `Command` (control) and `Event` (notification) pathways.
+- **Asynchronous Engine**: Two FreeRTOS tasks (sampler and network worker) with configurable stack sizes, priorities, and core pinning via `EngineConfig`.
+- **Per-Slot Scheduling**: `SamplingScheduler` supports independent polling intervals per sensor, independent of slot count.
+- **Zero-Cost Logging**: `MODEST_LOG_*` macros with compile-time level filtering; `MIOT_LOG_*` shorthand aliases available.
+- **Runtime Diagnostics**: `DiagnosticsSnapshot` with 12 fields: stack high-water marks, heap stats, queue counters, send statistics, and uptime.
+- **Sensor Health**: Debounced fault and recovery events (IDs 22/23) with configurable failure thresholds.
+- **Telemetry Pipeline**: `unique_ptr` ownership, drop-oldest queue policy, bounded serialization buffer, and envelope metadata (timestamp/sequence).
 
 ## Components
-- **`Event` & `EventHandler`**: Define and handle events (e.g., sensor triggers).
-- **`Command` & `CommandHandler`**: Issue and process commands (e.g., actuator control).
-- **`Sensor`**: Abstract base class for input devices, with event propagation.
-- **`Actuator`**: Abstract base class for output devices, with command handling.
-- **`Device`**: Abstract base class combining event and command handling for complete IoT devices.
-- **`Button`**: A concrete sensor class for detecting button presses and generating events.
-- **`Led`**: A concrete actuator class for controlling an LED with toggle, on, and off commands.
-- **`RgbLed`**: A concrete actuator for a PWM-driven RGB LED with color (per-channel 0-255 intensity), on, off, and toggle commands, including common-anode support and predefined colors (`RgbLed::RED`, `ORANGE`, ...).
-- **`DhtSensor`**: A concrete sensor for reading temperature and humidity from a DHT module.
-- **`LcdDisplay`**: A concrete actuator for driving a 16x2 I2C character LCD.
+
+### Core
+
+| Class | Description |
+|---|---|
+| `Event` | Lightweight event container with identifier and payload fields. |
+| `EventHandler` | Base interface for event-driven components (`on(Event)`). |
+| `Command` | Lightweight command container with identifier. |
+| `CommandHandler` | Base interface for command-driven components (`handle(Command)`). |
+| `Device` | Base class combining event and command handling; orchestrates the asynchronous engine, scheduler, and telemetry pipeline. |
+| `EngineConfig` | Configuration struct for FreeRTOS task stack sizes, priorities, core pinning, and queue depth. |
+| `DiagnosticsSnapshot` | 12-field runtime health snapshot (stack, heap, queue, timing). |
+| `SamplingScheduler` | Per-slot countdown scheduler with phase-aligned re-arming and minimum period enforcement. |
+| `TelemetryPackage` | Base class for telemetry payloads with envelope metadata (timestamp, sequence). |
+
+### Sensors
+
+| Class | Description |
+|---|---|
+| `Sensor` | Abstract base class with fault state machine, sampling interval attributes, and virtual getters. |
+| `Button` | GPIO button press detection with debounce. |
+| `DhtSensor` | Temperature and humidity from DHT11/DHT22/DHT21/AM2301 modules. |
+| `DigitalLightIntensitySensor` | I²C BH1750 light intensity sensor with threshold-based light/dark events. |
+| `GeolocationSensor` | GPS module parser for latitude, longitude, and altitude. |
+| `GasSensor` | MQ-series gas sensor with custom calibration support. |
+| `LoadCellAmplifier` | HX711 load cell amplifier for weight measurement. |
+| `PassiveInfraredSensor` | PIR motion detection with motion started/stopped events. |
+| `PulseSensor` | Heart rate or pulse detection from analog signal. |
+| `RfidSensor` | SPI RFID card reader with CRC calculation and card communication. |
+| `UltrasonicSensor` | HC-SR04 ultrasonic distance measurement. |
+
+### Actuators
+
+| Class | Description |
+|---|---|
+| `Actuator` | Abstract base class with command propagation. |
+| `Buzzer` | PWM-driven buzzer with tone frequency and duration. |
+| `Led` | Digital LED with on/off/toggle commands. |
+| `RgbLed` | PWM-driven RGB LED with color mixing, common-anode support, and predefined colors. |
+| `ServoMotor` | PWM servo motor with angle positioning. |
+| `CharacterLcdDisplay` | I²C 16x2 character LCD with text, cursor, and backlight control. |
+
+### Connectivity
+
+| Class | Description |
+|---|---|
+| `ConnectivityDriver` | Abstract base interface for network transports (`connect()`, `isConnected()`, `transmit()`). |
+| `WiFiConnectivityDriver` | Wi-Fi STA driver with reconnection retry logic and configurable reconnect intervals. |
+| `BleConnectivityDriver` | Bluetooth Low Energy driver using Nordic UART Service (NUS) GATT profile; supports all ESP32 variants. |
+| `BluetoothConnectivityDriver` | **Deprecated** Bluetooth Classic (SPP) driver, isolated behind preprocessor guards for legacy ESP32 only. |
+
+### Gateway Clients
+
+| Class | Description |
+|---|---|
+| `GatewayClient` | Abstract base for telemetry gateways with `sendTelemetryRecord()`, `service()`, and `getStatistics()`. |
+| `MqttGatewayClient` | MQTT gateway with keep-alive servicing, reconnection backoff, and bounded serialization buffer. |
+| `HttpGatewayClient` | HTTP POST gateway for REST-based telemetry transmission. |
+
+### Logging
+
+| Macro | Description |
+|---|---|
+| `MODEST_LOG_E(tag, fmt, ...)` | Log error-level message. |
+| `MODEST_LOG_W(tag, fmt, ...)` | Log warning-level message. |
+| `MODEST_LOG_I(tag, fmt, ...)` | Log info-level message. |
+| `MODEST_LOG_D(tag, fmt, ...)` | Log debug-level message. |
+| `MIOT_LOG_*` | Shorthand aliases for `MODEST_LOG_*` (enabled via `MODEST_USE_SHORT_LOG_MACROS`). |
+
+Log level is controlled by `MODEST_LOG_LEVEL` (0=NONE, 1=ERROR, 2=WARN, 3=INFO, 4=DEBUG, 5=VERBOSE). When compiled out, logging incurs zero Flash and RAM overhead.
+
+## Threading Model
+
+The framework runs on two FreeRTOS tasks plus a hardware timer ISR. Understanding what runs where is essential for correct usage.
+
+| Context | What Runs There |
+|---|---|
+| **Timer ISR** | `Device::handleHardwareTimerInterrupt`: signals the sampler task via `vTaskNotifyGiveFromISR`. |
+| **Sampler Task** (default: priority 3, 4096 bytes, core 1) | `SamplingScheduler` dispatch, `Sensor::on()` and `processEvent()`, mediator `Device::on()`, actuator `handle(Command)`, `TelemetryPackage` creation, and `enqueueTelemetryPayload()`. |
+| **Network Task** (default: priority 1, 8192 bytes, core 1) | `processQueuedTelemetryData()`, gateway `sendTelemetryRecord()`, JSON serialization, and packet deletion. Also runs `maintainNetworkServices()` during idle periods. |
+| **Arduino `loop()`** | `setup()` (all constructors, `pinMode`, `Wire.begin`, `Device` construction, `initializeAsynchronousEngine()`), then user `loop()` (examples typically call `vTaskDelay`). |
+
+### Threading Rules
+
+1. **Sensor, mediator, and actuator code runs on the sampler task** and must not block for long periods. Slow actuators (e.g., I²C LCD updates) consume the sensor tick budget.
+2. **Do not call actuators, sensors, or `Wire` from `loop()` or other tasks.** Use the mediator pattern: let the sampler task drive all hardware interactions.
+3. **Telemetry packets are immutable snapshots** passed by ownership transfer through the queue. The network task owns the packet after enqueue succeeds.
+4. **Interrupts only set flags** and signal the sampler task; they do not access hardware directly.
+5. **The two workers share no mutable framework state** except the queue, so no locks are needed in the core framework.
+
+### Engine Configuration
+
+The `EngineConfig` struct allows tuning stack sizes, priorities, and core pinning:
+
+```cpp
+EngineConfig config;
+config.samplerStackBytes = 4096;
+config.networkStackBytes = 8192;
+config.samplerPriority = 3;
+config.networkPriority = 1;
+config.samplerCore = 1;
+config.networkCore = 1;
+config.queueLength = 10;
+device.initializeAsynchronousEngine(config);
+```
+
+Call `device.stopAsynchronousEngine()` to gracefully shut down both tasks, drain the queue, and clean up the timer. Derived classes must call this in their destructor **before** their own destructor body runs.
+
+### Identifier Registry
+
+Event and command identifiers are plain integers. The framework reserves ranges to avoid collisions:
+
+| Space | Range | Owner |
+|---|---|---|
+| Events | 10 | `Button::BUTTON_PRESSED` |
+| Events | 20–21 | `Sensor::DATA_READ`, `MEASURE_DATA_REQUESTED` |
+| Events | 22–23 | `Sensor::SENSOR_FAULT`, `SENSOR_RECOVERED` |
+| Events | 30–31 | `PassiveInfraredSensor` motion detected/stopped |
+| Events | 40 | `GasSensor` digital gas detected |
+| Events | 50–51 | `DigitalLightIntensitySensor` light detected/absent |
+| Commands | 100–102 | `Led` |
+| Commands | 150–152 | `ServoMotor` |
+| Commands | 200–202 | `CharacterLcdDisplay` |
+| Commands | 250–252 | `Buzzer` |
+| Commands | 300–303 | `RgbLed` |
+| **User range** | **1000+** | **Reserved for application-defined identifiers** |
+
+## Sampling Scheduler
+
+The `SamplingScheduler` replaces fixed-tick round-robin dispatch with per-slot countdown timers. Each registered sensor can have an independent polling period:
+
+```cpp
+// Automatic: uses sensor's declared default interval
+appendSensorToScheduler(&dhtSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+
+// Explicit: custom period with minimum enforcement
+appendSensorToScheduler(&button, Button::BUTTON_PRESSED_EVENT_IDENTIFIER, 100, 50);
+```
+
+Sensors declare `DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS` and `MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS` constants. The scheduler enforces minimums and reports clamping via `MODEST_LOG_W`.
+
+## Logging
+
+The framework provides zero-cost compile-time filtered logging:
+
+```cpp
+MODEST_LOG_I("SmartBand", "Heart rate: %d bpm", heartRate);
+MODEST_LOG_W("DhtSensor", "Checksum error on pin %d", pin);
+MODEST_LOG_E("MqttGateway", "Connection failed to %s", brokerIp);
+```
+
+Set `MODEST_LOG_LEVEL` in your build flags or sketch to control verbosity. At level 0, all logging compiles to `((void)0)` with zero overhead.
+
+## Diagnostics
+
+Call `device.diagnostics()` to get a `DiagnosticsSnapshot` with 12 runtime health fields:
+
+```cpp
+DiagnosticsSnapshot health = device.diagnostics();
+Serial.printf("Free heap: %u bytes\n", health.freeHeapBytes);
+Serial.printf("Packets dropped: %u\n", health.packetsDropped);
+Serial.printf("Sampler stack free: %u words\n", health.samplerStackFreeWords);
+```
+
+### Sensor Fault Events
+
+Opt into sensor fault detection by calling `setFaultThreshold()` on any sensor:
+
+```cpp
+dhtSensor.setFaultThreshold(3); // Emit fault event after 3 consecutive failures
+```
+
+When a sensor faults, it emits event ID 22 (`SENSOR_FAULT_EVENT_IDENTIFIER`). When it recovers, it emits event ID 23 (`SENSOR_RECOVERED_EVENT_IDENTIFIER`). The mediator can react by turning on an alert LED, publishing health telemetry, or switching to a safe default state.
+
+## Connectivity
+
+### Wi-Fi
+
+```cpp
+WiFiConnectivityDriver wifiDriver("ssid", "password");
+wifiDriver.connect();
+```
+
+Supports reconnection retry with configurable intervals. Automatically re-arms after transient access point outages.
+
+### Bluetooth Low Energy (BLE)
+
+```cpp
+BleConnectivityDriver bleDriver("MyDevice");
+bleDriver.connect();
+```
+
+Uses the Nordic UART Service (NUS) GATT profile. Compatible with all ESP32 variants (ESP32, S3, C3, C6, H2). Supports GATT notifications for transmission and write callbacks for reception.
+
+### MQTT
+
+```cpp
+MqttGatewayClient mqttGateway(wifiDriver, wifiClient, "192.168.1.100", 1883, "device/telemetry", "device-001");
+device.setTelemetryGateway(&mqttGateway);
+```
+
+Provides keep-alive servicing via `service()`, reconnection backoff, and bounded serialization (512-byte buffer). Register with `device.setTelemetryGateway()` so diagnostics can aggregate send statistics.
+
+## Examples
+
+The framework ships with 10 example sketches demonstrating various use cases:
+
+| Example | Description |
+|---|---|
+| `ClassicBlinker` | Minimal device with timer-based LED blinking; demonstrates `EventHandler*` overload for non-Sensor handlers. |
+| `SmartBandMqtt` | Wearable device with pulse, DHT temperature/humidity, and button; publishes via MQTT. |
+| `AirConditioningDevice` | HVAC monitor with DHT sensor, buttons, and LCD display; demonstrates I²C actuator on sampler task. |
+| `AirQualityMonitor` | Gas sensor with MQTT telemetry; demonstrates keep-alive and reconnection. |
+| `DriverAssistantDevice` | GPS and ultrasonic distance monitoring; demonstrates multi-sensor coordination. |
+| `OutdoorSecurityLightController` | Light sensor and PIR with fault detection; demonstrates sensor health events and safe-state fallback. |
+| `PerimeterMonitor` | Four PIR sensors for zone-based motion detection; demonstrates high-frequency polling. |
+| `RfidAccessController` | SPI RFID card reader with access control; demonstrates CRC calculation and card communication. |
+| `SmartScaleDevice` | Four HX711 load cells for precision weighing; demonstrates multi-sensor averaging. |
+| `ToggableLedDevice` | Button-controlled LED with MQTT telemetry; demonstrates CQRS command/event separation. |
+
+## Testing
+
+The framework includes 11 host unit test suites that run natively without hardware:
+
+| Suite | What It Tests |
+|---|---|
+| `tests/digital_light/` | I²C sensor polling, Wire mock, event emission |
+| `tests/rgb_led/` | PWM output, color mixing, analogWrite mock |
+| `tests/rfid_sensor/` | CRC calculation, SPI mock, card communication |
+| `tests/ble_connectivity/` | BLE NUS GATT service, notifications, RX callbacks |
+| `tests/log/` | `MODEST_LOG_*` level filtering, sink redirection, `MIOT_LOG_*` aliases |
+| `tests/mqtt_gateway/` | MQTT keep-alive, reconnect backoff, client state |
+| `tests/engine_config/` | `EngineConfig` defaults, custom values, aggregate init |
+| `tests/diagnostics/` | `DiagnosticsSnapshot`, shared counters, enqueue edge cases |
+| `tests/sensor_fault/` | Fault threshold, latching, recovery events, counter reset |
+| `tests/scheduler/` | Per-slot periods, phase alignment, minimum enforcement |
+| `tests/telemetry/` | Golden JSON serialization, envelope metadata, bounded buffer overflow |
+
+Run all tests locally:
+
+```sh
+./tests/run_all.sh
+```
+
+Tests compile with strict warnings (`-Wall -Wextra -Werror`) and Address/Undefined sanitizers. A GitHub Actions workflow runs the full suite on Ubuntu and macOS for every pull request.
 
 ## Documentation
 
@@ -36,21 +278,23 @@ Documentation is split between architecture artifacts in `docs/` and code-level 
 
 ### Design and Architecture (`docs/`)
 
-| Artifact                                             | Description                                                                                                                                 |
-|------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
-| [`docs/class-diagram.puml`](docs/class-diagram.puml) | PlantUML class diagram of the current framework structure (inheritance, associations, and the `CustomDevice : Device` composition pattern). |
-| [`docs/user-stories.md`](docs/user-stories.md)       | Product-level user stories and acceptance criteria that motivated the framework design.                                                     |
+| Artifact | Description |
+|---|---|
+| [`docs/class-diagram.puml`](docs/class-diagram.puml) | PlantUML class diagram of the framework structure. |
+| [`docs/user-stories.md`](docs/user-stories.md) | Product-level user stories and acceptance criteria. |
+| [`docs/improvements-roadmap.md`](docs/improvements-roadmap.md) | Index and status of all improvement briefs. |
+| [`docs/connectivity-improvement.md`](docs/connectivity-improvement.md) | Connectivity drivers and gateway clients. |
+| [`docs/diagnostics-improvement.md`](docs/diagnostics-improvement.md) | Logging, sensor health, and counters. |
+| [`docs/threading-model-improvement.md`](docs/threading-model-improvement.md) | Threading rules, engine config, and ID registry. |
+| [`docs/sampling-interval-improvement.md`](docs/sampling-interval-improvement.md) | Per-slot scheduling and pure scheduler. |
+| [`docs/telemetry-improvement.md`](docs/telemetry-improvement.md) | Package ownership, queue policy, and format decoupling. |
+| [`docs/dependencies-improvement.md`](docs/dependencies-improvement.md) | Third-party library inventory and cleanup. |
+| [`docs/library-readiness-improvement.md`](docs/library-readiness-improvement.md) | CI, host tests, and release preparation. |
+| [`docs/interrupt-power-improvement.md`](docs/interrupt-power-improvement.md) | Interrupt-driven sensing and power optimization. |
 
 ### API and Code-Level Reference (`src/`)
 
-The source files in `src/` include Doxygen comments in both headers and implementation files. These comments document:
-
-- public APIs and their expected behavior,
-- template-method extension points used by subclasses,
-- predefined events and commands, and
-- internal helper routines and worker loops.
-
-To generate browsable API docs locally, use the provided Doxygen configuration:
+The source files in `src/` include Doxygen comments in both headers and implementation files. To generate browsable API docs locally:
 
 ```sh
 doxygen docs/Doxyfile
@@ -58,93 +302,114 @@ doxygen docs/Doxyfile
 
 Then open `docs/build/html/index.html` in your browser.
 
-### Maintenance Guidelines
-
-- Keep `docs/class-diagram.puml` synchronized with changes in class names, inheritance, and key associations.
-- Treat header declarations and inline Doxygen comments as the source of truth for API contracts.
-- Update documentation in the same change set whenever behavior or public interfaces change.
-
 ## Getting Started
 
 ### Prerequisites
-- **Software**: Arduino IDE with ESP32 board support installed.
+
+- **Software**: Arduino IDE 2.x or `arduino-cli` with ESP32 board support (Arduino-ESP32 core 3.x recommended).
+- **Hardware**: ESP32 development board (original ESP32, ESP32-S3, ESP32-C3, ESP32-C6, or ESP32-H2).
 
 ### Installation
+
 1. **Download**: Clone or download this repository from [avelasquezn/Modest-IoT-Nano-framework-Cpp](https://github.com/avelasquezn/Modest-IoT-Nano-framework-Cpp).
 2. **Install as Library**:
-    - Copy the repository contents, or at minimum the `src/` folder and `src/library.properties`, to your Arduino libraries directory (for example, `~/Arduino/libraries/ModestIoT/` on macOS/Linux or `Documents\Arduino\libraries\ModestIoT\` on Windows).
-    - Alternatively, in the Arduino IDE: Sketch > Include Library > Add .ZIP Library, then select a zipped copy of the library folder.
-3. **Verify Structure**: The library should be organized as:
+   - Copy the repository to your Arduino libraries directory (e.g., `~/Arduino/libraries/ModestIoT/` on macOS/Linux or `Documents\Arduino\libraries\ModestIoT\` on Windows).
+   - Alternatively, in the Arduino IDE: Sketch > Include Library > Add .ZIP Library.
+3. **Install Dependencies**: The framework requires the following Arduino libraries (install via Library Manager):
+   - `DHT sensor library` (for `DhtSensor`)
+   - `Adafruit Unified Sensor` (transitive dependency of DHT)
+   - `ArduinoJson (>=7.0.0)` (for telemetry serialization)
+   - `PubSubClient` (for `MqttGatewayClient`)
+   - `LiquidCrystal_I2C` (for `CharacterLcdDisplay`)
+   - `HX711` (for `LoadCellAmplifier`)
+4. **Verify Structure**: The library should be organized as:
    ```plaintext
-      Modest-IoT-Nano-framework-Cpp/
-      ├── README.md
-      ├── src/
-      │   ├── library.properties
-      │   ├── ModestIoT.h
-      │   ├── EventHandler.h
-      │   ├── CommandHandler.h
-      │   ├── Sensor.h
-      │   ├── Sensor.cpp
-      │   ├── Actuator.h
-      │   ├── Actuator.cpp
-      │   ├── Device.h
-      │   ├── Device.cpp
-      │   ├── Button.h
-      │   ├── Button.cpp
-      │   ├── Led.h
-      │   ├── Led.cpp
-      │   ├── RgbLed.h
-      │   ├── RgbLed.cpp
-      │   ├── DhtSensor.h
-      │   ├── DhtSensor.cpp
-      │   ├── LcdDisplay.h
-      │   └── LcdDisplay.cpp
+   Modest-IoT-Nano-Framework/
+   ├── README.md
+   ├── library.properties
+   ├── src/
+   │   ├── ModestIoT.h
+   │   ├── ModestLog.h
+   │   ├── EventHandler.h
+   │   ├── CommandHandler.h
+   │   ├── Sensor.h / Sensor.cpp
+   │   ├── Actuator.h / Actuator.cpp
+   │   ├── Device.h / Device.cpp
+   │   ├── SamplingScheduler.h / SamplingScheduler.cpp
+   │   ├── TelemetryPackage.h / TelemetryPackage.cpp
+   │   ├── GatewayClient.h
+   │   ├── MqttGatewayClient.h / MqttGatewayClient.cpp
+   │   ├── HttpGatewayClient.h / HttpGatewayClient.cpp
+   │   ├── WiFiConnectivityDriver.h / WiFiConnectivityDriver.cpp
+   │   ├── BleConnectivityDriver.h / BleConnectivityDriver.cpp
+   │   └── ... (sensors and actuators)
+   ├── examples/
+   └── tests/
    ```
-4. **Integration**: Include the library from your sketch with `#include <ModestIoT.h>` after the folder has been installed in your Arduino libraries directory.
+5. **Integration**: Include the library from your sketch with `#include <ModestIoT.h>`.
 
 ### Usage
-Include the library in your sketch:
-```cpp
-#include <ModestIoT.h> 
-```
-- Extend `Device` to create a custom IoT device that owns and coordinates its sensors and actuators.
-- Use `Button`, `Led`, `RgbLed`, `DhtSensor`, and `LcdDisplay` as building blocks inside your device subclass, or derive your own from `Sensor` and `Actuator`.
-- Have your sketch instantiate the custom device and interact with that device object; the device is responsible for wiring events and commands through `EventHandler` and `CommandHandler`.
-- For a complete example, refer to `ToggableLedDevice-Example-Cpp`.
-
-### Example usage
 
 ```cpp
 #include <ModestIoT.h>
 
-// Sketch-level code should interact with a custom Device subclass.
-// The device owns and wires the components together internally.
-// CustomDevice device;
-```
+class MyDevice : public Device {
+public:
+    MyDevice() : Device(1000) { /* 1-second tick interval */ }
 
-The framework is designed so that sensors emit events and actuators consume commands through the base handler interfaces, with the sketch operating on the custom `Device` object as the composition root.
+    void on(Event event) override {
+        // React to sensor events
+    }
+
+    void processQueuedTelemetryData(const TelemetryPackage* packet) const override {
+        // Send telemetry via gateway
+    }
+};
+
+MyDevice device;
+
+void setup() {
+    device.initializeAsynchronousEngine();
+}
+
+void loop() {
+    // Framework handles everything asynchronously
+}
+```
 
 ## Notes
 
 - The library targets Arduino-compatible ESP32 projects.
-- Some example components depend on external Arduino libraries such as `DHT` and `LiquidCrystal_I2C`.
-- If you are generating documentation, the Doxygen comments in `src/*.h` and `src/*.cpp` provide the canonical code-level reference.
+- BLE connectivity (`BleConnectivityDriver`) supports all ESP32 variants. Legacy Bluetooth Classic (`BluetoothConnectivityDriver`) is deprecated and only available on original ESP32 hardware.
+- Some example components depend on external Arduino libraries (listed in `library.properties`).
+- Doxygen comments in `src/*.h` and `src/*.cpp` provide the canonical code-level reference.
+
 ## License
+
 This project is licensed under the **MIT License**.
 
 - **Allowed**: Use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the framework, with attribution.
 - **Full License**: See [`LICENSE.md`](LICENSE.md) for the complete terms.
 
 ## Contributing
+
 Contributions, improvements, and extensions are welcome under the MIT License. You're welcome to:
+
 - Use the framework in your projects.
 - Submit feedback, bug reports, or feature suggestions via GitHub.
 - Fork and adapt the framework for your own needs (with attribution).
+
 ## Future Directions
-- **Version 0.2**: Potential additions like new sensor/actuator types (e.g., temperature sensors, motors).
-- **MicroPython Edition**: A planned port to MicroPython in a separate repository (e.g., Modest-IoT-Nano-framework-MicroPython).
+
+- **Tier 4**: `Device::post` command marshalling for cross-task commands, interrupt triggers for Button and PIR, HX711 data-ready and ultrasonic echo capture.
+- **Tier 5**: Tickless scheduling, deep-sleep battery profiles, telemetry packet pool, and `TelemetryWriter` format abstraction.
+- **MicroPython Edition**: A planned port to MicroPython in a separate repository.
+
 ## Contact
+
 For questions, feedback, or support, contact Angel Velasquez via GitHub:
-- **GitHub**: avelasquezn
+
+- **GitHub**: [avelasquezn](https://github.com/avelasquezn)
+
 ---
 ModestIoT Nano-Framework (C++ Edition): A simple, modular foundation for your IoT projects.
