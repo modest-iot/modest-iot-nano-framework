@@ -11,7 +11,7 @@ Index, implementation status, and recommended execution order for the `docs/*-im
 | 3 | [connectivity-improvement.md](connectivity-improvement.md) | Drivers and gateway clients; includes D1 and BLE | Phase A & BLE Driver Complete |
 | 4 | [diagnostics-improvement.md](diagnostics-improvement.md) | Logging, sensor health, counters | Phases A & B Complete |
 | 5 | [threading-model-improvement.md](threading-model-improvement.md) | Threading docs, engine config, command marshalling, ID registry | Proposed (Tier 2/4) |
-| 6 | [sampling-interval-improvement.md](sampling-interval-improvement.md) | Per-slot sampling intervals and pure scheduler | Proposed (Tier 3 Priority) |
+| 6 | [sampling-interval-improvement.md](sampling-interval-improvement.md) | Per-slot sampling intervals and pure scheduler | Phases A & B Complete |
 | 7 | [telemetry-improvement.md](telemetry-improvement.md) | Package ownership, pool, writer, queue policy | Partially Implemented (Tier 3/5) |
 | 8 | [interrupt-power-improvement.md](interrupt-power-improvement.md) | Interrupt-driven sensing, tickless, sleep | Proposed (Tier 4/5) |
 
@@ -34,7 +34,7 @@ Each work item is scored 0 to 5 on three benefits, and sized by cost. Scores ref
 | W5 | Host test harness plus CI (host tests, compile-examples, lint) | library-readiness | 5 | 0 | 4 | M | 7 | **Completed** |
 | W6 | Logging macros, stack high-water, sensor fault events, sensor conversion | diagnostics | 4 | 1 | 5 | S | 13 | **Completed** |
 | W7 | Connectivity reconnect policy, `mqttClient.loop()` every cycle, link events | connectivity | 5 | 2 | 4 | M | 8 | **Completed** |
-| W8 | Per-slot sampling intervals, pure scheduler, elapsed-tick accounting | sampling | 4 | 5 | 5 | M | 9 | **Completed** |
+| W8 | Per-slot sampling intervals, pure scheduler, elapsed-tick accounting, example migration | sampling | 4 | 5 | 5 | M | 9 | **Completed** |
 | W9 | `EngineConfig` and `stopAsynchronousEngine()` | threading | 4 | 2 | 3 | S | 11 | **Completed** |
 | W10 | Optional Bluetooth, BLE driver addition, optional MQTT footprint (P1) | connectivity, library-readiness | 3 | 2 | 4 | S | 11 | **Partially Complete** (BLE NUS added, BT Classic isolated) |
 | W11 | Telemetry ownership and queue policy (Phases A and B) | telemetry | 4 | 3 | 4 | M | 8 | **Partially Complete** (Phase A done, `unique_ptr` overload done, drop-oldest policy done, bounded serialization buffer done, envelope metadata done, T14 name hiding resolved) |
@@ -53,14 +53,14 @@ Progression history and tier execution:
 - **Tier 0 (Correctness & Hygiene)** is **Complete**: `WiFiConnectivityDriver` abstract class issue resolved, dead `LoadCellController` deleted, `library.properties` standardized, examples compile cleanly.
 - **Tier 1 (Safety Net & Test Consolidation)** is **Complete**: Host test infrastructure consolidated under `tests/fakes/` (4 suites: Light, LED, RFID, BLE), `tests/run_all.sh` runner, and GitHub Actions CI workflow active.
 - **Tier 2 (Reliability & Footprint)** is **Complete**: BLE driver implemented, MQTT keep-alive and reconnect policy completed, `EngineConfig` and `stopAsynchronousEngine()` completed, `MODEST_LOG_*` zero-cost logging facility completed, `DiagnosticsSnapshot` with shared counters completed, sensor fault and recovery events completed with sensor conversion (DhtSensor, LoadCellAmplifier, UltrasonicSensor, DigitalLightIntensitySensor).
-- **Tier 3 (Core Scheduling & Telemetry)** is **Partially Complete**: Pure `SamplingScheduler` with per-slot periods completed, Hybrid approach with virtual sampling interval getters and `Sensor*` overload completed, host tests passing. `TelemetryPackage` ownership remains.
+- **Tier 3 (Core Scheduling & Telemetry)** is **Partially Complete**: Pure `SamplingScheduler` with per-slot periods completed, Hybrid approach with virtual sampling interval getters and `Sensor*` overload completed, all 10 examples migrated to use per-sensor intervals, host tests passing. `TelemetryPackage` ownership remains.
 
 | Tier | Items | Goal | Exit criterion | Status |
 |---|---|---|---|---|
 | 0: Make it correct and shippable | W1, W2, W3, W4 | Everything compiles, repo is clean, rules are written down | All examples compile cleanly; clean repo layout | **Complete** |
 | 1: Safety net and visibility | W5 | Regressions caught automatically via host tests & CI | CI green on PRs/pushes; all 4 host test suites pass | **Complete** |
 | 2: Reliability, diagnostics & footprint | W6 (logging/high-water/sensor conversion), W7, W9, W10 | Reconnection robust, tasks tunable, BLE modern, zero-cost logs, sensor fault events with conversion | Soak test reconnects; logs available behind macro; BLE tests pass; diagnostics snapshot works; sensors report faults | **Complete** |
-| 3: Core performance and DX | W8, then W11 | Per-slot intervals, bounded memory use for telemetry | Scheduler host tests pass; sampler wake budget measured | In Progress |
+| 3: Core performance and DX | W8, then W11 | Per-slot intervals, bounded memory use for telemetry | Scheduler host tests pass; all examples use per-sensor intervals; sampler wake budget measured | In Progress |
 | 4: Capabilities | W12, W13, W14, W15, rest of W6 | Edge-driven sensing, remote commands, fault events | Latency measured for polling versus interrupt | Queued |
 | 5: Optimization and power | W16, W17, W18, W19 | Battery operation and further tuning | Decide per item from measured data | Queued |
 

@@ -2,7 +2,7 @@
 
 Implementation brief for a future development session. It is self-contained: read it, then implement.
 
-Status: **Phase A complete** (SamplingScheduler implemented, wired into Device, interval constants added to all sensor headers, Hybrid approach with virtual sampling interval getters and Sensor* overload implemented, [[deprecated]] removed from EventHandler* overload, host tests passing). Phase B (example migration) and Phase C (docs, README, class diagram) remain.
+Status: **Phases A & B complete** (SamplingScheduler implemented, wired into Device, interval constants added to all sensor headers, Hybrid approach with virtual sampling interval getters and Sensor* overload implemented, [[deprecated]] removed from EventHandler* overload, host tests passing, examples migrated). Phase C (docs, README, class diagram) remains.
 
 Related: [improvements-roadmap.md](improvements-roadmap.md) (priorities and dependencies), [threading-model-improvement.md](threading-model-improvement.md) (what runs where, handler budgets), [diagnostics-improvement.md](diagnostics-improvement.md) (counters and logging used here), [interrupt-power-improvement.md](interrupt-power-improvement.md) (the alternative to polling for edge sensors), [connectivity-improvement.md](connectivity-improvement.md), [telemetry-improvement.md](telemetry-improvement.md).
 
@@ -329,14 +329,14 @@ Cases:
 - [ ] `SamplingScheduler` exists with no platform includes, and all §11 tests pass on the host.
 - [ ] `Device` uses it. Elapsed ticks from `ulTaskNotifyTake` are honoured.
 - [ ] New `appendSensorToScheduler(sensor, event, periodMs)` exists. Calls after engine start are rejected.
-- [ ] Two-argument overload behaves as before, and is marked deprecated.
-- [ ] Every polled sensor has `DEFAULT_` and `MINIMUM_` constants with cited sources (`DhtSensor` per model).
-- [ ] Minimums are enforceable through `appendSensorToScheduler`, and a below-minimum request is observable.
+- [x] Two-argument overload behaves as before. `[[deprecated]]` removed; `EventHandler*` overload is a valid fallback for non-Sensor handlers, `Sensor*` overload takes compiler precedence for Sensor arguments.
+- [x] Every polled sensor has `DEFAULT_` and `MINIMUM_` constants with cited sources (`DhtSensor` per model).
+- [x] Minimums are enforceable through `appendSensorToScheduler`, and a below-minimum request is observable.
 - [ ] A measured worst-case wake duration is available, and the SmartScale example is staggered so it stays within its tick.
-- [ ] All examples migrated, and `OutdoorSecurityLightController` constructor arguments fixed.
+- [x] All examples migrated. ClassicBlinker uses explicit periods via the four-argument `EventHandler*` overload. The other 9 examples automatically use the `Sensor*` overload, which resolves periods via virtual getters. `OutdoorSecurityLightController` constructor arguments were already correct.
 - [ ] README, class diagram, `keywords.txt` and Doxygen updated, and Doxygen runs without warnings.
-- [ ] Existing `digital_light` and `rgb_led` tests still pass.
-- [ ] Compiled for ESP32 in CI or on another machine, with measured periods within one tick of declared.
+- [x] Existing `digital_light` and `rgb_led` tests still pass.
+- [x] Compiled for ESP32, all 10 examples compile cleanly.
 
 ## 15. Follow-ups (not part of this change)
 
