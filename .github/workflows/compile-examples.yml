@@ -1,0 +1,50 @@
+name: Compile Examples
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  compile-examples:
+    name: Compile Examples (${{ matrix.board }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        board: [esp32, esp32s3]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install arduino-cli
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+          sudo mv arduino-cli /usr/local/bin/
+
+      - name: Update arduino-cli index
+        run: arduino-cli core update-index
+
+      - name: Install ESP32 core
+        run: arduino-cli core install esp32:esp32
+
+      - name: Install library dependencies
+        run: |
+          arduino-cli lib install "ArduinoJson" --version ">=7.0.0"
+          arduino-cli lib install "PubSubClient"
+          arduino-cli lib install "ESP32Servo"
+          arduino-cli lib install "LiquidCrystal_I2C"
+          arduino-cli lib install "DHT sensor library"
+          arduino-cli lib install "Adafruit Unified Sensor"
+
+      - name: Compile examples for ${{ matrix.board }}
+        run: |
+          for sketch in examples/*/; do
+            ino_file=$(find "$sketch" -name "*.ino" -maxdepth 1 | head -1)
+            if [ -n "$ino_file" ]; then
+              echo "Compiling: $ino_file"
+              arduino-cli compile --fqbn esp32:esp32:${{ matrix.board }} --library "${{ github.workspace }}" "$ino_file"
+            fi
+          done
