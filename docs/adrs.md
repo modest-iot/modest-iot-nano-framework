@@ -81,7 +81,7 @@ Use `MODEST_LOG_*` as the official macro family (`MODEST_LOG_E`, `MODEST_LOG_W`,
 ### References
 
 - `src/ModestLog.h`
-- `tests/log/test.cpp`
+- `tests/ModestLog/test.cpp`
 - Evaluation discussion in session history
 
 ---
@@ -102,7 +102,7 @@ Four alternatives were evaluated:
 
 ### Decision
 
-Implement `BleConnectivityDriver` using the Nordic UART Service (NUS) GATT profile with 128-bit UUIDs (`6E400001-B5A3-F393-E0A9-E50E24DCCA9E`). Isolate the legacy `BluetoothConnectivityDriver` behind preprocessor guards and mark it `[[deprecated]]`.
+Implement `BleConnectivityDriver` using the Nordic UART Service (NUS) GATT profile with 128-bit UUIDs (`6E400001-B5A3-F393-E0A9-E50E24DCCA9E`). The legacy `BluetoothConnectivityDriver` was initially isolated behind preprocessor guards and marked `[[deprecated]]`, then fully removed as Arduino-ESP32 Core 4.0.0 drops `BluetoothSerial` support and modern ESP32 variants (S3, C3, C6, H2) lack Bluetooth Classic hardware entirely.
 
 ### Consequences
 
@@ -113,7 +113,7 @@ Implement `BleConnectivityDriver` using the Nordic UART Service (NUS) GATT profi
 ### References
 
 - `src/BleConnectivityDriver.h`, `src/BleConnectivityDriver.cpp`
-- `tests/ble_connectivity/test.cpp`
+- `tests/BleConnectivityDriver/test.cpp`
 - `docs/improvements.md`
 
 ---
@@ -327,7 +327,7 @@ Implement the debounced threshold state machine in the `Sensor` base class with 
 ### References
 
 - `src/Sensor.h`, `src/Sensor.cpp`
-- `tests/sensor_fault/test.cpp`
+- `tests/SensorFault/test.cpp`
 - `examples/OutdoorSecurityLightController/OutdoorSecurityLightController.ino`
 - `docs/improvements.md`
 
@@ -358,7 +358,7 @@ Add `EngineConfig` struct with `samplerStackBytes`, `networkStackBytes`, `sample
 ### References
 
 - `src/Device.h`, `src/Device.cpp`
-- `tests/engine_config/test.cpp`
+- `tests/EngineConfig/test.cpp`
 - `docs/improvements.md`
 
 ---
@@ -389,7 +389,7 @@ Implement `SamplingScheduler` with per-slot periods, staggered initial phases, e
 
 - `src/SamplingScheduler.h`, `src/SamplingScheduler.cpp`
 - `src/Device.cpp` (replaces `activeSequencePointer` round-robin)
-- `tests/scheduler/test.cpp`
+- `tests/SamplingScheduler/test.cpp`
 - `docs/improvements.md`
 
 ---
@@ -621,7 +621,7 @@ Stack high-water marks are queried via `uxTaskGetStackHighWaterMark()` and conve
 
 - `src/Device.h`, `src/Device.cpp`
 - `src/GatewayClient.h`
-- `tests/diagnostics/test.cpp`
+- `tests/DiagnosticsSnapshot/test.cpp`
 - `docs/improvements.md` (W6)
 
 ---
@@ -656,7 +656,7 @@ Implement non-blocking reconnection with configurable backoff (`reconnectInterva
 - `src/MqttGatewayClient.h`, `src/MqttGatewayClient.cpp`
 - `src/WiFiConnectivityDriver.cpp`
 - `src/Device.cpp` (`maintainNetworkServices`)
-- `tests/mqtt_gateway/test.cpp`
+- `tests/MqttGatewayClient/test.cpp`
 - `docs/improvements.md` (W7)
 
 ---
@@ -686,7 +686,7 @@ Implement `stopAsynchronousEngine()` with cooperative termination: set notificat
 ### References
 
 - `src/Device.h`, `src/Device.cpp`
-- `tests/engine_config/test.cpp`
+- `tests/EngineConfig/test.cpp`
 - `docs/improvements.md` (W9)
 
 ---
@@ -715,7 +715,7 @@ Create `tests/telemetry/test.cpp` with 10 golden test cases covering `SmartBandT
 
 ### References
 
-- `tests/telemetry/test.cpp`
+- `tests/TelemetryPackage/test.cpp`
 - `tests/fakes/ArduinoJson.h`
 - `docs/improvements.md` (W11, T13)
 
