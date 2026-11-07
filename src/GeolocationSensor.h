@@ -14,12 +14,6 @@
 #include "Sensor.h"
 
 /**
- * @name Sensors: Environmental & Distance
- * @ingroup sensors_module
- * @{
- */
-
-/**
  * @brief GPS/NMEA geolocation sensor that parses serial NMEA sentences.
  * @ingroup sensors_module
  */
@@ -122,7 +116,5 @@ public:
      */
     [[nodiscard]] const LocationData& getLocationData() const { return cachedLocation; }
 };
-
-/** @} */ // End of Sensors: Environmental & Distance
 
 #endif // GEOLOCATION_SENSOR_H

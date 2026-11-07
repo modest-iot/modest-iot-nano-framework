@@ -27,12 +27,6 @@
 #include "Event.h"
 #include <cstdint>
 
-/**
- * @name Sensors: Base Abstraction
- * @ingroup sensors_module
- * @{
- */
-
 class Sensor : public EventHandler {
 protected:
     int pin; ///< GPIO pin assigned to the sensor.
@@ -150,7 +144,5 @@ public:
         minimalSamplingIntervalInMilliseconds = intervalMs;
     }
 };
-
-/** @} */ // End of Sensors: Base Abstraction
 
 #endif // SENSOR_H

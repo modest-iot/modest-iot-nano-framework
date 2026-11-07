@@ -12,12 +12,6 @@
 #include "Sensor.h"
 
 /**
- * @name Sensors: Environmental & Distance
- * @ingroup sensors_module
- * @{
- */
-
-/**
  * @brief Distance sensor that triggers an ultrasonic pulse and measures echo time.
  * @ingroup sensors_module
  */
@@ -66,7 +60,5 @@ public:
      */
     [[nodiscard]] float getDistanceInCentimeters() const;
 };
-
-/** @} */ // End of Sensors: Environmental & Distance
 
 #endif // ULTRASONIC_SENSOR_H

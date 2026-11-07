@@ -10,12 +10,6 @@
  */
 
 /**
- * @name Core: Event & Command Primitives
- * @ingroup core_module
- * @{
- */
-
-/**
  * @brief Immutable-like command descriptor used to route actuator actions.
  * @ingroup core_module
  */
@@ -41,7 +35,5 @@ public:
         return this->identifier == other.identifier;
     }
 };
-
-/** @} */ // End of Core: Event & Command Primitives
 
 #endif // COMMAND_H

@@ -13,12 +13,6 @@
 #include <DHT.h>
 
 /**
- * @name Sensors: Environmental & Distance
- * @ingroup sensors_module
- * @{
- */
-
-/**
  * @brief Sensor adapter for DHT-family devices (temperature and humidity).
  * @ingroup sensors_module
  */
@@ -87,7 +81,5 @@ public:
      */
     [[nodiscard]] float getRelativeHumidityInPercentage() const;
 };
-
-/** @} */ // End of Sensors: Environmental & Distance
 
 #endif // DHT_SENSOR_H

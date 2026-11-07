@@ -14,12 +14,6 @@
 #include <LiquidCrystal_I2C.h>
 
 /**
- * @name Actuators: Display & Character Output
- * @ingroup actuators_module
- * @{
- */
-
-/**
  * @brief Actuator adapter for HD44780-compatible character Liquid Crystal displays over I2C.
  * @ingroup actuators_module
  */
@@ -93,7 +87,5 @@ public:
     /** @brief Returns the number of addressable columns on this display. */
     [[nodiscard]] uint8_t getMaximumColumnCount() const;
 };
-
-/** @} */ // End of Actuators: Display & Character Output
 
 #endif // CHARACTER_LCD_DISPLAY_H

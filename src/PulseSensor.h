@@ -12,12 +12,6 @@
 #include "Sensor.h"
 
 /**
- * @name Sensors: Biometric & Analog
- * @ingroup sensors_module
- * @{
- */
-
-/**
  * @brief Analog pulse sensor that estimates beats-per-minute from waveform peaks.
  * @ingroup sensors_module
  */
@@ -81,7 +75,5 @@ public:
      */
     [[nodiscard]] int getRawSignalValue() const;
 };
-
-/** @} */ // End of Sensors: Biometric & Analog
 
 #endif // PULSE_SENSOR_H

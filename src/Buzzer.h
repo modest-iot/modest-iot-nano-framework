@@ -13,12 +13,6 @@
 #include <Arduino.h> // For tone() and noTone()
 
 /**
- * @name Actuators: Sound Output
- * @ingroup actuators_module
- * @{
- */
-
-/**
  * @brief Digital output actuator that controls a buzzer for simple sounds or tones.
  *
  * This class supports turning a buzzer on/off and playing specific tones for a duration.
@@ -119,7 +113,5 @@ public:
      */
     [[nodiscard]] unsigned long getBufferedDuration() const;
 };
-
-/** @} */ // End of Actuators: Sound Output
 
 #endif // BUZZER_H

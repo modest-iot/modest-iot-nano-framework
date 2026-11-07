@@ -13,12 +13,6 @@
 #include "TelemetryPackage.h"
 
 /**
- * @name Gateway: Protocol-Specific Implementations
- * @ingroup gateway_module
- * @{
- */
-
-/**
  * @brief Gateway adapter that posts `TelemetryPackage` payloads to an HTTP endpoint.
  * @ingroup gateway_module
  */

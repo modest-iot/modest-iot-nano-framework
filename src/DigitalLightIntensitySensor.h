@@ -11,12 +11,6 @@
 #include <Arduino.h>
 
 /**
- * @name Sensors: Environmental & Distance
- * @ingroup sensors_module
- * @{
- */
-
-/**
  * @brief Event-driven adapter for a GY-302 / BH1750 digital illuminance sensor.
  *
  * The sensor is placed in continuous high-resolution measurement mode. On each
@@ -170,7 +164,5 @@ public:
      */
     [[nodiscard]] float getIlluminanceInLux() const;
 };
-
-/** @} */ // End of Sensors: Environmental & Distance
 
 #endif // DIGITAL_LIGHT_INTENSITY_SENSOR_H

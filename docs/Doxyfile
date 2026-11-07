@@ -7,10 +7,10 @@ OUTPUT_DIRECTORY       = docs/build
 CREATE_SUBDIRS         = NO
 
 # Input
-INPUT                  = src docs/doxygen-mainpage.md README.md
+INPUT                  = src docs/doxygen-mainpage.md docs/doxygen-groups.dox README.md
 FILE_PATTERNS          = *.h *.cpp *.md *.dox
 RECURSIVE              = YES
-EXCLUDE                = cmake cmake-build-debug examples
+EXCLUDE                = cmake cmake-build-debug examples tests
 EXCLUDE_PATTERNS       = */docs/build/* */cmake-build-debug/*
 USE_MDFILE_AS_MAINPAGE = docs/doxygen-mainpage.md
 

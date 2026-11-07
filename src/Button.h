@@ -12,12 +12,6 @@
 #include "Sensor.h"
 
 /**
- * @name Sensors: Digital & Debounced Input
- * @ingroup sensors_module
- * @{
- */
-
-/**
  * @brief Debounced button sensor that emits a press event on stable transitions.
  * @ingroup sensors_module
  */
@@ -59,7 +53,5 @@ public:
     Button(int signalGpioPin, unsigned long debounceDelayInMilliseconds = 50, EventHandler* parentHandler = nullptr);
     ~Button() override = default;
 };
-
-/** @} */ // End of Sensors: Digital & Debounced Input
 
 #endif // BUTTON_H

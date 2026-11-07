@@ -23,12 +23,6 @@ class BLEServerCallbacks;
 class BLECharacteristicCallbacks;
 
 /**
- * @name Connectivity: Concrete Drivers
- * @ingroup connectivity_module
- * @{
- */
-
-/**
  * @brief Bluetooth Low Energy (BLE) connectivity adapter implementing the Nordic UART Service (NUS).
  *
  * This driver provisions a standard 128-bit Nordic UART Service (NUS) GATT server, enabling
@@ -149,8 +143,6 @@ public:
      */
     void handleDataReceived(const uint8_t* data, size_t length) const;
 };
-
-/** @} */ // End of Connectivity: Concrete Drivers
 
 #endif // CONFIG_BT_ENABLED || ARDUINO_ARCH_ESP32 || TEST_MOCK_BLE
 

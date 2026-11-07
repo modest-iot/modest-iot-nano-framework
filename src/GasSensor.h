@@ -12,12 +12,6 @@
 #include "Sensor.h"
 
 /**
- * @name Sensors: Environmental & Distance
- * @ingroup sensors_module
- * @{
- */
-
-/**
  * @brief Adapter for analog gas sensors (e.g., MQ-series) to detect gas presence and concentration.
  *
  * This sensor reads an analog voltage proportional to the gas concentration. It provides
@@ -334,7 +328,5 @@ public:
      */
     [[nodiscard]] bool isGasDetected() const;
 };
-
-/** @} */ // End of Sensors: Environmental & Distance
 
 #endif // GAS_SENSOR_H

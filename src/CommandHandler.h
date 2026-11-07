@@ -24,11 +24,6 @@
  */
 
 #include "Command.h"
-/**
- * @name Core: Base Contracts & Interfaces
- * @ingroup core_module
- * @{
- */
 
 /**
  * @brief Abstract interface for handling commands.
@@ -50,7 +45,5 @@ public:
      */
     virtual ~CommandHandler() = default;
 };
-
-        /** @} */ // End of Core: Base Contracts & Interfaces
 
 #endif // COMMAND_HANDLER_H

@@ -13,12 +13,6 @@
 #include "TelemetryPackage.h"
 
 /**
- * @name Gateway: Generic Abstraction
- * @ingroup gateway_module
- * @{
- */
-
-/**
  * @brief Send success/failure counters for gateway diagnostics.
  * @ingroup gateway_module
  */
@@ -85,7 +79,5 @@ public:
         return {}; // Default: no tracking
     }
 };
-
-/** @} */ // End of Gateway: Generic Abstraction
 
 #endif // GATEWAY_CLIENT_H

@@ -12,12 +12,6 @@
 #include "Sensor.h"
 
 /**
- * @name Sensors: Environmental & Mass
- * @ingroup sensors_module
- * @{
- */
-
-/**
  * @brief Sensor adapter for HX711-based load cell amplifiers.
  * @ingroup sensors_module
  */
@@ -186,7 +180,5 @@ public:
      */
     bool calibrate(float knownWeightInGrams);
 };
-
-/** @} */ // End of Sensors: Environmental & Mass
 
 #endif // LOAD_CELL_AMPLIFIER_H

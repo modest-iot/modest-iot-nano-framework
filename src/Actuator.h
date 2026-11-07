@@ -25,12 +25,6 @@
 
 #include "CommandHandler.h"
 
-/**
- * @name Actuators: Base Abstraction
- * @ingroup actuators_module
- * @{
- */
-
 class Actuator : public CommandHandler {
 protected:
     int pin; ///< GPIO pin assigned to the actuator.
@@ -68,7 +62,5 @@ public:
      */
     void setHandler(CommandHandler* parentHandler);
 };
-
-/** @} */ // End of Actuators: Base Abstraction
 
 #endif // ACTUATOR_H

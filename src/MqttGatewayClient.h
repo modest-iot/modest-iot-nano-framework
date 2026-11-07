@@ -14,12 +14,6 @@
 #include <PubSubClient.h>   // Extends standard PubSubClient compilation visibility
 
 /**
- * @name Gateway: Protocol-Specific Implementations
- * @ingroup gateway_module
- * @{
- */
-
-/**
  * @brief Gateway adapter that publishes `TelemetryPackage` payloads to an MQTT topic.
  * @ingroup gateway_module
  */
@@ -106,7 +100,5 @@ public:
      */
     [[nodiscard]] GatewayStatistics getStatistics() const override;
 };
-
-/** @} */ // End of Gateway: Protocol-Specific Implementations
 
 #endif // MQTT_GATEWAY_CLIENT_H

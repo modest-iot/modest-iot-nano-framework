@@ -12,12 +12,6 @@
 #include "Actuator.h"
 
 /**
- * @name Actuators: Simple Digital Output
- * @ingroup actuators_module
- * @{
- */
-
-/**
  * @brief Digital output actuator that controls an LED state.
  * @ingroup actuators_module
  */
@@ -61,7 +55,5 @@ public:
      */
     [[nodiscard]] bool isActive() const;
 };
-
-/** @} */ // End of Actuators: Simple Digital Output
 
 #endif // LED_H

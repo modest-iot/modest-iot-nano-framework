@@ -17,12 +17,6 @@
 class Client;
 
 /**
- * @name Connectivity: Concrete Drivers
- * @ingroup connectivity_module
- * @{
- */
-
-/**
  * @brief Connectivity adapter that manages Wi-Fi provisioning and socket access.
  * @ingroup connectivity_module
  */
@@ -94,7 +88,5 @@ public:
      */
     [[nodiscard]] unsigned long getReconnectInterval() const;
 };
-
-/** @} */ // End of Connectivity: Concrete Drivers
 
 #endif // WIFI_CONNECTIVITY_DRIVER_H

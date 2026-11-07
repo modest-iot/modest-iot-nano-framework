@@ -13,12 +13,6 @@
 #include <ArduinoJson.h>
 
 /**
- * @name Core: Telemetry Contracts
- * @ingroup core_module
- * @{
- */
-
-/**
  * @brief Polymorphic payload contract for telemetry serialization.
  * @ingroup core_module
  */
@@ -85,7 +79,5 @@ public:
         return serializedJsonString;
     }
 };
-
-/** @} */ // End of Core: Telemetry Contracts
 
 #endif // TELEMETRY_PACKAGE_H

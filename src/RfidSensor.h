@@ -22,12 +22,6 @@
 #include <SPI.h>
 
 /**
- * @name Sensors: Identification & Proximity
- * @ingroup sensors_module
- * @{
- */
-
-/**
  * @brief RFID reader sensor adapter supporting MFRC522/ISO14443A contactless smart cards and tags.
  * @ingroup sensors_module
  *
@@ -298,7 +292,5 @@ public:
      */
     void powerUp();
 };
-
-/** @} */ // End of Sensors: Identification & Proximity
 
 #endif // RFID_SENSOR_H

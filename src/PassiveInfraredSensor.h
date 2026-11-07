@@ -12,12 +12,6 @@
 #include "Sensor.h"
 
 /**
- * @name Sensors: Digital & Debounced Input
- * @ingroup sensors_module
- * @{
- */
-
-/**
  * @brief Passive Infrared (PIR) motion sensor that detects motion transitions.
  * @ingroup sensors_module
  */
@@ -60,7 +54,5 @@ public:
     PassiveInfraredSensor(int signalGpioPin, EventHandler* parentHandler = nullptr);
     ~PassiveInfraredSensor() override = default;
 };
-
-/** @} */ // End of Sensors: Digital & Debounced Input
 
 #endif // PASSIVE_INFRARED_SENSOR_H

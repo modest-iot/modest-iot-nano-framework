@@ -17,12 +17,6 @@
 #include <Arduino.h>
 
 /**
- * @name Actuators: Color Output
- * @ingroup actuators_module
- * @{
- */
-
-/**
  * @brief Red/green/blue color value with per-channel intensities (0-255).
  * @ingroup actuators_module
  *
@@ -192,7 +186,5 @@ public:
      */
     [[nodiscard]] uint8_t getBlueIntensity() const;
 };
-
-/** @} */ // End of Actuators: Color Output
 
 #endif // RGB_LED_H

@@ -24,11 +24,6 @@
  */
 
 #include "Event.h"
-/**
- * @name Core: Base Contracts & Interfaces
- * @ingroup core_module
- * @{
- */
 
 /**
  * @brief Abstract interface for handling events.
@@ -50,7 +45,5 @@ public:
      */
     virtual ~EventHandler() = default;
 };
-
-        /** @} */ // End of Core: Base Contracts & Interfaces
 
 #endif // EVENT_HANDLER_H

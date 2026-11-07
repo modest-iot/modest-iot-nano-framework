@@ -10,12 +10,6 @@
  */
 
 /**
- * @name Core: Event & Command Primitives
- * @ingroup core_module
- * @{
- */
-
-/**
  * @brief Immutable-like event descriptor used to route sensor notifications.
  * @ingroup core_module
  */
@@ -46,7 +40,5 @@ public:
         return this->identifier == other.identifier && this->sourceId == other.sourceId;
     }
 };
-
-/** @} */ // End of Core: Event & Command Primitives
 
 #endif // EVENT_H

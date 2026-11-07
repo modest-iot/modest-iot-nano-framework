@@ -13,12 +13,6 @@
 #include <ESP32Servo.h>
 
 /**
- * @name Actuators: Motion Control
- * @ingroup actuators_module
- * @{
- */
-
-/**
  * @brief Actuator adapter for hobby servo motors driven through ESP32 PWM.
  * @ingroup actuators_module
  */
@@ -74,7 +68,5 @@ public:
      */
     int getCurrentActiveAngleInDegrees() const;
 };
-
-/** @} */ // End of Actuators: Motion Control
 
 #endif // SERVO_MOTOR_H

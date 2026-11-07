@@ -63,12 +63,6 @@ struct DiagnosticsSnapshot {
 
 
 /**
- * @name Core: Device Orchestration
- * @ingroup core_module
- * @{
- */
-
-/**
  * @brief Base class for composed IoT devices with asynchronous sampling and telemetry pipelines.
  * @ingroup core_module
  *
@@ -251,7 +245,5 @@ public:
      */
     void handle(Command command) override;
 };
-
-/** @} */ // End of Core: Device Orchestration
 
 #endif // DEVICE_H

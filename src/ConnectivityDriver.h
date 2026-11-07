@@ -10,12 +10,6 @@
  */
 
 /**
- * @name Connectivity: Interface & Contracts
- * @ingroup connectivity_module
- * @{
- */
-
-/**
  * @brief Strategy interface for physical/network link management.
  * @ingroup connectivity_module
  */
@@ -50,7 +44,5 @@ public:
      */
     virtual bool canTransmit() = 0;
 };
-
-/** @} */ // End of Connectivity: Interface & Contracts
 
 #endif // CONNECTIVITY_DRIVER_H

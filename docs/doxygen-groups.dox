@@ -91,6 +91,30 @@
 /** @} */
 
 /**
+ * @name Sensors: Identification & Proximity
+ * @ingroup sensors_module
+ * @{
+ */
+// RFID sensor with SPI communication defined here
+/** @} */
+
+/**
+ * @name Sensors: Environmental & Mass
+ * @ingroup sensors_module
+ * @{
+ */
+// Load cell amplifier with HX711 defined here
+/** @} */
+
+/**
+ * @name Sensors: Data Types
+ * @ingroup sensors_module
+ * @{
+ */
+// Location data value object defined here
+/** @} */
+
+/**
  * @defgroup actuators_module Actuators
  * @ingroup framework_modules
  * @brief Actuator adapters that execute framework commands.
@@ -129,6 +153,22 @@
  * @{
  */
 // Servo motor with bounded angle commands defined here
+/** @} */
+
+/**
+ * @name Actuators: Sound Output
+ * @ingroup actuators_module
+ * @{
+ */
+// Buzzer with tone and frequency control defined here
+/** @} */
+
+/**
+ * @name Actuators: Color Output
+ * @ingroup actuators_module
+ * @{
+ */
+// RGB LED with PWM color control and predefined colors defined here
 /** @} */
 
 /**
