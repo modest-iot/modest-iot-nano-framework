@@ -61,61 +61,61 @@ run_test() {
 }
 
 # 1. Digital Light Sensor Suite
-run_test "test_digital_light" \
+run_test "test_DigitalLightIntensitySensor" \
     src/Sensor.cpp \
     src/DigitalLightIntensitySensor.cpp \
-    tests/digital_light/test.cpp
+    tests/DigitalLightIntensitySensor/test.cpp
 
 # 2. RGB LED Actuator Suite
-run_test "test_rgb_led" \
+run_test "test_RgbLed" \
     src/Actuator.cpp \
     src/RgbLed.cpp \
-    tests/rgb_led/test.cpp
+    tests/RgbLed/test.cpp
 
 # 3. RFID Sensor Suite
-run_test "test_rfid_sensor" \
+run_test "test_RfidSensor" \
     src/Sensor.cpp \
     src/RfidSensor.cpp \
-    tests/rfid_sensor/test.cpp
+    tests/RfidSensor/test.cpp
 
 # 4. BLE Connectivity Driver Suite
-run_test "test_ble_connectivity" \
+run_test "test_BleConnectivityDriver" \
     -DTEST_MOCK_BLE \
     src/BleConnectivityDriver.cpp \
-    tests/ble_connectivity/test.cpp
+    tests/BleConnectivityDriver/test.cpp
 
 # 5. Logging and MIOT_LOG Aliases Suite
-run_test "test_log" \
-    tests/log/test.cpp
+run_test "test_ModestLog" \
+    tests/ModestLog/test.cpp
 
 # 6. MQTT Gateway and WiFi Reconnection Suite
-run_test "test_mqtt_gateway" \
+run_test "test_MqttGatewayClient" \
     src/MqttGatewayClient.cpp \
     src/WiFiConnectivityDriver.cpp \
-    tests/mqtt_gateway/test.cpp
+    tests/MqttGatewayClient/test.cpp
 
 # 7. EngineConfig and Device Configuration Suite
-run_test "test_engine_config" \
-    tests/engine_config/test.cpp
+run_test "test_EngineConfig" \
+    tests/EngineConfig/test.cpp
 
 # 8. Diagnostics Snapshot and Shared Counters Suite
-run_test "test_diagnostics" \
+run_test "test_DiagnosticsSnapshot" \
     -DTEST_MOCK_DEVICE \
-    tests/diagnostics/test.cpp
+    tests/DiagnosticsSnapshot/test.cpp
 
 # 9. Sensor Fault and Recovery Events Suite
-run_test "test_sensor_fault" \
+run_test "test_SensorFault" \
     src/Sensor.cpp \
-    tests/sensor_fault/test.cpp
+    tests/SensorFault/test.cpp
 
 # 10. SamplingScheduler Suite
-run_test "test_scheduler" \
+run_test "test_SamplingScheduler" \
     src/SamplingScheduler.cpp \
-    tests/scheduler/test.cpp
+    tests/SamplingScheduler/test.cpp
 
 # 11. Telemetry Serialization Golden Tests Suite
-run_test "test_telemetry" \
-    tests/telemetry/test.cpp
+run_test "test_TelemetryPackage" \
+    tests/TelemetryPackage/test.cpp
 
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
