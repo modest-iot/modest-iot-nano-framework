@@ -30,12 +30,12 @@ jobs:
 
       - name: Install library dependencies
         run: |
-          arduino-cli lib install "ArduinoJson" --version ">=7.0.0"
-          arduino-cli lib install "PubSubClient"
-          arduino-cli lib install "ESP32Servo"
-          arduino-cli lib install "LiquidCrystal_I2C"
-          arduino-cli lib install "DHT sensor library"
-          arduino-cli lib install "Adafruit Unified Sensor"
+          arduino-cli lib install "ArduinoJson@7.3.0"
+          arduino-cli lib install "PubSubClient@2.8"
+          arduino-cli lib install "ESP32Servo@1.1.1"
+          arduino-cli lib install "LiquidCrystal_I2C@1.1.4"
+          arduino-cli lib install "DHT sensor library@1.4.4"
+          arduino-cli lib install "Adafruit Unified Sensor@1.1.14"
 
       - name: Compile examples for ${{ matrix.board }}
         run: |
