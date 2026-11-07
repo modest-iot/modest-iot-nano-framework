@@ -326,7 +326,7 @@ void test_unique_ptr_ownership_transfer() {
 
 } // anonymous namespace
 
-int main() {
+[[nodiscard]] int main() {
     printf("=== Diagnostics Snapshot Tests ===\n");
     
     test_snapshot_defaults();

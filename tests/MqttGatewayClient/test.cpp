@@ -59,7 +59,7 @@ public:
 
 } // anonymous namespace
 
-int main() {
+[[nodiscard]] int main() {
     std::printf("Running MqttGatewayClient & WiFi Reconnection Tests...\n");
 
     // =========================================================================

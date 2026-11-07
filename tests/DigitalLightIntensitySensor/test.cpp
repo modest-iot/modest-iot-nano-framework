@@ -13,7 +13,7 @@ public:
 };
 } // namespace
 
-int main() {
+[[nodiscard]] int main() {
     Recorder recorder;
     DigitalLightIntensitySensor sensor(21, 0x23, 10.0f, &recorder);
     assert(sensor.isInitialized());

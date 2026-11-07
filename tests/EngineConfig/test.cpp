@@ -79,7 +79,7 @@ void testEngineConfigAggregateInit() {
 
 } // anonymous namespace
 
-int main() {
+[[nodiscard]] int main() {
     std::printf("Running EngineConfig Tests...\n");
 
     testEngineConfigDefaults();

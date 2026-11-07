@@ -1,8 +1,7 @@
 #include "ModestLog.h"
 #include <cassert>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
+// ReSharper disable once CppUnusedIncludeDirective
+#include <cstdio> // NOLINT(misc-include-cleaner) — declares std::printf and std::vsnprintf
 #include <string>
 #include <vector>
 
@@ -28,7 +27,7 @@ void resetCapture() {
 
 } // anonymous namespace
 
-int main() {
+[[nodiscard]] int main() {
     std::printf("Running ModestLog and MIOT_LOG tests...\n");
 
     modest_iot::setLogSink(testLogSink);

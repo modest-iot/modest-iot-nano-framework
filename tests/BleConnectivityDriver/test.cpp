@@ -15,7 +15,7 @@ void testDataReceivedCallback(const char* data, const size_t length) {
 }
 } // namespace
 
-int main() {
+[[nodiscard]] int main() {
     // 1. Initial State verification with default device name
     BLEDevice::reset();
     lastReceivedPayload.clear();
@@ -78,7 +78,7 @@ int main() {
     assert(txChar->getValue() == "Hello BLE World!");
     assert(txChar->notifyCount == 1);
 
-    const uint8_t rawBytes[] = {0x01, 0x02, 0xAA, 0xBB};
+    constexpr uint8_t rawBytes[] = {0x01, 0x02, 0xAA, 0xBB};
     assert(driver.transmitBytes(rawBytes, sizeof(rawBytes)));
     assert(txChar->getValue().size() == 4);
     assert(txChar->notifyCount == 2);

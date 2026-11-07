@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <vector>
-#include <algorithm>
 
 #include "SamplingScheduler.h"
 #include "Event.h"
@@ -304,7 +303,7 @@ void test_base_tick_zero_rejected() {
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
-int main() {
+[[nodiscard]] int main() {
     printf("[suite] SamplingScheduler\n");
 
     test_single_slot_every_tick();

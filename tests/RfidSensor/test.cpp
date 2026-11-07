@@ -182,7 +182,7 @@ uint8_t mockTransferHook(const uint8_t data, SPIClass* spi) {
 }
 } // namespace
 
-int main() {
+[[nodiscard]] int main() {
     SPI.transferHook = mockTransferHook;
 
     EventRecorder recorder;

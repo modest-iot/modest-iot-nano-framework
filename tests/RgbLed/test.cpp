@@ -9,7 +9,7 @@ struct Recorder : CommandHandler {
 };
 } // namespace
 
-int main() {
+[[nodiscard]] int main() {
     Recorder parent;
     RgbLed led(1, 2, 3, false, &parent);
     assert(!led.isActive() && fakePwm[1] == 0 && fakePwm[2] == 0 && fakePwm[3] == 0);

@@ -8,7 +8,6 @@
 
 #include <cstdio>
 #include <cassert>
-#include <cstring>
 
 #include "../src/Event.h"
 #include "../src/EventHandler.h"
@@ -229,7 +228,7 @@ void test_source_id_is_sensor_pin() {
 
 } // anonymous namespace
 
-int main() {
+[[nodiscard]] int main() {
     printf("Running Sensor fault and recovery tests...\n\n");
 
     test_default_fault_threshold_disabled();

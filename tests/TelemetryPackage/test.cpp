@@ -49,7 +49,7 @@ public:
 
 } // anonymous namespace
 
-int main() {
+[[nodiscard]] int main() {
     std::printf("Running Telemetry Serialization Golden Tests...\n");
 
     // =========================================================================
