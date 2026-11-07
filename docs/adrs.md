@@ -34,6 +34,7 @@ The 22 ADRs below span five categories that shaped the framework's architecture:
 | [ADR-020](#adr-020-stopasynchronousengine--cooperative-shutdown-via-notification-bits)     | `stopAsynchronousEngine` — Cooperative Shutdown               | Accepted | Threading    |
 | [ADR-021](#adr-021-golden-host-tests-for-telemetry-json-serialization)                     | Golden Host Tests for Telemetry JSON Serialization            | Accepted | Testing      |
 | [ADR-022](#adr-022-notification-redesign-for-interrupt-driven-sensors-n1)                  | Notification Redesign for Interrupt-Driven Sensors (N1)       | Proposed | Threading    |
+| [ADR-023](#adr-023-domain-driven-design-adoption-and-bounded-contexts)                     | Domain-Driven Design Adoption and Bounded Contexts            | Accepted | Architecture |
 
 ### Status Legend
 
@@ -54,6 +55,7 @@ The 22 ADRs below span five categories that shaped the framework's architecture:
 | **API Design**   | 2     | `serialize` overload rename; identifier registry with reserved ranges                                |
 | **Dependencies** | 2     | Retain ArduinoJson; five hygiene principles for dependency decisions                                 |
 | **Testing**      | 2     | Shared mock harness; golden host tests for JSON serialization                                        |
+| **Architecture** | 1     | DDD adoption, bounded contexts, ubiquitous language, embedded-friendly subset                        |
 
 ---
 
@@ -752,6 +754,87 @@ ISR rules: mark handlers `IRAM_ATTR`, keep them tiny, no heap/Serial/logging, us
 
 ---
 
+## ADR-023: Domain-Driven Design Adoption and Bounded Contexts
+
+**Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
+
+### Context
+
+The Modest IoT ecosystem spans two frameworks with different complexity levels: the Nano Framework (ESP32 C++ Arduino library with 33 headers) and the Edge Framework (Raspberry Pi Python/Flask application with SQLite). As the ecosystem grows, explicit architectural guidance is needed to ensure consistent terminology, clear context boundaries, and appropriate design patterns for each framework's constraints.
+
+The Nano Framework already embodies several Domain-Driven Design (DDD) concepts implicitly:
+- **CQRS-inspired separation**: `EventHandler`/`Event` (queries/events) vs `CommandHandler`/`Command` (commands).
+- **Aggregate Root**: `Device` orchestrates sensors, actuators, scheduler, and telemetry queue.
+- **Value Objects**: `Event`, `Command`, `EngineConfig`, `DiagnosticsSnapshot` — equality by value, no identity.
+- **Repository-like pattern**: `SamplingScheduler` manages sensor registration and per-slot scheduling.
+- **Domain Events**: Sensor fault events (IDs 22/23), measurement requests.
+- **Anti-Corruption Layer**: `ConnectivityDriver` interface isolates framework from Arduino/ESP-IDF core APIs.
+- **Ubiquitous Language**: Consistent naming across 33 headers, 10 examples, and documentation.
+
+However, the framework lacked explicit DDD **strategic design**: no documented bounded contexts, no context map, no documented aggregate invariants, and no shared glossary between Nano and Edge frameworks.
+
+Three alternatives were evaluated:
+1. **Full DDD** — Apply all DDD tactical patterns (aggregates, repositories, domain services, factories, specifications) to both frameworks.
+2. **DDD subset for Nano, full DDD for Edge** — Use DDD's embedded-friendly subset for Nano (ubiquitous language, bounded contexts, value objects, documented invariants) while applying full DDD tactical patterns to the Edge Framework where Python/Flask can handle the overhead.
+3. **No explicit DDD** — Continue implicit DDD patterns without documenting the strategic design.
+
+### Decision
+
+Adopt DDD explicitly with a **two-tier approach**:
+
+**Nano Framework (Embedded DDD Subset)**:
+- **Ubiquitous Language**: Enforce consistent naming: `Device`, `Sensor`, `Actuator`, `Event`, `Command`, `TelemetryPackage`.
+- **Bounded Context**: Document the Nano Device Context boundaries (ESP32, Arduino core, FreeRTOS tasks).
+- **Aggregate Root**: `Device` is the sole aggregate; document its invariants (sensor registration before engine start, queue length limits, fault event latching).
+- **Value Objects**: `Event`, `Command`, `EngineConfig`, `DiagnosticsSnapshot` — already implemented.
+- **Repository**: `SamplingScheduler` as sensor slot repository — already implemented.
+- **Skip**: Full repository pattern, domain event dispatcher, factories, specifications — too heavy for embedded C++.
+
+**Edge Framework (Full DDD)**:
+- **Aggregates**: `DeviceProfile` (owns device metadata, online status, last-seen), `Rule` (owns condition, action, enabled state).
+- **Repositories**: `DeviceRegistry` (DeviceProfile queries), `TelemetryRepository` (time-series storage and aggregation).
+- **Domain Services**: `TelemetryIngestionService` (processes incoming telemetry, validates envelope metadata, updates device status), `RuleEngine` (evaluates automation rules).
+- **Domain Events**: `DeviceOfflineEvent`, `TelemetryReceivedEvent`, `RuleTriggeredEvent` for decoupled service communication.
+- **Anti-Corruption Layer**: REST API isolates Edge's internal models (Peewee ORM) from external clients (HTMX dashboard, cloud relay).
+
+**Bounded Contexts and Context Map**:
+- **Nano Device Context**: Bounded by ESP32 microcontroller. Aggregate: `Device`. Language: `Sensor`, `Actuator`, `TelemetryPackage`.
+- **Edge Gateway Context**: Bounded by Raspberry Pi. Aggregates: `DeviceProfile`, `Rule`. Language: `TelemetryRecord`, `Alert`, `CommandQueue`.
+- **Relationship**: **Published Language** — MQTT topics and BLE NUS define the stable contract between Nano and Edge. Nano publishes telemetry; Edge subscribes and publishes commands.
+- **External Clients Context**: **Anti-Corruption Layer** — REST API isolates Edge from HTMX dashboard, cloud relay, and third-party integrations.
+
+**Ubiquitous Language Dictionary**:
+A shared glossary ensures consistent terminology across both frameworks:
+
+| Term | Definition | Nano Equivalent | Edge Equivalent |
+|---|---|---|---|
+| **Device** | Physical IoT endpoint | `Device` class | `DeviceProfile` aggregate |
+| **Sensor** | Reads measurements | `Sensor` subclass | Telemetry field |
+| **Actuator** | Executes commands | `Actuator` subclass | Command action |
+| **Telemetry** | Measurement data | `TelemetryPackage` | `TelemetryRecord` entity |
+| **Event** | Domain event | `Event` class | `TelemetryReceivedEvent` |
+| **Command** | Intent to act | `Command` class | MQTT command payload |
+| **Rule** | Automation logic | N/A (local mediator) | `Rule` aggregate |
+| **Alert** | Triggered condition | Sensor fault (ID 22) | `Alert` entity |
+
+### Consequences
+
+- **Positive**: Explicit bounded contexts prevent model leakage between Nano and Edge. Ubiquitous language ensures consistent communication across frameworks. DDD tactical patterns in Edge provide structure for Python/Flask application. Embedded-friendly subset avoids overhead in Nano.
+- **Negative**: DDD adds documentation overhead. Full DDD in Edge requires discipline to maintain aggregate boundaries and repository abstractions.
+- **Rationale**: DDD is not a framework or library — it's a set of principles and patterns that guide design decisions. The Nano Framework's Mediator pattern, CQRS-inspired Event/Command separation, and telemetry pipeline already reflect DDD thinking. Making this explicit improves communication, documentation, and future development without code overhead for Nano. The Edge Framework benefits from full DDD patterns appropriate for Python/Flask applications.
+
+### References
+
+- `src/Device.h`, `src/Device.cpp` (Nano aggregate root)
+- `src/Sensor.h`, `src/Actuator.h` (Nano ubiquitous language)
+- `src/Event.h`, `src/Command.h` (Nano CQRS separation)
+- `src/TelemetryPackage.h` (Nano value object)
+- `src/SamplingScheduler.h` (Nano repository)
+- `docs/vision.md` (Edge Framework architecture, bounded contexts)
+- `docs/improvements.md` (W12: command marshalling, W13: interrupts)
+
+---
+
 ## Consolidated Improvements Document
 
 The 8 individual improvement documents and the roadmap have been consolidated into a single `docs/improvements.md` file, organized by tier. This eliminates cross-document maintenance overhead while keeping all information accessible through headings and search.
@@ -799,4 +882,4 @@ For future architecture decisions, use this template:
 
 ---
 
-*Last updated: 2026-11-06 (22 ADRs: 13 original + 9 added from improvements.md review)*
+*Last updated: 2026-11-06 (23 ADRs: 13 original + 9 from improvements.md review + 1 DDD adoption)*
