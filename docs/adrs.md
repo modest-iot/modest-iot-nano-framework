@@ -10,30 +10,30 @@ The Modest IoT Nano Framework is a lightweight, deterministic IoT framework for 
 
 The 22 ADRs below span five categories that shaped the framework's architecture:
 
-| # | Title | Status | Category |
-|---|---|---|---|
-| [ADR-001](#adr-001-framework-naming-convention--modest_log_-macros-with-miot_log_-aliases) | Framework Naming Convention — `MODEST_LOG_*` Macros | Accepted | Naming |
-| [ADR-002](#adr-002-ble-connectivity-via-nordic-uart-service-nus) | BLE Connectivity via Nordic UART Service (NUS) | Accepted | Connectivity |
-| [ADR-003](#adr-003-hybrid-approach-for-sensor-sampling-intervals) | Hybrid Approach for Sensor Sampling Intervals | Accepted | Scheduling |
-| [ADR-004](#adr-004-unique_ptr-ownership-for-telemetry-enqueue) | `unique_ptr` Ownership for Telemetry Enqueue | Accepted | Telemetry |
-| [ADR-005](#adr-005-drop-oldest-queue-policy) | Drop-Oldest Queue Policy | Accepted | Telemetry |
-| [ADR-006](#adr-006-bounded-serialization-buffer) | Bounded Serialization Buffer | Accepted | Telemetry |
-| [ADR-007](#adr-007-envelope-metadata--timestamp-and-sequence) | Envelope Metadata — Timestamp and Sequence | Accepted | Telemetry |
-| [ADR-008](#adr-008-serialize-overload-rename--todocument-and-tojsonstring) | `serialize` Overload Rename — `toDocument` and `toJsonString` | Accepted | API Design |
-| [ADR-009](#adr-009-sensor-fault-events--debounced-threshold-state-machine) | Sensor Fault Events — Debounced Threshold State Machine | Accepted | Diagnostics |
-| [ADR-010](#adr-010-engineconfig--configurable-task-stacks-and-priorities) | `EngineConfig` — Configurable Task Stacks and Priorities | Accepted | Threading |
-| [ADR-011](#adr-011-samplingscheduler--per-slot-countdown-scheduling) | `SamplingScheduler` — Per-Slot Countdown Scheduling | Accepted | Scheduling |
-| [ADR-012](#adr-012-retain-arduinojson-for-telemetry-serialization) | Retain ArduinoJson for Telemetry Serialization | Accepted | Dependencies |
-| [ADR-013](#adr-013-screaming_snake_case-macro-convention) | `SCREAMING_SNAKE_CASE` Macro Convention | Accepted | Naming |
-| [ADR-014](#adr-014-threading-model--single-context-sampler-with-isolated-network-task) | Threading Model — Single-Context Sampler | Accepted | Threading |
-| [ADR-015](#adr-015-identifier-registry-with-reserved-ranges) | Identifier Registry with Reserved Ranges | Accepted | API Design |
-| [ADR-016](#adr-016-dependency-hygiene-principles) | Dependency Hygiene Principles | Accepted | Dependencies |
-| [ADR-017](#adr-017-shared-mock-harness-for-host-unit-tests) | Shared Mock Harness for Host Unit Tests | Accepted | Testing |
-| [ADR-018](#adr-018-diagnosticssnapshot--on-demand-stack-and-heap-metrics) | `DiagnosticsSnapshot` — On-Demand Stack and Heap Metrics | Accepted | Diagnostics |
-| [ADR-019](#adr-019-mqtt-reconnect-policy--rate-limited-backoff-with-continuous-keep-alive) | MQTT Reconnect Policy — Rate-Limited Backoff | Accepted | Connectivity |
-| [ADR-020](#adr-020-stopasynchronousengine--cooperative-shutdown-via-notification-bits) | `stopAsynchronousEngine` — Cooperative Shutdown | Accepted | Threading |
-| [ADR-021](#adr-021-golden-host-tests-for-telemetry-json-serialization) | Golden Host Tests for Telemetry JSON Serialization | Accepted | Testing |
-| [ADR-022](#adr-022-notification-redesign-for-interrupt-driven-sensors-n1) | Notification Redesign for Interrupt-Driven Sensors (N1) | Proposed | Threading |
+| #                                                                                          | Title                                                         | Status   | Category     |
+|--------------------------------------------------------------------------------------------|---------------------------------------------------------------|----------|--------------|
+| [ADR-001](#adr-001-framework-naming-convention--modest_log_-macros-with-miot_log_-aliases) | Framework Naming Convention — `MODEST_LOG_*` Macros           | Accepted | Naming       |
+| [ADR-002](#adr-002-ble-connectivity-via-nordic-uart-service-nus)                           | BLE Connectivity via Nordic UART Service (NUS)                | Accepted | Connectivity |
+| [ADR-003](#adr-003-hybrid-approach-for-sensor-sampling-intervals)                          | Hybrid Approach for Sensor Sampling Intervals                 | Accepted | Scheduling   |
+| [ADR-004](#adr-004-unique_ptr-ownership-for-telemetry-enqueue)                             | `unique_ptr` Ownership for Telemetry Enqueue                  | Accepted | Telemetry    |
+| [ADR-005](#adr-005-drop-oldest-queue-policy)                                               | Drop-Oldest Queue Policy                                      | Accepted | Telemetry    |
+| [ADR-006](#adr-006-bounded-serialization-buffer-in-mqttgatewayclient)                      | Bounded Serialization Buffer                                  | Accepted | Telemetry    |
+| [ADR-007](#adr-007-envelope-metadata-in-telemetry-packages)                                | Envelope Metadata — Timestamp and Sequence                    | Accepted | Telemetry    |
+| [ADR-008](#adr-008-serialize-overload-rename-to-prevent-name-hiding)                       | `serialize` Overload Rename — `toDocument` and `toJsonString` | Accepted | API Design   |
+| [ADR-009](#adr-009-sensor-fault-events-with-debounced-threshold-state-machine)             | Sensor Fault Events — Debounced Threshold State Machine       | Accepted | Diagnostics  |
+| [ADR-010](#adr-010-engineconfig-for-tunable-freertos-task-parameters)                      | `EngineConfig` — Configurable Task Stacks and Priorities      | Accepted | Threading    |
+| [ADR-011](#adr-011-per-slot-samplingscheduler-with-countdown-based-dispatch)               | `SamplingScheduler` — Per-Slot Countdown Scheduling           | Accepted | Scheduling   |
+| [ADR-012](#adr-012-arduinojson-retained-for-telemetry-serialization)                       | Retain ArduinoJson for Telemetry Serialization                | Accepted | Dependencies |
+| [ADR-013](#adr-013-screaming_snake_case-for-all-preprocessor-macros)                       | `SCREAMING_SNAKE_CASE` Macro Convention                       | Accepted | Naming       |
+| [ADR-014](#adr-014-threading-model--single-context-sampler-with-isolated-network-task)     | Threading Model — Single-Context Sampler                      | Accepted | Threading    |
+| [ADR-015](#adr-015-identifier-registry-with-reserved-ranges)                               | Identifier Registry with Reserved Ranges                      | Accepted | API Design   |
+| [ADR-016](#adr-016-dependency-hygiene-principles)                                          | Dependency Hygiene Principles                                 | Accepted | Dependencies |
+| [ADR-017](#adr-017-shared-mock-harness-for-host-unit-tests)                                | Shared Mock Harness for Host Unit Tests                       | Accepted | Testing      |
+| [ADR-018](#adr-018-diagnosticssnapshot--on-demand-stack-and-heap-metrics)                  | `DiagnosticsSnapshot` — On-Demand Stack and Heap Metrics      | Accepted | Diagnostics  |
+| [ADR-019](#adr-019-mqtt-reconnect-policy--rate-limited-backoff-with-continuous-keep-alive) | MQTT Reconnect Policy — Rate-Limited Backoff                  | Accepted | Connectivity |
+| [ADR-020](#adr-020-stopasynchronousengine--cooperative-shutdown-via-notification-bits)     | `stopAsynchronousEngine` — Cooperative Shutdown               | Accepted | Threading    |
+| [ADR-021](#adr-021-golden-host-tests-for-telemetry-json-serialization)                     | Golden Host Tests for Telemetry JSON Serialization            | Accepted | Testing      |
+| [ADR-022](#adr-022-notification-redesign-for-interrupt-driven-sensors-n1)                  | Notification Redesign for Interrupt-Driven Sensors (N1)       | Proposed | Threading    |
 
 ### Status Legend
 
@@ -43,17 +43,17 @@ The 22 ADRs below span five categories that shaped the framework's architecture:
 
 ### Category Summary
 
-| Category | Count | Key Decisions |
-|---|---|---|
-| **Naming** | 2 | `MODEST_LOG_*` macros with `MIOT_LOG_*` aliases; `SCREAMING_SNAKE_CASE` convention |
-| **Connectivity** | 2 | BLE via NUS GATT profile; MQTT rate-limited reconnect with keep-alive |
-| **Scheduling** | 2 | Hybrid sensor intervals with virtual getters; per-slot countdown scheduler |
-| **Telemetry** | 4 | `unique_ptr` ownership; drop-oldest policy; bounded buffer; envelope metadata |
-| **Diagnostics** | 2 | Sensor fault events with debounced threshold; on-demand `DiagnosticsSnapshot` |
-| **Threading** | 4 | Single-context sampler model; `EngineConfig`; cooperative shutdown; notification redesign (proposed) |
-| **API Design** | 2 | `serialize` overload rename; identifier registry with reserved ranges |
-| **Dependencies** | 2 | Retain ArduinoJson; five hygiene principles for dependency decisions |
-| **Testing** | 2 | Shared mock harness; golden host tests for JSON serialization |
+| Category         | Count | Key Decisions                                                                                        |
+|------------------|-------|------------------------------------------------------------------------------------------------------|
+| **Naming**       | 2     | `MODEST_LOG_*` macros with `MIOT_LOG_*` aliases; `SCREAMING_SNAKE_CASE` convention                   |
+| **Connectivity** | 2     | BLE via NUS GATT profile; MQTT rate-limited reconnect with keep-alive                                |
+| **Scheduling**   | 2     | Hybrid sensor intervals with virtual getters; per-slot countdown scheduler                           |
+| **Telemetry**    | 4     | `unique_ptr` ownership; drop-oldest policy; bounded buffer; envelope metadata                        |
+| **Diagnostics**  | 2     | Sensor fault events with debounced threshold; on-demand `DiagnosticsSnapshot`                        |
+| **Threading**    | 4     | Single-context sampler model; `EngineConfig`; cooperative shutdown; notification redesign (proposed) |
+| **API Design**   | 2     | `serialize` overload rename; identifier registry with reserved ranges                                |
+| **Dependencies** | 2     | Retain ArduinoJson; five hygiene principles for dependency decisions                                 |
+| **Testing**      | 2     | Shared mock harness; golden host tests for JSON serialization                                        |
 
 ---
 
@@ -743,7 +743,7 @@ ISR rules: mark handlers `IRAM_ATTR`, keep them tiny, no heap/Serial/logging, us
 
 - **Positive**: Multiple notification sources coexist without collision. ISR-safe bit operations are fast and deterministic. Atomic tick counter avoids race conditions.
 - **Negative**: Requires changing all existing notification calls. Limited to 32 bits (sufficient for current use cases).
-- **Rationale**: Bit-flag notifications are the standard FreeRTOS pattern for multi-source wakeups. They enable interrupt-driven sensors (W13) and command marshalling (W12) without redesigning the notification mechanism again.
+- **Rationale**: Bit-flag notifications are the standard FreeRTOS pattern for multi-source wakeups. They enable interrupt-driven sensors (W13) and command marshaling (W12) without redesigning the notification mechanism again.
 
 ### References
 
