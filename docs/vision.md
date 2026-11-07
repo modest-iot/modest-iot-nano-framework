@@ -131,7 +131,50 @@ New examples bundle multiple components to demonstrate complete use cases:
 - **v1.1.0**: Tier 2 components (BME280, Water Leak, Door/Window) with new examples.
 - **v1.2.0**: Tier 3 components as needed, based on community feedback.
 
----
+### On-Device ML Inference (Tier 5)
+
+**Goal**: Enable latency-critical on-device ML inference for safety decisions and pattern recognition, while keeping the core framework lightweight.
+
+**Two-Tier Intelligence Model**:
+
+| Tier | Location | Capability | Latency | RAM |
+|---|---|---|---|---|
+| **Nano** | ESP32 device | Statistical rules, threshold anomaly detection, lightweight ML | < 10 ms | ~10–60 KB (opt-in) |
+| **Edge** | Raspberry Pi | Full ML inference (TFLite), time-series analysis, multi-sensor correlation | 100–1000 ms | Unlimited |
+
+**`AiMicroModelController` Abstract Domain Service**:
+
+An optional, opt-in component that wraps ML runtimes (TensorFlow Lite Micro, emlearn) behind a uniform interface. The controller is a DDD domain service — not a `Sensor` or `Actuator` — that devices use for inference on extracted features.
+
+| Design Decision | Rationale |
+|---|---|
+| **Abstract base with runtime implementations** | Framework not locked into one ML runtime; developers choose TFLM (complex models) or emlearn (minimal footprint). |
+| **Opt-in via build guards** | Wrapped in `#if defined(USE_TFLITE_MICRO)` or `#if defined(USE_EMLEARN)`. Not included in `ModestIoT.h` by default. |
+| **Domain service pattern** | Standalone service that sensors/devices use; does not extend `Sensor` or `Actuator`. Reusable across multiple sensors. |
+| **Edge manages models** | Model training, quantization, and OTA distribution happen on the Edge Framework. Nano receives model updates via MQTT. |
+
+**Use Cases**:
+
+| Use Case | Runtime | Latency | Nano or Edge? |
+|---|---|---|---|
+| **Vibration anomaly detection** | emlearn (~10 KB RAM) | < 10 ms | **Nano** — immediate motor shutdown |
+| **Keyword spotting** | TFLM (~60 KB RAM) | < 100 ms | **Nano** — voice command without network |
+| **Gesture recognition** | TFLM or emlearn | < 50 ms | **Nano** — IMU pattern recognition |
+| **Multi-sensor correlation** | TFLite (Python) | 100–1000 ms | **Edge** — cross-device analysis |
+| **Predictive maintenance** | Regression models | 100–1000 ms | **Edge** — long-term trend analysis |
+
+**Bounded Context (ADR-023)**:
+
+On-device ML inference belongs to the **Nano Device Context** for latency-critical decisions only. The Edge Framework handles model training, updates, and complex multi-sensor correlation. The published language extends to include model distribution:
+
+```
+Edge Framework → (OTA model update via MQTT) → AiMicroModelController → (inference) → Device::on()
+```
+
+**Library Release Impact**:
+
+- **v1.0.0–v1.2.0**: Core framework without ML controller. Edge Framework handles all ML workloads.
+- **v1.3.0+**: `AiMicroModelController` as an optional Tier 5 component, released after core stability and community feedback on ML use cases.
 
 ## 2. Modest IoT Edge Framework (Raspberry Pi)
 
