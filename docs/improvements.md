@@ -184,19 +184,19 @@ Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power ev
 
 **Test Suites (11 total)**:
 
-| #  | Suite                     | What It Tests                                                          |
-|----|---------------------------|------------------------------------------------------------------------|
+| #  | Suite                                | What It Tests                                                          |
+|----|--------------------------------------|------------------------------------------------------------------------|
 | 1  | `tests/DigitalLightIntensitySensor/` | I²C sensor polling, Wire mock, event emission                          |
-| 2  | `tests/RgbLed/`          | PWM output, color mixing, analogWrite mock                             |
-| 3  | `tests/RfidSensor/`      | CRC calculation, SPI mock, card communication                          |
-| 4  | `tests/BleConnectivityDriver/` | BLE NUS GATT service, notifications, RX callbacks                      |
-| 5  | `tests/ModestLog/`              | `MODEST_LOG_*` level filtering, sink redirection, `MIOT_LOG_*` aliases |
-| 6  | `tests/MqttGatewayClient/`     | MQTT keep-alive, reconnect backoff, client state                       |
-| 7  | `tests/DiagnosticsSnapshot/`      | `DiagnosticsSnapshot`, shared counters, enqueue edge cases             |
-| 8  | `tests/SensorFault/`     | Fault threshold, latching, recovery events, counter reset              |
-| 9  | `tests/SamplingScheduler/`        | Per-slot periods, phase alignment, minimum enforcement                 |
-| 10 | `tests/EngineConfig/`    | `EngineConfig` defaults, custom values, aggregate init                 |
-| 11 | `tests/TelemetryPackage/`        | Golden JSON serialization, envelope metadata, bounded buffer           |
+| 2  | `tests/RgbLed/`                      | PWM output, color mixing, analogWrite mock                             |
+| 3  | `tests/RfidSensor/`                  | CRC calculation, SPI mock, card communication                          |
+| 4  | `tests/BleConnectivityDriver/`       | BLE NUS GATT service, notifications, RX callbacks                      |
+| 5  | `tests/ModestLog/`                   | `MODEST_LOG_*` level filtering, sink redirection, `MIOT_LOG_*` aliases |
+| 6  | `tests/MqttGatewayClient/`           | MQTT keep-alive, reconnect backoff, client state                       |
+| 7  | `tests/DiagnosticsSnapshot/`         | `DiagnosticsSnapshot`, shared counters, enqueue edge cases             |
+| 8  | `tests/SensorFault/`                 | Fault threshold, latching, recovery events, counter reset              |
+| 9  | `tests/SamplingScheduler/`           | Per-slot periods, phase alignment, minimum enforcement                 |
+| 10 | `tests/EngineConfig/`                | `EngineConfig` defaults, custom values, aggregate init                 |
+| 11 | `tests/TelemetryPackage/`            | Golden JSON serialization, envelope metadata, bounded buffer           |
 
 **Source**: `tests/fakes/`, `tests/run_all.sh`, `.github/workflows/`, `CMakeLists.txt`
 
@@ -387,7 +387,7 @@ Sampler Task (Core 1)                    Network Task (Core 1)
 
 ## Tier 4: Capabilities (Pending)
 
-### W12: `Device::post` command marshalling
+### W12: `Device::post` command marshaling
 
 Give other tasks a safe way to act on the sampler's objects.
 
@@ -446,7 +446,7 @@ void IRAM_ATTR trigger(TriggerHandle handle);   // ISR-safe
 
 **Problem**: The framework only supports publish (telemetry outbound). No path from MQTT topic to `Command`.
 
-**Resolution**: Add `subscribe(topic, callback)` to MQTT gateway and map messages to `Command`s delivered via `Device::post`. Requires W12 (command marshalling) first.
+**Resolution**: Add `subscribe(topic, callback)` to MQTT gateway and map messages to `Command`s delivered via `Device::post`. Requires W12 (command marshaling) first.
 
 **Source**: `src/MqttGatewayClient.h`
 
