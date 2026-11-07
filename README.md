@@ -282,15 +282,7 @@ Documentation is split between architecture artifacts in `docs/` and code-level 
 |---|---|
 | [`docs/class-diagram.puml`](docs/class-diagram.puml) | PlantUML class diagram of the framework structure. |
 | [`docs/user-stories.md`](docs/user-stories.md) | Product-level user stories and acceptance criteria. |
-| [`docs/improvements-roadmap.md`](docs/improvements-roadmap.md) | Index and status of all improvement briefs. |
-| [`docs/connectivity-improvement.md`](docs/connectivity-improvement.md) | Connectivity drivers and gateway clients. |
-| [`docs/diagnostics-improvement.md`](docs/diagnostics-improvement.md) | Logging, sensor health, and counters. |
-| [`docs/threading-model-improvement.md`](docs/threading-model-improvement.md) | Threading rules, engine config, and ID registry. |
-| [`docs/sampling-interval-improvement.md`](docs/sampling-interval-improvement.md) | Per-slot scheduling and pure scheduler. |
-| [`docs/telemetry-improvement.md`](docs/telemetry-improvement.md) | Package ownership, queue policy, and format decoupling. |
-| [`docs/dependencies-improvement.md`](docs/dependencies-improvement.md) | Third-party library inventory and cleanup. |
-| [`docs/library-readiness-improvement.md`](docs/library-readiness-improvement.md) | CI, host tests, and release preparation. |
-| [`docs/interrupt-power-improvement.md`](docs/interrupt-power-improvement.md) | Interrupt-driven sensing and power optimization. |
+| [`docs/improvements.md`](docs/improvements.md) | Master index, implementation status, and detailed plans for all framework improvements. |
 
 ### API and Code-Level Reference (`src/`)
 
