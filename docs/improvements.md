@@ -371,8 +371,8 @@ Sampler Task (Core 1)                    Network Task (Core 1)
 ┌──────────────────────┐                ┌─────────────────────────┐
 │ Sensor reads data    │                │ xQueueReceive()         │
 │                      │                │                         │
-│ make_unique<Package> │──enqueue──►│ TelemetryPackage*       │
-│ (heap allocation)    │  (unique_ptr)│                         │
+│ make_unique<Package> │──enqueue──────►│ TelemetryPackage*       │
+│ (heap allocation)    │  (unique_ptr)  │                         │
 │ if enqueue fails:    │                │ processQueuedTelemetry()│
 │   unique_ptr deletes │                │ delete packet           │
 └──────────────────────┘                │ serializeJson()         │
