@@ -75,7 +75,6 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 | `ConnectivityDriver` | Abstract base interface for network transports (`connect()`, `isConnected()`, `transmit()`). |
 | `WiFiConnectivityDriver` | Wi-Fi STA driver with reconnection retry logic and configurable reconnect intervals. |
 | `BleConnectivityDriver` | Bluetooth Low Energy driver using Nordic UART Service (NUS) GATT profile; supports all ESP32 variants. |
-| `BluetoothConnectivityDriver` | **Deprecated** Bluetooth Classic (SPP) driver, isolated behind preprocessor guards for legacy ESP32 only. |
 
 ### Gateway Clients
 
@@ -252,17 +251,17 @@ The framework includes 11 host unit test suites that run natively without hardwa
 
 | Suite | What It Tests |
 |---|---|
-| `tests/digital_light/` | I²C sensor polling, Wire mock, event emission |
-| `tests/rgb_led/` | PWM output, color mixing, analogWrite mock |
-| `tests/rfid_sensor/` | CRC calculation, SPI mock, card communication |
-| `tests/ble_connectivity/` | BLE NUS GATT service, notifications, RX callbacks |
-| `tests/log/` | `MODEST_LOG_*` level filtering, sink redirection, `MIOT_LOG_*` aliases |
-| `tests/mqtt_gateway/` | MQTT keep-alive, reconnect backoff, client state |
-| `tests/engine_config/` | `EngineConfig` defaults, custom values, aggregate init |
-| `tests/diagnostics/` | `DiagnosticsSnapshot`, shared counters, enqueue edge cases |
-| `tests/sensor_fault/` | Fault threshold, latching, recovery events, counter reset |
-| `tests/scheduler/` | Per-slot periods, phase alignment, minimum enforcement |
-| `tests/telemetry/` | Golden JSON serialization, envelope metadata, bounded buffer overflow |
+| `tests/DigitalLightIntensitySensor/` | I²C sensor polling, Wire mock, event emission |
+| `tests/RgbLed/` | PWM output, color mixing, analogWrite mock |
+| `tests/RfidSensor/` | CRC calculation, SPI mock, card communication |
+| `tests/BleConnectivityDriver/` | BLE NUS GATT service, notifications, RX callbacks |
+| `tests/ModestLog/` | `MODEST_LOG_*` level filtering, sink redirection, `MIOT_LOG_*` aliases |
+| `tests/MqttGatewayClient/` | MQTT keep-alive, reconnect backoff, client state |
+| `tests/EngineConfig/` | `EngineConfig` defaults, custom values, aggregate init |
+| `tests/DiagnosticsSnapshot/` | `DiagnosticsSnapshot`, shared counters, enqueue edge cases |
+| `tests/SensorFault/` | Fault threshold, latching, recovery events, counter reset |
+| `tests/SamplingScheduler/` | Per-slot periods, phase alignment, minimum enforcement |
+| `tests/TelemetryPackage/` | Golden JSON serialization, envelope metadata, bounded buffer overflow |
 
 Run all tests locally:
 
@@ -372,7 +371,7 @@ void loop() {
 ## Notes
 
 - The library targets Arduino-compatible ESP32 projects.
-- BLE connectivity (`BleConnectivityDriver`) supports all ESP32 variants. Legacy Bluetooth Classic (`BluetoothConnectivityDriver`) is deprecated and only available on original ESP32 hardware.
+- BLE connectivity (`BleConnectivityDriver`) supports all ESP32 variants (ESP32, S3, C3, C6, H2).
 - Some example components depend on external Arduino libraries (listed in `library.properties`).
 - Doxygen comments in `src/*.h` and `src/*.cpp` provide the canonical code-level reference.
 
