@@ -164,99 +164,99 @@ enable_testing()
 
 file(GLOB TEST_FAKES "tests/fakes/*.h")
 
-add_executable(test_digital_light
-        tests/digital_light/test.cpp
+add_executable(test_DigitalLightIntensitySensor
+        tests/DigitalLightIntensitySensor/test.cpp
         src/Sensor.cpp
         src/DigitalLightIntensitySensor.cpp
         ${TEST_FAKES}
 )
-target_include_directories(test_digital_light PRIVATE tests/fakes src)
+target_include_directories(test_DigitalLightIntensitySensor PRIVATE tests/fakes src)
 
-add_executable(test_rgb_led
-        tests/rgb_led/test.cpp
+add_executable(test_RgbLed
+        tests/RgbLed/test.cpp
         src/Actuator.cpp
         src/RgbLed.cpp
         ${TEST_FAKES}
 )
-target_include_directories(test_rgb_led PRIVATE tests/fakes src)
+target_include_directories(test_RgbLed PRIVATE tests/fakes src)
 
-add_executable(test_rfid_sensor
-        tests/rfid_sensor/test.cpp
+add_executable(test_RfidSensor
+        tests/RfidSensor/test.cpp
         src/Sensor.cpp
         src/RfidSensor.cpp
         ${TEST_FAKES}
 )
-target_include_directories(test_rfid_sensor PRIVATE tests/fakes src)
+target_include_directories(test_RfidSensor PRIVATE tests/fakes src)
 
-add_executable(test_ble_connectivity
-        tests/ble_connectivity/test.cpp
+add_executable(test_BleConnectivityDriver
+        tests/BleConnectivityDriver/test.cpp
         src/BleConnectivityDriver.cpp
         ${TEST_FAKES}
 )
-target_compile_definitions(test_ble_connectivity PRIVATE TEST_MOCK_BLE)
-target_include_directories(test_ble_connectivity PRIVATE tests/fakes src)
+target_compile_definitions(test_BleConnectivityDriver PRIVATE TEST_MOCK_BLE)
+target_include_directories(test_BleConnectivityDriver PRIVATE tests/fakes src)
 
-add_executable(test_log
-        tests/log/test.cpp
+add_executable(test_ModestLog
+        tests/ModestLog/test.cpp
         ${TEST_FAKES}
 )
-target_include_directories(test_log PRIVATE tests/fakes src)
+target_include_directories(test_ModestLog PRIVATE tests/fakes src)
 
-add_executable(test_mqtt_gateway
-        tests/mqtt_gateway/test.cpp
+add_executable(test_MqttGatewayClient
+        tests/MqttGatewayClient/test.cpp
         src/MqttGatewayClient.cpp
         src/WiFiConnectivityDriver.cpp
         ${TEST_FAKES}
 )
-target_include_directories(test_mqtt_gateway PRIVATE tests/fakes src)
+target_include_directories(test_MqttGatewayClient PRIVATE tests/fakes src)
 
-add_executable(test_engine_config
-        tests/engine_config/test.cpp
+add_executable(test_EngineConfig
+        tests/EngineConfig/test.cpp
         ${TEST_FAKES}
 )
-target_include_directories(test_engine_config PRIVATE tests/fakes src)
+target_include_directories(test_EngineConfig PRIVATE tests/fakes src)
 
-add_executable(test_diagnostics
-        tests/diagnostics/test.cpp
+add_executable(test_DiagnosticsSnapshot
+        tests/DiagnosticsSnapshot/test.cpp
         ${TEST_FAKES}
 )
-target_compile_definitions(test_diagnostics PRIVATE TEST_MOCK_DEVICE)
-target_include_directories(test_diagnostics PRIVATE tests/fakes src)
+target_compile_definitions(test_DiagnosticsSnapshot PRIVATE TEST_MOCK_DEVICE)
+target_include_directories(test_DiagnosticsSnapshot PRIVATE tests/fakes src)
 
-add_executable(test_sensor_fault
-        tests/sensor_fault/test.cpp
+add_executable(test_SensorFault
+        tests/SensorFault/test.cpp
         src/Sensor.cpp
         ${TEST_FAKES}
 )
-target_include_directories(test_sensor_fault PRIVATE tests/fakes src)
+target_include_directories(test_SensorFault PRIVATE tests/fakes src)
 
-add_executable(test_scheduler
-        tests/scheduler/test.cpp
+add_executable(test_SamplingScheduler
+        tests/SamplingScheduler/test.cpp
         src/SamplingScheduler.cpp
         ${TEST_FAKES}
 )
-target_include_directories(test_scheduler PRIVATE tests/fakes src)
+target_include_directories(test_SamplingScheduler PRIVATE tests/fakes src)
 
-add_executable(test_telemetry
-        tests/telemetry/test.cpp
+add_executable(test_TelemetryPackage
+        tests/TelemetryPackage/test.cpp
         ${TEST_FAKES}
 )
-target_include_directories(test_telemetry PRIVATE tests/fakes src)
+target_include_directories(test_TelemetryPackage PRIVATE tests/fakes src)
 
-add_test(NAME DigitalLightTest COMMAND test_digital_light)
-add_test(NAME RgbLedTest COMMAND test_rgb_led)
-add_test(NAME RfidSensorTest COMMAND test_rfid_sensor)
-add_test(NAME BleConnectivityTest COMMAND test_ble_connectivity)
-add_test(NAME LogTest COMMAND test_log)
-add_test(NAME MqttGatewayTest COMMAND test_mqtt_gateway)
-add_test(NAME EngineConfigTest COMMAND test_engine_config)
-add_test(NAME DiagnosticsTest COMMAND test_diagnostics)
-add_test(NAME SensorFaultTest COMMAND test_sensor_fault)
-add_test(NAME SchedulerTest COMMAND test_scheduler)
-add_test(NAME TelemetryTest COMMAND test_telemetry)
+add_test(NAME DigitalLightIntensitySensorTest COMMAND test_DigitalLightIntensitySensor)
+add_test(NAME RgbLedTest COMMAND test_RgbLed)
+add_test(NAME RfidSensorTest COMMAND test_RfidSensor)
+add_test(NAME BleConnectivityDriverTest COMMAND test_BleConnectivityDriver)
+add_test(NAME ModestLogTest COMMAND test_ModestLog)
+add_test(NAME MqttGatewayClientTest COMMAND test_MqttGatewayClient)
+add_test(NAME EngineConfigTest COMMAND test_EngineConfig)
+add_test(NAME DiagnosticsSnapshotTest COMMAND test_DiagnosticsSnapshot)
+add_test(NAME SensorFaultTest COMMAND test_SensorFault)
+add_test(NAME SamplingSchedulerTest COMMAND test_SamplingScheduler)
+add_test(NAME TelemetryPackageTest COMMAND test_TelemetryPackage)
 
 add_custom_target(run_tests
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        DEPENDS test_digital_light test_rgb_led test_rfid_sensor test_ble_connectivity test_log test_mqtt_gateway test_engine_config test_diagnostics test_sensor_fault test_scheduler test_telemetry
+        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage
         COMMENT "Executing all native host test suites..."
 )
