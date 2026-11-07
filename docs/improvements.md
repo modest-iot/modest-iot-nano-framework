@@ -403,18 +403,32 @@ Give other tasks a safe way to act on the sampler's objects.
 
 ---
 
-### W13: Interrupt triggers for Button and PIR
+### W13: Interrupt triggers for Button, PIR, and pulse-based sensors
 
-**Problem**: Edge-type sensors are polled, introducing latency (up to one full period) and wasting CPU on idle reads.
+**Problem**: Edge-type sensors are polled, introducing latency (up to one full period) and wasting CPU on idle reads. Pulse-based sensors (e.g., YF-S201 water flow) cannot be accurately measured by polling alone — every pulse must be captured.
 
 **Mechanism**: The ISR does minimal work: sets a bit and wakes the sampler. The sampler runs the sensor's normal `processEvent` (existing logic, including debounce) and forwards the event to the mediator.
 
+**API Design** (following `appendSensorToScheduler` naming pattern):
+
 ```cpp
-TriggerHandle addTriggered(EventHandler* handler, int eventIdentifier);
-void IRAM_ATTR trigger(TriggerHandle handle);   // ISR-safe
+// In Device.h:
+uint32_t appendSensorToTriggeringScheduler(Sensor* target, int eventId, int interruptMode = CHANGE);
+void removeSensorFromTriggeringScheduler(uint32_t triggerHandle);
+bool appendToBothSchedulers(Sensor* target, int eventId, int interruptMode = CHANGE);
 ```
 
+- `appendSensorToTriggeringScheduler`: Registers a sensor for interrupt-driven operation. Mirrors `appendSensorToScheduler` naming pattern. Returns a handle for ISR-safe trigger (or 0 on failure).
+- `removeSensorFromTriggeringScheduler`: Removes an interrupt-driven sensor registration.
+- `appendToBothSchedulers`: Convenience method for hybrid sensors (e.g., YF-S201) that need both interrupt-driven pulse counting and periodic sampling. Registers with both schedulers in one call.
+
 **Notification redesign (N1)**: Replace `vTaskNotifyGiveFromISR` with `xTaskNotifyFromISR(handle, bit, eSetBits)` for all sources. Keep elapsed ticks in an ISR-incremented `std::atomic<uint32_t> pendingTicks` that the task exchanges to zero.
+
+| Bit | Meaning | Source |
+|-----|---------|--------|
+| Bit 0 (0x1) | Timer tick arrived | Hardware timer ISR |
+| Bit 1 (0x2) | Termination signal | `stopAsynchronousEngine()` |
+| Bit 2 (0x4) | Interrupt-driven sensor event | GPIO ISR via `appendSensorToTriggeringScheduler()` |
 
 **ISR Rules**:
 - Mark handlers `IRAM_ATTR`; keep them tiny; no heap, no `Serial`, no logging.
@@ -425,10 +439,27 @@ void IRAM_ATTR trigger(TriggerHandle handle);   // ISR-safe
 **Candidates**:
 - `Button`: Excellent fit. GPIO edge interrupt plus debounce in the task.
 - `PassiveInfraredSensor`: Excellent fit. Rising and falling edge.
+- `WaterFlowSensor` (YF-S201): Excellent fit for hybrid pattern. RISING edge interrupt counts every pulse; periodic sampling reads accumulated count and calculates flow rate. Default interval 1000ms, minimum 100ms. ~450 pulses per liter.
 - `LoadCellAmplifier` (HX711): Good. Data-ready line (DOUT) falls when conversion is ready.
 - `UltrasonicSensor`: Good, harder. RMT/PCNT peripheral or edge interrupt pair.
 
-**Source**: `src/Device.h`, `src/Button.h`, `src/PassiveInfraredSensor.h`
+**Hybrid Sensor Pattern** (e.g., YF-S201):
+
+Some sensors need both interrupt-driven operation (to capture every pulse/edge) and periodic sampling (to read accumulated data and calculate rates). The `appendToBothSchedulers` convenience method registers the sensor with both schedulers:
+
+```cpp
+// In a device sketch:
+appendToBothSchedulers(&flowSensor,
+                       Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
+                       RISING);
+// Equivalent to:
+// appendSensorToScheduler(&flowSensor, eventId);        // Periodic read
+// appendSensorToTriggeringScheduler(&flowSensor, eventId, RISING); // Pulse counting
+```
+
+**Auto-routing rejected**: The `appendSensorToScheduler(Sensor*, int)` overload does NOT auto-route interrupt-driven sensors to the triggering scheduler. The APIs remain explicit — the developer knows which scheduler the sensor is registered with. Hybrid sensors use `appendToBothSchedulers`.
+
+**Source**: `src/Device.h`, `src/Device.cpp`, `src/Button.h`, `src/PassiveInfraredSensor.h`
 
 ---
 
