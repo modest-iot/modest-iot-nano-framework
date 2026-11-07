@@ -186,17 +186,17 @@ Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power ev
 
 | #  | Suite                     | What It Tests                                                          |
 |----|---------------------------|------------------------------------------------------------------------|
-| 1  | `tests/digital_light/`    | I²C sensor polling, Wire mock, event emission                          |
-| 2  | `tests/rgb_led/`          | PWM output, color mixing, analogWrite mock                             |
-| 3  | `tests/rfid_sensor/`      | CRC calculation, SPI mock, card communication                          |
-| 4  | `tests/ble_connectivity/` | BLE NUS GATT service, notifications, RX callbacks                      |
-| 5  | `tests/log/`              | `MODEST_LOG_*` level filtering, sink redirection, `MIOT_LOG_*` aliases |
-| 6  | `tests/mqtt_gateway/`     | MQTT keep-alive, reconnect backoff, client state                       |
-| 7  | `tests/diagnostics/`      | `DiagnosticsSnapshot`, shared counters, enqueue edge cases             |
-| 8  | `tests/sensor_fault/`     | Fault threshold, latching, recovery events, counter reset              |
-| 9  | `tests/scheduler/`        | Per-slot periods, phase alignment, minimum enforcement                 |
-| 10 | `tests/engine_config/`    | `EngineConfig` defaults, custom values, aggregate init                 |
-| 11 | `tests/telemetry/`        | Golden JSON serialization, envelope metadata, bounded buffer           |
+| 1  | `tests/DigitalLightIntensitySensor/` | I²C sensor polling, Wire mock, event emission                          |
+| 2  | `tests/RgbLed/`          | PWM output, color mixing, analogWrite mock                             |
+| 3  | `tests/RfidSensor/`      | CRC calculation, SPI mock, card communication                          |
+| 4  | `tests/BleConnectivityDriver/` | BLE NUS GATT service, notifications, RX callbacks                      |
+| 5  | `tests/ModestLog/`              | `MODEST_LOG_*` level filtering, sink redirection, `MIOT_LOG_*` aliases |
+| 6  | `tests/MqttGatewayClient/`     | MQTT keep-alive, reconnect backoff, client state                       |
+| 7  | `tests/DiagnosticsSnapshot/`      | `DiagnosticsSnapshot`, shared counters, enqueue edge cases             |
+| 8  | `tests/SensorFault/`     | Fault threshold, latching, recovery events, counter reset              |
+| 9  | `tests/SamplingScheduler/`        | Per-slot periods, phase alignment, minimum enforcement                 |
+| 10 | `tests/EngineConfig/`    | `EngineConfig` defaults, custom values, aggregate init                 |
+| 11 | `tests/TelemetryPackage/`        | Golden JSON serialization, envelope metadata, bounded buffer           |
 
 **Source**: `tests/fakes/`, `tests/run_all.sh`, `.github/workflows/`, `CMakeLists.txt`
 
@@ -218,7 +218,7 @@ Zero-cost compile-time level filtering (`MODEST_LOG_LEVEL` 0-5). ESP32 `esp32-ha
 #endif
 ```
 
-**Source**: `src/ModestLog.h`, `tests/log/test.cpp`
+**Source**: `src/ModestLog.h`, `tests/ModestLog/test.cpp`
 
 #### Diagnostics Snapshot
 
@@ -230,7 +230,7 @@ Gateway statistics via `GatewayStatistics` struct and `MqttGatewayClient::getSta
 
 First-drop and first-failure warning logging with one-time transition guards.
 
-**Source**: `src/Device.h`, `src/Device.cpp`, `src/GatewayClient.h`, `tests/diagnostics/test.cpp`
+**Source**: `src/Device.h`, `src/Device.cpp`, `src/GatewayClient.h`, `tests/DiagnosticsSnapshot/test.cpp`
 
 #### Sensor Fault Events
 
@@ -242,7 +242,7 @@ Converted sensors: `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `Digita
 
 `OutdoorSecurityLightController` example opts in with `setFaultThreshold(3)`.
 
-**Source**: `src/Sensor.h`, `src/Sensor.cpp`, `tests/sensor_fault/test.cpp`
+**Source**: `src/Sensor.h`, `src/Sensor.cpp`, `tests/SensorFault/test.cpp`
 
 ---
 
@@ -279,7 +279,7 @@ Converted sensors: `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `Digita
 - Idempotent double-stop guard.
 - `~Device()` calls `stopAsynchronousEngine()` as safety net.
 
-**Source**: `src/Device.h`, `src/Device.cpp`, `tests/engine_config/test.cpp`
+**Source**: `src/Device.h`, `src/Device.cpp`, `tests/EngineConfig/test.cpp`
 
 ---
 
@@ -292,11 +292,9 @@ Converted sensors: `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `Digita
 - Host unit tests covering connection state, transmission, and RX events.
 
 **BluetoothConnectivityDriver**:
-- Isolated with preprocessor guards (`CONFIG_BT_ENABLED`, `CONFIG_BLUEDROID_ENABLED`).
-- Marked `[[deprecated]]` and removed from `ModestIoT.h` umbrella header.
-- Fixes compilation on ESP32-S3, ESP32-C3, ESP32-C6, and ESP8266.
+- Fully removed. The legacy driver was initially isolated behind preprocessor guards and marked `[[deprecated]]`, then deleted as Arduino-ESP32 Core 4.0.0 drops `BluetoothSerial` support and modern ESP32 variants (S3, C3, C6, H2) lack Bluetooth Classic hardware.
 
-**Source**: `src/BleConnectivityDriver.h`, `src/BleConnectivityDriver.cpp`, `src/BluetoothConnectivityDriver.h`, `tests/ble_connectivity/test.cpp`
+**Source**: `src/BleConnectivityDriver.h`, `src/BleConnectivityDriver.cpp`, `tests/BleConnectivityDriver/test.cpp`
 
 ---
 
@@ -345,7 +343,7 @@ Converted sensors: `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `Digita
 | `DigitalLightIntensitySensor` | sub-millisecond to a few ms         | `Wire` reads                            |
 | `GeolocationSensor`           | grows with serial backlog           | `updateInternalBuffer()`                |
 
-**Source**: `src/SamplingScheduler.h`, `src/SamplingScheduler.cpp`, `src/Device.cpp`, `src/Sensor.h`, `tests/scheduler/test.cpp`
+**Source**: `src/SamplingScheduler.h`, `src/SamplingScheduler.cpp`, `src/Device.cpp`, `src/Sensor.h`, `tests/SamplingScheduler/test.cpp`
 
 ---
 
@@ -359,7 +357,7 @@ Converted sensors: `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `Digita
 - Bounded 512-byte serialization buffer in `MqttGatewayClient` (`MAX_TELEMETRY_PAYLOAD_SIZE`), eliminating intermediate `String` allocation.
 - Envelope metadata: `captureTimestamp` (from `millis()`) and `sequenceNumber` (monotonically increasing) in every `TelemetryPackage`. Sequence assigned before enqueue so drops are visible as gaps.
 - Renamed `serialize()` convenience overloads to `toDocument()` and `toJsonString()` to prevent name hiding (T14).
-- Golden host tests in `tests/telemetry/test.cpp` (10 test cases).
+- Golden host tests in `tests/TelemetryPackage/test.cpp` (10 test cases).
 
 **Deferred**:
 - Packet pool with placement-new (requires heap measurements).
@@ -383,7 +381,7 @@ Sampler Task (Core 1)                    Network Task (Core 1)
                                         └─────────────────────────┘
 ```
 
-**Source**: `src/Device.h`, `src/Device.cpp`, `src/TelemetryPackage.h`, `src/MqttGatewayClient.h`, `src/MqttGatewayClient.cpp`, `tests/telemetry/test.cpp`
+**Source**: `src/Device.h`, `src/Device.cpp`, `src/TelemetryPackage.h`, `src/MqttGatewayClient.h`, `src/MqttGatewayClient.cpp`, `tests/TelemetryPackage/test.cpp`
 
 ---
 
