@@ -52,7 +52,7 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 
 | ID      | Work Item                                    | Priority | Complexity | Description                                                                            |
 |---------|----------------------------------------------|----------|------------|----------------------------------------------------------------------------------------|
-| **W12** | `Device::post` command marshalling           | High     | High       | Cross-task command queue for cloud-to-device commands. Prerequisite for W15.           |
+| **W12** | `Device::post` command marshaling            | High     | High       | Cross-task command queue for cloud-to-device commands. Prerequisite for W15.           |
 | **W13** | Interrupt triggers for Button, PIR, pulse sensors | High | Medium | GPIO edge triggers with `appendSensorToTriggeringScheduler`. Reduces latency and CPU usage. Enables YF-S201 water flow sensor. |
 | **W14** | HX711 data-ready and ultrasonic echo capture | Medium   | Medium     | Remove blocking `pulseIn()` and HX711 timeout waits. Non-blocking alternatives.        |
 | **W15** | Cloud-to-device commands (MQTT subscribe)    | Medium   | Medium     | MQTT subscribe topics, parse incoming commands, marshal to sampler via `Device::post`. |
@@ -862,7 +862,7 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 
 | Quarter     | Milestone       | Deliverables                                                                   |
 |-------------|-----------------|--------------------------------------------------------------------------------|
-| **Q1 2027** | Tier 4 complete | W12–W15: command marshalling, interrupts, non-blocking sensors, MQTT subscribe |
+| **Q1 2027** | Tier 4 complete | W12–W15: command marshaling, interrupts, non-blocking sensors, MQTT subscribe |
 | **Q2 2027** | Tier 5 complete | W16–W19: tickless sleep, deep sleep, telemetry pool, native drivers            |
 | **Q2 2027** | Library release | v1.0.0 tag, Arduino Library Manager submission                                 |
 

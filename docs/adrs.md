@@ -483,7 +483,7 @@ Five threading rules were established:
 ### Consequences
 
 - **Positive**: Eliminates race conditions in sensors/actuators without mutexes. Predictable execution context for debugging. Network latency does not block sensing.
-- **Negative**: Cloud-to-device commands require `Device::post` marshalling (W12). Developers must understand the two-task model.
+- **Negative**: Cloud-to-device commands require `Device::post` marshaling (W12). Developers must understand the two-task model.
 - **Rationale**: The single-context model is simpler, safer, and matches the embedded IoT use case where sensors are polled and actuators are commanded sequentially.
 
 ### References
@@ -831,7 +831,7 @@ A shared glossary ensures consistent terminology across both frameworks:
 - `src/TelemetryPackage.h` (Nano value object)
 - `src/SamplingScheduler.h` (Nano repository)
 - `docs/vision.md` (Edge Framework architecture, bounded contexts)
-- `docs/improvements.md` (W12: command marshalling, W13: interrupts)
+- `docs/improvements.md` (W12: command marshaling, W13: interrupts)
 
 ---
 
