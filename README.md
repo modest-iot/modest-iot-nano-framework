@@ -392,7 +392,7 @@ Contributions, improvements, and extensions are welcome under the MIT License. Y
 
 ## Future Directions
 
-- **Tier 4**: `Device::post` command marshalling for cross-task commands, interrupt triggers for Button and PIR, HX711 data-ready and ultrasonic echo capture.
+- **Tier 4**: `Device::post` command marshaling for cross-task commands, interrupt triggers for Button and PIR, HX711 data-ready and ultrasonic echo capture.
 - **Tier 5**: Tickless scheduling, deep-sleep battery profiles, telemetry packet pool, and `TelemetryWriter` format abstraction.
 - **MicroPython Edition**: A planned port to MicroPython in a separate repository.
 

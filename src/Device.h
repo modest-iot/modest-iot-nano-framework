@@ -16,6 +16,7 @@
 #include "GatewayClient.h"
 #include "SamplingScheduler.h"
 #include <memory>
+#include <atomic>
 #include <Arduino.h>
 
 struct hw_timer_s;
@@ -28,7 +29,7 @@ struct hw_timer_s;
  * Default values match the original hard-coded parameters: sampler (4096 bytes, priority 3, core 1),
  * network worker (8192 bytes, priority 1, core 1), queue length 10.
  */
-struct EngineConfig {
+struct EngineConfiguration {
     uint32_t samplerStackBytes = 4096; ///< Stack size for the hardware sampling task.
     uint32_t networkStackBytes = 8192; ///< Stack size for the network dispatcher task.
     uint8_t samplerPriority = 3; ///< FreeRTOS priority for the sampler task.
@@ -87,6 +88,9 @@ private:
     mutable bool firstDropLogged; ///< Tracks whether the first drop warning was emitted.
     mutable uint32_t nextSequenceNumber; ///< Monotonically increasing sequence for telemetry envelope.
 
+    // Notification infrastructure
+    std::atomic<uint32_t> pendingTicks; ///< ISR-incremented tick counter for bit-flag notifications.
+
     hw_timer_t* hardwareTimer; ///< Pointer to the hardware timer.
     const unsigned long pollingIntervalInMilliseconds; ///< Polling interval in milliseconds.
     const uint8_t hardwareTimerIndex; ///< Index of the hardware timer.
@@ -130,9 +134,9 @@ protected:
 
     /**
      * @brief Allocates queue/task infrastructure with full engine configuration.
-     * @param config Stack sizes, priorities, core pinning, and queue depth.
+     * @param engineConfiguration Stack sizes, priorities, core pinning, and queue depth.
      */
-    void initializeAsynchronousEngine(const EngineConfig& config);
+    void initializeAsynchronousEngine(const EngineConfiguration& engineConfiguration);
 
     /**
      * @brief Pushes a telemetry payload pointer into the internal queue.
@@ -231,6 +235,26 @@ protected:
     void stopAsynchronousEngine();
 
 public:
+    /**
+     * @brief Notification bit flags for the sampler task.
+     *
+     * Each bit represents a distinct event source that can wake the sampler task.
+     * The sampler task checks these bits to determine which work to perform.
+     *
+     * | Bit | Enum Value | Source |
+     * |-----|------------|--------|
+     * | Bit 0 (0x1) | TimerTickArrived | Hardware timer ISR |
+     * | Bit 1 (0x2) | TerminationSignal | stopAsynchronousEngine() |
+     * | Bit 2 (0x4) | SensorTrigger | GPIO ISR (W13) |
+     * | Bit 3 (0x8) | CommandAvailable | Device::post() (W12) |
+     */
+    enum class NotificationBitFlag : uint32_t {
+        TimerTickArrived    = 0x1, ///< Hardware timer tick arrived.
+        TerminationSignal   = 0x2, ///< Engine termination signal.
+        SensorTrigger       = 0x4, ///< Interrupt-driven sensor event (W13).
+        CommandAvailable    = 0x8  ///< Command marshaled from network task (W12).
+    };
+
     /**
      * @brief Returns a snapshot of runtime health and diagnostic counters.
      *

@@ -31,6 +31,7 @@ Device::Device(const unsigned long samplingIntervalInMilliseconds, const uint8_t
       missedTickCount(0),
       firstDropLogged(false),
       nextSequenceNumber(0),
+      pendingTicks(0),
       hardwareTimer(nullptr),
       pollingIntervalInMilliseconds(samplingIntervalInMilliseconds),
       hardwareTimerIndex(timerGroupIndex) {
@@ -47,36 +48,41 @@ Device::~Device() {
 void IRAM_ATTR Device::handleHardwareTimerInterrupt(void *deviceInstance) {
     if (deviceInstance != nullptr) {
         auto *self = static_cast<Device *>(deviceInstance);
+        // Increment atomic tick counter so the sampler task knows how many ticks occurred
+        self->pendingTicks.fetch_add(1, std::memory_order_relaxed);
+        // Set bit 0 to wake the sampler task (bit-flag notification)
         BaseType_t higherPriorityTaskWoken = pdFALSE;
-        vTaskNotifyGiveFromISR(self->hardwareSamplingTaskHandle, &higherPriorityTaskWoken);
+        xTaskNotifyFromISR(self->hardwareSamplingTaskHandle,
+                           static_cast<uint32_t>(Device::NotificationBitFlag::TimerTickArrived),
+                           eSetBits, &higherPriorityTaskWoken);
         if (higherPriorityTaskWoken)
-        portYIELD_FROM_ISR();
+            portYIELD_FROM_ISR();
     }
 }
 
-void Device::initializeAsynchronousEngine(uint8_t maximumQueueLength) {
-    EngineConfig config;
-    config.queueLength = maximumQueueLength;
-    initializeAsynchronousEngine(config);
+void Device::initializeAsynchronousEngine(const uint8_t maximumQueueLength) {
+    EngineConfiguration engineConfiguration;
+    engineConfiguration.queueLength = maximumQueueLength;
+    initializeAsynchronousEngine(engineConfiguration);
 }
 
-void Device::initializeAsynchronousEngine(const EngineConfig &config) {
+void Device::initializeAsynchronousEngine(const EngineConfiguration &engineConfiguration) {
     // Resolve legacy (two-argument) slots before starting the engine
     // Legacy slots get periodInTicks = total legacy slot count, reproducing the old round-robin
     // This is handled internally: legacy slots are marked with period 0 and resolved here
     engineStarted = true;
 
-    telemetryQueueHandle = xQueueCreate(config.queueLength, sizeof(TelemetryPackage*));
+    telemetryQueueHandle = xQueueCreate(engineConfiguration.queueLength, sizeof(TelemetryPackage*));
 
     xTaskCreatePinnedToCore(
         &Device::executeHardwareSamplingContext, "HardwareWorker",
-        config.samplerStackBytes, this, config.samplerPriority,
-        &hardwareSamplingTaskHandle, config.samplerCore
+        engineConfiguration.samplerStackBytes, this, engineConfiguration.samplerPriority,
+        &hardwareSamplingTaskHandle, engineConfiguration.samplerCore
     );
     xTaskCreatePinnedToCore(
         &Device::executeNetworkDispatchContext, "NetworkWorker",
-        config.networkStackBytes, this, config.networkPriority,
-        &networkDispatcherTaskHandle, config.networkCore
+        engineConfiguration.networkStackBytes, this, engineConfiguration.networkPriority,
+        &networkDispatcherTaskHandle, engineConfiguration.networkCore
     );
 
     hardwareTimer = timerBegin(1000000);
@@ -86,18 +92,18 @@ void Device::initializeAsynchronousEngine(const EngineConfig &config) {
     timerAlarm(hardwareTimer, alarmIntervalInMicroseconds, true, 0);
 }
 
-bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, int requestedEventIdentifier) {
+bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, const int requestedEventIdentifier) {
     if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
         return false;
     }
     // Legacy two-argument form: period 0 marks it for resolution at engine start
     // At engine start, legacy slots get periodInTicks = legacy count, reproducing round-robin
-    auto result = scheduler.add(targetSensorInstance, requestedEventIdentifier, 0);
+    const auto result = scheduler.add(targetSensorInstance, requestedEventIdentifier, 0);
     return result != SamplingScheduler::AddResult::TableFull &&
            result != SamplingScheduler::AddResult::InvalidArgument;
 }
 
-bool Device::appendSensorToScheduler(Sensor *targetSensorInstance, int requestedEventIdentifier) {
+bool Device::appendSensorToScheduler(Sensor *targetSensorInstance, const int requestedEventIdentifier) {
     if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
         return false;
     }
@@ -107,9 +113,9 @@ bool Device::appendSensorToScheduler(Sensor *targetSensorInstance, int requested
                                    minimumPeriodInMilliseconds);
 }
 
-bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, int requestedEventIdentifier,
-                                     uint32_t periodInMilliseconds,
-                                     uint32_t minimumPeriodInMilliseconds) {
+bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, const int requestedEventIdentifier,
+                                     const uint32_t periodInMilliseconds,
+                                     const uint32_t minimumPeriodInMilliseconds) {
     if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
         return false;
     }
@@ -172,8 +178,8 @@ bool Device::enqueueTelemetryPayload(std::unique_ptr<TelemetryPackage> telemetry
     // Assign envelope metadata before enqueue attempt so drops are visible as gaps
     telemetryPackageStandardUniquePointer->setEnvelopeMetadata(static_cast<uint32_t>(millis()), nextSequenceNumber++);
     
-    TelemetryPackage *rawPtr = telemetryPackageStandardUniquePointer.release();
-    if (xQueueSend(telemetryQueueHandle, &rawPtr, 0) == pdPASS) {
+    TelemetryPackage *rawPackagePointer = telemetryPackageStandardUniquePointer.release();
+    if (xQueueSend(telemetryQueueHandle, &rawPackagePointer, 0) == pdPASS) {
         // Ownership transferred to the queue.
         packetsEnqueuedCount++;
         if (const auto currentQueueSize = static_cast<uint8_t>(uxQueueMessagesWaiting(telemetryQueueHandle)); currentQueueSize > queueHighWaterMarkCount) {
@@ -182,11 +188,11 @@ bool Device::enqueueTelemetryPayload(std::unique_ptr<TelemetryPackage> telemetry
         return true;
     }
     // Queue is full: drop the oldest packet and insert the new one
-    TelemetryPackage* oldest = nullptr;
-    if (xQueueReceive(telemetryQueueHandle, &oldest, 0) == pdPASS && oldest != nullptr) {
-        delete oldest;
+    TelemetryPackage* oldestPackage = nullptr;
+    if (xQueueReceive(telemetryQueueHandle, &oldestPackage, 0) == pdPASS && oldestPackage != nullptr) {
+        delete oldestPackage;
         packetsDroppedOldestCount++;
-        if (xQueueSend(telemetryQueueHandle, &rawPtr, 0) == pdPASS) {
+        if (xQueueSend(telemetryQueueHandle, &rawPackagePointer, 0) == pdPASS) {
             packetsEnqueuedCount++;
             if (const auto currentQueueSize = static_cast<uint8_t>(uxQueueMessagesWaiting(telemetryQueueHandle));
                 currentQueueSize > queueHighWaterMarkCount) {
@@ -196,7 +202,7 @@ bool Device::enqueueTelemetryPayload(std::unique_ptr<TelemetryPackage> telemetry
         }
     }
     // Restore ownership so the package is deleted automatically on failure.
-    telemetryPackageStandardUniquePointer.reset(rawPtr);
+    telemetryPackageStandardUniquePointer.reset(rawPackagePointer);
     packetsDroppedCount++;
     if (!firstDropLogged) {
         MODEST_LOG_W("Device", "First packet dropped: telemetry queue full");
@@ -208,30 +214,38 @@ bool Device::enqueueTelemetryPayload(std::unique_ptr<TelemetryPackage> telemetry
 void Device::executeHardwareSamplingContext(void *taskParameters) {
     auto *self = static_cast<Device *>(taskParameters);
     while (true) {
-        // Wait for timer tick or termination signal
-        // vTaskNotifyGiveFromISR increments the notification value on each tick
-        // stopAsynchronousEngine sets bit 1 (0x2) to signal termination
-        const uint32_t notificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        // Wait for any notification bit to be set, then clear all bits
+        uint32_t notificationValue = 0;
+        xTaskNotifyWait(pdFALSE, pdTRUE, &notificationValue, portMAX_DELAY);
 
-        // Check termination signal (bit 1)
-        if (notificationValue & 0x2) {
+        // Check termination signal
+        if (notificationValue & static_cast<uint32_t>(Device::NotificationBitFlag::TerminationSignal)) {
             break;
         }
 
-        // The notification value is the accumulated tick count since last wake
-        // ulTaskNotifyTake(pdTRUE, ...) clears the notification after reading
-        uint32_t elapsed = notificationValue;
-        if (elapsed == 0) {
-            // Should not happen, but treat as 1 tick for safety
-            elapsed = 1;
-        }
-        if (elapsed > 1) {
-            self->missedTickCount += (elapsed - 1);
+        // Timer tick: read and clear the atomic pending tick counter
+        if (notificationValue & static_cast<uint32_t>(Device::NotificationBitFlag::TimerTickArrived)) {
+            uint32_t elapsed = self->pendingTicks.exchange(0, std::memory_order_acq_rel);
+            if (elapsed == 0) {
+                // Should not happen, but treat as 1 tick for safety
+                elapsed = 1;
+            }
+            if (elapsed > 1) {
+                self->missedTickCount += (elapsed - 1);
+            }
+            // Advance the scheduler by the elapsed tick count
+            self->scheduler.advance(elapsed);
         }
 
-        // Advance the scheduler by the elapsed tick count
-        // This handles all due slots, with phase-aligned re-arming
-        self->scheduler.advance(elapsed);
+        // Interrupt-driven sensor event (W13 - future)
+        if (notificationValue & static_cast<uint32_t>(Device::NotificationBitFlag::SensorTrigger)) {
+            // self->processTriggeredSensors();
+        }
+
+        // Command available from network task (W12 - future)
+        if (notificationValue & static_cast<uint32_t>(Device::NotificationBitFlag::CommandAvailable)) {
+            // self->processPendingCommands();
+        }
     }
     vTaskDelete(nullptr);
 }
@@ -241,10 +255,10 @@ void Device::executeNetworkDispatchContext(void *taskParameters) {
     TelemetryPackage *incomingPolymorphicPacketPointer = nullptr;
 
     while (true) {
-        // Check for termination signal (bit 1 = stop) without clearing the notification
+        // Check for termination signal without clearing the notification
         uint32_t notificationValue;
         if (xTaskNotifyWait(pdFALSE, pdTRUE, &notificationValue, 0) == pdTRUE) {
-            if (notificationValue & 0x2) {
+            if (notificationValue & static_cast<uint32_t>(Device::NotificationBitFlag::TerminationSignal)) {
                 break;
             }
         }
@@ -298,9 +312,9 @@ DiagnosticsSnapshot Device::diagnostics() const {
 
     // Aggregate gateway send statistics if a gateway is registered
     if (telemetryGateway != nullptr) {
-        GatewayStatistics gwStats = telemetryGateway->getStatistics();
-        snapshot.sendsSucceeded = gwStats.sendsSucceeded;
-        snapshot.sendsFailed = gwStats.sendsFailed;
+        auto [sendsSucceeded, sendsFailed] = telemetryGateway->getStatistics();
+        snapshot.sendsSucceeded = sendsSucceeded;
+        snapshot.sendsFailed = sendsFailed;
     } else {
         snapshot.sendsSucceeded = 0;
         snapshot.sendsFailed = 0;
@@ -336,12 +350,14 @@ void Device::stopAsynchronousEngine() {
         hardwareTimer = nullptr;
     }
 
-    // 2. Signal both tasks to terminate cooperatively using bit 1 (0x2)
+    // 2. Signal both tasks to terminate cooperatively
     if (hardwareSamplingTaskHandle != nullptr) {
-        xTaskNotify(hardwareSamplingTaskHandle, 0x2, eSetValueWithOverwrite);
+        xTaskNotify(hardwareSamplingTaskHandle,
+                    static_cast<uint32_t>(Device::NotificationBitFlag::TerminationSignal), eSetBits);
     }
     if (networkDispatcherTaskHandle != nullptr) {
-        xTaskNotify(networkDispatcherTaskHandle, 0x2, eSetValueWithOverwrite);
+        xTaskNotify(networkDispatcherTaskHandle,
+                    static_cast<uint32_t>(Device::NotificationBitFlag::TerminationSignal), eSetBits);
     }
 
     // 3. Wait for tasks to terminate (they call vTaskDelete(nullptr) at loop exit)

@@ -1,6 +1,7 @@
 #ifndef FAKE_ARDUINO_H
 #define FAKE_ARDUINO_H
 
+#include <atomic>
 #include <cstdint>
 #include <cstring>
 #include <iterator>
@@ -22,6 +23,7 @@ typedef std::uint32_t TickType_t;
 #define portMAX_DELAY ((TickType_t)0xFFFFFFFFUL)
 #define portYIELD_FROM_ISR(x) ((void)(x))
 #define eSetValueWithOverwrite 1
+#define eSetBits 2
 #define IRAM_ATTR
 struct hw_timer_s;
 typedef hw_timer_s* hw_timer_t;
@@ -35,6 +37,7 @@ inline uint32_t ulTaskNotifyTake(BaseType_t, TickType_t) { return 0; }
 inline BaseType_t xTaskNotifyGive(TaskHandle_t) { return pdPASS; }
 inline void vTaskNotifyGive(TaskHandle_t) {}
 inline BaseType_t xTaskNotify(TaskHandle_t, uint32_t, int) { return pdPASS; }
+inline BaseType_t xTaskNotifyFromISR(TaskHandle_t, uint32_t, int, BaseType_t*) { return pdPASS; }
 inline BaseType_t xTaskNotifyWait(BaseType_t, BaseType_t, uint32_t*, TickType_t) { return pdFALSE; }
 inline QueueHandle_t xQueueCreate(std::uint32_t, std::uint32_t) { return nullptr; }
 inline BaseType_t xQueueSend(QueueHandle_t, const void*, TickType_t) { return pdFAIL; }

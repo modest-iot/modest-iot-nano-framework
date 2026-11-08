@@ -6,7 +6,7 @@ namespace {
 
 // Verify EngineConfig default values match the original hard-coded parameters
 void testEngineConfigDefaults() {
-    EngineConfig config;
+    EngineConfiguration config;
 
     // Default sampler stack: 4096 bytes
     assert(config.samplerStackBytes == 4096);
@@ -30,7 +30,7 @@ void testEngineConfigDefaults() {
 
 // Verify EngineConfig can be customized for high-memory scenarios
 void testEngineConfigCustomValues() {
-    EngineConfig config;
+    EngineConfiguration config;
     config.samplerStackBytes = 8192;
     config.networkStackBytes = 16384;
     config.samplerPriority = 4;
@@ -50,7 +50,7 @@ void testEngineConfigCustomValues() {
 
 // Verify EngineConfig can be used with minimal queue for low-memory devices
 void testEngineConfigMinimalValues() {
-    EngineConfig config;
+    EngineConfiguration config;
     config.samplerStackBytes = 2048;
     config.networkStackBytes = 4096;
     config.queueLength = 4;
@@ -67,7 +67,7 @@ void testEngineConfigMinimalValues() {
 
 // Verify EngineConfig aggregate initialization
 void testEngineConfigAggregateInit() {
-    EngineConfig config{4096, 8192, 3, 1, 1, 1, 10};
+    EngineConfiguration config{4096, 8192, 3, 1, 1, 1, 10};
     assert(config.samplerStackBytes == 4096);
     assert(config.networkStackBytes == 8192);
     assert(config.samplerPriority == 3);
