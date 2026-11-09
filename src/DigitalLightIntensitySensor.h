@@ -50,7 +50,7 @@ private:
     /// Datasheet conversion factor from raw measurement units to lux.
     static constexpr float BH1750_RAW_TO_LUX_DIVISOR = 1.2f;
     /// Minimum wait before reading the first conversion, in milliseconds.
-    static constexpr unsigned long BH1750_FIRST_CONVERSION_TIME_MS = 180;
+    static constexpr unsigned long BH1750_FIRST_CONVERSION_TIME_IN_MILLISECONDS = 180;
 
     /**
      * @brief Sends one command byte to the configured I2C address.
