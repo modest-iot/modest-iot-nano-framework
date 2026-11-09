@@ -35,6 +35,8 @@ Sensor	KEYWORD1
 ServoMotor	KEYWORD1
 TelemetryPackage	KEYWORD1
 UltrasonicSensor	KEYWORD1
+RelayActuator	KEYWORD1
+SoilMoistureSensor	KEYWORD1
 WaterFlowSensor	KEYWORD1
 WiFiConnectivityDriver	KEYWORD1
 
@@ -198,3 +200,16 @@ getEffectiveMinimalSamplingIntervalInMilliseconds	KEYWORD8
 setMinimalSamplingIntervalInMilliseconds	KEYWORD8
 getDefaultSamplingIntervalInMilliseconds	KEYWORD8
 getMinimalSamplingIntervalInMilliseconds	KEYWORD8
+getMoistureLevel	KEYWORD2
+isActive	KEYWORD2
+
+# RelayActuator commands
+RELAY_ON_COMMAND	LITERAL1
+RELAY_ON_COMMAND_IDENTIFIER	LITERAL1
+RELAY_OFF_COMMAND	LITERAL1
+RELAY_OFF_COMMAND_IDENTIFIER	LITERAL1
+TOGGLE_RELAY_COMMAND	LITERAL1
+TOGGLE_RELAY_COMMAND_IDENTIFIER	LITERAL1
+
+# SoilMoistureSensor constants
+MOISTURE_CHANGE_EPSILON	LITERAL1
