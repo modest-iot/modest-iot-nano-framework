@@ -78,6 +78,7 @@ private:
     TaskHandle_t hardwareSamplingTaskHandle; ///< Handle for the hardware sampling task.
     TaskHandle_t networkDispatcherTaskHandle; ///< Handle for the network dispatcher task.
     QueueHandle_t telemetryQueueHandle; ///< Handle for the telemetry queue.
+    QueueHandle_t commandQueueHandle; ///< Handle for the inbound command queue (W12).
 
     // Shared diagnostic counters (single-writer rule: each counter written by one task)
     mutable uint32_t packetsEnqueuedCount; ///< Total packets successfully enqueued.
@@ -155,6 +156,28 @@ private:
      * @note Declared public so host tests can set it to simulate ISR scenarios.
      */
     static Device* activeDevice; ///< Static pointer for ISR access to the active Device instance.
+
+    /**
+     * @brief Entry in the command queue for cross-task command marshaling.
+     *
+     * Carries a command and its target handler so the sampler task can deliver
+     * the command on its own context, preserving the single-context guarantee.
+     */
+    struct CommandEntry {
+        CommandHandler* targetHandler = nullptr; ///< CommandHandler that should process the command.
+        Command command;                         ///< The command to execute.
+
+        CommandEntry() : command(-1) {}
+        CommandEntry(CommandHandler* handler, Command cmd) : targetHandler(handler), command(cmd) {}
+    };
+
+    /**
+     * @brief Processes all pending commands in the sampler task context.
+     *
+     * Drains the command queue and calls `targetHandler->handle(command)` for
+     * each entry on the sampler task's own context.
+     */
+    void processPendingCommands();
 
 protected:
     /**
@@ -284,6 +307,21 @@ protected:
                                  int interruptMode = CHANGE);
 
     /**
+     * @brief Enqueues a command for execution on the sampler task context.
+     * @param targetHandler The CommandHandler that should process the command.
+     * @param command The command to execute.
+     * @return `true` when enqueued successfully, `false` when the queue is full.
+     *
+     * This method enables cross-task command marshaling: the network task
+     * receives a command (e.g., via MQTT subscribe) and enqueues it for
+     * execution on the sampler task, preserving the single-context guarantee.
+     *
+     * The sampler task drains the command queue and calls
+     * `targetHandler->handle(command)` on its own context.
+     */
+    bool enqueueCommand(CommandHandler* targetHandler, Command command);
+
+    /**
      * @brief Optional gateway reference for diagnostics aggregation.
      * Derived classes can set this so diagnostics() can query send statistics.
      */
@@ -307,8 +345,8 @@ protected:
      * @brief Gracefully stops the asynchronous engine and releases all resources.
      *
      * Stops the hardware timer, signals both FreeRTOS tasks to exit cooperatively,
-     * waits for them to terminate, drains and deletes any pending telemetry packets,
-     * and deletes the queue. After calling this method, the engine cannot be restarted.
+     * waits for them to terminate, drains and deletes any pending telemetry packets
+     * and commands, and deletes the queues. After calling this method, the engine cannot be restarted.
      *
      * Derived classes must call this method in their destructor **before** their own
      * destructor body runs, because sensor/actuator members are destroyed before
@@ -328,7 +366,7 @@ public:
      * | Bit 0 (0x1) | TimerTickArrived | Hardware timer ISR |
      * | Bit 1 (0x2) | TerminationSignal | stopAsynchronousEngine() |
      * | Bit 2 (0x4) | SensorTrigger | GPIO ISR (W13) |
-     * | Bit 3 (0x8) | CommandAvailable | Device::post() (W12) |
+     * | Bit 3 (0x8) | CommandAvailable | Device::enqueueCommand() (W12) |
      */
     enum class NotificationBitFlag : uint32_t {
         TimerTickArrived    = 0x1, ///< Hardware timer tick arrived.

@@ -24,6 +24,7 @@ Device::Device(const unsigned long samplingIntervalInMilliseconds, const uint8_t
       hardwareSamplingTaskHandle(nullptr),
       networkDispatcherTaskHandle(nullptr),
       telemetryQueueHandle(nullptr),
+      commandQueueHandle(nullptr),
       packetsEnqueuedCount(0),
       packetsDroppedCount(0),
       packetsDroppedOldestCount(0),
@@ -73,6 +74,7 @@ void Device::initializeAsynchronousEngine(const EngineConfiguration &engineConfi
     engineStarted = true;
 
     telemetryQueueHandle = xQueueCreate(engineConfiguration.queueLength, sizeof(TelemetryPackage*));
+    commandQueueHandle = xQueueCreate(engineConfiguration.queueLength, sizeof(CommandEntry));
 
     xTaskCreatePinnedToCore(
         &Device::executeHardwareSamplingContext, "HardwareWorker",
@@ -242,9 +244,9 @@ void Device::executeHardwareSamplingContext(void *taskParameters) {
             self->processTriggeredSensors();
         }
 
-        // Command available from network task (W12 - future)
+        // Command available from network task (W12)
         if (notificationValue & static_cast<uint32_t>(Device::NotificationBitFlag::CommandAvailable)) {
-            // self->processPendingCommands();
+            self->processPendingCommands();
         }
     }
     vTaskDelete(nullptr);
@@ -453,6 +455,50 @@ bool Device::appendToBothSchedulers(Sensor *targetSensorInstance,
     return samplingOk && (triggerHandle != 0);
 }
 
+// ============================================================================
+// Command Marshaling (W12) — Cross-task command delivery
+// ============================================================================
+
+/**
+ * @brief Enqueues a command for execution on the sampler task context.
+ *
+ * The network task calls this method to marshal a command from the network
+ * context to the sampler context. The sampler task drains the queue and
+ * calls `targetHandler->handle(command)` on its own context.
+ */
+bool Device::enqueueCommand(CommandHandler *targetHandler, Command command) {
+    if (commandQueueHandle == nullptr || targetHandler == nullptr) {
+        return false;
+    }
+
+    CommandEntry entry(targetHandler, command);
+
+    BaseType_t result = xQueueSend(commandQueueHandle, &entry, 0);
+    if (result == pdPASS) {
+        // Wake the sampler task to process the command
+        xTaskNotify(hardwareSamplingTaskHandle,
+                    static_cast<uint32_t>(Device::NotificationBitFlag::CommandAvailable),
+                    eSetBits);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * @brief Processes all pending commands in the sampler task context.
+ *
+ * Drains the command queue and calls `targetHandler->handle(command)` for
+ * each entry on the sampler task's own context.
+ */
+void Device::processPendingCommands() {
+    CommandEntry entry;
+    while (xQueueReceive(commandQueueHandle, &entry, 0) == pdPASS) {
+        if (entry.targetHandler != nullptr) {
+            entry.targetHandler->handle(entry.command);
+        }
+    }
+}
+
 DiagnosticsSnapshot Device::diagnostics() const {
     DiagnosticsSnapshot snapshot;
     snapshot.missedTicks = missedTickCount;
@@ -528,5 +574,15 @@ void Device::stopAsynchronousEngine() {
         }
         vQueueDelete(telemetryQueueHandle);
         telemetryQueueHandle = nullptr;
+    }
+
+    // 6. Drain and delete the command queue
+    if (commandQueueHandle != nullptr) {
+        CommandEntry pendingCommand;
+        while (xQueueReceive(commandQueueHandle, &pendingCommand, 0) == pdPASS) {
+            // Commands are value types; no cleanup needed beyond draining
+        }
+        vQueueDelete(commandQueueHandle);
+        commandQueueHandle = nullptr;
     }
 }
