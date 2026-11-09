@@ -35,8 +35,8 @@ static const unsigned long  SERIAL_BAUD_RATE                = 115200;
 
 // Asynchronous engine configuration
 static const int            ASYNC_ENGINE_QUEUE_DEPTH        = 16;
-static const unsigned long  SAMPLING_INTERVAL_MS            = 500;
-static const unsigned long  MAIN_LOOP_DELAY_MS              = 60000;
+static const unsigned long  SAMPLING_INTERVAL_IN_MILLISECONDS            = 500;
+static const unsigned long  MAIN_LOOP_DELAY_IN_MILLISECONDS              = 60000;
 static const int            TIMER_GROUP_INDEX               = 0;
 
 static const char*          STATUS_DISPLAY_TITLE            = "Smart Scale";
@@ -94,7 +94,7 @@ public:
                         int rearLeftDataPin,    int rearLeftClockPin,
                         int rearRightDataPin,   int rearRightClockPin,
                         uint8_t lcdI2cAddress)
-        : Device(SAMPLING_INTERVAL_MS, TIMER_GROUP_INDEX),
+        : Device(SAMPLING_INTERVAL_IN_MILLISECONDS, TIMER_GROUP_INDEX),
           frontLeftLoadCell(frontLeftDataPin,   frontLeftClockPin,  MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS,
                             MINIMUM_RAW_VALUE,  MAXIMUM_RAW_VALUE, LOAD_CELL_FILTER_DEPTH, this),
           frontRightLoadCell(frontRightDataPin, frontRightClockPin, MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS,
@@ -167,5 +167,5 @@ void setup() {
 }
 
 void loop() {
-    vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_MS));
+    vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_IN_MILLISECONDS));
 }

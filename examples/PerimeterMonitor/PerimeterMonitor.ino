@@ -27,7 +27,7 @@ static const int LCD_BUFFER_SIZE                = LCD_COLUMNS + 1;
 static const int LCD_ROWS                       = 2;
 
 // Timing
-static const unsigned long SAMPLING_INTERVAL_MS = 100;
+static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS = 100;
 static const int ASYNC_ENGINE_QUEUE_DEPTH       = 32;
 
 /**
@@ -63,7 +63,7 @@ private:
 
 public:
     PerimeterMonitor()
-        : Device(SAMPLING_INTERVAL_MS, 0),
+        : Device(SAMPLING_INTERVAL_IN_MILLISECONDS, 0),
           northCornerPir(NORTH_CORNER_PIR_PIN, this),
           eastCornerPir(EAST_CORNER_PIR_PIN, this),
           southCornerPir(SOUTH_CORNER_PIR_PIN, this),

@@ -31,10 +31,10 @@ static const float   DARKNESS_THRESHOLD_IN_LUX  = 10.0f;
 static const uint8_t SENSOR_FAULT_THRESHOLD     = 3;
 
 // Timing
-static const unsigned long SAMPLING_INTERVAL_MS     = 200;
-static const unsigned long DEVICE_EVENT_DELAY_MS    = 0;
+static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS     = 200;
+static const unsigned long DEVICE_EVENT_DELAY_IN_MILLISECONDS    = 0;
 static const int           ASYNC_ENGINE_QUEUE_DEPTH = 8;
-static const unsigned long MAIN_LOOP_DELAY_MS       = 1000;
+static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS       = 1000;
 
 // Initial state: bright, no motion -> light off
 static const bool SECURITY_LED_INITIAL_STATE   = false;
@@ -69,7 +69,7 @@ private:
 
 public:
     OutdoorSecurityLightController()
-        : Device(SAMPLING_INTERVAL_MS, DEVICE_EVENT_DELAY_MS),
+        : Device(SAMPLING_INTERVAL_IN_MILLISECONDS, DEVICE_EVENT_DELAY_IN_MILLISECONDS),
           lightSensor(LIGHT_SENSOR_SOURCE_ID, LIGHT_SENSOR_I2C_ADDRESS, DARKNESS_THRESHOLD_IN_LUX, this),
           motionSensor(MOTION_SENSOR_PIN, this),
           securityLight(SECURITY_LED_PIN, SECURITY_LED_INITIAL_STATE, this),
@@ -133,5 +133,5 @@ void setup() {
 }
 
 void loop() {
-    vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_MS));
+    vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_IN_MILLISECONDS));
 }

@@ -36,8 +36,8 @@ static const unsigned long SERIAL_BAUD_RATE = 115200;
 // Asynchronous engine configuration
 
 static const int            ASYNC_ENGINE_QUEUE_DEPTH    = 16;
-static const unsigned long  SAMPLING_INTERVAL_MS        = 1000;
-static const unsigned long  MAIN_LOOP_DELAY_MS          = 60000;
+static const unsigned long  SAMPLING_INTERVAL_IN_MILLISECONDS        = 1000;
+static const unsigned long  MAIN_LOOP_DELAY_IN_MILLISECONDS          = 60000;
 static const int            TIMER_GROUP_INDEX           = 0;
 
 static const char*          SYSTEM_BOOT_MESSAGE         = "[System Boot] Smart Greenhouse active.";
@@ -68,7 +68,7 @@ private:
 
 public:
     SmartGreenhouseDevice()
-        : Device(SAMPLING_INTERVAL_MS, TIMER_GROUP_INDEX),
+        : Device(SAMPLING_INTERVAL_IN_MILLISECONDS, TIMER_GROUP_INDEX),
           soilSensor(SOIL_MOISTURE_PIN, this),
           temperatureSensor(DHT_DATA_PIN, DhtSensor::SENSOR_MODEL_DHT22, this),
           waterPump(RELAY_PUMP_PIN, false, this),
@@ -123,5 +123,5 @@ void setup() {
 }
 
 void loop() {
-    vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_MS));
+    vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_IN_MILLISECONDS));
 }

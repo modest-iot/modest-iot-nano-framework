@@ -27,9 +27,9 @@ static const int BUZZER_PIN       = 4;
 static const char* const AUTHORIZED_UID = "DE:AD:BE:EF";
 
 // Timing constants
-static const unsigned long SAMPLING_INTERVAL_MS = 100;
+static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS = 100;
 static const int ASYNC_ENGINE_QUEUE_DEPTH       = 8;
-static const unsigned long MAIN_LOOP_DELAY_MS   = 60000;
+static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS   = 60000;
 
 /**
  * @brief Access Control Device managing an RFID reader, feedback LED, and buzzer.
@@ -42,7 +42,7 @@ private:
 
 public:
     RfidAccessController(int csPin, int rstPin, int ledPin, int buzzerPin)
-        : Device(SAMPLING_INTERVAL_MS),
+        : Device(SAMPLING_INTERVAL_IN_MILLISECONDS),
           rfidReader(csPin, rstPin, this),
           accessLed(ledPin, false, this),
           feedbackBuzzer(buzzerPin, this)
@@ -83,5 +83,5 @@ void setup() {
 }
 
 void loop() {
-    vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_MS));
+    vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_IN_MILLISECONDS));
 }
