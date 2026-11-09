@@ -44,7 +44,7 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 | W13 | Interrupt triggers for Button, PIR, and WaterFlowSensor                                 | Tier 4      | 3 | 4 | 3 | M    | 6     | **Complete** (Button/PIR interrupt-driven, WaterFlowSensor hybrid, examples migrated, host tests) |
 | W14 | HX711 data-ready and ultrasonic echo capture (remove blocking)                          | Tier 4      | 2 | 4 | 2 | M    | 5     | **Complete** (LoadCellAmplifier hybrid scheduling, UltrasonicSensor interrupt echo, SmartScaleDevice migrated) |
 | W15 | Cloud-to-device commands (MQTT subscribe)                                               | Tier 4      | 2 | 0 | 4 | M    | 5     | **Complete** (subscribe on connect, JSON parsing, Device::enqueueCommand, 8 host tests)           |
-| W16 | Tickless scheduling and light sleep                                                     | Tier 5      | 2 | 4 | 2 | L    | 3     | Pending                                                                                                                                     |
+| W16 | Tickless scheduling and light sleep                                                     | Tier 5      | 2 | 4 | 2 | L    | 3     | **Complete** (ticksUntilNextDue(), PowerMode enum, rearmTimerForNextDue(), enterLightSleep(), ESP32 light sleep) |
 | W17 | Deep-sleep cycle and battery example                                                    | Tier 5      | 1 | 4 | 2 | L    | 3     | Pending                                                                                                                                     |
 | W18 | Telemetry pool and writer interface (Phase C)                                           | Tier 5      | 2 | 3 | 1 | L    | 2     | Pending                                                                                                                                     |
 | W19 | Native servo and LCD drivers                                                            | Tier 5      | 2 | 0 | 1 | M    | 2     | Pending                                                                                                                                     |
@@ -553,30 +553,24 @@ Demonstrates `WaterFlowSensor` with `appendToBothSchedulers()` using CHANGE edge
 
 ---
 
-## Tier 5: Optimization and Power (Pending)
+## Tier 5: Optimization and Power (In Progress)
 
-### W16: Tickless scheduling and light sleep
+### W16: Tickless scheduling and light sleep — **Complete** ✓
 
 **Problem**: The hardware timer wakes the system at the tick rate forever, preventing sleep.
 
 **Resolution**: With the pure scheduler, the next due time is known. Program the single timer alarm for that moment instead of a fixed period:
 - `SamplingScheduler::ticksUntilNextDue()` returns the smallest `ticksUntilDue`.
 - After each dispatch, the sampler re-arms the one-shot alarm for that interval.
+- In tickless mode, the device enters ESP32 light sleep until the next alarm fires.
 
-**Light Sleep** (`esp_light_sleep_start`): Timer and GPIO wake sources. RAM and CPU state preserved. Tasks resume. Wi-Fi association lost unless modem-sleep is configured.
+**Implementation**:
+- `SamplingScheduler::ticksUntilNextDue()` — returns minimum ticks until any slot is due.
+- `Device::PowerMode` enum — `Periodic` (default) or `Tickless` (one-shot timer + light sleep).
+- `Device::rearmTimerForNextDue()` — calculates and sets one-shot alarm based on `ticksUntilNextDue()`.
+- `Device::enterLightSleep()` — configures timer wake source and calls `esp_light_sleep_start()`.
 
-**PowerPolicy for Device**:
-```cpp
-enum class PowerMode : uint8_t { AlwaysOn, LightSleepWhenIdle, DeepSleepCycle };
-void setPowerMode(PowerMode mode, uint32_t maximumSleepMilliseconds);
-```
-
-Rules before sleeping:
-1. Telemetry queue is empty and network worker is idle.
-2. No slot is due within minimum useful sleep time.
-3. Next wake sources are armed: timer for next due slot plus GPIO wake pins.
-
-**Source**: `src/SamplingScheduler.h`, `src/Device.h`
+**Source**: `src/SamplingScheduler.h`, `src/SamplingScheduler.cpp`, `src/Device.h`, `src/Device.cpp`
 
 ---
 
