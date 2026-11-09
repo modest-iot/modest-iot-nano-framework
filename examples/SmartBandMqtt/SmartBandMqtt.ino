@@ -76,10 +76,12 @@ class SmartBandDevice : public Device {
 
         initializeAsynchronousEngine(10);
 
-        // All sensors are systematically polled inside the thread sequence ring safely
+        // Sensors are registered for periodic polling; the button uses interrupt-driven mode
         appendSensorToScheduler(&heartRateSensor,       Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
         appendSensorToScheduler(&ambientClimateSensor,  Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-        appendSensorToScheduler(&userActionButton,      Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+        appendSensorToTriggeringScheduler(&userActionButton,
+                                          Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
+                                          FALLING);
     }
 
     ~SmartBandDevice() override = default;
