@@ -33,8 +33,12 @@ The 22 ADRs below span five categories that shaped the framework's architecture:
 | [ADR-019](#adr-019-mqtt-reconnect-policy--rate-limited-backoff-with-continuous-keep-alive) | MQTT Reconnect Policy — Rate-Limited Backoff                  | Accepted | Connectivity |
 | [ADR-020](#adr-020-stopasynchronousengine--cooperative-shutdown-via-notification-bits)     | `stopAsynchronousEngine` — Cooperative Shutdown               | Accepted | Threading    |
 | [ADR-021](#adr-021-golden-host-tests-for-telemetry-json-serialization)                     | Golden Host Tests for Telemetry JSON Serialization            | Accepted | Testing      |
-| [ADR-022](#adr-022-notification-redesign-for-interrupt-driven-sensors-n1)                  | Notification Redesign for Interrupt-Driven Sensors (N1)       | Proposed | Threading    |
+| [ADR-022](#adr-022-notification-redesign-for-interrupt-driven-sensors-n1)                  | Notification Redesign for Interrupt-Driven Sensors (N1)       | Accepted | Threading    |
 | [ADR-023](#adr-023-domain-driven-design-adoption-and-bounded-contexts)                     | Domain-Driven Design Adoption and Bounded Contexts            | Accepted | Architecture |
+| [ADR-024](#adr-024-command-marshaling-for-cross-task-safety-w12)                           | Command Marshaling for Cross-Task Safety (W12)                | Accepted | Threading    |
+| [ADR-025](#adr-025-non-blocking-sensor-protocols-w14)                                      | Non-Blocking Sensor Protocols (W14)                           | Accepted | Scheduling   |
+| [ADR-026](#adr-026-cloud-to-device-mqtt-subscribe-w15)                                     | Cloud-to-Device MQTT Subscribe (W15)                          | Accepted | Connectivity |
+| [ADR-027](#adr-027-tickless-scheduling-and-light-sleep-w16)                                | Tickless Scheduling and Light Sleep (W16)                     | Accepted | Power        |
 
 ### Status Legend
 
@@ -47,15 +51,16 @@ The 22 ADRs below span five categories that shaped the framework's architecture:
 | Category         | Count | Key Decisions                                                                                        |
 |------------------|-------|------------------------------------------------------------------------------------------------------|
 | **Naming**       | 2     | `MODEST_LOG_*` macros with `MIOT_LOG_*` aliases; `SCREAMING_SNAKE_CASE` convention                   |
-| **Connectivity** | 2     | BLE via NUS GATT profile; MQTT rate-limited reconnect with keep-alive                                |
-| **Scheduling**   | 2     | Hybrid sensor intervals with virtual getters; per-slot countdown scheduler                           |
+| **Connectivity** | 3     | BLE via NUS GATT profile; MQTT reconnect; cloud-to-device MQTT subscribe                            |
+| **Scheduling**   | 3     | Hybrid sensor intervals with virtual getters; per-slot countdown scheduler; non-blocking sensors     |
 | **Telemetry**    | 4     | `unique_ptr` ownership; drop-oldest policy; bounded buffer; envelope metadata                        |
 | **Diagnostics**  | 2     | Sensor fault events with debounced threshold; on-demand `DiagnosticsSnapshot`                        |
-| **Threading**    | 4     | Single-context sampler model; `EngineConfig`; cooperative shutdown; notification redesign (proposed) |
+| **Threading**    | 5     | Single-context sampler model; `EngineConfig`; cooperative shutdown; notification redesign; command marshaling |
 | **API Design**   | 2     | `serialize` overload rename; identifier registry with reserved ranges                                |
 | **Dependencies** | 2     | Retain ArduinoJson; five hygiene principles for dependency decisions                                 |
 | **Testing**      | 2     | Shared mock harness; golden host tests for JSON serialization                                        |
 | **Architecture** | 1     | DDD adoption, bounded contexts, ubiquitous language, embedded-friendly subset                        |
+| **Power**        | 1     | Tickless scheduling with light sleep for battery-powered operation                                   |
 
 ---
 
@@ -509,8 +514,8 @@ Two alternatives were evaluated:
 ### Decision
 
 Maintain a centralized identifier registry with reserved ranges:
-- Framework events: 0-99 (currently 10, 20-23, 30-31, 40, 50-51)
-- Framework commands: 100-399 (currently 100-102, 150-152, 200-202, 250-252, 300-303)
+- Framework events: 0-99 (currently 10, 20-23, 30-31, 40, 50-51, 60-61)
+- Framework commands: 100-399 (currently 100-102, 150-152, 200-202, 250-252, 300-302, 304-307)
 - Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power events 910-919
 - User identifiers: 1000+
 
@@ -725,7 +730,7 @@ Create `tests/telemetry/test.cpp` with 10 golden test cases covering `SmartBandT
 
 ## ADR-022: Notification Redesign for Interrupt-Driven Sensors (N1)
 
-**Status**: Proposed | **Date**: 2026-11-06 | **Supersedes**: N/A
+**Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
 
 ### Context
 
@@ -751,6 +756,128 @@ ISR rules: mark handlers `IRAM_ATTR`, keep them tiny, no heap/Serial/logging, us
 
 - `src/Device.h`, `src/Device.cpp`
 - `docs/improvements.md` (W13, W12)
+
+---
+
+## ADR-024: Command Marshaling for Cross-Task Safety (W12)
+
+**Status**: Accepted | **Date**: 2026-11-09 | **Supersedes**: N/A
+
+### Context
+
+The framework runs two FreeRTOS tasks: a sampler task for all sensor/actuator I/O and a network task for asynchronous transmission. Cloud-to-device commands arrive on the network task via MQTT, but actuators must be controlled on the sampler task to preserve the single-context guarantee. Without cross-task marshaling, commands would execute on the wrong task, introducing race conditions.
+
+Two alternatives were evaluated:
+1. **Command queue with notification bit** — Network task enqueues `CommandEntry` (handler + command) to a FreeRTOS queue and sets `CommandAvailable` bit (0x8). Sampler task drains the queue and calls `handle(command)` on its own context.
+2. **Direct handler call** — Network task calls `handle(command)` directly. Violates the single-context guarantee.
+
+### Decision
+
+Implement `Device::enqueueCommand(CommandHandler* targetHandler, Command command)` that pushes a `CommandEntry` to a FreeRTOS queue and sets the `CommandAvailable` notification bit. The sampler task drains the queue in `processPendingCommands()` and calls `targetHandler->handle(command)` on its own context.
+
+### Consequences
+
+- **Positive**: Preserves the single-context guarantee for all command execution. Enables cloud-to-device commands (W15) without redesigning the threading model.
+- **Negative**: Adds one queue and one notification bit. Commands are delayed until the next sampler wake-up.
+- **Rationale**: The queue-based approach is the standard FreeRTOS pattern for cross-task communication. It integrates cleanly with the existing notification bit-flag redesign (ADR-022).
+
+### References
+
+- `src/Device.h`, `src/Device.cpp`
+- `docs/improvements.md` (W12)
+
+---
+
+## ADR-025: Non-Blocking Sensor Protocols (W14)
+
+**Status**: Accepted | **Date**: 2026-11-09 | **Supersedes**: N/A
+
+### Context
+
+Two sensors block the sampler task, consuming its entire time budget:
+1. **LoadCellAmplifier** (`readRawValue()`): Up to **100ms busy-wait** polling the HX711 data pin.
+2. **UltrasonicSensor** (`processEvent()`): Up to **30ms blocking** inside `pulseIn()` waiting for the echo pin.
+
+Two alternatives were evaluated:
+1. **Interrupt-driven replacement** — HX711 uses `appendToBothSchedulers()` with CHANGE edge for data-ready; ultrasonic uses GPIO interrupt with `esp_timer_get_time()` for echo timing.
+2. **Keep blocking** — Accept the latency; document in the handler time budget table.
+
+### Decision
+
+Convert both sensors to interrupt-driven operation:
+- **LoadCellAmplifier**: Added `dataReady` volatile flag. ISR sets the flag when the HX711 data pin goes LOW. `processEvent()` checks `dataReady` first, suppressing propagation if not ready. The 24-bit read (~1.2ms) still blocks but is orders of magnitude shorter than the 100ms wait.
+- **UltrasonicSensor**: Replaced `pulseIn()` with GPIO interrupt on the echo pin. Rising edge starts `esp_timer_get_time()`, falling edge stops it. Distance computed from the duration in `processEvent()`.
+
+### Consequences
+
+- **Positive**: Eliminates 99% of sampler blocking (100ms → ~1.2ms for HX711, 30ms → microseconds for ultrasonic). Enables higher sampling frequencies.
+- **Negative**: Adds interrupt handlers and volatile state. HX711 timing remains sensitive to clock pulse accuracy.
+- **Rationale**: The interrupt-driven pattern matches the triggering scheduler infrastructure (ADR-022). The performance improvement is significant and transparent to the API.
+
+### References
+
+- `src/LoadCellAmplifier.h`, `src/LoadCellAmplifier.cpp`
+- `src/UltrasonicSensor.h`, `src/UltrasonicSensor.cpp`
+- `docs/improvements.md` (W14)
+
+---
+
+## ADR-026: Cloud-to-Device MQTT Subscribe (W15)
+
+**Status**: Accepted | **Date**: 2026-11-09 | **Supersedes**: N/A
+
+### Context
+
+The framework only supports outbound telemetry. There is no path from MQTT topic to `Command`, meaning devices cannot receive remote control commands. The command marshaling infrastructure (W12) provides `Device::enqueueCommand()` for cross-task safety.
+
+Two alternatives were evaluated:
+1. **Device* parameter** — `MqttGatewayClient` accepts `Device*` and uses `Device::enqueueCommand()` to marshal commands to the sampler task.
+2. **CommandHandler* parameter** — `MqttGatewayClient` accepts `CommandHandler*` and calls `handle()` directly in the network task context.
+
+### Decision
+
+`MqttGatewayClient` accepts `Device* targetDevice` and uses `Device::enqueueCommand(targetDevice, command)` in the MQTT callback. The callback parses JSON to extract `commandId`, creates a `Command`, and marshals it to the sampler task. A fixed 256-byte buffer prevents heap allocation.
+
+### Consequences
+
+- **Positive**: Completes bidirectional communication. Commands are safely delivered to the sampler task. Enables remote actuator control and configuration updates.
+- **Negative**: Adds subscribe topic parameter and callback infrastructure. MQTT callback runs in the network task context.
+- **Rationale**: Since `Device` extends `CommandHandler`, the Device itself is the natural command target. Using `enqueueCommand()` ensures cross-task safety without requiring the caller to understand the threading model.
+
+### References
+
+- `src/MqttGatewayClient.h`, `src/MqttGatewayClient.cpp`
+- `docs/improvements.md` (W15)
+
+---
+
+## ADR-027: Tickless Scheduling and Light Sleep (W16)
+
+**Status**: Accepted | **Date**: 2026-11-09 | **Supersedes**: N/A
+
+### Context
+
+The hardware timer wakes the system at a fixed interval forever, preventing sleep. With the pure scheduler (`SamplingScheduler`), the next due time is known from `ticksUntilNextDue()`. The device can sleep between samples, reducing idle CPU consumption.
+
+Two alternatives were evaluated:
+1. **One-shot timer with light sleep** — Convert the hardware timer from periodic to one-shot mode. After each sampler dispatch, re-arm the alarm for `ticksUntilNextDue()`. Enter `esp_light_sleep_start()` so the CPU halts until the next alarm.
+2. **Keep periodic timer** — Accept the idle CPU consumption; document in the power budget.
+
+### Decision
+
+Add `PowerMode` enum (`Periodic`, `Tickless`) to Device. In tickless mode, the timer is re-armed after each dispatch using `scheduler.ticksUntilNextDue()`. The device enters ESP32 light sleep via `esp_light_sleep_start()`, halting the CPU until the timer fires. Periodic mode remains the default for backward compatibility.
+
+### Consequences
+
+- **Positive**: Reduces idle CPU consumption. Enables battery-powered always-on devices. Light sleep preserves RAM and CPU state; tasks resume on wake.
+- **Negative**: Adds complexity to the timer ISR and sampler loop. Wi-Fi association must be maintained via modem-sleep configuration.
+- **Rationale**: Tickless scheduling is the standard pattern for low-power IoT devices. The infrastructure (`ticksUntilNextDue()`) is minimal (~10 lines) and integrates cleanly with the existing scheduler.
+
+### References
+
+- `src/SamplingScheduler.h`, `src/SamplingScheduler.cpp`
+- `src/Device.h`, `src/Device.cpp`
+- `docs/improvements.md` (W16)
 
 ---
 
@@ -882,4 +1009,4 @@ For future architecture decisions, use this template:
 
 ---
 
-*Last updated: 2026-11-06 (23 ADRs: 13 original + 9 from improvements.md review + 1 DDD adoption)*
+*Last updated: 2026-11-09 (27 ADRs: 13 original + 9 from improvements.md review + 1 DDD adoption + 4 from W12-W16)*
