@@ -103,7 +103,7 @@ private:
     struct TriggerEntry {
         Sensor* sensor = nullptr;          ///< Pointer to the registered sensor.
         int eventIdentifier = -1;          ///< Event identifier to emit on trigger.
-        int interruptMode = CHANGE;        ///< GPIO interrupt mode (RISING, FALLING, CHANGE).
+        int interruptMode = CHANGE;        ///< GPIO interrupt mode (Arduino core: RISING, FALLING, CHANGE).
         bool wasTriggered = false;         ///< True if this sensor was triggered since last poll.
         uint8_t slotIndex = 0;             ///< Index in the trigger table (also the trigger handle).
     };
@@ -248,7 +248,7 @@ protected:
      * @brief Registers a sensor for interrupt-driven operation.
      * @param targetSensorInstance Sensor to trigger on GPIO edge.
      * @param requestedEventIdentifier Event identifier to emit on trigger.
-     * @param interruptMode GPIO interrupt mode (RISING, FALLING, CHANGE).
+     * @param interruptMode GPIO interrupt mode (Arduino core constants: RISING, FALLING, CHANGE).
      * @return Trigger handle (slot index + 1, or 0 on failure).
      *
      * The sensor's pin is configured with attachInterrupt(). When the GPIO
@@ -273,7 +273,7 @@ protected:
      * @brief Registers a sensor with both the sampling and triggering schedulers.
      * @param targetSensorInstance Sensor to register.
      * @param requestedEventIdentifier Event identifier to emit.
-     * @param interruptMode GPIO interrupt mode (RISING, FALLING, CHANGE).
+     * @param interruptMode GPIO interrupt mode (Arduino core constants: RISING, FALLING, CHANGE).
      * @return `true` when both registrations succeed, `false` otherwise.
      *
      * This is a convenience method for hybrid sensors (e.g., YF-S201 water flow)
