@@ -29,7 +29,7 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 | **Tier 1**: Test Consolidation & CI     | W5      | **Complete** ✓ |
 | **Tier 2**: Reliability & Footprint     | W6–W10  | **Complete** ✓ |
 | **Tier 3**: Core Scheduling & Telemetry | W8, W11 | **Complete** ✓ |
-| **Tier 4**: Capabilities                | W12–W15 | **In Progress**   |
+| **Tier 4**: Capabilities                | W12–W15 | **Complete** ✓   |
 | **Tier 5**: Optimization & Power        | W16–W19 | **Queued**      |
 
 ### What's Delivered
@@ -54,7 +54,7 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 |---------|----------------------------------------------|----------|------------|----------------------------------------------------------------------------------------|
 | **W12** | `Device::enqueueCommand` command marshaling | High | High | **Complete**: Cross-task command queue for cloud-to-device commands. Prerequisite for W15. |
 | **W13** | Interrupt triggers for Button, PIR, pulse sensors | High | Medium | **Partially Complete**: `appendSensorToTriggeringScheduler()`/`appendToBothSchedulers()` API implemented with bit-flag notifications. Sensor-specific conversion (Button, PIR, YF-S201) pending. |
-| **W14** | HX711 data-ready and ultrasonic echo capture | Medium   | Medium     | Remove blocking `pulseIn()` and HX711 timeout waits. Non-blocking alternatives.        |
+| **W14** | HX711 data-ready and ultrasonic echo capture | Medium   | Medium     | **Complete**: LoadCellAmplifier hybrid scheduling, UltrasonicSensor interrupt echo. |
 | **W15** | Cloud-to-device commands (MQTT subscribe)    | Medium   | Medium     | **Complete**: Subscribe on connect, JSON parsing, Device::enqueueCommand for cross-task safety, 8 host tests. |
 
 ### Remaining Work: Tier 5 (Optimization & Power)
@@ -72,7 +72,7 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 
 1. **W12: `Device::post` command marshaling** — Implement command queue consumed by sampler task. Requires notification redesign (ADR-022, bit-flag notifications). Enables cloud-to-device commands.
 2. **W13: Interrupt triggers** — Triggering scheduler infrastructure complete: `appendSensorToTriggeringScheduler()`/`appendToBothSchedulers()` API, bit-flag notifications, trigger table, ISR handler, and host tests. Sensor-specific conversion (Button, PIR, YF-S201) pending.
-3. **W14: Non-blocking sensors** — Replace `pulseIn()` in UltrasonicSensor with timer-based measurement. Replace HX711 blocking read with data-ready pin interrupt.
+3. **W14: Non-blocking sensors** — **Complete**: LoadCellAmplifier uses hybrid scheduling with interrupt-driven data-ready detection (appendToBothSchedulers). UltrasonicSensor uses GPIO interrupt on echo pin with esp_timer_get_time() for nanosecond precision. SmartScaleDevice example migrated.
 4. **W15: MQTT subscribe commands** — **Complete**: Subscribe topic wired to `MqttGatewayClient`, JSON parsing extracts `commandId`, commands delivered via `CommandHandler::handle()`. Legacy constructor preserves backward compatibility.
 
 **Phase 2: Tier 5 Completion** (Estimated: 2–3 weeks)
