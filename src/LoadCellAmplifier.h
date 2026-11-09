@@ -13,6 +13,11 @@
 
 /**
  * @brief Sensor adapter for HX711-based load cell amplifiers.
+ *
+ * Uses hybrid scheduling: interrupt-driven data-ready detection via CHANGE edge
+ * on the data pin eliminates the 100 ms busy-wait. Periodic sampling performs the
+ * 24-bit read protocol (~1.2 ms) and change detection. Register via
+ * appendToBothSchedulers() for this behavior.
  * @ingroup sensors_module
  */
 class LoadCellAmplifier : public Sensor {
@@ -27,6 +32,9 @@ private:
     long    tareOffsetRaw; ///< Offset for taring the sensor.
     int     gainPulses; ///< Number of pulses for gain/channel selection.
 
+    // Data-ready state (interrupt-driven, replaces busy-wait)
+    volatile bool dataReady; ///< True when HX711 data pin goes LOW (new conversion ready).
+
     static constexpr int    PROPAGATION_SUPPRESSION_IDENTIFIER  = -1; ///< Identifier used to suppress error events.
     static constexpr float  WEIGHT_CHANGE_EPSILON               = 0.1f; ///< Epsilon for weight change detection.
     static constexpr int    CALIBRATION_STABILITY_THRESHOLD     = 20; ///< Threshold for calibration stability.
@@ -38,7 +46,7 @@ private:
     static constexpr float  INITIAL_CACHED_WEIGHT               = 0.0f; ///< Initial value for cached weight.
     static constexpr float  INITIAL_LAST_NOTIFIED_WEIGHT        = -1.0f; ///< Initial value for the last notified weight.
     static constexpr int    MAX_FILTER_SIZE                     = 10; ///< Maximum size of the moving average filter.
-    static constexpr unsigned long READ_TIMEOUT_MS              = 100; ///< Timeout for sensor readiness.
+    static constexpr unsigned long READ_TIMEOUT_MS              = 100; ///< Timeout for sensor readiness (legacy, kept for calibration).
 
     /// Default sampling interval in milliseconds.
     /// @note HX711 output rate is typically 10 SPS (100 ms) or 80 SPS (12.5 ms) depending on RATE pin wiring.
@@ -53,9 +61,18 @@ private:
 
     /**
      * @brief Performs the HX711 bit-banging protocol to read the 24-bit raw value.
-     * @return The 24-bit raw value read from the HX711, or -1 if a timeout occurs.
+     * @return The 24-bit raw value read from the HX711.
+     * @note Assumes data is ready (dataReady is true). Does not busy-wait.
      */
     [[nodiscard]] long readRawValue() const;
+
+    /**
+     * @brief Performs the HX711 bit-banging protocol with busy-wait for data ready.
+     * Used only during calibration when the sensor may not be registered with the
+     * triggering scheduler.
+     * @return The 24-bit raw value read from the HX711, or -1 if a timeout occurs.
+     */
+    [[nodiscard]] long readRawValueWithWait() const;
 
     /**
      * @brief Calculates the weight from the raw ADC value using linear interpolation.
@@ -126,8 +143,12 @@ public:
      * @param maxRawValue The raw ADC reading corresponding to maxWeightInGrams.
      * @param filterDepth Depth of the moving average filter (default: 5).
      * @param parentHandler Pointer to the parent handler that manages device events.
+     * @note Uses hybrid scheduling: interrupt-driven data-ready detection via
+     * CHANGE edge on the data pin. Register via appendToBothSchedulers() for
+     * this behavior to eliminate the 100 ms busy-wait.
      */
     LoadCellAmplifier(int dataGpioPin, int clockGpioPin, float minWeightInGrams, float maxWeightInGrams, long minRawValue, long maxRawValue, int filterDepth = 5, EventHandler* parentHandler = nullptr);
+    ~LoadCellAmplifier() override = default;
 
     /**
      * @brief Returns the most recent successful weight reading.

@@ -13,7 +13,8 @@ LoadCellAmplifier::LoadCellAmplifier(const int dataGpioPin, const int clockGpioP
       maxRawValue(maxRawValue),
       tareOffsetRaw(0),
       gainPulses(1),
-      filterDepth((filterDepth > MAX_FILTER_SIZE) ? MAX_FILTER_SIZE : (filterDepth < 1 ? 1 : filterDepth)) {
+      dataReady(false),
+      filterDepth(filterDepth > MAX_FILTER_SIZE ? MAX_FILTER_SIZE : filterDepth < 1 ? 1 : filterDepth) {
     pinMode(dataGpioPin, INPUT);
     pinMode(clockGpioPin, OUTPUT);
     reset();
@@ -21,10 +22,20 @@ LoadCellAmplifier::LoadCellAmplifier(const int dataGpioPin, const int clockGpioP
 
 void LoadCellAmplifier::processEvent(Event& event) {
     if (event.identifier == MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER) {
+        // Check if data is ready (set by interrupt when data pin goes LOW)
+        if (!dataReady) {
+            // Data not ready yet; suppress propagation to avoid stale reads
+            reportReadSuccess(event);
+            event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
+            return;
+        }
+
+        // Data is ready; perform the 24-bit read (no busy-wait needed)
+        dataReady = false; // Clear the flag for next cycle
         const long rawValue = readRawValue();
         if (rawValue == -1) {
             reportReadFailure(event);
-            if (event.identifier != Sensor::SENSOR_FAULT_EVENT_IDENTIFIER) {
+            if (event.identifier != SENSOR_FAULT_EVENT_IDENTIFIER) {
                 event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
             }
             return;
@@ -78,13 +89,47 @@ void LoadCellAmplifier::reset() {
     cachedWeightInGrams = INITIAL_CACHED_WEIGHT;
     lastNotifiedWeightInGrams = INITIAL_LAST_NOTIFIED_WEIGHT;
     bufferIndex = 0;
+    dataReady = false;
     for (int i = 0; i < filterDepth; ++i) {
         rawValueBuffer[i] = 0;
     }
 }
 
 long LoadCellAmplifier::readRawValue() const {
+    // Perform the 24-bit HX711 read protocol (assumes data is ready).
+    // This takes ~1.2 ms of delayMicroseconds() but no busy-wait.
+    long value = 0;
+    for (int i = 0; i < HX711_BIT_COUNT; ++i) {
+        digitalWrite(clockGpioPin, HIGH);
+        delayMicroseconds(HX711_CLOCK_PULSE_DELAY_US);
+        value <<= 1;
+        digitalWrite(clockGpioPin, LOW);
+        if (digitalRead(pin) == HIGH) {
+            value++;
+        }
+        delayMicroseconds(HX711_CLOCK_PULSE_DELAY_US);
+    }
+
+    // HX711 pulse for gain/channel selection
+    for (int i = 0; i < gainPulses; ++i) {
+        digitalWrite(clockGpioPin, HIGH);
+        delayMicroseconds(HX711_CLOCK_PULSE_DELAY_US);
+        digitalWrite(clockGpioPin, LOW);
+        delayMicroseconds(HX711_CLOCK_PULSE_DELAY_US);
+    }
+
+    // Sign extension for 24-bit to 32-bit (if negative)
+    if (value & HX711_SIGN_BIT_MASK) {
+        value |= HX711_SIGN_EXTENSION_MASK;
+    }
+    
+    return value - tareOffsetRaw;
+}
+
+long LoadCellAmplifier::readRawValueWithWait() const {
     // Wait for the HX711 to become ready (data line goes low).
+    // Used only during calibration when the sensor may not be registered
+    // with the triggering scheduler.
     const unsigned long startTime = millis();
     while (digitalRead(pin) != LOW) {
         if (millis() - startTime > READ_TIMEOUT_MS) {
@@ -92,6 +137,7 @@ long LoadCellAmplifier::readRawValue() const {
         }
     }
 
+    // Perform the 24-bit read (same as readRawValue)
     long value = 0;
     for (int i = 0; i < HX711_BIT_COUNT; ++i) {
         digitalWrite(clockGpioPin, HIGH);
@@ -140,8 +186,7 @@ void LoadCellAmplifier::powerUp() {
 void LoadCellAmplifier::tare() {
     // Current raw value (already tared by offset)
     // To set current weight to 0, I need to add current reading as offset
-    long currentRaw = readRawValue() + tareOffsetRaw;
-    if (currentRaw != -1) {
+    if (const long currentRaw = readRawValueWithWait() + tareOffsetRaw; currentRaw != -1) {
         tareOffsetRaw = currentRaw;
         reset();
     }
@@ -175,8 +220,7 @@ long LoadCellAmplifier::calculateAverageRawValue(int& successfulSamples) const {
     long totalRaw = 0;
     successfulSamples = 0;
     for (int i = 0; i < CALIBRATION_SAMPLES; ++i) {
-        const long currentRaw = readRawValue() + tareOffsetRaw;
-        if (currentRaw != -1) {
+        if (const long currentRaw = readRawValueWithWait() + tareOffsetRaw; currentRaw != -1) {
             totalRaw += currentRaw;
             successfulSamples++;
         }
@@ -188,7 +232,7 @@ long LoadCellAmplifier::calculateAverageRawValue(int& successfulSamples) const {
     return totalRaw / successfulSamples;
 }
 
-bool LoadCellAmplifier::isCalibrationStable(long averageRawValue) const {
+bool LoadCellAmplifier::isCalibrationStable(const long averageRawValue) const {
     return std::abs(averageRawValue - tareOffsetRaw) > CALIBRATION_STABILITY_THRESHOLD;
 }
 
