@@ -75,11 +75,21 @@ public:
           statusDisplay(LCD_I2C_ADDRESS, LCD_COLUMNS, LCD_ROWS, true, this)
     {
         initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
-        
-        appendSensorToScheduler(&northCornerPir, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-        appendSensorToScheduler(&eastCornerPir, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-        appendSensorToScheduler(&southCornerPir, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-        appendSensorToScheduler(&westCornerPir, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+
+        // Register PIR sensors for interrupt-driven operation (CHANGE edge)
+        // Motion detected (RISING) and motion stopped (FALLING) are both captured
+        appendSensorToTriggeringScheduler(&northCornerPir,
+                                          Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
+                                          CHANGE);
+        appendSensorToTriggeringScheduler(&eastCornerPir,
+                                          Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
+                                          CHANGE);
+        appendSensorToTriggeringScheduler(&southCornerPir,
+                                          Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
+                                          CHANGE);
+        appendSensorToTriggeringScheduler(&westCornerPir,
+                                          Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
+                                          CHANGE);
         
         static const char* TITLE_MESSAGE = "Perimeter Status";
         static const char* INITIALIZING_MESSAGE = "Initializing...";
