@@ -91,6 +91,25 @@ private:
     // Notification infrastructure
     std::atomic<uint32_t> pendingTicks; ///< ISR-incremented tick counter for bit-flag notifications.
 
+    // Triggering scheduler infrastructure (W13)
+    static constexpr uint8_t MAX_TRIGGERED_SENSORS = 4; ///< Maximum interrupt-driven sensors.
+
+    /**
+     * @brief Entry in the trigger table for an interrupt-driven sensor.
+     *
+     * All triggering state (interrupt mode, trigger flag) is owned by Device,
+     * not by Sensor. This keeps Sensor as a pure sensor abstraction.
+     */
+    struct TriggerEntry {
+        Sensor* sensor = nullptr;          ///< Pointer to the registered sensor.
+        int eventIdentifier = -1;          ///< Event identifier to emit on trigger.
+        int interruptMode = CHANGE;        ///< GPIO interrupt mode (RISING, FALLING, CHANGE).
+        bool wasTriggered = false;         ///< True if this sensor was triggered since last poll.
+        uint8_t slotIndex = 0;             ///< Index in the trigger table (also the trigger handle).
+    };
+
+    TriggerEntry triggerTable[MAX_TRIGGERED_SENSORS]; ///< Framework-managed trigger table.
+
     hw_timer_t* hardwareTimer; ///< Pointer to the hardware timer.
     const unsigned long pollingIntervalInMilliseconds; ///< Polling interval in milliseconds.
     const uint8_t hardwareTimerIndex; ///< Index of the hardware timer.
@@ -112,6 +131,30 @@ private:
      * @param deviceInstance Pointer to the owning `Device` instance.
      */
     static void IRAM_ATTR handleHardwareTimerInterrupt(void* deviceInstance);
+
+    /**
+     * @brief Static ISR handler for interrupt-driven sensor triggers.
+     * @param handle Trigger handle (slot index in trigger table).
+     *
+     * Called from the GPIO ISR when an interrupt-driven sensor fires.
+     * Marks the sensor as triggered and wakes the sampler task.
+     * Declared public so host tests can simulate ISR triggers.
+     */
+    static void IRAM_ATTR onSensorTrigger(uint32_t handle);
+
+    /**
+     * @brief Processes all triggered sensors in the sampler task context.
+     *
+     * Iterates the trigger table, and for each sensor that was triggered,
+     * clears the flag and calls on() (which internally invokes processEvent()).
+     */
+    void processTriggeredSensors();
+
+    /**
+     * @brief Static pointer for ISR access to the active Device instance.
+     * @note Declared public so host tests can set it to simulate ISR scenarios.
+     */
+    static Device* activeDevice; ///< Static pointer for ISR access to the active Device instance.
 
 protected:
     /**
@@ -202,6 +245,45 @@ protected:
                                   uint32_t minimumPeriodInMilliseconds = 0);
 
     /**
+     * @brief Registers a sensor for interrupt-driven operation.
+     * @param targetSensorInstance Sensor to trigger on GPIO edge.
+     * @param requestedEventIdentifier Event identifier to emit on trigger.
+     * @param interruptMode GPIO interrupt mode (RISING, FALLING, CHANGE).
+     * @return Trigger handle (slot index + 1, or 0 on failure).
+     *
+     * The sensor's pin is configured with attachInterrupt(). When the GPIO
+     * edge fires, the ISR marks the sensor as triggered and wakes the sampler
+     * task. The sampler then calls the sensor's processEvent() on its own context.
+     *
+     * Calls after initializeAsynchronousEngine() are rejected.
+     */
+    uint32_t appendSensorToTriggeringScheduler(Sensor* targetSensorInstance,
+                                                int requestedEventIdentifier,
+                                                int interruptMode = CHANGE);
+
+    /**
+     * @brief Removes an interrupt-driven sensor registration.
+     * @param triggerHandle Handle returned by appendSensorToTriggeringScheduler.
+     *
+     * Detaches the GPIO interrupt and clears the trigger table entry.
+     */
+    void removeSensorFromTriggeringScheduler(uint32_t triggerHandle);
+
+    /**
+     * @brief Registers a sensor with both the sampling and triggering schedulers.
+     * @param targetSensorInstance Sensor to register.
+     * @param requestedEventIdentifier Event identifier to emit.
+     * @param interruptMode GPIO interrupt mode (RISING, FALLING, CHANGE).
+     * @return `true` when both registrations succeed, `false` otherwise.
+     *
+     * This is a convenience method for hybrid sensors (e.g., YF-S201 water flow)
+     * that need both interrupt-driven pulse counting and periodic sampling.
+     */
+    bool appendToBothSchedulers(Sensor* targetSensorInstance,
+                                 int requestedEventIdentifier,
+                                 int interruptMode = CHANGE);
+
+    /**
      * @brief Optional gateway reference for diagnostics aggregation.
      * Derived classes can set this so diagnostics() can query send statistics.
      */
@@ -254,6 +336,15 @@ public:
         SensorTrigger       = 0x4, ///< Interrupt-driven sensor event (W13).
         CommandAvailable    = 0x8  ///< Command marshaled from network task (W12).
     };
+
+    /**
+     * @brief Static C function pointer wrapper for the GPIO ISR.
+     *
+     * Arduino's attachInterrupt requires a plain function pointer (not a lambda).
+     * This static member scans the trigger table and delegates to onSensorTrigger.
+     * Declared public so the free C adapter function can call it.
+     */
+    static void IRAM_ATTR onSensorTriggerWrapper();
 
     /**
      * @brief Returns a snapshot of runtime health and diagnostic counters.

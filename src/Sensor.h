@@ -23,11 +23,14 @@
  * See LICENSE.md in the root of this repository for full terms.
  */
 
+#include <Arduino.h>
+
 #include "EventHandler.h"
 #include "Event.h"
 #include <cstdint>
 
 class Sensor : public EventHandler {
+
 protected:
     int pin; ///< GPIO pin assigned to the sensor.
     EventHandler* eventHandler; ///< Optional handler to receive propagated events.
@@ -143,6 +146,12 @@ public:
     void setMinimalSamplingIntervalInMilliseconds(uint32_t intervalMs) {
         minimalSamplingIntervalInMilliseconds = intervalMs;
     }
+
+    /**
+     * @brief Returns the GPIO pin assigned to this sensor.
+     * @return GPIO pin number.
+     */
+    [[nodiscard]] int getPin() const { return pin; }
 };
 
 #endif // SENSOR_H

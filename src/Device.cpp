@@ -237,9 +237,9 @@ void Device::executeHardwareSamplingContext(void *taskParameters) {
             self->scheduler.advance(elapsed);
         }
 
-        // Interrupt-driven sensor event (W13 - future)
+        // Interrupt-driven sensor event (W13)
         if (notificationValue & static_cast<uint32_t>(Device::NotificationBitFlag::SensorTrigger)) {
-            // self->processTriggeredSensors();
+            self->processTriggeredSensors();
         }
 
         // Command available from network task (W12 - future)
@@ -299,6 +299,158 @@ void Device::processQueuedTelemetryData(const TelemetryPackage *rawQueueItemPayl
  */
 void Device::maintainNetworkServices() const {
     // Intentional default no-op
+}
+
+// ============================================================================
+// Triggering Scheduler (W13) — Interrupt-driven sensor support
+// ============================================================================
+
+Device* Device::activeDevice = nullptr;
+
+// ISR handle table: maps GPIO interrupt number to trigger handle (slot index + 1)
+static uint32_t isrHandleTable[64] = {};
+
+/**
+ * @brief Static C function pointer wrapper for the GPIO ISR.
+ *
+ * Arduino's attachInterrupt requires a plain function pointer (not a lambda).
+ * This static member scans the trigger table and delegates to onSensorTrigger.
+ */
+void IRAM_ATTR Device::onSensorTriggerWrapper() {
+    if (activeDevice != nullptr) {
+        for (uint8_t i = 0; i < MAX_TRIGGERED_SENSORS; i++) {
+            if (activeDevice->triggerTable[i].sensor != nullptr) {
+                onSensorTrigger(static_cast<uint32_t>(i + 1));
+            }
+        }
+    }
+}
+
+/**
+ * @brief C adapter function for attachInterrupt compatibility.
+ *
+ * attachInterrupt requires a plain C function pointer, not a C++ member function.
+ * This free function delegates to the static member Device::onSensorTriggerWrapper().
+ */
+extern "C" {
+static void c_interrupt_adapter(void) {
+    Device::onSensorTriggerWrapper();
+}
+}
+
+/**
+ * @brief Static ISR handler for interrupt-driven sensor triggers.
+ *
+ * Called from the GPIO ISR when an interrupt-driven sensor fires.
+ * Marks the sensor as triggered and wakes the sampler task.
+ */
+void IRAM_ATTR Device::onSensorTrigger(uint32_t handle) {
+    if (activeDevice != nullptr && handle > 0 && handle <= MAX_TRIGGERED_SENSORS) {
+        uint8_t index = static_cast<uint8_t>(handle - 1);
+        activeDevice->triggerTable[index].wasTriggered = true;
+        BaseType_t higherPriorityTaskWoken = pdFALSE;
+        xTaskNotifyFromISR(activeDevice->hardwareSamplingTaskHandle,
+                           static_cast<uint32_t>(Device::NotificationBitFlag::SensorTrigger),
+                           eSetBits, &higherPriorityTaskWoken);
+        if (higherPriorityTaskWoken)
+            portYIELD_FROM_ISR();
+    }
+}
+
+/**
+ * @brief Processes all triggered sensors in the sampler task context.
+ *
+ * Iterates the trigger table, and for each sensor that was triggered,
+ * clears the flag and calls on() (which internally invokes processEvent()).
+ * Uses getPin() for sourceId — no friend access needed.
+ */
+void Device::processTriggeredSensors() {
+    for (uint8_t i = 0; i < MAX_TRIGGERED_SENSORS; i++) {
+        if (triggerTable[i].sensor != nullptr && triggerTable[i].wasTriggered) {
+            triggerTable[i].wasTriggered = false;
+            Event event(triggerTable[i].eventIdentifier);
+            event.sourceId = triggerTable[i].sensor->getPin();
+            // Call on() which internally calls processEvent() — no friend access needed.
+            triggerTable[i].sensor->on(event);
+        }
+    }
+}
+
+/**
+ * @brief Registers a sensor for interrupt-driven operation.
+ */
+uint32_t Device::appendSensorToTriggeringScheduler(Sensor *targetSensorInstance,
+                                                    int requestedEventIdentifier,
+                                                    int interruptMode) {
+    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
+        return 0;
+    }
+
+    // Find an empty slot in the trigger table
+    for (uint8_t i = 0; i < MAX_TRIGGERED_SENSORS; i++) {
+        if (triggerTable[i].sensor == nullptr) {
+            triggerTable[i].sensor = targetSensorInstance;
+            triggerTable[i].eventIdentifier = requestedEventIdentifier;
+            triggerTable[i].interruptMode = interruptMode;
+            triggerTable[i].wasTriggered = false;
+            triggerTable[i].slotIndex = i;
+
+            // Set the static active device pointer for ISR access
+            activeDevice = this;
+
+            // Attach the GPIO interrupt using the C adapter function
+            // (Arduino's attachInterrupt requires a plain C function pointer)
+            uint32_t handle = static_cast<uint32_t>(i + 1);
+            int interruptNumber = digitalPinToInterrupt(targetSensorInstance->getPin());
+            isrHandleTable[interruptNumber] = handle;
+            attachInterrupt(interruptNumber, c_interrupt_adapter, interruptMode);
+
+            // Return handle (slot index + 1, so 0 is invalid)
+            return handle;
+        }
+    }
+
+    // No empty slot available
+    return 0;
+}
+
+/**
+ * @brief Removes an interrupt-driven sensor registration.
+ */
+void Device::removeSensorFromTriggeringScheduler(uint32_t triggerHandle) {
+    if (triggerHandle == 0 || triggerHandle > MAX_TRIGGERED_SENSORS) {
+        return;
+    }
+
+    uint8_t index = static_cast<uint8_t>(triggerHandle - 1);
+    if (triggerTable[index].sensor != nullptr) {
+        // Detach the GPIO interrupt
+        detachInterrupt(digitalPinToInterrupt(triggerTable[index].sensor->getPin()));
+
+        // Clear the trigger table entry (all state is in Device, not Sensor)
+        triggerTable[index].sensor = nullptr;
+        triggerTable[index].eventIdentifier = -1;
+        triggerTable[index].interruptMode = CHANGE;
+        triggerTable[index].wasTriggered = false;
+    }
+}
+
+/**
+ * @brief Registers a sensor with both the sampling and triggering schedulers.
+ */
+bool Device::appendToBothSchedulers(Sensor *targetSensorInstance,
+                                     int requestedEventIdentifier,
+                                     int interruptMode) {
+    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
+        return false;
+    }
+
+    bool samplingOk = appendSensorToScheduler(targetSensorInstance, requestedEventIdentifier);
+    uint32_t triggerHandle = appendSensorToTriggeringScheduler(targetSensorInstance,
+                                                                requestedEventIdentifier,
+                                                                interruptMode);
+
+    return samplingOk && (triggerHandle != 0);
 }
 
 DiagnosticsSnapshot Device::diagnostics() const {
