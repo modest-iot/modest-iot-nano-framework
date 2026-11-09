@@ -41,7 +41,7 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 | W10 | Optional Bluetooth, BLE driver addition, optional MQTT footprint                        | Tier 2      | 3 | 2 | 4 | S    | 11    | **Partially Complete** (BLE NUS added, BT Classic isolated)                                                                                 |
 | W11 | Telemetry ownership and queue policy (Phases A and B)                                   | Tier 3      | 4 | 3 | 4 | M    | 8     | **Partially Complete** (Phase A done, `unique_ptr` overload, drop-oldest, bounded buffer, envelope metadata, golden tests, T14 name hiding) |
 | W12 | `Device::post` command marshaling                                                      | Tier 4      | 3 | 0 | 4 | M    | 6     | Pending                                                                                                                                     |
-| W13 | Interrupt triggers for Button and PIR                                                   | Tier 4      | 3 | 4 | 3 | M    | 6     | Pending                                                                                                                                     |
+| W13 | Interrupt triggers for Button and PIR                                                   | Tier 4      | 3 | 4 | 3 | M    | 6     | **Partially Complete** (triggering scheduler infrastructure, `appendSensorToTriggeringScheduler`, `appendToBothSchedulers`, host tests) |
 | W14 | HX711 data-ready and ultrasonic echo capture (remove blocking)                          | Tier 4      | 2 | 4 | 2 | M    | 5     | Pending                                                                                                                                     |
 | W15 | Cloud-to-device commands (MQTT subscribe)                                               | Tier 4      | 2 | 0 | 4 | M    | 5     | Pending                                                                                                                                     |
 | W16 | Tickless scheduling and light sleep                                                     | Tier 5      | 2 | 4 | 2 | L    | 3     | Pending                                                                                                                                     |
@@ -405,9 +405,22 @@ Give other tasks a safe way to act on the sampler's objects.
 
 ### W13: Interrupt triggers for Button, PIR, and pulse-based sensors
 
+**Status**: Partially Complete — triggering scheduler infrastructure implemented; sensor-specific interrupt conversion pending.
+
 **Problem**: Edge-type sensors are polled, introducing latency (up to one full period) and wasting CPU on idle reads. Pulse-based sensors (e.g., YF-S201 water flow) cannot be accurately measured by polling alone — every pulse must be captured.
 
-**Mechanism**: The ISR does minimal work: sets a bit and wakes the sampler. The sampler runs the sensor's normal `processEvent` (existing logic, including debounce) and forwards the event to the mediator.
+**Implementation**:
+
+- **Notification redesign (N1)**: Replaced `vTaskNotifyGiveFromISR` with `xTaskNotifyFromISR(handle, bit, eSetBits)` for all sources. Elapsed ticks tracked in `std::atomic<uint32_t> pendingTicks` that the sampler exchanges to zero. Bit-flag `enum class NotificationBitFlag` with named constants: `TimerTickArrived` (0x1), `TerminationSignal` (0x2), `SensorTrigger` (0x4), `CommandAvailable` (0x8).
+- **Sensor base class**: Added `interruptDriven`, `triggerHandle`, and `interruptMode` protected attributes with public `isInterruptDriven()`, `setInterruptMode()`, and `getInterruptMode()` methods.
+- **Triggering scheduler API**:
+  - `appendSensorToTriggeringScheduler(Sensor*, int, int)` — registers interrupt-driven sensor, returns handle.
+  - `removeSensorFromTriggeringScheduler(uint32_t)` — removes registration, detaches GPIO interrupt.
+  - `appendToBothSchedulers(Sensor*, int, int)` — convenience for hybrid sensors (e.g., YF-S201).
+- **Trigger table**: `MAX_TRIGGERED_SENSORS = 4` slots, each with `sensor`, `eventIdentifier`, `wasTriggered`, and `slotIndex`.
+- **ISR handler**: Static `onSensorTrigger(uint32_t)` marks the sensor as triggered and wakes the sampler via `SensorTrigger` bit flag.
+- **Sampler task**: Calls `processTriggeredSensors()` when `SensorTrigger` bit is set, iterating the trigger table and calling `processEvent()` + `on()` for each triggered sensor.
+- **Host tests**: 16 test cases in `tests/TriggeringScheduler/test.cpp` covering registration, capacity, removal, trigger handling, and hybrid sensors.
 
 **API Design** (following `appendSensorToScheduler` naming pattern):
 
@@ -418,48 +431,17 @@ void removeSensorFromTriggeringScheduler(uint32_t triggerHandle);
 bool appendToBothSchedulers(Sensor* target, int eventId, int interruptMode = CHANGE);
 ```
 
-- `appendSensorToTriggeringScheduler`: Registers a sensor for interrupt-driven operation. Mirrors `appendSensorToScheduler` naming pattern. Returns a handle for ISR-safe trigger (or 0 on failure).
-- `removeSensorFromTriggeringScheduler`: Removes an interrupt-driven sensor registration.
-- `appendToBothSchedulers`: Convenience method for hybrid sensors (e.g., YF-S201) that need both interrupt-driven pulse counting and periodic sampling. Registers with both schedulers in one call.
-
-**Notification redesign (N1)**: Replace `vTaskNotifyGiveFromISR` with `xTaskNotifyFromISR(handle, bit, eSetBits)` for all sources. Keep elapsed ticks in an ISR-incremented `std::atomic<uint32_t> pendingTicks` that the task exchanges to zero.
-
-| Bit | Meaning | Source |
-|-----|---------|--------|
-| Bit 0 (0x1) | Timer tick arrived | Hardware timer ISR |
-| Bit 1 (0x2) | Termination signal | `stopAsynchronousEngine()` |
-| Bit 2 (0x4) | Interrupt-driven sensor event | GPIO ISR via `appendSensorToTriggeringScheduler()` |
-
-**ISR Rules**:
-- Mark handlers `IRAM_ATTR`; keep them tiny; no heap, no `Serial`, no logging.
-- Use `portYIELD_FROM_ISR` when a higher-priority task was woken.
-- Rate-limit contact bounce by disabling the pin interrupt during debounce.
-- Never call `digitalRead` from the ISR.
-
-**Candidates**:
-- `Button`: Excellent fit. GPIO edge interrupt plus debounce in the task.
-- `PassiveInfraredSensor`: Excellent fit. Rising and falling edge.
-- `WaterFlowSensor` (YF-S201): Excellent fit for hybrid pattern. RISING edge interrupt counts every pulse; periodic sampling reads accumulated count and calculates flow rate. Default interval 1000ms, minimum 100ms. ~450 pulses per liter.
-- `LoadCellAmplifier` (HX711): Good. Data-ready line (DOUT) falls when conversion is ready.
-- `UltrasonicSensor`: Good, harder. RMT/PCNT peripheral or edge interrupt pair.
-
 **Hybrid Sensor Pattern** (e.g., YF-S201):
 
-Some sensors need both interrupt-driven operation (to capture every pulse/edge) and periodic sampling (to read accumulated data and calculate rates). The `appendToBothSchedulers` convenience method registers the sensor with both schedulers:
-
 ```cpp
-// In a device sketch:
 appendToBothSchedulers(&flowSensor,
                        Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
                        RISING);
-// Equivalent to:
-// appendSensorToScheduler(&flowSensor, eventId);        // Periodic read
-// appendSensorToTriggeringScheduler(&flowSensor, eventId, RISING); // Pulse counting
 ```
 
-**Auto-routing rejected**: The `appendSensorToScheduler(Sensor*, int)` overload does NOT auto-route interrupt-driven sensors to the triggering scheduler. The APIs remain explicit — the developer knows which scheduler the sensor is registered with. Hybrid sensors use `appendToBothSchedulers`.
+**Remaining**: Convert Button, PIR, and WaterFlowSensor to use the triggering scheduler. Add ADR for the notification redesign.
 
-**Source**: `src/Device.h`, `src/Device.cpp`, `src/Button.h`, `src/PassiveInfraredSensor.h`
+**Source**: `src/Device.h`, `src/Device.cpp`, `src/Sensor.h`, `tests/TriggeringScheduler/test.cpp`
 
 ---
 
