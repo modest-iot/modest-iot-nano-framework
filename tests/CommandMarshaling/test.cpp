@@ -38,8 +38,8 @@ public:
     void processQueuedTelemetryData(const TelemetryPackage*) const override {}
     void handle(Command) override {}
 
-    // Forward protected Device methods for test access
-    bool enqueueCommand(CommandHandler* h, Command c) {
+    // Forward public Device methods for test access
+    bool enqueueCommand(CommandHandler* h, Command c) override {
         return Device::enqueueCommand(h, c);
     }
 };

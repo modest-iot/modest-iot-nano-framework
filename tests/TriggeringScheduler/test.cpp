@@ -51,13 +51,13 @@ public:
     void processQueuedTelemetryData(const TelemetryPackage*) const override {}
 
     // Forward protected Device methods for test access
-    uint32_t appendSensorToTriggeringScheduler(Sensor* s, int e, int m = CHANGE) {
+    uint32_t appendSensorToTriggeringScheduler(Sensor* s, int e, int m = CHANGE) override {
         return Device::appendSensorToTriggeringScheduler(s, e, m);
     }
-    void removeSensorFromTriggeringScheduler(uint32_t h) {
+    void removeSensorFromTriggeringScheduler(uint32_t h) override {
         Device::removeSensorFromTriggeringScheduler(h);
     }
-    bool appendToBothSchedulers(Sensor* s, int e, int m = CHANGE) {
+    bool appendToBothSchedulers(Sensor* s, int e, int m = CHANGE) override {
         return Device::appendToBothSchedulers(s, e, m);
     }
 };

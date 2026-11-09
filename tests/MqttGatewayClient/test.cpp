@@ -1,6 +1,8 @@
 #include "MqttGatewayClient.h"
+#include "Device.h"
 #include "WiFiConnectivityDriver.h"
 #include "TelemetryPackage.h"
+#include "Command.h"
 #include <ArduinoJson.h>
 #include <cassert>
 #include <cstdio>
@@ -54,6 +56,42 @@ public:
     void serialize(JsonDocument& destination) const override {
         destination["id"] = sensorId;
         destination["value"] = readingValue;
+    }
+};
+
+// W15: Mock Device for testing incoming command delivery via enqueueCommand()
+class MockDevice : public Device {
+public:
+    int lastCommandId = -1;
+    int handleCallCount = 0;
+    int enqueueCommandCallCount = 0;
+
+    MockDevice() : Device(100) {}
+
+    void on(Event event) override {
+        (void)event;
+        // No-op for tests
+    }
+
+    void handle(Command command) override {
+        lastCommandId = command.identifier;
+        handleCallCount++;
+    }
+
+    // Override enqueueCommand to track calls without FreeRTOS queue
+    bool enqueueCommand(CommandHandler* targetHandler, Command command) override {
+        enqueueCommandCallCount++;
+        // Directly call handle on the target handler (which is this MockDevice)
+        if (targetHandler != nullptr) {
+            targetHandler->handle(command);
+        }
+        return true;
+    }
+
+    void reset() {
+        lastCommandId = -1;
+        handleCallCount = 0;
+        enqueueCommandCallCount = 0;
     }
 };
 
@@ -309,6 +347,193 @@ public:
         GatewayStatistics stats = gateway.getStatistics();
         assert(stats.sendsSucceeded == 1);
         assert(stats.sendsFailed == 0);
+    }
+
+    // =========================================================================
+    // Test 7: W15 - Subscribe topic stored and returned
+    // =========================================================================
+    {
+        PubSubClient::resetMockState();
+        fakeMillis = 1000;
+
+        MockConnectivityDriver mockDriver;
+        Client fakeSocket;
+        MockDevice mockDevice;
+        MqttGatewayClient gateway(mockDriver, fakeSocket, "192.168.1.100", 1883,
+                                   "telemetry/out", "commands/in", &mockDevice, "Node-06");
+
+        assert(gateway.getSubscribeTopic() != nullptr);
+        assert(std::string(gateway.getSubscribeTopic()) == "commands/in");
+    }
+
+    // =========================================================================
+    // Test 8: W15 - Legacy constructor has no subscribe topic
+    // =========================================================================
+    {
+        PubSubClient::resetMockState();
+        fakeMillis = 1000;
+
+        MockConnectivityDriver mockDriver;
+        Client fakeSocket;
+        MqttGatewayClient gateway(mockDriver, fakeSocket, "192.168.1.100", 1883,
+                                   "telemetry/out", "Node-07");
+
+        assert(gateway.getSubscribeTopic() == nullptr);
+    }
+
+    // =========================================================================
+    // Test 9: W15 - Subscribe on successful connection
+    // =========================================================================
+    {
+        PubSubClient::resetMockState();
+        fakeMillis = 1000;
+
+        MockConnectivityDriver mockDriver;
+        Client fakeSocket;
+        MockDevice mockDevice;
+        MqttGatewayClient gateway(mockDriver, fakeSocket, "192.168.1.100", 1883,
+                                   "telemetry/out", "commands/in", &mockDevice, "Node-08");
+
+        // Trigger connection via send
+        SampleTelemetryPackage package(1, 1.0f);
+        gateway.sendTelemetryRecord(package);
+
+        assert(PubSubClient::subscribeCount == 1);
+        assert(PubSubClient::lastSubscribeTopic == "commands/in");
+        assert(PubSubClient::lastSubscribeQos == 0);
+    }
+
+    // =========================================================================
+    // Test 10: W15 - Incoming command JSON parsed and delivered via enqueueCommand
+    // =========================================================================
+    {
+        PubSubClient::resetMockState();
+        fakeMillis = 1000;
+
+        MockConnectivityDriver mockDriver;
+        Client fakeSocket;
+        MockDevice mockDevice;
+        MqttGatewayClient gateway(mockDriver, fakeSocket, "192.168.1.100", 1883,
+                                   "telemetry/out", "commands/in", &mockDevice, "Node-09");
+
+        // Connect first
+        SampleTelemetryPackage package(1, 1.0f);
+        gateway.sendTelemetryRecord(package);
+        assert(gateway.isConnected());
+
+        // Simulate incoming command: {"commandId": 5}
+        PubSubClient::simulateIncomingMessage("commands/in", "{\"commandId\":5}");
+
+        // Process via service() -> mqttClient.loop() -> callback -> enqueueCommand -> handle
+        gateway.service();
+
+        assert(mockDevice.enqueueCommandCallCount == 1);
+        assert(mockDevice.handleCallCount == 1);
+        assert(mockDevice.lastCommandId == 5);
+    }
+
+    // =========================================================================
+    // Test 11: W15 - Multiple commands delivered sequentially
+    // =========================================================================
+    {
+        PubSubClient::resetMockState();
+        fakeMillis = 1000;
+
+        MockConnectivityDriver mockDriver;
+        Client fakeSocket;
+        MockDevice mockDevice;
+        MqttGatewayClient gateway(mockDriver, fakeSocket, "192.168.1.100", 1883,
+                                   "telemetry/out", "commands/in", &mockDevice, "Node-10");
+
+        // Connect
+        SampleTelemetryPackage package(1, 1.0f);
+        gateway.sendTelemetryRecord(package);
+
+        // First command
+        PubSubClient::simulateIncomingMessage("commands/in", "{\"commandId\":10}");
+        gateway.service();
+        assert(mockDevice.enqueueCommandCallCount == 1);
+        assert(mockDevice.handleCallCount == 1);
+        assert(mockDevice.lastCommandId == 10);
+
+        // Second command
+        PubSubClient::simulateIncomingMessage("commands/in", "{\"commandId\":20}");
+        gateway.service();
+        assert(mockDevice.enqueueCommandCallCount == 2);
+        assert(mockDevice.handleCallCount == 2);
+        assert(mockDevice.lastCommandId == 20);
+    }
+
+    // =========================================================================
+    // Test 12: W15 - Missing commandId field is ignored
+    // =========================================================================
+    {
+        PubSubClient::resetMockState();
+        fakeMillis = 1000;
+
+        MockConnectivityDriver mockDriver;
+        Client fakeSocket;
+        MockDevice mockDevice;
+        MqttGatewayClient gateway(mockDriver, fakeSocket, "192.168.1.100", 1883,
+                                   "telemetry/out", "commands/in", &mockDevice, "Node-11");
+
+        // Connect
+        SampleTelemetryPackage package(1, 1.0f);
+        gateway.sendTelemetryRecord(package);
+
+        // Send malformed JSON without commandId
+        PubSubClient::simulateIncomingMessage("commands/in", "{\"otherField\":\"value\"}");
+        gateway.service();
+
+        // Handler should NOT have been called
+        assert(mockDevice.enqueueCommandCallCount == 0);
+        assert(mockDevice.handleCallCount == 0);
+    }
+
+    // =========================================================================
+    // Test 13: W15 - Invalid JSON is ignored
+    // =========================================================================
+    {
+        PubSubClient::resetMockState();
+        fakeMillis = 1000;
+
+        MockConnectivityDriver mockDriver;
+        Client fakeSocket;
+        MockDevice mockDevice;
+        MqttGatewayClient gateway(mockDriver, fakeSocket, "192.168.1.100", 1883,
+                                   "telemetry/out", "commands/in", &mockDevice, "Node-12");
+
+        // Connect
+        SampleTelemetryPackage package(1, 1.0f);
+        gateway.sendTelemetryRecord(package);
+
+        // Send invalid JSON
+        PubSubClient::simulateIncomingMessage("commands/in", "not json at all");
+        gateway.service();
+
+        // Handler should NOT have been called
+        assert(mockDevice.enqueueCommandCallCount == 0);
+        assert(mockDevice.handleCallCount == 0);
+    }
+
+    // =========================================================================
+    // Test 14: W15 - Publish-only mode does not subscribe
+    // =========================================================================
+    {
+        PubSubClient::resetMockState();
+        fakeMillis = 1000;
+
+        MockConnectivityDriver mockDriver;
+        Client fakeSocket;
+        MqttGatewayClient gateway(mockDriver, fakeSocket, "192.168.1.100", 1883,
+                                   "telemetry/out", "Node-13");
+
+        // Connect
+        SampleTelemetryPackage package(1, 1.0f);
+        gateway.sendTelemetryRecord(package);
+
+        // Subscribe should NOT have been called
+        assert(PubSubClient::subscribeCount == 0);
     }
 
     std::printf("All MqttGatewayClient and WiFi Reconnection tests passed successfully!\n");
