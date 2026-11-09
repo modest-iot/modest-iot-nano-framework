@@ -260,6 +260,14 @@ add_executable(test_CommandMarshaling
 )
 target_include_directories(test_CommandMarshaling PRIVATE tests/fakes src)
 
+add_executable(test_WaterFlowSensor
+        tests/WaterFlowSensor/test.cpp
+        src/Sensor.cpp
+        src/WaterFlowSensor.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_WaterFlowSensor PRIVATE tests/fakes src)
+
 add_test(NAME DigitalLightIntensitySensorTest COMMAND test_DigitalLightIntensitySensor)
 add_test(NAME RgbLedTest COMMAND test_RgbLed)
 add_test(NAME RfidSensorTest COMMAND test_RfidSensor)
@@ -273,9 +281,10 @@ add_test(NAME SamplingSchedulerTest COMMAND test_SamplingScheduler)
 add_test(NAME TelemetryPackageTest COMMAND test_TelemetryPackage)
 add_test(NAME TriggeringSchedulerTest COMMAND test_TriggeringScheduler)
 add_test(NAME CommandMarshalingTest COMMAND test_CommandMarshaling)
+add_test(NAME WaterFlowSensorTest COMMAND test_WaterFlowSensor)
 
 add_custom_target(run_tests
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling
+        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor
         COMMENT "Executing all native host test suites..."
 )
