@@ -161,4 +161,19 @@ inline void analogWrite(const std::uint8_t pin, const int val) {
     }
 }
 
+// Mock ESP32 deep sleep API for host testing (W17)
+#define RTC_DATA_ATTR
+enum esp_sleep_wakeup_cause_t {
+    ESP_SLEEP_WAKEUP_EXT0,
+    ESP_SLEEP_WAKEUP_EXT1,
+    ESP_SLEEP_WAKEUP_TIMER,
+    ESP_SLEEP_WAKEUP_TOUCHPAD,
+    ESP_SLEEP_WAKEUP_ULP,
+    ESP_SLEEP_WAKEUP_OTHER
+};
+inline esp_sleep_wakeup_cause_t fakeWakeupCause = ESP_SLEEP_WAKEUP_OTHER;
+inline void esp_deep_sleep_start() {}
+inline void esp_sleep_enable_timer_wakeup(uint64_t time_in_us) { (void)time_in_us; }
+inline esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause() { return fakeWakeupCause; }
+
 #endif // FAKE_ARDUINO_H
