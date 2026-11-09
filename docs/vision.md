@@ -30,7 +30,7 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 | **Tier 2**: Reliability & Footprint     | W6–W10  | **Complete** ✓ |
 | **Tier 3**: Core Scheduling & Telemetry | W8, W11 | **Complete** ✓ |
 | **Tier 4**: Capabilities                | W12–W15 | **Complete** ✓   |
-| **Tier 5**: Optimization & Power        | W16–W19 | **Queued**      |
+| **Tier 5**: Optimization & Power        | W16–W19 | **In Progress** (W16 ✓) |
 
 ### What's Delivered
 
@@ -56,7 +56,7 @@ All Tier 4 items (W12–W15) are implemented. The framework now supports bidirec
 
 | ID      | Work Item                            | Priority | Complexity | Description                                                              |
 |---------|--------------------------------------|----------|------------|--------------------------------------------------------------------------|
-| **W16** | Tickless scheduling and light sleep  | Medium   | High       | `ticksUntilNextDue()` from scheduler, ESP32 light sleep between ticks.   |
+| **W16** | Tickless scheduling and light sleep  | Medium   | High       | **Complete** ✓ — `ticksUntilNextDue()`, PowerMode enum, ESP32 light sleep.   |
 | **W17** | Deep-sleep cycle and battery example | Low      | High       | ESP32 deep sleep with RTC, wake-on-timer/GPIO, battery-powered example.  |
 | **W18** | Telemetry pool and writer interface  | Medium   | High       | Static packet pool, `TelemetryWriter` abstraction for format decoupling. |
 | **W19** | Native servo and LCD drivers         | Low      | Medium     | Replace ESP32Servo and LiquidCrystal_I2C with native implementations.    |
@@ -874,7 +874,7 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 |-------------|------------------------|--------------------------------------------------------------------------------|
 | **Q4 2026** | Tier 4 complete ✓      | W12–W15: command marshaling, interrupts, non-blocking sensors, MQTT subscribe |
 | **Q4 2026** | Component Expansion ✓  | RelayActuator, SoilMoistureSensor, WaterFlowSensor with examples              |
-| **Q4 2026** | Tier 5 in progress     | W16–W19: tickless sleep, deep sleep, telemetry pool, native drivers            |
+| **Q4 2026** | Tier 5 in progress     | W16 ✓: tickless scheduling and light sleep; W17–W19 pending                    |
 | **Q1 2027** | Library release        | v1.0.0 tag, Arduino Library Manager submission                                 |
 
 ### Edge Framework Development
