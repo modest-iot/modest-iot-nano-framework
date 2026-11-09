@@ -66,10 +66,10 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 
 ## Claims verified and remaining verification gaps
 
-- **Verified**: Local `arduino-cli compile` cleanly builds all 10 examples across ESP32 targets with `--library .` configured.
+- **Verified**: Local `arduino-cli compile` cleanly builds all 11 examples across ESP32 targets with `--library .` configured.
 - **Verified**: `library.properties` `depends=` syntax formatted for Arduino Library Manager compliance.
 - **Verified**: Bluetooth Classic fails on modern ESP32 variants (S2, S3, C3, C6, H2); resolved via target guards and `BleConnectivityDriver`.
-- **Verified**: Host test harness executes 11 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`) under Address and Undefined sanitizers.
+- **Verified**: Host test harness executes 16 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/relay_actuator`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`, `tests/triggering_scheduler`, `tests/command_marshaling`, `tests/water_flow_sensor`, `tests/soil_moisture_sensor`) under Address and Undefined sanitizers.
 - **Verified**: Logging facility (`MODEST_LOG_*`) works with host capture sink and `MIOT_LOG_*` aliases.
 - **Verified**: MQTT gateway reconnection and keep-alive verified with host tests.
 - **Remaining**: Performance, latency, memory and power figures (reasoned, to be measured on hardware).
@@ -157,7 +157,8 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 | Commands | 150 to 152   | `ServoMotor`                                         |
 | Commands | 200 to 202   | `CharacterLcdDisplay`                                |
 | Commands | 250 to 252   | `Buzzer`                                             |
-| Commands | 300 to 303   | `RgbLed`                                             |
+| Commands | 300 to 302   | `RelayActuator`                                      |
+| Commands | 304 to 306   | `RgbLed`                                             |
 
 Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power events 910-919. User identifiers from 1000.
 
@@ -177,26 +178,31 @@ Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power ev
 **Test Runner & CI**:
 - Implemented `tests/run_all.sh` with strict warnings (`-Wall -Wextra -Werror`) and Address/Undefined sanitizers.
 - Added GitHub Actions workflows:
-  - `host-tests.yml`: runs all 11 test suites on Ubuntu and macOS.
-  - `compile-examples.yml`: compiles all 10 examples across ESP32 and ESP32-S3 boards.
+  - `host-tests.yml`: runs all 16 test suites on Ubuntu and macOS.
+  - `compile-examples.yml`: compiles all 11 examples across ESP32 and ESP32-S3 boards.
   - `lint.yml`: validates `library.properties` with Arduino Library Manager compliance.
 - Registered all test targets in `CMakeLists.txt` with CTest integration.
 
-**Test Suites (11 total)**:
+**Test Suites (16 total)**:
 
 | #  | Suite                                | What It Tests                                                          |
 |----|--------------------------------------|------------------------------------------------------------------------|
 | 1  | `tests/DigitalLightIntensitySensor/` | I²C sensor polling, Wire mock, event emission                          |
 | 2  | `tests/RgbLed/`                      | PWM output, color mixing, analogWrite mock                             |
-| 3  | `tests/RfidSensor/`                  | CRC calculation, SPI mock, card communication                          |
-| 4  | `tests/BleConnectivityDriver/`       | BLE NUS GATT service, notifications, RX callbacks                      |
-| 5  | `tests/ModestLog/`                   | `MODEST_LOG_*` level filtering, sink redirection, `MIOT_LOG_*` aliases |
-| 6  | `tests/MqttGatewayClient/`           | MQTT keep-alive, reconnect backoff, client state                       |
-| 7  | `tests/DiagnosticsSnapshot/`         | `DiagnosticsSnapshot`, shared counters, enqueue edge cases             |
-| 8  | `tests/SensorFault/`                 | Fault threshold, latching, recovery events, counter reset              |
-| 9  | `tests/SamplingScheduler/`           | Per-slot periods, phase alignment, minimum enforcement                 |
-| 10 | `tests/EngineConfig/`                | `EngineConfig` defaults, custom values, aggregate init                 |
-| 11 | `tests/TelemetryPackage/`            | Golden JSON serialization, envelope metadata, bounded buffer           |
+| 3  | `tests/RelayActuator/`               | Relay on/off/toggle commands, state tracking, parent propagation       |
+| 4  | `tests/RfidSensor/`                  | CRC calculation, SPI mock, card communication                          |
+| 5  | `tests/BleConnectivityDriver/`       | BLE NUS GATT service, notifications, RX callbacks                      |
+| 6  | `tests/ModestLog/`                   | `MODEST_LOG_*` level filtering, sink redirection, `MIOT_LOG_*` aliases |
+| 7  | `tests/MqttGatewayClient/`           | MQTT keep-alive, reconnect backoff, client state                       |
+| 8  | `tests/DiagnosticsSnapshot/`         | `DiagnosticsSnapshot`, shared counters, enqueue edge cases             |
+| 9  | `tests/SensorFault/`                 | Fault threshold, latching, recovery events, counter reset              |
+| 10 | `tests/SamplingScheduler/`           | Per-slot periods, phase alignment, minimum enforcement                 |
+| 11 | `tests/EngineConfig/`                | `EngineConfig` defaults, custom values, aggregate init                 |
+| 12 | `tests/TelemetryPackage/`            | Golden JSON serialization, envelope metadata, bounded buffer           |
+| 13 | `tests/TriggeringScheduler/`         | Interrupt-driven sensor registration, trigger table, ISR handler       |
+| 14 | `tests/CommandMarshaling/`           | Command queue, cross-task marshaling, enqueue edge cases               |
+| 15 | `tests/WaterFlowSensor/`             | Hybrid scheduling, pulse counting, flow rate change detection          |
+| 16 | `tests/SoilMoistureSensor/`          | AnalogRead moisture, epsilon-based change detection, event emission    |
 
 **Source**: `tests/fakes/`, `tests/run_all.sh`, `.github/workflows/`, `CMakeLists.txt`
 
@@ -331,7 +337,7 @@ Converted sensors: `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `Digita
 | `GeolocationSensor`           | 1000         | 100          |
 | `RfidSensor`                  | 100          | 10           |
 
-**Example Migration**: All 10 examples migrated. `ClassicBlinker` uses explicit four-argument `EventHandler*` overload. 9 other examples automatically use `Sensor*` overload.
+**Example Migration**: All 11 examples migrated. `ClassicBlinker` uses explicit four-argument `EventHandler*` overload. 10 other examples automatically use `Sensor*` overload.
 
 **Handler time budget** (worst-case blocking per handler):
 
@@ -538,6 +544,12 @@ Added two zero-dependency components to enable the v1.0.0 library release with b
 Bundles `SoilMoistureSensor` + `DhtSensor` + `RelayActuator` (pump) + `ServoMotor` (vent). Demonstrates event-driven irrigation control (soil dry → pump on) and ventilation control (temperature high → vent open).
 
 **Source**: `examples/SmartGreenhouseDevice/SmartGreenhouseDevice.ino`
+
+### WaterFlowMonitor Example
+
+Demonstrates `WaterFlowSensor` with `appendToBothSchedulers()` using CHANGE edge for hybrid interrupt-driven pulse counting plus periodic flow rate computation.
+
+**Source**: `examples/WaterFlowMonitor/WaterFlowMonitor.ino`
 
 ---
 
