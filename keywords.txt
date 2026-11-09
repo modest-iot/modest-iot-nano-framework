@@ -135,6 +135,8 @@ TimerTickArrived	KEYWORD1
 TerminationSignal	KEYWORD1
 SensorTrigger	KEYWORD1
 CommandAvailable	KEYWORD1
+enqueueCommand	KEYWORD2
+CommandEntry	KEYWORD1
 NotificationBitFlag	KEYWORD1
 NUS_SERVICE_UUID	LITERAL1
 NUS_RX_CHARACTERISTIC_UUID	LITERAL1
