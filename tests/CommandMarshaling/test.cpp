@@ -7,7 +7,8 @@
 
 #include "Device.h"
 #include "Command.h"
-#include "fakes/Arduino.h"
+#include "Event.h"
+#include "Arduino.h"
 #include <cassert>
 #include <cstdio>
 #include <vector>
@@ -33,8 +34,14 @@ class TestDevice : public Device {
 public:
     TestDevice() : Device(100, 0) {}
 
+    void on(Event) override {}
     void processQueuedTelemetryData(const TelemetryPackage*) const override {}
     void handle(Command) override {}
+
+    // Forward protected Device methods for test access
+    bool enqueueCommand(CommandHandler* h, Command c) {
+        return Device::enqueueCommand(h, c);
+    }
 };
 
 } // anonymous namespace

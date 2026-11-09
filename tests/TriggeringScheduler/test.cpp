@@ -6,7 +6,7 @@
  * removal, hybrid sensor registration, and trigger table capacity.
  */
 
-#include "fakes/Arduino.h"
+#include "Arduino.h"
 #include "Event.h"
 #include "Sensor.h"
 #include "Device.h"
@@ -26,7 +26,6 @@ class TestTriggeredSensor : public Sensor {
 protected:
     void processEvent(Event& event) override {
         eventCount++;
-        event.value = 42.0f;
         reportReadSuccess(event);
     }
     uint32_t getDefaultSamplingIntervalInMilliseconds() const override { return 1000; }
@@ -47,15 +46,27 @@ public:
 
 class TestDevice : public Device {
 public:
-    TestDevice() : Device(100) {
-        // Initialize trigger table to known state
-        std::memset(triggerTable, 0, sizeof(triggerTable));
+    TestDevice() : Device(100, 0) {}
+    void on(Event) override {}
+    void processQueuedTelemetryData(const TelemetryPackage*) const override {}
+
+    // Forward protected Device methods for test access
+    uint32_t appendSensorToTriggeringScheduler(Sensor* s, int e, int m = CHANGE) {
+        return Device::appendSensorToTriggeringScheduler(s, e, m);
+    }
+    void removeSensorFromTriggeringScheduler(uint32_t h) {
+        Device::removeSensorFromTriggeringScheduler(h);
+    }
+    bool appendToBothSchedulers(Sensor* s, int e, int m = CHANGE) {
+        return Device::appendToBothSchedulers(s, e, m);
     }
 };
 
 // =========================================================================
 // Tests
 // =========================================================================
+
+} // anonymous namespace
 
 [[nodiscard]] int main() {
     std::printf("Running TriggeringScheduler tests...\n");
@@ -349,4 +360,3 @@ public:
     return 0;
 }
 
-} // namespace

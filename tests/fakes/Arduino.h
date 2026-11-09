@@ -21,7 +21,7 @@ typedef std::uint32_t TickType_t;
 #define pdPASS ((BaseType_t)1)
 #define pdFAIL ((BaseType_t)0)
 #define portMAX_DELAY ((TickType_t)0xFFFFFFFFUL)
-#define portYIELD_FROM_ISR(x) ((void)(x))
+#define portYIELD_FROM_ISR(...) ((void)0)
 #define eSetValueWithOverwrite 1
 #define eSetBits 2
 #define IRAM_ATTR
@@ -30,7 +30,7 @@ typedef hw_timer_s* hw_timer_t;
 
 // Mock FreeRTOS task/queue APIs (no-ops for host testing)
 inline TaskHandle_t xTaskCreateStatic(void*, const char*, std::uint32_t, void*, std::uint8_t, TaskHandle_t*) { return nullptr; }
-inline void xTaskCreatePinnedToCore(void*, const char*, std::uint32_t, void*, std::uint8_t, TaskHandle_t*, BaseType_t) {}
+inline void xTaskCreatePinnedToCore(void (*)(void*), const char*, std::uint32_t, void*, std::uint8_t, TaskHandle_t*, BaseType_t) {}
 inline void vTaskDelete(TaskHandle_t) {}
 inline void vTaskDelay(TickType_t) {}
 inline uint32_t ulTaskNotifyTake(BaseType_t, TickType_t) { return 0; }
@@ -56,7 +56,7 @@ inline std::uint32_t getMinFreeHeap() { return 50000; }
 // Mock timer APIs
 inline hw_timer_t* timerBegin(std::uint32_t) { return nullptr; }
 inline void timerEnd(hw_timer_t*) {}
-inline void timerAttachInterruptArg(hw_timer_t*, void*, void*) {}
+inline void timerAttachInterruptArg(hw_timer_t*, void (*)(void*), void*) {}
 inline void timerDetachInterrupt(hw_timer_t*) {}
 inline void timerAlarm(hw_timer_t*, std::uint64_t, BaseType_t, std::uint32_t) {}
 

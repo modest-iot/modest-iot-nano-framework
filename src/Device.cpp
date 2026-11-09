@@ -8,11 +8,13 @@
 #include "Device.h"
 #include "ModestLog.h"
 #include <memory>
+#ifdef ARDUINO_ARCH_ESP32
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/idf_additions.h"
 #include "esp_attr.h"
+#endif
 
 #ifndef traceISR_EXIT_TO_SCHEDULER
 #define traceISR_EXIT_TO_SCHEDULER()
@@ -24,7 +26,6 @@ Device::Device(const unsigned long samplingIntervalInMilliseconds, const uint8_t
       hardwareSamplingTaskHandle(nullptr),
       networkDispatcherTaskHandle(nullptr),
       telemetryQueueHandle(nullptr),
-      commandQueueHandle(nullptr),
       packetsEnqueuedCount(0),
       packetsDroppedCount(0),
       packetsDroppedOldestCount(0),
@@ -35,7 +36,9 @@ Device::Device(const unsigned long samplingIntervalInMilliseconds, const uint8_t
       pendingTicks(0),
       hardwareTimer(nullptr),
       pollingIntervalInMilliseconds(samplingIntervalInMilliseconds),
-      hardwareTimerIndex(timerGroupIndex) {
+      hardwareTimerIndex(timerGroupIndex),
+      commandQueueHandle(nullptr) {
+    (void)hardwareTimerIndex; ///< Stored for future use; not yet read.
 }
 
 Device::~Device() {
@@ -284,6 +287,7 @@ void Device::executeNetworkDispatchContext(void *taskParameters) {
  * Allows derived application controllers to completely omit empty override boilerplate.
  */
 void Device::handle(Command command) {
+    (void)command;
     // Intentional default no-op for devices that only process Events up
 }
 
@@ -292,6 +296,7 @@ void Device::handle(Command command) {
  * Allows action/control-only nodes to ignore the network queue cycle seamlessly.
  */
 void Device::processQueuedTelemetryData(const TelemetryPackage *rawQueueItemPayload) const {
+    (void)rawQueueItemPayload;
     // Intentional default no-op
 }
 
@@ -518,8 +523,14 @@ DiagnosticsSnapshot Device::diagnostics() const {
         snapshot.sendsFailed = 0;
     }
 
+    // ESP heap functions are ESP32-specific; default to 0 for host compilation
+#ifdef ARDUINO_ARCH_ESP32
     snapshot.freeHeapBytes = ESP.getFreeHeap();
     snapshot.minFreeHeapBytes = ESP.getMinFreeHeap();
+#else
+    snapshot.freeHeapBytes = 0;
+    snapshot.minFreeHeapBytes = 0;
+#endif
     snapshot.uptimeSeconds = millis() / 1000;
 
     // Query FreeRTOS stack high-water marks (returned in StackType_t words, not bytes)

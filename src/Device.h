@@ -78,7 +78,6 @@ private:
     TaskHandle_t hardwareSamplingTaskHandle; ///< Handle for the hardware sampling task.
     TaskHandle_t networkDispatcherTaskHandle; ///< Handle for the network dispatcher task.
     QueueHandle_t telemetryQueueHandle; ///< Handle for the telemetry queue.
-    QueueHandle_t commandQueueHandle; ///< Handle for the inbound command queue (W12).
 
     // Shared diagnostic counters (single-writer rule: each counter written by one task)
     mutable uint32_t packetsEnqueuedCount; ///< Total packets successfully enqueued.
@@ -93,8 +92,6 @@ private:
     std::atomic<uint32_t> pendingTicks; ///< ISR-incremented tick counter for bit-flag notifications.
 
     // Triggering scheduler infrastructure (W13)
-    static constexpr uint8_t MAX_TRIGGERED_SENSORS = 4; ///< Maximum interrupt-driven sensors.
-
     /**
      * @brief Entry in the trigger table for an interrupt-driven sensor.
      *
@@ -108,8 +105,6 @@ private:
         bool wasTriggered = false;         ///< True if this sensor was triggered since last poll.
         uint8_t slotIndex = 0;             ///< Index in the trigger table (also the trigger handle).
     };
-
-    TriggerEntry triggerTable[MAX_TRIGGERED_SENSORS]; ///< Framework-managed trigger table.
 
     hw_timer_t* hardwareTimer; ///< Pointer to the hardware timer.
     const unsigned long pollingIntervalInMilliseconds; ///< Polling interval in milliseconds.
@@ -133,6 +128,7 @@ private:
      */
     static void IRAM_ATTR handleHardwareTimerInterrupt(void* deviceInstance);
 
+public:
     /**
      * @brief Static ISR handler for interrupt-driven sensor triggers.
      * @param handle Trigger handle (slot index in trigger table).
@@ -156,6 +152,24 @@ private:
      * @note Declared public so host tests can set it to simulate ISR scenarios.
      */
     static Device* activeDevice; ///< Static pointer for ISR access to the active Device instance.
+
+    /**
+     * @brief Maximum number of interrupt-driven sensors.
+     * @note Declared public so host tests can verify capacity limits.
+     */
+    static constexpr uint8_t MAX_TRIGGERED_SENSORS = 4; ///< Maximum interrupt-driven sensors.
+
+    /**
+     * @brief Framework-managed trigger table for interrupt-driven sensors.
+     * @note Declared public so host tests can inspect trigger state.
+     */
+    TriggerEntry triggerTable[MAX_TRIGGERED_SENSORS]; ///< Framework-managed trigger table.
+
+    /**
+     * @brief Handle for the inbound command queue.
+     * @note Declared public so host tests can simulate queue state.
+     */
+    QueueHandle_t commandQueueHandle; ///< Handle for the inbound command queue (W12).
 
     /**
      * @brief Entry in the command queue for cross-task command marshaling.
