@@ -567,8 +567,7 @@ void Device::rearmTimerForNextDue() {
     const uint64_t alarmIntervalInMicroseconds = static_cast<uint64_t>(ticksToWait) *
                                                  pollingIntervalInMilliseconds *
                                                  MILLISECONDS_PER_MICROSECOND;
-    timerAlarmWrite(hardwareTimer, alarmIntervalInMicroseconds, false);
-    timerAlarmEnable(hardwareTimer);
+    timerAlarm(hardwareTimer, alarmIntervalInMicroseconds, false, 0);
 }
 
 void Device::setPowerMode(const PowerMode mode) {
