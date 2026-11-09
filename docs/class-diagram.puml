@@ -76,7 +76,7 @@ package "Core" #FAFAFA {
   class Device {
     +{static} MAX_TRIGGERED_SENSORS : uint8_t = 4
     +NotificationBitFlag : enum {TimerTickArrived, TerminationSignal, SensorTrigger, CommandAvailable}
-    +PowerMode : enum {Periodic, Tickless}
+    +PowerMode : enum {Periodic, Tickless, DeepSleep}
     +TriggerEntry : struct {sensor, eventIdentifier, interruptMode, wasTriggered, slotIndex}
     +CommandEntry : struct {targetHandler, command}
     +activeDevice : Device*
@@ -91,6 +91,8 @@ package "Core" #FAFAFA {
     +diagnostics() const : DiagnosticsSnapshot
     +setPowerMode(mode : PowerMode) : void
     +getPowerMode() const : PowerMode
+    +enterDeepSleep() const : void
+    +reportWakeReason() : void
     +stopAsynchronousEngine() : void
     #initializeAsynchronousEngine(maximumQueueLength : uint8_t = 10) : void
     #initializeAsynchronousEngine(engineConfiguration : const EngineConfiguration&) : void
