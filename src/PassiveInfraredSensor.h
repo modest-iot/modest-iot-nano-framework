@@ -13,6 +13,10 @@
 
 /**
  * @brief Passive Infrared (PIR) motion sensor that detects motion transitions.
+ *
+ * Uses interrupt-driven operation (CHANGE edge) for zero-latency motion detection.
+ * The GPIO interrupt fires on both RISING and FALLING edges, and processEvent()
+ * distinguishes between motion detected and motion stopped.
  * @ingroup sensors_module
  */
 class PassiveInfraredSensor : public Sensor {
@@ -21,8 +25,13 @@ private:
 
 protected:
     /**
-     * @brief Samples the PIR sensor state and detects motion transitions.
+     * @brief Detects motion transitions from the GPIO interrupt trigger.
+     *
+     * Called from the sampler task via processTriggeredSensors() after the GPIO
+     * interrupt fires. Compares the current pin state with the last known state
+     * and emits either MOTION_DETECTED or MOTION_STOPPED events.
      * @param event Mutable event request/response payload.
+     * @runs_on sampler
      */
     void processEvent(Event& event) override;
 
@@ -39,19 +48,20 @@ public:
     static const Event MOTION_STOPPED_EVENT;
     static constexpr int PROPAGATION_SUPPRESSION_IDENTIFIER = -1; ///< Identifier for propagation suppression.
 
-    /// Default sampling interval in milliseconds.
-    /// @note PIR module hold time typically requires ~50 ms polling.
+    /// Default sampling interval in milliseconds (used only for hybrid registration).
+    /// @note In interrupt mode, this value is not used for polling.
     static constexpr uint32_t DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS = 100;
-    /// Minimum sampling interval in milliseconds.
-    /// @note Below 20 ms the PIR output cannot settle reliably.
+    /// Minimum sampling interval in milliseconds (used only for hybrid registration).
     static constexpr uint32_t MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS = 20;
 
     /**
      * @brief Constructs a PIR sensor with an optional propagation target.
      * @param signalGpioPin Input GPIO pin connected to the PIR sensor output.
      * @param parentHandler Optional upstream handler for propagated events.
+     * @note Configures the pin as INPUT. Register via
+     * appendSensorToTriggeringScheduler() for interrupt-driven operation.
      */
-    PassiveInfraredSensor(int signalGpioPin, EventHandler* parentHandler = nullptr);
+    explicit PassiveInfraredSensor(int signalGpioPin, EventHandler* parentHandler = nullptr);
     ~PassiveInfraredSensor() override = default;
 };
 

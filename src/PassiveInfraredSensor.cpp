@@ -1,6 +1,6 @@
 /**
  * @file PassiveInfraredSensor.cpp
- * @brief Implements PIR sensor sampling and motion-detection event emission.
+ * @brief Implements PIR sensor motion detection via interrupt-driven operation.
  */
 
 #include "PassiveInfraredSensor.h"
