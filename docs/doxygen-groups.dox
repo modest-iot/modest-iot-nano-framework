@@ -103,7 +103,15 @@
  * @ingroup sensors_module
  * @{
  */
-// Load cell amplifier with HX711 defined here
+// Load cell amplifier with HX711 and soil moisture sensor defined here
+/** @} */
+
+/**
+ * @name Sensors: Flow & Hybrid
+ * @ingroup sensors_module
+ * @{
+ */
+// Water flow sensor with hybrid interrupt + periodic scheduling defined here
 /** @} */
 
 /**
@@ -136,7 +144,7 @@
  * @ingroup actuators_module
  * @{
  */
-// LED on/off/toggle control defined here
+// LED on/off/toggle control and relay actuator for AC/DC load switching defined here
 /** @} */
 
 /**

@@ -43,7 +43,7 @@ REFERENCES_RELATION    = YES
 HAVE_DOT               = YES
 CALL_GRAPH             = NO
 CALLER_GRAPH           = NO
-CLASS_DIAGRAMS         = YES
+UML_LOOK               = YES
 DOT_IMAGE_FORMAT       = svg
 DOT_GRAPH_MAX_NODES    = 100
 
