@@ -124,6 +124,12 @@ run_test "test_TriggeringScheduler" \
     src/SamplingScheduler.cpp \
     tests/TriggeringScheduler/test.cpp
 
+# 13. Command Marshaling Suite
+run_test "test_CommandMarshaling" \
+    src/Device.cpp \
+    src/SamplingScheduler.cpp \
+    tests/CommandMarshaling/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="
