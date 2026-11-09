@@ -11,10 +11,12 @@
 
 #include "GatewayClient.h"
 #include "TelemetryPackage.h"
+#include "Device.h"
 #include <PubSubClient.h>   // Extends standard PubSubClient compilation visibility
 
 /**
- * @brief Gateway adapter that publishes `TelemetryPackage` payloads to an MQTT topic.
+ * @brief Gateway adapter that publishes `TelemetryPackage` payloads to an MQTT topic
+ *        and subscribes to inbound command topics for cloud-to-device communication.
  * @ingroup gateway_module
  */
 class MqttGatewayClient : public GatewayClient {
@@ -22,7 +24,8 @@ private:
     PubSubClient mqttClient; ///< Underlying MQTT client instance.
     
     const char* clientIdentifier; ///< Unique client identifier.
-    const char* publishTopic; ///< MQTT topic for publishing.
+    const char* publishTopic; ///< MQTT topic for publishing telemetry.
+    const char* subscribeTopic; ///< MQTT topic for subscribing to inbound commands (W15).
 
     unsigned long lastReconnectAttemptTimestamp; ///< Timestamp of the last broker connection attempt.
     unsigned long reconnectIntervalMilliseconds; ///< Minimum cooldown between reconnect attempts in milliseconds.
@@ -34,11 +37,56 @@ private:
     static constexpr size_t MAX_TELEMETRY_PAYLOAD_SIZE = 512; ///< Maximum serialized payload size in bytes.
     char serializationBuffer[MAX_TELEMETRY_PAYLOAD_SIZE]; ///< Fixed-size buffer for JSON serialization.
 
+    // W15: Cloud-to-device command infrastructure
+    Device* targetDevice; ///< Device that receives incoming MQTT commands via enqueueCommand().
+    static constexpr size_t MAX_SUBSCRIBE_PAYLOAD_SIZE = 256; ///< Maximum inbound command payload size.
+    char subscribePayloadBuffer[MAX_SUBSCRIBE_PAYLOAD_SIZE]; ///< Fixed-size buffer for incoming command JSON.
+
+    /**
+     * @brief Static callback invoked by PubSubClient when a subscribed message arrives.
+     *
+     * Parses the JSON payload to extract the command identifier and marshals it
+     * to the sampler task via Device::enqueueCommand(). Runs in the network task context
+     * when mqttClient.loop() is called.
+     *
+     * @param topic MQTT topic of the incoming message.
+     * @param payload Raw JSON payload bytes.
+     * @param length Length of the payload in bytes.
+     */
+    static void mqttMessageCallback(char* topic, const byte* payload, unsigned int length);
+
     static constexpr uint16_t DEFAULT_RECONNECT_INTERVAL_MILLISECONDS = 5000; ///< Default cooldown between broker reconnection attempts.
+    static constexpr uint8_t DEFAULT_MQTT_QOS = 0; ///< Default Quality of Service for MQTT subscribe.
+
     void ensureBrokerSessionConnection(); ///< Ensures broker session is active with rate-limited backoff.
+    void subscribeToTopic(); ///< Subscribes to the inbound command topic after successful connection (W15).
 
 public:
     /**
+     * @param transportDriver Abstract reference handling physical Layer 1-4 link health.
+     * @param networkClient The underlying TCP network client socket (e.g., WiFiClient).
+     * @param brokerIpAddress The network IP or domain address of your MQTT Broker.
+     * @param brokerPort The port of your broker instance (typically 1883 for unencrypted TCP).
+     * @param publishTopic Target MQTT topic string destination for publishing telemetry records.
+     * @param subscribeTopic MQTT topic to subscribe to for inbound cloud-to-device commands (W15).
+     *        Pass nullptr to disable subscribe (publish-only mode).
+     * @param targetDevice Device that receives incoming commands via enqueueCommand().
+     *        Commands are marshaled to the sampler task for cross-task safety.
+     *        Required when subscribeTopic is non-null; ignored otherwise.
+     * @param deviceId Unique identification literal used during broker handshakes.
+     */
+    MqttGatewayClient(ConnectivityDriver& transportDriver, Client& networkClient, 
+                      const char* brokerIpAddress, uint16_t brokerPort,
+                      const char* publishTopic, const char* subscribeTopic,
+                      Device* targetDevice,
+                      const char* deviceId = "ModestIotNode");
+
+    /**
+     * @brief Legacy constructor for publish-only mode (backward compatible).
+     *
+     * Equivalent to calling the full constructor with subscribeTopic = nullptr
+     * and targetDevice = nullptr.
+     *
      * @param transportDriver Abstract reference handling physical Layer 1-4 link health.
      * @param networkClient The underlying TCP network client socket (e.g., WiFiClient).
      * @param brokerIpAddress The network IP or domain address of your MQTT Broker.
@@ -99,6 +147,12 @@ public:
      * @return Statistics struct with cumulative send counts.
      */
     [[nodiscard]] GatewayStatistics getStatistics() const override;
+
+    /**
+     * @brief Returns the subscribe topic, or nullptr if subscribe is disabled.
+     * @return Subscribe topic string, or nullptr.
+     */
+    [[nodiscard]] const char* getSubscribeTopic() const;
 };
 
 #endif // MQTT_GATEWAY_CLIENT_H

@@ -7,6 +7,38 @@
 
 #include "MqttGatewayClient.h"
 #include "ModestLog.h"
+#include <ArduinoJson.h>   // W15: JSON parsing for incoming command payloads
+
+// W15: Static pointer for callback access (set by constructor)
+static MqttGatewayClient* gActiveMqttClient = nullptr;
+
+MqttGatewayClient::MqttGatewayClient(ConnectivityDriver& transportDriver, Client& networkClient, 
+                                     const char* brokerIpAddress, const uint16_t brokerPort,
+                                     const char* publishT, const char* subscribeT,
+                                     Device* targetDev,
+                                     const char* deviceId)
+    : GatewayClient(transportDriver, ""), // We don't use serviceEndpointUrl here, so pass ""
+      mqttClient(networkClient),
+      clientIdentifier(deviceId),
+      publishTopic(publishT),
+      subscribeTopic(subscribeT),
+      lastReconnectAttemptTimestamp(0),
+      reconnectIntervalMilliseconds(DEFAULT_RECONNECT_INTERVAL_MILLISECONDS),
+      sendsSucceededCount(0),
+      sendsFailedCount(0),
+      firstFailureLogged(false),
+      serializationBuffer{},
+      targetDevice(targetDev),
+      subscribePayloadBuffer{}
+{
+    mqttClient.setServer(brokerIpAddress, brokerPort);
+    
+    // Register the static callback if subscribe is enabled
+    if (subscribeTopic != nullptr) {
+        gActiveMqttClient = this;
+        mqttClient.setCallback(mqttMessageCallback);
+    }
+}
 
 MqttGatewayClient::MqttGatewayClient(ConnectivityDriver& transportDriver, Client& networkClient, 
                                      const char* brokerIpAddress, const uint16_t brokerPort,
@@ -15,12 +47,15 @@ MqttGatewayClient::MqttGatewayClient(ConnectivityDriver& transportDriver, Client
       mqttClient(networkClient),
       clientIdentifier(deviceId),
       publishTopic(topic),
+      subscribeTopic(nullptr),
       lastReconnectAttemptTimestamp(0),
       reconnectIntervalMilliseconds(DEFAULT_RECONNECT_INTERVAL_MILLISECONDS),
       sendsSucceededCount(0),
       sendsFailedCount(0),
       firstFailureLogged(false),
-      serializationBuffer{}
+      serializationBuffer{},
+      targetDevice(nullptr),
+      subscribePayloadBuffer{}
 {
     mqttClient.setServer(brokerIpAddress, brokerPort);
 }
@@ -43,6 +78,8 @@ void MqttGatewayClient::ensureBrokerSessionConnection() {
 
         if (mqttClient.connect(clientIdentifier)) {
             MODEST_LOG_I("MQTT", "Connected to MQTT broker successfully.");
+            // W15: Subscribe to the inbound command topic after successful connection
+            subscribeToTopic();
         } else {
             MODEST_LOG_W("MQTT", "Failed to connect to MQTT broker, state: %d", mqttClient.state());
         }
@@ -142,4 +179,67 @@ GatewayStatistics MqttGatewayClient::getStatistics() const {
     stats.sendsSucceeded = sendsSucceededCount;
     stats.sendsFailed = sendsFailedCount;
     return stats;
+}
+
+const char* MqttGatewayClient::getSubscribeTopic() const {
+    return subscribeTopic;
+}
+
+// ============================================================================
+// W15: Cloud-to-device MQTT subscribe
+// ============================================================================
+
+void MqttGatewayClient::subscribeToTopic() {
+    if (subscribeTopic == nullptr) {
+        return;
+    }
+    
+    if (mqttClient.subscribe(subscribeTopic, DEFAULT_MQTT_QOS)) {
+        MODEST_LOG_I("MQTT", "Subscribed to topic: %s", subscribeTopic);
+    } else {
+        MODEST_LOG_W("MQTT", "Failed to subscribe to topic: %s", subscribeTopic);
+    }
+}
+
+void MqttGatewayClient::mqttMessageCallback(char* topic, const byte* payload, unsigned int length) {
+    if (gActiveMqttClient == nullptr || gActiveMqttClient->targetDevice == nullptr) {
+        return;
+    }
+
+    // Guard: ignore messages that don't match the subscribe topic
+    if (gActiveMqttClient->subscribeTopic == nullptr) {
+        return;
+    }
+
+    // Safely copy payload into fixed buffer
+    if (length >= MAX_SUBSCRIBE_PAYLOAD_SIZE) {
+        MODEST_LOG_W("MQTT", "Incoming command payload too large (%u bytes)", length);
+        return;
+    }
+    
+    // Null-terminate the payload for JSON parsing
+    memcpy(gActiveMqttClient->subscribePayloadBuffer, payload, length);
+    gActiveMqttClient->subscribePayloadBuffer[length] = '\0';
+
+    // Parse JSON to extract command identifier
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, gActiveMqttClient->subscribePayloadBuffer);
+    if (error != DeserializationError::Ok) {
+        MODEST_LOG_W("MQTT", "Failed to parse command JSON (error code: %d)", static_cast<int>(error));
+        return;
+    }
+
+    // Extract command identifier from JSON
+    if (!doc["commandId"].is<int>()) {
+        MODEST_LOG_W("MQTT", "Incoming command missing 'commandId' field");
+        return;
+    }
+
+    const int commandId = doc["commandId"].as<int>();
+    MODEST_LOG_D("MQTT", "Received command %d on topic: %s", commandId, topic);
+
+    // Marshal the command to the sampler task via Device::enqueueCommand()
+    // The Device is both the target handler and the marshaler, ensuring cross-task safety
+    Command command(commandId);
+    gActiveMqttClient->targetDevice->enqueueCommand(gActiveMqttClient->targetDevice, command);
 }
