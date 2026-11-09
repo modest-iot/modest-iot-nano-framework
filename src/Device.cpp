@@ -495,7 +495,7 @@ bool Device::enqueueCommand(CommandHandler *targetHandler, Command command) {
  * Drains the command queue and calls `targetHandler->handle(command)` for
  * each entry on the sampler task's own context.
  */
-void Device::processPendingCommands() {
+void Device::processPendingCommands() const {
     CommandEntry entry;
     while (xQueueReceive(commandQueueHandle, &entry, 0) == pdPASS) {
         if (entry.targetHandler != nullptr) {

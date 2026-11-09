@@ -17,9 +17,6 @@
 #include "SamplingScheduler.h"
 #include <memory>
 #include <atomic>
-#include <Arduino.h>
-
-struct hw_timer_s;
 
 /**
  * @brief Configuration parameters for the asynchronous FreeRTOS engine.
@@ -191,7 +188,7 @@ public:
      * Drains the command queue and calls `targetHandler->handle(command)` for
      * each entry on the sampler task's own context.
      */
-    void processPendingCommands();
+    void processPendingCommands() const;
 
 protected:
     /**
@@ -294,7 +291,7 @@ protected:
      *
      * Calls after initializeAsynchronousEngine() are rejected.
      */
-    uint32_t appendSensorToTriggeringScheduler(Sensor* targetSensorInstance,
+    virtual uint32_t appendSensorToTriggeringScheduler(Sensor* targetSensorInstance,
                                                 int requestedEventIdentifier,
                                                 int interruptMode = CHANGE);
 
@@ -304,7 +301,7 @@ protected:
      *
      * Detaches the GPIO interrupt and clears the trigger table entry.
      */
-    void removeSensorFromTriggeringScheduler(uint32_t triggerHandle);
+    virtual void removeSensorFromTriggeringScheduler(uint32_t triggerHandle);
 
     /**
      * @brief Registers a sensor with both the sampling and triggering schedulers.
@@ -316,24 +313,9 @@ protected:
      * This is a convenience method for hybrid sensors (e.g., YF-S201 water flow)
      * that need both interrupt-driven pulse counting and periodic sampling.
      */
-    bool appendToBothSchedulers(Sensor* targetSensorInstance,
+    virtual bool appendToBothSchedulers(Sensor* targetSensorInstance,
                                  int requestedEventIdentifier,
                                  int interruptMode = CHANGE);
-
-    /**
-     * @brief Enqueues a command for execution on the sampler task context.
-     * @param targetHandler The CommandHandler that should process the command.
-     * @param command The command to execute.
-     * @return `true` when enqueued successfully, `false` when the queue is full.
-     *
-     * This method enables cross-task command marshaling: the network task
-     * receives a command (e.g., via MQTT subscribe) and enqueues it for
-     * execution on the sampler task, preserving the single-context guarantee.
-     *
-     * The sampler task drains the command queue and calls
-     * `targetHandler->handle(command)` on its own context.
-     */
-    bool enqueueCommand(CommandHandler* targetHandler, Command command);
 
     /**
      * @brief Optional gateway reference for diagnostics aggregation.
@@ -406,6 +388,21 @@ public:
      * Safe to call from any task; does not block.
      */
     [[nodiscard]] DiagnosticsSnapshot diagnostics() const;
+    /**
+     * @brief Enqueues a command for execution on the sampler task context.
+     * @param targetHandler The CommandHandler that should process the command.
+     * @param command The command to execute.
+     * @return `true` when enqueued successfully, `false` when the queue is full.
+     *
+     * This method enables cross-task command marshaling: the network task
+     * receives a command (e.g., via MQTT subscribe) and enqueues it for
+     * execution on the sampler task, preserving the single-context guarantee.
+     *
+     * The sampler task drains the command queue and calls
+     * `targetHandler->handle(command)` on its own context.
+     */
+    virtual bool enqueueCommand(CommandHandler* targetHandler, Command command);
+
     /**
      * @brief Concrete fallback command interface fulfillment.
      * Intercepts framework-wide actions; overrides CommandHandler.
