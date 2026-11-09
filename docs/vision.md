@@ -53,7 +53,7 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 | ID      | Work Item                                    | Priority | Complexity | Description                                                                            |
 |---------|----------------------------------------------|----------|------------|----------------------------------------------------------------------------------------|
 | **W12** | `Device::post` command marshaling            | High     | High       | Cross-task command queue for cloud-to-device commands. Prerequisite for W15.           |
-| **W13** | Interrupt triggers for Button, PIR, pulse sensors | High | Medium | GPIO edge triggers with `appendSensorToTriggeringScheduler`. Reduces latency and CPU usage. Enables YF-S201 water flow sensor. |
+| **W13** | Interrupt triggers for Button, PIR, pulse sensors | High | Medium | **Partially Complete**: `appendSensorToTriggeringScheduler()`/`appendToBothSchedulers()` API implemented with bit-flag notifications. Sensor-specific conversion (Button, PIR, YF-S201) pending. |
 | **W14** | HX711 data-ready and ultrasonic echo capture | Medium   | Medium     | Remove blocking `pulseIn()` and HX711 timeout waits. Non-blocking alternatives.        |
 | **W15** | Cloud-to-device commands (MQTT subscribe)    | Medium   | Medium     | MQTT subscribe topics, parse incoming commands, marshal to sampler via `Device::post`. |
 
@@ -71,7 +71,7 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 **Phase 1: Tier 4 Completion** (Estimated: 1–2 weeks)
 
 1. **W12: `Device::post` command marshaling** — Implement command queue consumed by sampler task. Requires notification redesign (ADR-022, bit-flag notifications). Enables cloud-to-device commands.
-2. **W13: Interrupt triggers** — Add `appendSensorToTriggeringScheduler()`/`appendToBothSchedulers()` API for Button, PIR, and pulse-based sensors (YF-S201). ISR does minimal work: sets bit and wakes sampler. Hybrid sensors (e.g., YF-S201) use `appendToBothSchedulers` for both interrupt pulse counting and periodic sampling.
+2. **W13: Interrupt triggers** — Triggering scheduler infrastructure complete: `appendSensorToTriggeringScheduler()`/`appendToBothSchedulers()` API, bit-flag notifications, trigger table, ISR handler, and host tests. Sensor-specific conversion (Button, PIR, YF-S201) pending.
 3. **W14: Non-blocking sensors** — Replace `pulseIn()` in UltrasonicSensor with timer-based measurement. Replace HX711 blocking read with data-ready pin interrupt.
 4. **W15: MQTT subscribe commands** — Add subscribe topic to `MqttGatewayClient`, parse incoming JSON, marshal commands via `Device::post`.
 
