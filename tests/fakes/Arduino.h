@@ -61,8 +61,6 @@ inline void timerEnd(hw_timer_t*) {}
 inline void timerAttachInterruptArg(hw_timer_t*, void (*)(void*), void*) {}
 inline void timerDetachInterrupt(hw_timer_t*) {}
 inline void timerAlarm(hw_timer_t*, std::uint64_t, BaseType_t, std::uint32_t) {}
-inline void timerAlarmWrite(hw_timer_t*, std::uint64_t, BaseType_t) {}
-inline void timerAlarmEnable(hw_timer_t*) {}
 
 class String : public std::string {
 public:
