@@ -23,7 +23,6 @@
 Device::Device(const unsigned long samplingIntervalInMilliseconds, const uint8_t timerGroupIndex)
     : scheduler(samplingIntervalInMilliseconds),
       engineStarted(false),
-      powerMode(PowerMode::Periodic),
       hardwareSamplingTaskHandle(nullptr),
       networkDispatcherTaskHandle(nullptr),
       telemetryQueueHandle(nullptr),
@@ -38,7 +37,9 @@ Device::Device(const unsigned long samplingIntervalInMilliseconds, const uint8_t
       hardwareTimer(nullptr),
       pollingIntervalInMilliseconds(samplingIntervalInMilliseconds),
       hardwareTimerIndex(timerGroupIndex),
-      commandQueueHandle(nullptr) {
+      powerMode(PowerMode::Periodic),
+      commandQueueHandle(nullptr),
+      telemetryGateway(nullptr) {
     (void) hardwareTimerIndex; ///< Stored for future use; not yet read.
 }
 
