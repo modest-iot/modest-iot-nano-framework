@@ -109,10 +109,12 @@ public:
     {
         initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
 
-        appendSensorToScheduler(&frontLeftLoadCell,     Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-        appendSensorToScheduler(&frontRightLoadCell,    Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-        appendSensorToScheduler(&rearLeftLoadCell,      Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-        appendSensorToScheduler(&rearRightLoadCell,     Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+        // Hybrid scheduling: interrupt-driven data-ready detection eliminates the 100 ms busy-wait.
+        // Periodic sampling performs the 24-bit read (~1.2 ms) and change detection.
+        appendToBothSchedulers(&frontLeftLoadCell,     Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER, FALLING);
+        appendToBothSchedulers(&frontRightLoadCell,    Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER, FALLING);
+        appendToBothSchedulers(&rearLeftLoadCell,      Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER, FALLING);
+        appendToBothSchedulers(&rearRightLoadCell,     Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER, FALLING);
 
         updateStatusDisplay();
         calibrate();
