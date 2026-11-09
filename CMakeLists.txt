@@ -243,6 +243,15 @@ add_executable(test_TelemetryPackage
 )
 target_include_directories(test_TelemetryPackage PRIVATE tests/fakes src)
 
+add_executable(test_TriggeringScheduler
+        tests/TriggeringScheduler/test.cpp
+        src/Sensor.cpp
+        src/Device.cpp
+        src/SamplingScheduler.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_TriggeringScheduler PRIVATE tests/fakes src)
+
 add_test(NAME DigitalLightIntensitySensorTest COMMAND test_DigitalLightIntensitySensor)
 add_test(NAME RgbLedTest COMMAND test_RgbLed)
 add_test(NAME RfidSensorTest COMMAND test_RfidSensor)
@@ -254,9 +263,10 @@ add_test(NAME DiagnosticsSnapshotTest COMMAND test_DiagnosticsSnapshot)
 add_test(NAME SensorFaultTest COMMAND test_SensorFault)
 add_test(NAME SamplingSchedulerTest COMMAND test_SamplingScheduler)
 add_test(NAME TelemetryPackageTest COMMAND test_TelemetryPackage)
+add_test(NAME TriggeringSchedulerTest COMMAND test_TriggeringScheduler)
 
 add_custom_target(run_tests
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage
+        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler
         COMMENT "Executing all native host test suites..."
 )
