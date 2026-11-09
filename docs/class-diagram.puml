@@ -33,6 +33,79 @@ package "Core" #FAFAFA {
     +handle(command : Command) : void
   }
 
+  class SamplingScheduler {
+    +{static} MAXIMUM_SLOTS : uint8_t = 8
+    +AddResult : enum {Ok, ClampedToMinimum, ClampedToTick, TableFull, InvalidArgument}
+    +Slot : struct {handler, eventIdentifier, periodInTicks, ticksUntilDue}
+    +SamplingScheduler(baseTickInMilliseconds : uint32_t)
+    +add(handler : EventHandler*, eventIdentifier : int, periodInMilliseconds : uint32_t) : AddResult
+    +advance(elapsedTicks : uint32_t) : uint8_t
+    +count() const : uint8_t
+    +slotAt(index : uint8_t) const : const Slot&
+    +baseTickInMilliseconds() const : uint32_t
+    +effectivePeriodInMilliseconds(index : uint8_t) const : uint32_t
+    +ticksUntilNextDue() const : uint32_t
+  }
+
+  class EngineConfiguration <<struct>> {
+    +samplerStackBytes : uint32_t = 4096
+    +networkStackBytes : uint32_t = 8192
+    +samplerPriority : uint8_t = 3
+    +networkPriority : uint8_t = 1
+    +samplerCore : BaseType_t = 1
+    +networkCore : BaseType_t = 1
+    +queueLength : uint8_t = 10
+  }
+
+  class DiagnosticsSnapshot <<struct>> {
+    +missedTicks : uint32_t
+    +worstCaseWakeMicros : uint32_t
+    +packetsEnqueued : uint32_t
+    +packetsDropped : uint32_t
+    +packetsDroppedOldest : uint32_t
+    +queueHighWaterMark : uint8_t
+    +sendsSucceeded : uint32_t
+    +sendsFailed : uint32_t
+    +freeHeapBytes : uint32_t
+    +minFreeHeapBytes : uint32_t
+    +samplerStackFreeWords : uint16_t
+    +networkStackFreeWords : uint16_t
+    +uptimeSeconds : uint32_t
+  }
+
+  class Device {
+    +{static} MAX_TRIGGERED_SENSORS : uint8_t = 4
+    +NotificationBitFlag : enum {TimerTickArrived, TerminationSignal, SensorTrigger, CommandAvailable}
+    +PowerMode : enum {Periodic, Tickless}
+    +TriggerEntry : struct {sensor, eventIdentifier, interruptMode, wasTriggered, slotIndex}
+    +CommandEntry : struct {targetHandler, command}
+    +activeDevice : Device*
+    +triggerTable[MAX_TRIGGERED_SENSORS] : TriggerEntry
+    +commandQueueHandle : QueueHandle_t
+    +onSensorTrigger(handle : uint32_t) : void
+    +onSensorTriggerWrapper() : void
+    +processTriggeredSensors() : void
+    +processPendingCommands() : void
+    +enqueueCommand(targetHandler : CommandHandler*, command : Command) : bool
+    +handle(command : Command) : void
+    +diagnostics() const : DiagnosticsSnapshot
+    +setPowerMode(mode : PowerMode) : void
+    +getPowerMode() const : PowerMode
+    +stopAsynchronousEngine() : void
+    #initializeAsynchronousEngine(maximumQueueLength : uint8_t = 10) : void
+    #initializeAsynchronousEngine(engineConfiguration : const EngineConfiguration&) : void
+    #enqueueTelemetryPayload(telemetryPackagePointerAddress : TelemetryPackage**) : bool
+    #enqueueTelemetryPayload(telemetryPackageStandardUniquePointer : unique_ptr<TelemetryPackage>) : bool
+    #appendSensorToScheduler(targetSensorInstance : EventHandler*, requestedEventIdentifier : int) : bool
+    #appendSensorToScheduler(targetSensorInstance : Sensor*, requestedEventIdentifier : int) : bool
+    #appendSensorToScheduler(targetSensorInstance : EventHandler*, requestedEventIdentifier : int, periodInMilliseconds : uint32_t) : bool
+    #appendSensorToTriggeringScheduler(targetSensorInstance : Sensor*, requestedEventIdentifier : int, interruptMode : int) : uint32_t
+    #removeSensorFromTriggeringScheduler(triggerHandle : uint32_t) : void
+    #appendToBothSchedulers(targetSensorInstance : Sensor*, requestedEventIdentifier : int, interruptMode : int) : bool
+    #processQueuedTelemetryData(rawQueueItemPayload : const TelemetryPackage*) : void
+    #maintainNetworkServices() : void
+  }
+
   abstract class Sensor {
     #pin : int
     #eventHandler : EventHandler*
@@ -40,9 +113,16 @@ package "Core" #FAFAFA {
     +{static} MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER : int = 21
     +{static} DATA_READ_EVENT : Event
     +{static} MEASURE_DATA_REQUESTED_EVENT : Event
+    +{static} SENSOR_FAULT_EVENT_IDENTIFIER : int = 22
+    +{static} SENSOR_RECOVERED_EVENT_IDENTIFIER : int = 23
     +Sensor(signalGpioPin : int, parentHandler : EventHandler* = nullptr)
     +on(event : Event) : void
     +setHandler(parentHandler : EventHandler*) : void
+    +setSamplingIntervalInMilliseconds(interval : uint32_t) : void
+    +getSamplingIntervalInMilliseconds() const : uint32_t
+    +setMinimalSamplingIntervalInMilliseconds(interval : uint32_t) : void
+    +getMinimalSamplingIntervalInMilliseconds() const : uint32_t
+    +setFaultThreshold(threshold : uint8_t) : void
     #processEvent(event : Event&) : void
   }
 
@@ -55,29 +135,10 @@ package "Core" #FAFAFA {
     #executeCommand(command : Command) : void
   }
 
-  abstract class Device {
-    -scheduledSequences : ScheduledTaskSlot[8]
-    -registeredSlotCount : uint8_t
-    -activeSequencePointer : uint8_t
-    -hardwareSamplingTaskHandle : TaskHandle_t
-    -networkDispatcherTaskHandle : TaskHandle_t
-    -telemetryQueueHandle : QueueHandle_t
-    -hardwareTimer : hw_timer_t*
-    -pollingIntervalInMilliseconds : const unsigned long
-    -hardwareTimerIndex : const uint8_t
-    #Device(samplingIntervalInMilliseconds : unsigned long,
-            timerGroupIndex : uint8_t = 0)
-    #initializeAsynchronousEngine(maximumQueueLength : uint8_t = 10) : void
-    #enqueueTelemetryPayload(telemetryPackagePointerAddress : TelemetryPackage**) : bool
-    #appendSensorToScheduler(targetSensorInstance : EventHandler*, requestedEventIdentifier : int) : bool
-    #processQueuedTelemetryData(rawQueueItemPayload : const TelemetryPackage*) : void
-    +handle(command : Command) : void
-  }
-
   abstract class TelemetryPackage {
     +serialize(serializationDestination : JsonDocument&) const : void
-    +serialize() const : JsonDocument
-    +serializeAsString() const : String
+    +toDocument() const : JsonDocument
+    +toJsonString() const : String
   }
 }
 
@@ -92,9 +153,7 @@ package "Sensors" #EEF6EE {
     -previousState : bool
     +{static} BUTTON_PRESSED_EVENT_IDENTIFIER : int = 10
     +{static} BUTTON_PRESSED_EVENT : Event
-    +Button(signalGpioPin : int,
-            debounceDelayInMilliseconds : unsigned long = 50,
-            parentHandler : EventHandler* = nullptr)
+    +Button(signalGpioPin : int, debounceDelayInMilliseconds : unsigned long = 50, parentHandler : EventHandler* = nullptr)
     #processEvent(event : Event&) : void
   }
 
@@ -102,8 +161,7 @@ package "Sensors" #EEF6EE {
     -physicalDhtSensor : DHT
     -cachedTemperatureInCelsius : float
     -cachedRelativeHumidityInPercentage : float
-    +DhtSensor(signalGpioPin : int, dhtModelType : uint8_t,
-               parentHandler : EventHandler* = nullptr)
+    +DhtSensor(signalGpioPin : int, dhtModelType : uint8_t, parentHandler : EventHandler* = nullptr)
     +getTemperatureInCelsius() const : float
     +getRelativeHumidityInPercentage() const : float
     #processEvent(event : Event&) : void
@@ -112,8 +170,11 @@ package "Sensors" #EEF6EE {
   class UltrasonicSensor {
     -echoGpioPin : int
     -cachedDistanceInCentimeters : float
-    +UltrasonicSensor(triggerGpioPin : int, echoGpioPin : int,
-                      parentHandler : EventHandler* = nullptr)
+    -echoStarted : volatile bool
+    -echoStartTime : volatile int64_t
+    -echoDurationNanoseconds : volatile int64_t
+    -echoComplete : volatile bool
+    +UltrasonicSensor(triggerGpioPin : int, echoGpioPin : int, parentHandler : EventHandler* = nullptr)
     +getDistanceInCentimeters() const : float
     #processEvent(event : Event&) : void
   }
@@ -126,10 +187,71 @@ package "Sensors" #EEF6EE {
     -runningSignalPeak : int
     -runningSignalTrough : int
     -adaptiveThresholdValue : int
-    +PulseSensor(analogInputGpioPin : int,
-                 parentHandler : EventHandler* = nullptr)
+    +PulseSensor(analogInputGpioPin : int, parentHandler : EventHandler* = nullptr)
     +getBeatsPerMinute() const : int
     +getRawSignalValue() const : int
+    #processEvent(event : Event&) : void
+  }
+
+  class LoadCellAmplifier {
+    -clockGpioPin : int
+    -cachedWeightInGrams : float
+    -lastNotifiedWeightInGrams : float
+    -dataReady : volatile bool
+    +LoadCellAmplifier(dataGpioPin : int, clockGpioPin : int, minWeightInGrams : float, maxWeightInGrams : float, minRawValue : long, maxRawValue : long, filterDepth : int = 5, parentHandler : EventHandler* = nullptr)
+    +getWeightInGrams() const : float
+    +getMinWeightInGrams() const : float
+    +getMaxWeightInGrams() const : float
+    +reset() : void
+    +setGain(gain : int) : void
+    +powerDown() : void
+    +powerUp() : void
+    +tare() : void
+    +calibrate(knownWeightInGrams : float) : bool
+    #processEvent(event : Event&) : void
+  }
+
+  class SoilMoistureSensor {
+    -cachedMoistureLevel : int
+    -lastNotifiedMoistureLevel : int
+    +SoilMoistureSensor(analogInputGpioPin : int, parentHandler : EventHandler* = nullptr)
+    +getMoistureLevel() const : int
+    #processEvent(event : Event&) : void
+  }
+
+  class WaterFlowSensor {
+    -pulseCount : volatile uint32_t
+    -cachedFlowRateInLitersPerMinute : float
+    -lastNotifiedFlowRateInLitersPerMinute : float
+    +WaterFlowSensor(signalGpioPin : int, parentHandler : EventHandler* = nullptr)
+    +getFlowRateInLitersPerMinute() const : float
+    #processEvent(event : Event&) : void
+  }
+
+  class PassiveInfraredSensor {
+    -lastState : bool
+    +{static} MOTION_DETECTED_EVENT_IDENTIFIER : int = 30
+    +{static} MOTION_STOPPED_EVENT_IDENTIFIER : int = 31
+    +{static} MOTION_DETECTED_EVENT : Event
+    +{static} MOTION_STOPPED_EVENT : Event
+    +PassiveInfraredSensor(signalGpioPin : int, parentHandler : EventHandler* = nullptr)
+    #processEvent(event : Event&) : void
+  }
+
+  class DigitalLightIntensitySensor {
+    -i2cAddress : uint8_t
+    -cachedIlluminanceInLux : float
+    -lastState : bool
+    +{static} DEFAULT_I2C_ADDRESS : uint8_t = 0x23
+    +{static} ALTERNATE_I2C_ADDRESS : uint8_t = 0x5C
+    +{static} LIGHT_DETECTED_EVENT_IDENTIFIER : int = 50
+    +{static} LIGHT_ABSENT_EVENT_IDENTIFIER : int = 51
+    +DigitalLightIntensitySensor(signalGpioPin : int, i2cAddress : uint8_t = DEFAULT_I2C_ADDRESS, parentHandler : EventHandler* = nullptr)
+    +initialize() : bool
+    +isInitialized() const : bool
+    +hasValidSample() const : bool
+    +isLightDetected() const : bool
+    +getIlluminanceInLux() const : float
     #processEvent(event : Event&) : void
   }
 
@@ -171,14 +293,10 @@ package "Sensors" #EEF6EE {
     -targetGasType : GasType
     +{static} DIGITAL_GAS_DETECTED_EVENT_IDENTIFIER : int = 40
     +{static} DIGITAL_GAS_DETECTED_EVENT : Event
-    +GasSensor(analogInputGpioPin : int,
-               digitalInputGpioPin : int = -1,
-               parentHandler : EventHandler* = nullptr,
-               initialMode : OperatingMode = RawMode)
+    +GasSensor(analogInputGpioPin : int, digitalInputGpioPin : int = -1, parentHandler : EventHandler* = nullptr, initialMode : OperatingMode = RawMode)
     +startCalibration() : void
     +setR0(cleanAirResistanceInKiloOhm : float) : void
     +setTargetGas(gasType : GasType) : bool
-    +setGasCalibrationParameters(gasType : GasType, slope : float, intercept : float) : bool
     +getOperatingMode() const : OperatingMode
     +getTargetGasType() const : GasType
     +getRawAnalogValue() const : int
@@ -198,15 +316,7 @@ package "Sensors" #EEF6EE {
     +fixQuality : int
     +satellitesTracked : int
     +horizontalDilutionOfPrecision : float
-    +year : int
-    +month : int
-    +day : int
-    +hour : int
-    +minute : int
-    +second : int
-    +milliseconds : int
     +isDataValid : bool
-    +operator==(other : LocationData) : bool
   }
 
   class GeolocationSensor {
@@ -214,10 +324,33 @@ package "Sensors" #EEF6EE {
     -gpsSerial : SoftwareSerial
     -cachedLocation : LocationData
     -lastNotifiedLocation : LocationData
-    +GeolocationSensor(receiveGpioPin : int, transmitGpioPin : int,
-                       baudRate : long = 9600,
-                       parentHandler : EventHandler* = nullptr)
+    +GeolocationSensor(receiveGpioPin : int, transmitGpioPin : int, baudRate : long = 9600, parentHandler : EventHandler* = nullptr)
     +getLocationData() const : const LocationData&
+    #processEvent(event : Event&) : void
+  }
+
+  class RfidSensor {
+    -resetGpioPin : int
+    -spi : SPIClass&
+    -cachedUidString : char[MAX_UID_STRING_LENGTH]
+    -cachedUidBytes : uint8_t[MAX_UID_BYTES]
+    -cachedUidLength : uint8_t
+    -initialized : bool
+    -tagCurrentlyPresent : bool
+    +{static} MAX_UID_BYTES : uint8_t = 10
+    +{static} TAG_DETECTED_EVENT_IDENTIFIER : int = 60
+    +{static} TAG_REMOVED_EVENT_IDENTIFIER : int = 61
+    +{static} TAG_DETECTED_EVENT : Event
+    +{static} TAG_REMOVED_EVENT : Event
+    +StatusCode : enum {STATUS_OK, STATUS_ERROR, STATUS_COLLISION, STATUS_TIMEOUT, ...}
+    +RfidSensor(chipSelectGpioPin : int, resetGpioPin : int = -1, parentHandler : EventHandler* = nullptr, spiInstance : SPIClass& = SPI)
+    +initialize() : bool
+    +isInitialized() const : bool
+    +getUid() const : const char*
+    +getUidBytes(outLength : uint8_t&) const : const uint8_t*
+    +isTagPresent() const : bool
+    +powerDown() : void
+    +powerUp() : void
     #processEvent(event : Event&) : void
   }
 }
@@ -235,8 +368,20 @@ package "Actuators" #EEF0FF {
     +{static} TURN_ON_COMMAND : Command
     +{static} TURN_OFF_COMMAND : Command
     +{static} TOGGLE_LED_COMMAND : Command
-    +Led(signalGpioPin : int, initialState : bool = false,
-         parentHandler : CommandHandler* = nullptr)
+    +Led(signalGpioPin : int, initialState : bool = false, parentHandler : CommandHandler* = nullptr)
+    +isActive() const : bool
+    #executeCommand(command : Command) : void
+  }
+
+  class RelayActuator {
+    -active : bool
+    +{static} RELAY_ON_COMMAND_IDENTIFIER : int = 300
+    +{static} RELAY_OFF_COMMAND_IDENTIFIER : int = 301
+    +{static} TOGGLE_RELAY_COMMAND_IDENTIFIER : int = 302
+    +{static} RELAY_ON_COMMAND : Command
+    +{static} RELAY_OFF_COMMAND : Command
+    +{static} TOGGLE_RELAY_COMMAND : Command
+    +RelayActuator(signalGpioPin : int, initialState : bool = false, parentHandler : CommandHandler* = nullptr)
     +isActive() const : bool
     #executeCommand(command : Command) : void
   }
@@ -251,41 +396,19 @@ package "Actuators" #EEF0FF {
     -greenPin : int
     -bluePin : int
     -commonAnode : bool
-    -bufferedRedIntensity : uint8_t
-    -bufferedGreenIntensity : uint8_t
-    -bufferedBlueIntensity : uint8_t
-    -activeRedIntensity : uint8_t
-    -activeGreenIntensity : uint8_t
-    -activeBlueIntensity : uint8_t
     -active : bool
-    +{static} TURN_ON_COMMAND_IDENTIFIER : int = 300
-    +{static} TURN_OFF_COMMAND_IDENTIFIER : int = 301
-    +{static} TOGGLE_LED_COMMAND_IDENTIFIER : int = 302
-    +{static} SET_COLOR_COMMAND_IDENTIFIER : int = 303
-    +{static} TURN_ON_COMMAND : Command
-    +{static} TURN_OFF_COMMAND : Command
-    +{static} TOGGLE_LED_COMMAND : Command
-    +{static} SET_COLOR_COMMAND : Command
+    +{static} TURN_ON_COMMAND_IDENTIFIER : int = 304
+    +{static} TURN_OFF_COMMAND_IDENTIFIER : int = 305
+    +{static} TOGGLE_LED_COMMAND_IDENTIFIER : int = 306
+    +{static} SET_COLOR_COMMAND_IDENTIFIER : int = 307
     +{static} RED : RgbColor
     +{static} GREEN : RgbColor
     +{static} BLUE : RgbColor
-    +{static} YELLOW : RgbColor
-    +{static} CYAN : RgbColor
-    +{static} MAGENTA : RgbColor
     +{static} WHITE : RgbColor
-    +{static} ORANGE : RgbColor
-    +{static} PURPLE : RgbColor
-    +RgbLed(redGpioPin : int, greenGpioPin : int, blueGpioPin : int,
-            isCommonAnode : bool = false, parentHandler : CommandHandler* = nullptr)
-    +setColor(redIntensity : uint8_t, greenIntensity : uint8_t,
-             blueIntensity : uint8_t) : void
+    +RgbLed(redGpioPin : int, greenGpioPin : int, blueGpioPin : int, isCommonAnode : bool = false, parentHandler : CommandHandler* = nullptr)
+    +setColor(redIntensity : uint8_t, greenIntensity : uint8_t, blueIntensity : uint8_t) : void
     +setColor(color : const RgbColor&) : void
     +isActive() const : bool
-    +getRedIntensity() const : uint8_t
-    +getGreenIntensity() const : uint8_t
-    +getBlueIntensity() const : uint8_t
-    -applyState() const : void
-    -writeColorChannel(gpioPin : int, intensity : uint8_t) const : void
     #executeCommand(command : Command) : void
   }
 
@@ -293,23 +416,13 @@ package "Actuators" #EEF0FF {
     -physicalLcdScreen : LiquidCrystal_I2C
     -maximumRowCount : const uint8_t
     -maximumColumnCount : const uint8_t
-    -characterScreenMatrixBuffer : char*
     -backlightEnabled : bool
     +{static} UPDATE_TEXT_COMMAND_IDENTIFIER : int = 200
     +{static} TURN_BACKLIGHT_ON_COMMAND_IDENTIFIER : int = 201
     +{static} TURN_BACKLIGHT_OFF_COMMAND_IDENTIFIER : int = 202
-    +{static} UPDATE_TEXT_COMMAND : Command
-    +{static} TURN_BACKLIGHT_ON_COMMAND : Command
-    +{static} TURN_BACKLIGHT_OFF_COMMAND : Command
-    +CharacterLcdDisplay(i2cAddress : uint8_t, columnCount : uint8_t,
-                         rowCount : uint8_t,
-                         backlightInitialState : bool = true,
-                         parentHandler : CommandHandler* = nullptr)
+    +CharacterLcdDisplay(i2cAddress : uint8_t, columnCount : uint8_t, rowCount : uint8_t, parentHandler : CommandHandler* = nullptr)
     +setLineBuffer(rowIndex : uint8_t, nullTerminatedString : const char*) : void
-    +setLineBuffer(multiLineArrayPointer : const char*[]) : void
     +isBacklightOn() const : bool
-    +getMaximumRowCount() const : uint8_t
-    +getMaximumColumnCount() const : uint8_t
     #executeCommand(command : Command) : void
   }
 
@@ -320,12 +433,7 @@ package "Actuators" #EEF0FF {
     +{static} LOCK_TO_MINIMUM_LIMIT_COMMAND_IDENTIFIER : int = 150
     +{static} LOCK_TO_MAXIMUM_LIMIT_COMMAND_IDENTIFIER : int = 151
     +{static} DRIVE_TO_BUFFERED_ANGLE_COMMAND_IDENTIFIER : int = 152
-    +{static} LOCK_TO_MINIMUM_LIMIT_COMMAND : Command
-    +{static} LOCK_TO_MAXIMUM_LIMIT_COMMAND : Command
-    +{static} DRIVE_TO_BUFFERED_ANGLE_COMMAND : Command
-    +ServoMotor(signalGpioPin : int,
-                initialAngleInDegrees : int = 0,
-                parentHandler : CommandHandler* = nullptr)
+    +ServoMotor(signalGpioPin : int, initialAngleInDegrees : int = 0, parentHandler : CommandHandler* = nullptr)
     +setTargetAngleBufferInDegrees(targetAngleInDegrees : int) : void
     +getCurrentActiveAngleInDegrees() const : int
     #executeCommand(command : Command) : void
@@ -338,14 +446,9 @@ package "Actuators" #EEF0FF {
     +{static} TURN_ON_COMMAND_IDENTIFIER : int = 250
     +{static} TURN_OFF_COMMAND_IDENTIFIER : int = 251
     +{static} PLAY_TONE_COMMAND_IDENTIFIER : int = 252
-    +{static} TURN_ON_COMMAND : Command
-    +{static} TURN_OFF_COMMAND : Command
-    +{static} PLAY_TONE_COMMAND : Command
     +Buzzer(signalGpioPin : int, parentHandler : CommandHandler* = nullptr)
     +setTone(frequency : int, duration : unsigned long) : void
     +isActive() const : bool
-    +getBufferedFrequency() const : int
-    +getBufferedDuration() const : unsigned long
     #executeCommand(command : Command) : void
   }
 }
@@ -373,6 +476,30 @@ package "Connectivity" #EDF3FF {
     +canTransmit() : bool
     +getNetworkSocket() : Client&
   }
+
+  class BleConnectivityDriver {
+    -localDeviceName : const char*
+    -deviceConnected : volatile bool
+    -advertisingActive : bool
+    -bleServer : BLEServer*
+    -txCharacteristic : BLECharacteristic*
+    -rxCharacteristic : BLECharacteristic*
+    +{static} NUS_SERVICE_UUID : const char*
+    +{static} NUS_RX_CHARACTERISTIC_UUID : const char*
+    +{static} NUS_TX_CHARACTERISTIC_UUID : const char*
+    +DataReceivedCallback : callback
+    +BleConnectivityDriver(deviceName : const char* = "Modest-IoT-Device")
+    +connect() : void
+    +isConnected() : bool
+    +canTransmit() : bool
+    +transmit(target : const char*, data : const char*) : bool
+    +transmitBytes(payload : const uint8_t*, length : size_t) : bool
+    +getDeviceName() const : const char*
+    +isAdvertising() const : bool
+    +stopAdvertising() : void
+    +startAdvertising() : void
+    +setReceivedDataCallback(callback : DataReceivedCallback) : void
+  }
 }
 
 ' ─────────────────────────────────────────────
@@ -383,15 +510,16 @@ package "Gateway" #FFF8EE {
   abstract class GatewayClient {
     #communicationTransportDriver : ConnectivityDriver&
     #serviceEndpointUrl : const char*
-    +GatewayClient(transportDriver : ConnectivityDriver&,
-                   targetEndpoint : const char*)
+    +GatewayClient(transportDriver : ConnectivityDriver&, targetEndpoint : const char*)
     +sendTelemetryRecord(abstractTelemetryPayload : const TelemetryPackage&) : bool
+    +service() : void
+    +loop() : void
+    +isConnected() : bool
   }
 
   class HttpGatewayClient {
     -contentTypeHeader : const char*
-    +HttpGatewayClient(transportDriver : ConnectivityDriver&,
-                       targetEndpoint : const char*)
+    +HttpGatewayClient(transportDriver : ConnectivityDriver&, targetEndpoint : const char*)
     +sendTelemetryRecord(abstractTelemetryPayload : const TelemetryPackage&) : bool
   }
 
@@ -399,13 +527,18 @@ package "Gateway" #FFF8EE {
     -mqttClient : PubSubClient
     -clientIdentifier : const char*
     -publishTopic : const char*
-    +MqttGatewayClient(transportDriver : ConnectivityDriver&,
-                       networkClient : Client&,
-                       brokerIpAddress : const char*,
-                       brokerPort : uint16_t,
-                       topic : const char*,
-                       deviceId : const char* = "ModestIotNode")
+    -subscribeTopic : const char*
+    -targetDevice : Device*
+    +MqttGatewayClient(transportDriver : ConnectivityDriver&, networkClient : Client&, brokerIpAddress : const char*, brokerPort : uint16_t, publishTopic : const char*, subscribeTopic : const char*, targetDevice : Device*, deviceId : const char* = "ModestIotNode")
     +sendTelemetryRecord(abstractTelemetryPayload : const TelemetryPackage&) : bool
+    +service() : void
+    +loop() : void
+    +isConnected() : bool
+    +getClientState() : int
+    +setReconnectInterval(intervalMilliseconds : unsigned long) : void
+    +getReconnectInterval() const : unsigned long
+    +getStatistics() const : GatewayStatistics
+    +getSubscribeTopic() const : const char*
   }
 }
 
@@ -433,10 +566,17 @@ Sensor <|-- Button
 Sensor <|-- DhtSensor
 Sensor <|-- UltrasonicSensor
 Sensor <|-- PulseSensor
+Sensor <|-- LoadCellAmplifier
+Sensor <|-- SoilMoistureSensor
+Sensor <|-- WaterFlowSensor
+Sensor <|-- PassiveInfraredSensor
+Sensor <|-- DigitalLightIntensitySensor
 Sensor <|-- GasSensor
 Sensor <|-- GeolocationSensor
+Sensor <|-- RfidSensor
 
 Actuator <|-- Led
+Actuator <|-- RelayActuator
 Actuator <|-- RgbLed
 RgbLed ..> RgbColor : uses
 Actuator <|-- CharacterLcdDisplay
@@ -444,6 +584,7 @@ Actuator <|-- ServoMotor
 Actuator <|-- Buzzer
 
 ConnectivityDriver <|.. WiFiConnectivityDriver : implements
+ConnectivityDriver <|.. BleConnectivityDriver : implements
 
 GatewayClient <|-- HttpGatewayClient
 GatewayClient <|-- MqttGatewayClient
@@ -455,16 +596,21 @@ Device <|-- CustomDevice
 ' ─────────────────────────────────────────────
 Sensor   "0..1" o--> EventHandler   : eventHandler
 Actuator "0..1" o--> CommandHandler : commandHandler
-Device   "0..8" o--> EventHandler   : scheduledSequences
+Device   "0..8" o--> SamplingScheduler : scheduler
+Device   "0..4" o--> Sensor : triggerTable
 
 GatewayClient     --> ConnectivityDriver : uses
 GatewayClient     ..> TelemetryPackage   : serializes
 
 MqttGatewayClient *-- PubSubClient : owns
 MqttGatewayClient --> Client       : uses socket
+MqttGatewayClient --> Device       : enqueueCommand
 
 WiFiConnectivityDriver ..> WiFiClient : allocates
 WiFiConnectivityDriver ..> Client     : exposes
+
+BleConnectivityDriver ..> BLEServer : uses
+BleConnectivityDriver ..> BLECharacteristic : uses
 
 GasSensor +-- GasSensor_OperatingMode
 GasSensor +-- GasSensor_GasType
@@ -472,6 +618,8 @@ GasSensor +-- GasCalibrationParameters
 
 GeolocationSensor *-- LocationData   : caches
 GeolocationSensor *-- SoftwareSerial : owns
+
+RfidSensor *-- SPIClass : uses
 
 CustomDevice *--> Sensor   : owns
 CustomDevice *--> Actuator : owns
