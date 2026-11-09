@@ -89,7 +89,10 @@ public:
 
 // Mock GPIO interrupt APIs
 using InterruptHandler = void(*)();
+using InterruptHandlerArg = void(*)(void*);
 inline InterruptHandler fakeInterruptHandlers[64] = {};
+inline InterruptHandlerArg fakeInterruptHandlersArg[64] = {};
+inline void* fakeInterruptArgs[64] = {};
 inline int fakeInterruptModes[64] = {};
 inline int digitalPinToInterrupt(const std::uint8_t pin) { return pin; }
 inline void attachInterrupt(int pin, InterruptHandler fn, int mode) {
@@ -98,9 +101,18 @@ inline void attachInterrupt(int pin, InterruptHandler fn, int mode) {
         fakeInterruptModes[pin] = mode;
     }
 }
+inline void attachInterruptArg(int pin, InterruptHandlerArg fn, void* arg, int mode) {
+    if (pin >= 0 && pin < 64) {
+        fakeInterruptHandlersArg[pin] = fn;
+        fakeInterruptArgs[pin] = arg;
+        fakeInterruptModes[pin] = mode;
+    }
+}
 inline void detachInterrupt(int pin) {
     if (pin >= 0 && pin < 64) {
         fakeInterruptHandlers[pin] = nullptr;
+        fakeInterruptHandlersArg[pin] = nullptr;
+        fakeInterruptArgs[pin] = nullptr;
         fakeInterruptModes[pin] = 0;
     }
 }
@@ -110,6 +122,16 @@ inline unsigned long fakeMillis = 0;
 inline unsigned long millis() { return fakeMillis; }
 inline void delay(const unsigned long ms) { fakeMillis += ms; }
 inline void delayMicroseconds(const unsigned int us) { (void)us; }
+
+// Mock ESP32 high-resolution timer (nanoseconds since boot)
+inline int64_t fakeTimerNanoseconds = 0;
+inline int64_t esp_timer_get_time() { return fakeTimerNanoseconds / 1000; } // Returns microseconds
+
+// Mock pulseIn (for backward compatibility)
+inline unsigned long pulseIn(int pin, int state, unsigned long timeout = 0) {
+    (void)pin; (void)state; (void)timeout;
+    return 0;
+}
 
 // Mock GPIO pins and digital I/O
 inline void pinMode(const std::uint8_t pin, const std::uint8_t mode) { (void)pin; (void)mode; }
