@@ -130,18 +130,27 @@ public:
      */
     uint32_t effectivePeriodInMilliseconds(uint8_t index) const;
 
+    /**
+     * @brief Returns the minimum ticksUntilDue across all registered slots.
+     * @return Minimum ticks until any slot is due, or 0 if no slots are registered.
+     *
+     * Used by tickless scheduling to determine how long the device can sleep
+     * before the next sensor sample is due.
+     */
+    uint32_t ticksUntilNextDue() const;
+
 private:
-    uint32_t baseTickMs; ///< Hardware timer tick period in milliseconds.
+    uint32_t baseTickIntervalInMilliseconds; ///< Hardware timer tick period in milliseconds.
     Slot slots[MAXIMUM_SLOTS]; ///< Slot table.
     uint8_t slotCount; ///< Number of registered slots.
 
     /**
      * @brief Computes the ceiling of a / b using integer arithmetic.
-     * @param a Numerator.
-     * @param b Denominator (must be > 0).
+     * @param numerator Numerator.
+     * @param denominator Denominator (must be > 0).
      * @return ceil(a / b)
      */
-    static uint32_t ceilingDiv(uint32_t a, uint32_t b);
+    static uint32_t calculateCeilingDivision(uint32_t numerator, uint32_t denominator);
 };
 
 #endif // SAMPLING_SCHEDULER_H
