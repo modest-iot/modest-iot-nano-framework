@@ -502,6 +502,45 @@ appendToBothSchedulers(&flowSensor,
 
 ---
 
+## Component Expansion Tier 1 (Complete)
+
+Added two zero-dependency components to enable the v1.0.0 library release with broader IoT coverage.
+
+| Component | Type | Dependencies | Use Case |
+|-----------|------|-------------|----------|
+| RelayActuator | Actuator | `digitalWrite()` | AC/DC load control (smart home, greenhouse pumps, industrial relays) |
+| SoilMoistureSensor | Sensor | `analogRead()` | Soil moisture monitoring (smart greenhouse, agriculture) |
+
+### RelayActuator
+
+**Commands**: `RELAY_ON_COMMAND` (300), `RELAY_OFF_COMMAND` (301), `TOGGLE_RELAY_COMMAND` (302)
+
+**API**: Extends `Actuator` with `isActive()` getter. Follows the `Led` pattern exactly.
+
+**Tests**: 8 host tests covering constructor, on/off/toggle commands, state tracking, unknown command handling, and parent propagation.
+
+**Source**: `src/RelayActuator.h`, `src/RelayActuator.cpp`, `tests/RelayActuator/test.cpp`
+
+### SoilMoistureSensor
+
+**Readings**: Raw ADC value (0–1023) via `analogRead()`. Callers calibrate to percentage based on sensor and soil type.
+
+**Change Detection**: Epsilon-based (`MOISTURE_CHANGE_EPSILON = 5` ADC units) suppresses spurious events from ADC noise.
+
+**Sampling**: Default 1000ms, minimum 100ms.
+
+**Tests**: 7 host tests covering constructor, moisture reading, change detection, propagation suppression, and event emission.
+
+**Source**: `src/SoilMoistureSensor.h`, `src/SoilMoistureSensor.cpp`, `tests/SoilMoistureSensor/test.cpp`
+
+### SmartGreenhouseDevice Example
+
+Bundles `SoilMoistureSensor` + `DhtSensor` + `RelayActuator` (pump) + `ServoMotor` (vent). Demonstrates event-driven irrigation control (soil dry → pump on) and ventilation control (temperature high → vent open).
+
+**Source**: `examples/SmartGreenhouseDevice/SmartGreenhouseDevice.ino`
+
+---
+
 ## Tier 5: Optimization and Power (Pending)
 
 ### W16: Tickless scheduling and light sleep
