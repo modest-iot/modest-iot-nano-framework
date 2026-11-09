@@ -83,7 +83,10 @@ public:
         motionSensor.setFaultThreshold(SENSOR_FAULT_THRESHOLD);
 
         appendSensorToScheduler(&lightSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-        appendSensorToScheduler(&motionSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+        // PIR sensor uses interrupt-driven operation (CHANGE edge) for zero-latency motion detection
+        appendSensorToTriggeringScheduler(&motionSensor,
+                                          Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
+                                          CHANGE);
     }
 
     void on(Event event) override {
