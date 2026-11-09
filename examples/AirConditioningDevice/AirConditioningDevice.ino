@@ -99,9 +99,13 @@ class AirConditioningDevice : public Device {
         // 2. Register the DHT sensor using the baseline scheduler ticker token
         appendSensorToScheduler(&humidityAndTemperatureSensor,  Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
-        // 3. Register button handlers using their specific localized identity tokens
-        appendSensorToScheduler(&targetTemperatureUpButton,     Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-        appendSensorToScheduler(&targetTemperatureDownButton,   Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+        // 3. Register buttons for interrupt-driven operation (FALLING edge)
+        appendSensorToTriggeringScheduler(&targetTemperatureUpButton,
+                                          Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
+                                          FALLING);
+        appendSensorToTriggeringScheduler(&targetTemperatureDownButton,
+                                          Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
+                                          FALLING);
 
         // 4. Initial rendering pass to populate both display lines
         updateCurrentMeasureDisplay();
