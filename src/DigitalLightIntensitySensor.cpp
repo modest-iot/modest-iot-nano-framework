@@ -83,7 +83,7 @@ void DigitalLightIntensitySensor::processEvent(Event &event) {
         return;
     }
 
-    if (!initialized || (!validSample && millis() - conversionStartedAt < BH1750_FIRST_CONVERSION_TIME_MS)) {
+    if (!initialized || (!validSample && millis() - conversionStartedAt < BH1750_FIRST_CONVERSION_TIME_IN_MILLISECONDS)) {
         event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
         return;
     }
