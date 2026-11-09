@@ -31,9 +31,12 @@ class ToggableLedDevice : public Device {
         // 1. Launch internal background task workers with a safe queue boundary depth of 5
         initializeAsynchronousEngine(5);
 
-        // 2. Register the button object pointer to the scheduler grid
-        // mapped directly to its pre-defined pressed event token.
-        appendSensorToScheduler(&toggleLedButton, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+        // 2. Register the button for interrupt-driven operation (FALLING edge).
+        // The GPIO interrupt fires on button press, and the sampler task handles
+        // debouncing via processEvent(). This eliminates polling latency.
+        appendSensorToTriggeringScheduler(&toggleLedButton,
+                                          Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
+                                          FALLING);
     }
 
     /**
