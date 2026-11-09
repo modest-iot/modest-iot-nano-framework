@@ -12,6 +12,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "esp_attr.h"
+#include "esp_sleep.h"
 #endif
 
 
@@ -95,7 +96,7 @@ void Device::initializeAsynchronousEngine(const EngineConfiguration &engineConfi
 
     const auto alarmIntervalInMicroseconds = static_cast<uint64_t>(pollingIntervalInMilliseconds) *
                                              MILLISECONDS_PER_MICROSECOND;
-    const bool autoReload = (powerMode == PowerMode::Periodic);
+    const bool autoReload = powerMode == PowerMode::Periodic;
     timerAlarm(hardwareTimer, alarmIntervalInMicroseconds, autoReload, 0);
 }
 
@@ -244,9 +245,10 @@ void Device::executeHardwareSamplingContext(void *taskParameters) {
             // Advance the scheduler by the elapsed tick count
             self->scheduler.advance(elapsed);
 
-            // W16: Re-arm timer in tickless mode
-            if (self->powerMode == Device::PowerMode::Tickless) {
+            // W16: Re-arm timer in tickless mode and enter light sleep
+            if (self->powerMode == PowerMode::Tickless) {
                 self->rearmTimerForNextDue();
+                self->enterLightSleep();
             }
         }
 
@@ -558,16 +560,38 @@ DiagnosticsSnapshot Device::diagnostics() const {
  * `scheduler.ticksUntilNextDue()` and sets a one-shot alarm for that interval.
  * If no slots are registered, falls back to the polling interval.
  */
-void Device::rearmTimerForNextDue() {
+void Device::rearmTimerForNextDue() const {
     if (hardwareTimer == nullptr) {
         return;
     }
     const uint32_t ticksUntilNext = scheduler.ticksUntilNextDue();
-    const uint32_t ticksToWait = (ticksUntilNext > 0) ? ticksUntilNext : 1;
+    const uint32_t ticksToWait = ticksUntilNext > 0 ? ticksUntilNext : 1;
     const uint64_t alarmIntervalInMicroseconds = static_cast<uint64_t>(ticksToWait) *
                                                  pollingIntervalInMilliseconds *
                                                  MILLISECONDS_PER_MICROSECOND;
     timerAlarm(hardwareTimer, alarmIntervalInMicroseconds, false, 0);
+}
+
+/**
+ * @brief Enters ESP32 light sleep mode until the next timer alarm (W16).
+ *
+ * Configures the hardware timer as the wake source and calls `esp_light_sleep_start()`.
+ * The CPU halts until the timer fires, reducing idle power consumption.
+ * This method is guarded by `#ifdef ARDUINO_ARCH_ESP32` for host compilation.
+ */
+void Device::enterLightSleep() const {
+#ifdef ARDUINO_ARCH_ESP32
+    if (hardwareTimer == nullptr) {
+        return;
+    }
+    const uint32_t ticksUntilNext = scheduler.ticksUntilNextDue();
+    const uint32_t ticksToSleep = ticksUntilNext > 0 ? ticksUntilNext : 1;
+    const uint64_t sleepTimeInMicroseconds = static_cast<uint64_t>(ticksToSleep) *
+                                             pollingIntervalInMilliseconds *
+                                             MILLISECONDS_PER_MICROSECOND;
+    esp_sleep_enable_timer_wakeup(sleepTimeInMicroseconds);
+    esp_light_sleep_start();
+#endif
 }
 
 void Device::setPowerMode(const PowerMode mode) {

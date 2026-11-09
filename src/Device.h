@@ -157,7 +157,16 @@ private:
      * Calculates the time until the next sensor sample is due using
      * `scheduler.ticksUntilNextDue()` and sets a one-shot alarm for that interval.
      */
-    void rearmTimerForNextDue();
+    void rearmTimerForNextDue() const;
+
+    /**
+     * @brief Enters ESP32 light sleep mode until the next timer alarm (W16).
+     *
+     * Configures the timer as the wake source and calls `esp_light_sleep_start()`.
+     * The CPU halts until the hardware timer fires, reducing idle power consumption.
+     * This method is a no-op when not on ESP32 or when the timer is null.
+     */
+    void enterLightSleep() const;
 
 public:
     /**
@@ -410,12 +419,12 @@ public:
      * Each bit represents a distinct event source that can wake the sampler task.
      * The sampler task checks these bits to determine which work to perform.
      *
-     * | Bit | Enum Value | Source |
-     * |-----|------------|--------|
-     * | Bit 0 (0x1) | TimerTickArrived | Hardware timer ISR |
-     * | Bit 1 (0x2) | TerminationSignal | stopAsynchronousEngine() |
-     * | Bit 2 (0x4) | SensorTrigger | GPIO ISR (W13) |
-     * | Bit 3 (0x8) | CommandAvailable | Device::enqueueCommand() (W12) |
+     * | Bit         | Enum Value        | Source                         |
+     * |-------------|-------------------|--------------------------------|
+     * | Bit 0 (0x1) | TimerTickArrived  | Hardware timer ISR             |
+     * | Bit 1 (0x2) | TerminationSignal | stopAsynchronousEngine()       |
+     * | Bit 2 (0x4) | SensorTrigger     | GPIO ISR (W13)                 |
+     * | Bit 3 (0x8) | CommandAvailable  | Device::enqueueCommand() (W12) |
      */
     enum class NotificationBitFlag : uint32_t {
         TimerTickArrived    = 0x1, ///< Hardware timer tick arrived.
