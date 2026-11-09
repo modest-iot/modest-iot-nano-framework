@@ -246,9 +246,13 @@ void Device::executeHardwareSamplingContext(void *taskParameters) {
             self->scheduler.advance(elapsed);
 
             // W16: Re-arm timer in tickless mode and enter light sleep
+            // W17: Enter deep sleep when configured
             if (self->powerMode == PowerMode::Tickless) {
                 self->rearmTimerForNextDue();
                 self->enterLightSleep();
+            } else if (self->powerMode == PowerMode::DeepSleep) {
+                self->rearmTimerForNextDue();
+                self->enterDeepSleep();
             }
         }
 
@@ -591,6 +595,65 @@ void Device::enterLightSleep() const {
                                              MILLISECONDS_PER_MICROSECOND;
     esp_sleep_enable_timer_wakeup(sleepTimeInMicroseconds);
     esp_light_sleep_start();
+#endif
+}
+
+/**
+ * @brief Enters ESP32 deep sleep mode until the timer alarm (W17).
+ *
+ * Calculates the sleep duration from `scheduler.ticksUntilNextDue()`, configures
+ * the timer wake source, and calls `esp_deep_sleep_start()`. Unlike light sleep,
+ * deep sleep shuts down the CPU, Wi-Fi, and most peripherals (~10µA).
+ * The device reboots on wake — only RTC memory survives.
+ * This method is guarded by `#ifdef ARDUINO_ARCH_ESP32` for host compilation.
+ */
+void Device::enterDeepSleep() const {
+#ifdef ARDUINO_ARCH_ESP32
+    if (hardwareTimer == nullptr) {
+        return;
+    }
+    const uint32_t ticksUntilNext = scheduler.ticksUntilNextDue();
+    const uint32_t ticksToSleep = ticksUntilNext > 0 ? ticksUntilNext : 1;
+    const uint64_t sleepTimeInMicroseconds = static_cast<uint64_t>(ticksToSleep) *
+                                             pollingIntervalInMilliseconds *
+                                             MILLISECONDS_PER_MICROSECOND;
+    esp_sleep_enable_timer_wakeup(sleepTimeInMicroseconds);
+    esp_deep_sleep_start();
+#endif
+}
+
+/**
+ * @brief Reports the wake reason from the last sleep cycle (W17).
+ *
+ * Uses `esp_sleep_get_wakeup_cause()` to determine how the device woke up
+ * and prints the result to Serial. Call early in setup() to diagnose
+ * unexpected wake cycles.
+ */
+void Device::reportWakeReason() const {
+#ifdef ARDUINO_ARCH_ESP32
+    const auto wakeupCause = esp_sleep_get_wakeup_cause();
+    switch (wakeupCause) {
+        case ESP_SLEEP_WAKEUP_EXT0:
+            Serial.println(F("[Device] Wakeup: External signal (RTC_IO)"));
+            break;
+        case ESP_SLEEP_WAKEUP_EXT1:
+            Serial.println(F("[Device] Wakeup: External signal (RTC_CNTL)"));
+            break;
+        case ESP_SLEEP_WAKEUP_TIMER:
+            Serial.println(F("[Device] Wakeup: Timer"));
+            break;
+        case ESP_SLEEP_WAKEUP_TOUCHPAD:
+            Serial.println(F("[Device] Wakeup: Touchpad"));
+            break;
+        case ESP_SLEEP_WAKEUP_ULP:
+            Serial.println(F("[Device] Wakeup: ULP coprogram"));
+            break;
+        default:
+            Serial.println(F("[Device] Wakeup: Reset or unknown"));
+            break;
+    }
+#else
+    (void)0; // Suppress unused warning in host builds
 #endif
 }
 

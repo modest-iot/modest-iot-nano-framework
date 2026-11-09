@@ -159,16 +159,38 @@ private:
      */
     void enterLightSleep() const;
 
+    /**
+     * @brief Enters ESP32 deep sleep mode until the timer alarm (W17).
+     *
+     * Configures the timer as the wake source and calls `esp_deep_sleep_start()`.
+     * Unlike light sleep, deep sleep shuts down the CPU, Wi-Fi, and most peripherals
+     * (~10µA vs ~100mA). The device reboots on wake — only RTC memory survives.
+     * This method is a no-op when not on ESP32 or when the timer is null.
+     * @runs_on sampler task
+     */
+    void enterDeepSleep() const;
+
 public:
     /**
      * @brief Power mode for the hardware timer (W16).
      */
     enum class PowerMode : uint8_t {
         Periodic,   ///< Fixed-period timer alarm (default, backward compatible).
-        Tickless    ///< One-shot timer re-armed after each sampler dispatch.
+        Tickless,   ///< One-shot timer re-armed after each sampler dispatch.
+        DeepSleep   ///< Full CPU shutdown, RTC memory only, timer wake (W17).
     };
 
-    PowerMode powerMode; ///< Current power mode (W16).
+    PowerMode powerMode; ///< Current power mode (W16/W17).
+
+    /**
+     * @brief Reports the wake reason from the last sleep cycle (W17).
+     *
+     * Uses `esp_sleep_get_wakeup_cause()` to determine how the device woke up
+     * (timer, GPIO, touchpad, ULP, or reset) and prints the result to Serial.
+     * Call early in setup() to diagnose unexpected wake cycles.
+     * @runs_on any task
+     */
+    void reportWakeReason() const;
 
     /**
      * @brief Static ISR handler for interrupt-driven sensor triggers.
