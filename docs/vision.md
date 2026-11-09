@@ -52,10 +52,10 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 
 | ID      | Work Item                                    | Priority | Complexity | Description                                                                            |
 |---------|----------------------------------------------|----------|------------|----------------------------------------------------------------------------------------|
-| **W12** | `Device::post` command marshaling            | High     | High       | Cross-task command queue for cloud-to-device commands. Prerequisite for W15.           |
+| **W12** | `Device::enqueueCommand` command marshaling | High | High | **Complete**: Cross-task command queue for cloud-to-device commands. Prerequisite for W15. |
 | **W13** | Interrupt triggers for Button, PIR, pulse sensors | High | Medium | **Partially Complete**: `appendSensorToTriggeringScheduler()`/`appendToBothSchedulers()` API implemented with bit-flag notifications. Sensor-specific conversion (Button, PIR, YF-S201) pending. |
 | **W14** | HX711 data-ready and ultrasonic echo capture | Medium   | Medium     | Remove blocking `pulseIn()` and HX711 timeout waits. Non-blocking alternatives.        |
-| **W15** | Cloud-to-device commands (MQTT subscribe)    | Medium   | Medium     | MQTT subscribe topics, parse incoming commands, marshal to sampler via `Device::post`. |
+| **W15** | Cloud-to-device commands (MQTT subscribe)    | Medium   | Medium     | MQTT subscribe topics, parse incoming commands, marshal to sampler via `Device::enqueueCommand`. |
 
 ### Remaining Work: Tier 5 (Optimization & Power)
 

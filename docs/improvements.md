@@ -40,7 +40,7 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 | W9  | `EngineConfig` and `stopAsynchronousEngine()`                                           | Tier 2      | 4 | 2 | 3 | S    | 11    | **Completed**                                                                                                                               |
 | W10 | Optional Bluetooth, BLE driver addition, optional MQTT footprint                        | Tier 2      | 3 | 2 | 4 | S    | 11    | **Partially Complete** (BLE NUS added, BT Classic isolated)                                                                                 |
 | W11 | Telemetry ownership and queue policy (Phases A and B)                                   | Tier 3      | 4 | 3 | 4 | M    | 8     | **Partially Complete** (Phase A done, `unique_ptr` overload, drop-oldest, bounded buffer, envelope metadata, golden tests, T14 name hiding) |
-| W12 | `Device::post` command marshaling                                                      | Tier 4      | 3 | 0 | 4 | M    | 6     | Pending                                                                                                                                     |
+| W12 | `Device::enqueueCommand` command marshaling                                                      | Tier 4      | 3 | 0 | 4 | M    | 6     | **Complete** (`enqueueCommand`, `processPendingCommands`, `CommandEntry`, `CommandAvailable` bit, host tests) |
 | W13 | Interrupt triggers for Button and PIR                                                   | Tier 4      | 3 | 4 | 3 | M    | 6     | **Partially Complete** (triggering scheduler infrastructure, `appendSensorToTriggeringScheduler`, `appendToBothSchedulers`, host tests) |
 | W14 | HX711 data-ready and ultrasonic echo capture (remove blocking)                          | Tier 4      | 2 | 4 | 2 | M    | 5     | Pending                                                                                                                                     |
 | W15 | Cloud-to-device commands (MQTT subscribe)                                               | Tier 4      | 2 | 0 | 4 | M    | 5     | Pending                                                                                                                                     |
@@ -387,9 +387,21 @@ Sampler Task (Core 1)                    Network Task (Core 1)
 
 ## Tier 4: Capabilities (Pending)
 
-### W12: `Device::post` command marshaling
+### W12: `Device::enqueueCommand` command marshaling
 
 Give other tasks a safe way to act on the sampler's objects.
+
+**Status**: **Complete**
+
+**Implementation**:
+- `Device::CommandEntry` struct carries `CommandHandler*` and `Command` value.
+- `Device::enqueueCommand(CommandHandler*, Command)` places entry on the command queue and wakes the sampler via `CommandAvailable` bit flag.
+- `Device::processPendingCommands()` drains the queue calling `targetHandler->handle(command)` on the sampler task context.
+- Command queue created in `initializeAsynchronousEngine()` with same length as telemetry queue.
+- Command queue drained in `stopAsynchronousEngine()` — commands are value types, no cleanup needed.
+- 16 host unit tests in `tests/CommandMarshaling/test.cpp`.
+
+**Source**: `src/Device.h`, `src/Device.cpp`, `tests/CommandMarshaling/test.cpp`
 
 **Problem**: The threading model is single-threaded on the sampler. Cloud-to-device commands (MQTT subscribe) arrive on the network worker. Calling actuators from the network worker breaks the single-context guarantee.
 
