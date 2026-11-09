@@ -146,8 +146,8 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
 ### TS15: Validate Framework with Automated Tests
 - **As an** IoT Developer, **I want** the framework to have comprehensive host unit tests and CI workflows, **so that** I can trust the codebase compiles and behaves correctly without deploying to hardware.
 - **Acceptance Criteria**:
-    - **Given** a new pull request, **when** CI runs, **then** all 11 host test suites pass with Address and Undefined sanitizers enabled.
-    - **Given** a new pull request, **when** CI runs, **then** all 10 example sketches compile cleanly on ESP32 and ESP32-S3 targets.
+    - **Given** a new pull request, **when** CI runs, **then** all 17 host test suites pass with Address and Undefined sanitizers enabled.
+    - **Given** a new pull request, **when** CI runs, **then** all 13 example sketches compile cleanly on ESP32 and ESP32-S3 targets.
     - **Given** library metadata is changed, **when** CI runs, **then** `arduino-lint` validates Arduino Library Manager compliance.
     - **Given** a telemetry package is serialized in a host test, **when** the golden JSON is compared, **then** the exact output matches the expected string.
 - **Status**: ✓ Implemented. See `tests/run_all.sh`, `.github/workflows/host-tests.yml`, `.github/workflows/compile-examples.yml`, `.github/workflows/lint.yml`, and `tests/TelemetryPackage/test.cpp`.
@@ -155,4 +155,4 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
 ---
 
 *Created: March 23, 2025.*
-*Last Updated: November 6, 2026.*
+*Last Updated: November 9, 2026.*
