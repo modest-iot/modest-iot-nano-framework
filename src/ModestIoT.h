@@ -45,5 +45,7 @@
 #include "PassiveInfraredSensor.h"
 #include "DigitalLightIntensitySensor.h"
 #include "RfidSensor.h"
+#include "RelayActuator.h"
+#include "SoilMoistureSensor.h"
 
 #endif // MODEST_IOT_H
