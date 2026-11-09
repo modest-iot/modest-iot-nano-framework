@@ -134,10 +134,24 @@ inline unsigned long pulseIn(int pin, int state, unsigned long timeout = 0) {
 }
 
 // Mock GPIO pins and digital I/O
+inline int fakeDigitalWrite[64] = {};
 inline void pinMode(const std::uint8_t pin, const std::uint8_t mode) { (void)pin; (void)mode; }
-inline void digitalWrite(const std::uint8_t pin, const std::uint8_t val) { (void)pin; (void)val; }
+inline void digitalWrite(const std::uint8_t pin, const std::uint8_t val) {
+    if (pin < std::size(fakeDigitalWrite)) {
+        fakeDigitalWrite[pin] = val;
+    }
+}
 inline int digitalRead(const std::uint8_t pin) { (void)pin; return HIGH; }
 inline void yield() {}
+
+// Mock analog input
+inline int fakeAnalogRead[64] = {};
+inline int analogRead(const std::uint8_t pin) {
+    if (pin < std::size(fakeAnalogRead)) {
+        return fakeAnalogRead[pin];
+    }
+    return 0;
+}
 
 // Mock PWM analog output
 inline int fakePwm[64] = {};
