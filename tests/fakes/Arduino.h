@@ -47,11 +47,13 @@ inline UBaseType_t uxQueueMessagesWaiting(QueueHandle_t) { return 0; }
 inline UBaseType_t uxTaskGetStackHighWaterMark(TaskHandle_t) { return 0; }
 inline TickType_t pdMS_TO_TICKS(std::uint32_t ms) { return ms; }
 
-// Mock ESP32 heap diagnostics
-namespace ESP {
-inline std::uint32_t getFreeHeap() { return 100000; }
-inline std::uint32_t getMinFreeHeap() { return 50000; }
-} // namespace ESP
+// Mock ESP32 heap diagnostics (matches real EspClass from Esp.h)
+class EspClass {
+public:
+    std::uint32_t getFreeHeap() { return 100000; }
+    std::uint32_t getMinFreeHeap() { return 50000; }
+};
+inline EspClass ESP;
 
 // Mock timer APIs
 inline hw_timer_t* timerBegin(std::uint32_t) { return nullptr; }

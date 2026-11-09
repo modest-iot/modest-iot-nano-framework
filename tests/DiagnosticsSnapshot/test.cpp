@@ -46,8 +46,8 @@ public:
         snapshot.queueHighWaterMark = queueHighWaterMarkCount;
         snapshot.sendsSucceeded = 0;
         snapshot.sendsFailed = 0;
-        snapshot.freeHeapBytes = ESP::getFreeHeap();
-        snapshot.minFreeHeapBytes = ESP::getMinFreeHeap();
+        snapshot.freeHeapBytes = ESP.getFreeHeap();
+        snapshot.minFreeHeapBytes = ESP.getMinFreeHeap();
         snapshot.uptimeSeconds = millis() / 1000;
         snapshot.samplerStackFreeWords = 0;
         snapshot.networkStackFreeWords = 0;
@@ -144,9 +144,9 @@ void test_heap_diagnostics() {
     
     DiagnosticsSnapshot snapshot = device.diagnostics();
     
-    // Mock ESP::getFreeHeap() returns 100000
+    // Mock ESP.getFreeHeap() returns 100000
     assert(snapshot.freeHeapBytes == 100000);
-    // Mock ESP::getMinFreeHeap() returns 50000
+    // Mock ESP.getMinFreeHeap() returns 50000
     assert(snapshot.minFreeHeapBytes == 50000);
     
     printf("[PASS] Heap diagnostics return mock values\n");
