@@ -8,7 +8,7 @@ Each ADR documents **why** a decision was made, not just **what** was decided. T
 
 The Modest IoT Nano Framework is a lightweight, deterministic IoT framework for ESP32-based devices. It provides a Mediator design pattern for sensor-actuator wiring, a per-slot sampling scheduler, a telemetry pipeline with ownership safety, and connectivity drivers for Wi-Fi, BLE, and MQTT. The framework runs on FreeRTOS with two isolated tasks: a sampler task for all sensor/actuator I/O and a network task for asynchronous transmission.
 
-The 22 ADRs below span five categories that shaped the framework's architecture:
+The 28 ADRs below span six categories that shaped the framework's architecture:
 
 | #                                                                                          | Title                                                         | Status   | Category     |
 |--------------------------------------------------------------------------------------------|---------------------------------------------------------------|----------|--------------|
@@ -39,6 +39,7 @@ The 22 ADRs below span five categories that shaped the framework's architecture:
 | [ADR-025](#adr-025-non-blocking-sensor-protocols-w14)                                      | Non-Blocking Sensor Protocols (W14)                           | Accepted | Scheduling   |
 | [ADR-026](#adr-026-cloud-to-device-mqtt-subscribe-w15)                                     | Cloud-to-Device MQTT Subscribe (W15)                          | Accepted | Connectivity |
 | [ADR-027](#adr-027-tickless-scheduling-and-light-sleep-w16)                                | Tickless Scheduling and Light Sleep (W16)                     | Accepted | Power        |
+| [ADR-028](#adr-028-deep-sleep-cycle-and-battery-example-w17)                               | Deep-Sleep Cycle and Battery Example (W17)                    | Accepted | Power        |
 
 ### Status Legend
 
@@ -60,7 +61,7 @@ The 22 ADRs below span five categories that shaped the framework's architecture:
 | **Dependencies** | 2     | Retain ArduinoJson; five hygiene principles for dependency decisions                                 |
 | **Testing**      | 2     | Shared mock harness; golden host tests for JSON serialization                                        |
 | **Architecture** | 1     | DDD adoption, bounded contexts, ubiquitous language, embedded-friendly subset                        |
-| **Power**        | 1     | Tickless scheduling with light sleep for battery-powered operation                                   |
+| **Power**        | 2     | Tickless scheduling with light sleep; deep sleep with RTC memory for battery operation   |
 
 ---
 
@@ -881,6 +882,43 @@ Add `PowerMode` enum (`Periodic`, `Tickless`) to Device. In tickless mode, the t
 
 ---
 
+## ADR-028: Deep-Sleep Cycle and Battery Example (W17)
+
+**Status**: Accepted | **Date**: 2026-11-09 | **Supersedes**: N/A
+
+### Context
+
+Battery-powered IoT devices need true deep sleep (~10µA) rather than light sleep (~100mA). Deep sleep shuts down the CPU, Wi-Fi, and most peripherals, retaining only RTC (Real-Time Clock) memory. The device reboots on each wake, requiring state to survive via `RTC_DATA_ATTR` variables.
+
+Light sleep (W16) keeps Wi-Fi and RAM alive but consumes ~100mA. For coin-cell battery operation, deep sleep is essential — it reduces power by 10,000×, enabling months of operation.
+
+Two alternatives were evaluated:
+1. **Deep sleep with RTC memory** — Add `PowerMode::DeepSleep`, use `esp_deep_sleep_start()` after each sampler dispatch. Store state in RTC memory via `RTC_DATA_ATTR`. Report wake reason on boot.
+2. **Light sleep only** — Accept ~100mA idle consumption; suitable for mains-powered devices but not battery operation.
+
+### Decision
+
+Add `PowerMode::DeepSleep` to the existing `PowerMode` enum in `Device`. When set, the device enters deep sleep after each sampler dispatch via `Device::enterDeepSleep()`, which configures the timer wake source and calls `esp_deep_sleep_start()`. On wake, `Device::reportWakeReason()` uses `esp_sleep_get_wakeup_cause()` to report the wake source (timer, GPIO, reset).
+
+Application state that must survive deep sleep uses the `RTC_DATA_ATTR` compiler attribute on free-standing variables, as ESP32 compiler restrictions prevent class member attributes.
+
+The `WeatherStation` example demonstrates deep sleep with DHT22 and BH1750 sensors, RTC boot count tracking, and wake-reason reporting.
+
+### Consequences
+
+- **Positive**: Enables true battery operation (~10µA vs ~100mA active). With 5-minute sleep intervals, the device spends >99.9% of its time asleep. Coin cell batteries last months.
+- **Negative**: Wi-Fi is disconnected during deep sleep; the device must reconnect on each wake (~200ms boot time). RAM is lost except for RTC memory. Application code must use `RTC_DATA_ATTR` for state survival.
+- **Rationale**: Deep sleep is the standard pattern for battery-powered IoT devices. The infrastructure is minimal — one enum value, two methods, and RTC memory attributes. The `WeatherStation` example provides a template for battery-powered deployments.
+
+### References
+
+- `src/Device.h`, `src/Device.cpp`
+- `examples/WeatherStation/WeatherStation.ino`
+- `tests/DeepSleep/test.cpp`
+- `docs/improvements.md` (W17)
+
+---
+
 ## ADR-023: Domain-Driven Design Adoption and Bounded Contexts
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -1009,4 +1047,4 @@ For future architecture decisions, use this template:
 
 ---
 
-*Last updated: 2026-11-09 (27 ADRs: 13 original + 9 from improvements.md review + 1 DDD adoption + 4 from W12-W16)*
+*Last updated: 2026-11-09 (28 ADRs: 13 original + 9 from improvements.md review + 1 DDD adoption + 4 from W12-W16 + 1 from W17)*
