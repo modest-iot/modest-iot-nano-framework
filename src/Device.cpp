@@ -22,6 +22,7 @@
 Device::Device(const unsigned long samplingIntervalInMilliseconds, const uint8_t timerGroupIndex)
     : scheduler(samplingIntervalInMilliseconds),
       engineStarted(false),
+      powerMode(PowerMode::Periodic),
       hardwareSamplingTaskHandle(nullptr),
       networkDispatcherTaskHandle(nullptr),
       telemetryQueueHandle(nullptr),
@@ -94,7 +95,8 @@ void Device::initializeAsynchronousEngine(const EngineConfiguration &engineConfi
 
     const auto alarmIntervalInMicroseconds = static_cast<uint64_t>(pollingIntervalInMilliseconds) *
                                              MILLISECONDS_PER_MICROSECOND;
-    timerAlarm(hardwareTimer, alarmIntervalInMicroseconds, true, 0);
+    const bool autoReload = (powerMode == PowerMode::Periodic);
+    timerAlarm(hardwareTimer, alarmIntervalInMicroseconds, autoReload, 0);
 }
 
 bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, const int requestedEventIdentifier) {
@@ -241,6 +243,11 @@ void Device::executeHardwareSamplingContext(void *taskParameters) {
             }
             // Advance the scheduler by the elapsed tick count
             self->scheduler.advance(elapsed);
+
+            // W16: Re-arm timer in tickless mode
+            if (self->powerMode == Device::PowerMode::Tickless) {
+                self->rearmTimerForNextDue();
+            }
         }
 
         // Interrupt-driven sensor event (W13)
@@ -542,6 +549,34 @@ DiagnosticsSnapshot Device::diagnostics() const {
     }
 
     return snapshot;
+}
+
+/**
+ * @brief Re-arms the hardware timer for the next due sensor sample (W16).
+ *
+ * Calculates the time until the next sensor sample is due using
+ * `scheduler.ticksUntilNextDue()` and sets a one-shot alarm for that interval.
+ * If no slots are registered, falls back to the polling interval.
+ */
+void Device::rearmTimerForNextDue() {
+    if (hardwareTimer == nullptr) {
+        return;
+    }
+    const uint32_t ticksUntilNext = scheduler.ticksUntilNextDue();
+    const uint32_t ticksToWait = (ticksUntilNext > 0) ? ticksUntilNext : 1;
+    const uint64_t alarmIntervalInMicroseconds = static_cast<uint64_t>(ticksToWait) *
+                                                 pollingIntervalInMilliseconds *
+                                                 MILLISECONDS_PER_MICROSECOND;
+    timerAlarmWrite(hardwareTimer, alarmIntervalInMicroseconds, false);
+    timerAlarmEnable(hardwareTimer);
+}
+
+void Device::setPowerMode(const PowerMode mode) {
+    powerMode = mode;
+}
+
+Device::PowerMode Device::getPowerMode() const {
+    return powerMode;
 }
 
 void Device::stopAsynchronousEngine() {

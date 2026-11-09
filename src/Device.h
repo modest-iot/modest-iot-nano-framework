@@ -27,13 +27,13 @@
  * network worker (8192 bytes, priority 1, core 1), queue length 10.
  */
 struct EngineConfiguration {
-    uint32_t samplerStackBytes = 4096; ///< Stack size for the hardware sampling task.
-    uint32_t networkStackBytes = 8192; ///< Stack size for the network dispatcher task.
-    uint8_t samplerPriority = 3; ///< FreeRTOS priority for the sampler task.
-    uint8_t networkPriority = 1; ///< FreeRTOS priority for the network task.
-    BaseType_t samplerCore = 1; ///< Core pinning for the sampler task.
-    BaseType_t networkCore = 1; ///< Core pinning for the network task.
-    uint8_t queueLength = 10; ///< Maximum telemetry queue depth.
+    uint32_t    samplerStackBytes   = 4096; ///< Stack size for the hardware sampling task.
+    uint32_t    networkStackBytes   = 8192; ///< Stack size for the network dispatcher task.
+    uint8_t     samplerPriority     = 3; ///< FreeRTOS priority for the sampler task.
+    uint8_t     networkPriority     = 1; ///< FreeRTOS priority for the network task.
+    BaseType_t  samplerCore         = 1; ///< Core pinning for the sampler task.
+    BaseType_t  networkCore         = 1; ///< Core pinning for the network task.
+    uint8_t     queueLength         = 10; ///< Maximum telemetry queue depth.
 };
 
 /**
@@ -44,19 +44,19 @@ struct EngineConfiguration {
  * FreeRTOS `StackType_t` words (4 bytes on ESP32), not raw bytes.
  */
 struct DiagnosticsSnapshot {
-    uint32_t missedTicks = 0; ///< Ticks missed by the sampler due to handler overrun.
-    uint32_t worstCaseWakeMicros = 0; ///< Highest observed sampler handler duration.
-    uint32_t packetsEnqueued = 0; ///< Total telemetry packets successfully enqueued.
-    uint32_t packetsDropped = 0; ///< Total telemetry packets dropped due to full queue.
-    uint32_t packetsDroppedOldest = 0; ///< Total oldest packets dropped to make room for new ones.
-    uint8_t queueHighWaterMark = 0; ///< Maximum queue depth observed.
-    uint32_t sendsSucceeded = 0; ///< Successful gateway transmissions.
-    uint32_t sendsFailed = 0; ///< Failed gateway transmissions.
-    uint32_t freeHeapBytes = 0; ///< Current free heap in bytes.
-    uint32_t minFreeHeapBytes = 0; ///< Lowest free heap observed since boot.
-    uint16_t samplerStackFreeWords = 0; ///< Sampler task stack high-water mark (words).
-    uint16_t networkStackFreeWords = 0; ///< Network task stack high-water mark (words).
-    uint32_t uptimeSeconds = 0; ///< Device uptime in seconds.
+    uint32_t    missedTicks             = 0; ///< Ticks missed by the sampler due to handler overrun.
+    uint32_t    worstCaseWakeMicros     = 0; ///< Highest observed sampler handler duration.
+    uint32_t    packetsEnqueued         = 0; ///< Total telemetry packets successfully enqueued.
+    uint32_t    packetsDropped          = 0; ///< Total telemetry packets dropped due to full queue.
+    uint32_t    packetsDroppedOldest    = 0; ///< Total oldest packets dropped to make room for new ones.
+    uint8_t     queueHighWaterMark      = 0; ///< Maximum queue depth observed.
+    uint32_t    sendsSucceeded          = 0; ///< Successful gateway transmissions.
+    uint32_t    sendsFailed             = 0; ///< Failed gateway transmissions.
+    uint32_t    freeHeapBytes           = 0; ///< Current free heap in bytes.
+    uint32_t    minFreeHeapBytes        = 0; ///< Lowest free heap observed since boot.
+    uint16_t    samplerStackFreeWords   = 0; ///< Sampler task stack high-water mark (words).
+    uint16_t    networkStackFreeWords   = 0; ///< Network task stack high-water mark (words).
+    uint32_t    uptimeSeconds           = 0; ///< Device uptime in seconds.
 };
 
 
@@ -76,18 +76,27 @@ namespace DeviceConstants {
 class Device : public EventHandler, public CommandHandler {
 private:
     // Named constants to avoid magic numbers and strings
-    static constexpr uint32_t TIMER_FREQUENCY_IN_HERTZ = 1000000; ///< Hardware timer frequency (1 MHz).
-    static constexpr uint32_t MILLISECONDS_PER_MICROSECOND = 1000; ///< Milliseconds to microseconds conversion.
-    static constexpr uint32_t NETWORK_QUEUE_RECEIVE_TIMEOUT_IN_MILLISECONDS = 100; ///< Network dispatch queue poll timeout.
-    static constexpr uint32_t TASK_TERMINATION_WAIT_IN_MILLISECONDS = 100; ///< Wait time for task termination.
-    static constexpr int INVALID_EVENT_IDENTIFIER = -1; ///< Sentinel for invalid event identifier.
-    static constexpr int INVALID_COMMAND_IDENTIFIER = -1; ///< Sentinel for invalid command identifier.
-    static constexpr auto SAMPLER_TASK_NAME = "HardwareWorker"; ///< FreeRTOS sampler task name.
-    static constexpr auto NETWORK_TASK_NAME = "NetworkWorker"; ///< FreeRTOS network task name.
-    static constexpr auto DEVICE_COMPONENT_NAME = "Device"; ///< Log component name.
+    static constexpr uint32_t   TIMER_FREQUENCY_IN_HERTZ                        = 1000000; ///< Hardware timer frequency (1 MHz).
+    static constexpr uint32_t   MILLISECONDS_PER_MICROSECOND                    = 1000; ///< Milliseconds to microseconds conversion.
+    static constexpr uint32_t   NETWORK_QUEUE_RECEIVE_TIMEOUT_IN_MILLISECONDS   = 100; ///< Network dispatch queue poll timeout.
+    static constexpr uint32_t   TASK_TERMINATION_WAIT_IN_MILLISECONDS           = 100; ///< Wait time for task termination.
+    static constexpr int        INVALID_EVENT_IDENTIFIER                        = -1; ///< Sentinel for invalid event identifier.
+    static constexpr int        INVALID_COMMAND_IDENTIFIER                      = -1; ///< Sentinel for invalid command identifier.
+    static constexpr auto       SAMPLER_TASK_NAME                               = "HardwareWorker"; ///< FreeRTOS sampler task name.
+    static constexpr auto       NETWORK_TASK_NAME                               = "NetworkWorker"; ///< FreeRTOS network task name.
+    static constexpr auto       DEVICE_COMPONENT_NAME                           = "Device"; ///< Log component name.
+
+    /**
+     * @brief Power mode for the hardware timer (W16).
+     */
+    enum class PowerMode : uint8_t {
+        Periodic,   ///< Fixed-period timer alarm (default, backward compatible).
+        Tickless    ///< One-shot timer re-armed after each sampler dispatch.
+    };
 
     SamplingScheduler scheduler; ///< Per-slot sampling scheduler.
     bool engineStarted; ///< Guards against registration after engine start.
+    PowerMode powerMode; ///< Current power mode (W16).
 
     TaskHandle_t hardwareSamplingTaskHandle; ///< Handle for the hardware sampling task.
     TaskHandle_t networkDispatcherTaskHandle; ///< Handle for the network dispatcher task.
@@ -113,11 +122,11 @@ private:
      * not by Sensor. This keeps Sensor as a pure sensor abstraction.
      */
     struct TriggerEntry {
-        Sensor* sensor = nullptr;          ///< Pointer to the registered sensor.
-        int eventIdentifier = -1;          ///< Event identifier to emit on trigger.
-        int interruptMode = CHANGE;        ///< GPIO interrupt mode (Arduino core: RISING, FALLING, CHANGE).
-        bool wasTriggered = false;         ///< True if this sensor was triggered since last poll.
-        uint8_t slotIndex = 0;             ///< Index in the trigger table (also the trigger handle).
+        Sensor* sensor          = nullptr;          ///< Pointer to the registered sensor.
+        int     eventIdentifier = -1;          ///< Event identifier to emit on trigger.
+        int     interruptMode   = CHANGE;        ///< GPIO interrupt mode (Arduino core: RISING, FALLING, CHANGE).
+        bool    wasTriggered    = false;         ///< True if this sensor was triggered since last poll.
+        uint8_t slotIndex       = 0;             ///< Index in the trigger table (also the trigger handle).
     };
 
     hw_timer_t* hardwareTimer; ///< Pointer to the hardware timer.
@@ -141,6 +150,14 @@ private:
      * @param deviceInstance Pointer to the owning `Device` instance.
      */
     static void IRAM_ATTR handleHardwareTimerInterrupt(void* deviceInstance);
+
+    /**
+     * @brief Re-arms the hardware timer for the next due sensor sample (W16).
+     *
+     * Calculates the time until the next sensor sample is due using
+     * `scheduler.ticksUntilNextDue()` and sets a one-shot alarm for that interval.
+     */
+    void rearmTimerForNextDue();
 
 public:
     /**
@@ -353,6 +370,25 @@ protected:
      * @runs_on network
      */
     virtual void maintainNetworkServices() const;
+
+    /**
+     * @brief Sets the power mode for the hardware timer (W16).
+     * @param mode Power mode: Periodic (default) or Tickless.
+     *
+     * In Periodic mode, the hardware timer fires at a fixed interval.
+     * In Tickless mode, the timer is re-armed after each sampler dispatch
+     * using the time until the next sensor sample is due, allowing the
+     * device to sleep between samples.
+     *
+     * Must be called before initializeAsynchronousEngine() to take effect.
+     */
+    void setPowerMode(PowerMode mode);
+
+    /**
+     * @brief Returns the current power mode.
+     * @return The configured PowerMode.
+     */
+    [[nodiscard]] PowerMode getPowerMode() const;
 
     /**
      * @brief Gracefully stops the asynchronous engine and releases all resources.
