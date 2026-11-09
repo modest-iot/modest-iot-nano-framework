@@ -34,9 +34,9 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 
 ### What's Delivered
 
-- **33 source headers** with full Doxygen documentation and `@runs_on` threading tags.
-- **10 example sketches** covering diverse use cases (smart band, air quality, RFID access, etc.).
-- **11 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
+- **35 source headers** with full Doxygen documentation and `@runs_on` threading tags.
+- **11 example sketches** covering diverse use cases (smart band, air quality, RFID access, smart greenhouse, etc.).
+- **16 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
 - **3 CI workflows**: host tests, compile examples, lint.
 - **Per-slot `SamplingScheduler`** with phase-aligned re-arming and minimum period enforcement.
 - **`EngineConfig`** for tunable FreeRTOS task stacks, priorities, and core pinning.
@@ -61,14 +61,26 @@ All Tier 4 items (W12–W15) are implemented. The framework now supports bidirec
 | **W18** | Telemetry pool and writer interface  | Medium   | High       | Static packet pool, `TelemetryWriter` abstraction for format decoupling. |
 | **W19** | Native servo and LCD drivers         | Low      | Medium     | Replace ESP32Servo and LiquidCrystal_I2C with native implementations.    |
 
+### Component Expansion Tier 1 — **Complete** ✓
+
+Zero-dependency components added for broader IoT coverage:
+
+| Component                | Type     | Interface        | Use Case                                                                |
+|--------------------------|----------|------------------|-------------------------------------------------------------------------|
+| **RelayActuator**        | Actuator | `digitalWrite()` | AC/DC load control for smart home, greenhouse pumps, industrial relays  |
+| **SoilMoistureSensor**   | Sensor   | `analogRead()`   | Smart greenhouse and agriculture monitoring                             |
+| **WaterFlowSensor**      | Sensor   | Interrupt + ADC  | Water consumption tracking, leak detection, smart irrigation            |
+
+New examples: `SmartGreenhouseDevice` (Soil Moisture + DHT + Relay + ServoMotor), `WaterFlowMonitor` (YF-S201 hybrid scheduling).
+
 ### Nano Framework Completion Roadmap
 
 **Phase 1: Tier 4 Completion** (Estimated: 1–2 weeks)
 
-1. **W12: `Device::post` command marshaling** — Implement command queue consumed by sampler task. Requires notification redesign (ADR-022, bit-flag notifications). Enables cloud-to-device commands.
-2. **W13: Interrupt triggers** — Triggering scheduler infrastructure complete: `appendSensorToTriggeringScheduler()`/`appendToBothSchedulers()` API, bit-flag notifications, trigger table, ISR handler, and host tests. Sensor-specific conversion (Button, PIR, YF-S201) pending.
+1. **W12: `Device::enqueueCommand` command marshaling** — **Complete**: Command queue consumed by sampler task with `CommandAvailable` bit-flag notification. Enables cloud-to-device commands.
+2. **W13: Interrupt triggers** — **Complete**: Button/PIR converted to interrupt-driven, WaterFlowSensor added as hybrid sensor with `appendToBothSchedulers()`. All examples migrated.
 3. **W14: Non-blocking sensors** — **Complete**: LoadCellAmplifier uses hybrid scheduling with interrupt-driven data-ready detection (appendToBothSchedulers). UltrasonicSensor uses GPIO interrupt on echo pin with esp_timer_get_time() for nanosecond precision. SmartScaleDevice example migrated.
-4. **W15: MQTT subscribe commands** — **Complete**: Subscribe topic wired to `MqttGatewayClient`, JSON parsing extracts `commandId`, commands delivered via `CommandHandler::handle()`. Legacy constructor preserves backward compatibility.
+4. **W15: MQTT subscribe commands** — **Complete**: Subscribe topic wired to `MqttGatewayClient`, JSON parsing extracts `commandId`, commands delivered via `Device::enqueueCommand()`. Legacy constructor preserves backward compatibility.
 
 **Phase 2: Tier 5 Completion** (Estimated: 2–3 weeks)
 
@@ -120,12 +132,13 @@ New examples bundle multiple components to demonstrate complete use cases:
 | New Example               | Components                                              | IoT Category |
 |---------------------------|---------------------------------------------------------|--------------|
 | **SmartGreenhouseDevice** | Soil Moisture + DHT + Relay (pump) + ServoMotor (vent)  | Agriculture  |
+| **WaterFlowMonitor**      | WaterFlowSensor with hybrid scheduling                  | Utilities    |
 | **WeatherStationDevice**  | BME280 + Rain Sensor + DigitalLightIntensitySensor      | Weather      |
 | **HomeSecurityDevice**    | PIR + Water Leak + Door/Window + Buzzer + Relay (alarm) | Security     |
 
 **Library Release Impact**:
 
-- **v1.0.0**: Current 10 sensors + 5 actuators + Tier 1 components (Relay, Soil Moisture).
+- **v1.0.0**: Current 12 sensors + 6 actuators + Tier 1 components (Relay, Soil Moisture, WaterFlow).
 - **v1.1.0**: Tier 2 components (BME280, Water Leak, Door/Window) with new examples.
 - **v1.2.0**: Tier 3 components as needed, based on community feedback.
 
@@ -857,28 +870,29 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 
 ### Nano Framework Completion
 
-| Quarter     | Milestone       | Deliverables                                                                   |
-|-------------|-----------------|--------------------------------------------------------------------------------|
-| **Q1 2027** | Tier 4 complete | W12–W15: command marshaling, interrupts, non-blocking sensors, MQTT subscribe |
-| **Q2 2027** | Tier 5 complete | W16–W19: tickless sleep, deep sleep, telemetry pool, native drivers            |
-| **Q2 2027** | Library release | v1.0.0 tag, Arduino Library Manager submission                                 |
+| Quarter     | Milestone              | Deliverables                                                                   |
+|-------------|------------------------|--------------------------------------------------------------------------------|
+| **Q4 2026** | Tier 4 complete ✓      | W12–W15: command marshaling, interrupts, non-blocking sensors, MQTT subscribe |
+| **Q4 2026** | Component Expansion ✓  | RelayActuator, SoilMoistureSensor, WaterFlowSensor with examples              |
+| **Q4 2026** | Tier 5 in progress     | W16–W19: tickless sleep, deep sleep, telemetry pool, native drivers            |
+| **Q1 2027** | Library release        | v1.0.0 tag, Arduino Library Manager submission                                 |
 
 ### Edge Framework Development
 
 | Quarter     | Milestone        | Deliverables                                                               |
 |-------------|------------------|----------------------------------------------------------------------------|
-| **Q2 2027** | Phase 1 complete | Core services: MQTT, device registry, telemetry ingestion, basic dashboard |
-| **Q3 2027** | Phase 2 complete | Intelligence: rule engine, ML inference, alerts, advanced dashboard        |
-| **Q4 2027** | Phase 3 complete | Cloud & OTA: cloud relay, OTA management, security hardening               |
-| **Q1 2028** | Phase 4 complete | BLE & advanced: BLE gateway, advanced ML, MicroPython edition              |
+| **Q1 2027** | Phase 1 complete | Core services: MQTT, device registry, telemetry ingestion, basic dashboard |
+| **Q2 2027** | Phase 2 complete | Intelligence: rule engine, ML inference, alerts, advanced dashboard        |
+| **Q3 2027** | Phase 3 complete | Cloud & OTA: cloud relay, OTA management, security hardening               |
+| **Q4 2027** | Phase 4 complete | BLE & advanced: BLE gateway, advanced ML, MicroPython edition              |
 
 ### Integrated System
 
 | Quarter     | Milestone          | Deliverables                                                  |
 |-------------|--------------------|---------------------------------------------------------------|
-| **Q3 2027** | Alpha integration  | Nano v1.0.0 + Edge Phase 2, end-to-end telemetry and commands |
-| **Q4 2027** | Beta release       | Full integration, cloud relay, OTA, multi-device support      |
-| **Q1 2028** | Production release | Stable release, documentation, examples, community support    |
+| **Q2 2027** | Alpha integration  | Nano v1.0.0 + Edge Phase 2, end-to-end telemetry and commands |
+| **Q3 2027** | Beta release       | Full integration, cloud relay, OTA, multi-device support      |
+| **Q4 2027** | Production release | Stable release, documentation, examples, community support    |
 
 ---
 
@@ -943,10 +957,10 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 | Metric                  | Target                                 |
 |-------------------------|----------------------------------------|
 | **Compilation success** | 100% across ESP32 variants             |
-| **Test coverage**       | 100% pass rate, 11+ test suites        |
+| **Test coverage**       | 100% pass rate, 16 test suites         |
 | **Flash footprint**     | <30 KB overhead                        |
 | **RAM footprint**       | <2 KB overhead                         |
-| **Example count**       | 10+ diverse examples                   |
+| **Example count**       | 11 diverse examples                    |
 | **CI workflows**        | 3 (host tests, compile examples, lint) |
 
 ### Edge Framework
@@ -981,7 +995,7 @@ The Modest IoT dual-framework vision provides a complete, local-first IoT stack:
 - **Together** they form a scalable, offline-resilient, AI-ready IoT platform.
 - **DDD-guided design** ensures consistent terminology, clear context boundaries, and appropriate patterns for each framework (see ADR-023).
 
-The Nano Framework is **90% complete** (Tiers 0–4 done, Component Expansion Tier 1 done, Tier 5 queued). The Edge Framework is **planned** with a clear DDD-based architecture and development roadmap.
+The Nano Framework is **95% complete** (Tiers 0–4 done, Component Expansion Tier 1 done, Tier 5 queued). The Edge Framework is **planned** with a clear DDD-based architecture and development roadmap.
 
 **Next steps**:
 1. Nano Framework Tier 4 is complete (W12–W15 ✓). Component Expansion Tier 1 is complete (RelayActuator, SoilMoistureSensor ✓).
