@@ -48,14 +48,9 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 - **MQTT keep-alive** with rate-limited reconnection backoff.
 - **22 Architecture Decision Records** documenting all key architectural choices, including DDD adoption (ADR-023).
 
-### Remaining Work: Tier 4 (Capabilities)
+### Remaining Work: Tier 4 (Capabilities) — **Complete** ✓
 
-| ID      | Work Item                                    | Priority | Complexity | Description                                                                            |
-|---------|----------------------------------------------|----------|------------|----------------------------------------------------------------------------------------|
-| **W12** | `Device::enqueueCommand` command marshaling | High | High | **Complete**: Cross-task command queue for cloud-to-device commands. Prerequisite for W15. |
-| **W13** | Interrupt triggers for Button, PIR, pulse sensors | High | Medium | **Partially Complete**: `appendSensorToTriggeringScheduler()`/`appendToBothSchedulers()` API implemented with bit-flag notifications. Sensor-specific conversion (Button, PIR, YF-S201) pending. |
-| **W14** | HX711 data-ready and ultrasonic echo capture | Medium   | Medium     | **Complete**: LoadCellAmplifier hybrid scheduling, UltrasonicSensor interrupt echo. |
-| **W15** | Cloud-to-device commands (MQTT subscribe)    | Medium   | Medium     | **Complete**: Subscribe on connect, JSON parsing, Device::enqueueCommand for cross-task safety, 8 host tests. |
+All Tier 4 items (W12–W15) are implemented. The framework now supports bidirectional MQTT communication, interrupt-driven sensors, and non-blocking HX711/ultrasonic operation.
 
 ### Remaining Work: Tier 5 (Optimization & Power)
 
@@ -92,14 +87,16 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 
 **Goal**: Expand the Nano Framework component library to cover the top 3 IoT project categories (smart home, agriculture, weather/security) with minimal new dependencies, enabling adoption-ready examples.
 
-**Tier 1: Zero-Dependency Components** (P0, ~2 hours total)
+**Tier 1: Zero-Dependency Components** (P0, **Complete** ✓)
 
 Components requiring only `digitalRead()` or `analogRead()` — no external libraries:
 
-| Component                | Type     | Interface        | Enables                                                                |
-|--------------------------|----------|------------------|------------------------------------------------------------------------|
-| **Relay Actuator**       | Actuator | `digitalWrite()` | AC/DC load control for smart home, greenhouse pumps, industrial relays |
-| **Soil Moisture Sensor** | Sensor   | `analogRead()`   | Smart greenhouse and agriculture monitoring                            |
+| Component                | Type     | Interface        | Enables                                                                | Status |
+|--------------------------|----------|------------------|------------------------------------------------------------------------|--------|
+| **RelayActuator**        | Actuator | `digitalWrite()` | AC/DC load control for smart home, greenhouse pumps, industrial relays | ✓      |
+| **SoilMoistureSensor**   | Sensor   | `analogRead()`   | Smart greenhouse and agriculture monitoring                            | ✓      |
+
+Both components are implemented with host tests and integrated into the `SmartGreenhouseDevice` example.
 
 **Tier 2: Common I²C/Analog Sensors** (P1, ~5 hours total)
 
@@ -984,10 +981,10 @@ The Modest IoT dual-framework vision provides a complete, local-first IoT stack:
 - **Together** they form a scalable, offline-resilient, AI-ready IoT platform.
 - **DDD-guided design** ensures consistent terminology, clear context boundaries, and appropriate patterns for each framework (see ADR-023).
 
-The Nano Framework is **80% complete** (Tiers 0–3 done, Tiers 4–5 queued). The Edge Framework is **planned** with a clear DDD-based architecture and development roadmap.
+The Nano Framework is **90% complete** (Tiers 0–4 done, Component Expansion Tier 1 done, Tier 5 queued). The Edge Framework is **planned** with a clear DDD-based architecture and development roadmap.
 
 **Next steps**:
-1. Complete Nano Framework Tier 4 (W12–W15) to enable cloud-to-device commands.
+1. Nano Framework Tier 4 is complete (W12–W15 ✓). Component Expansion Tier 1 is complete (RelayActuator, SoilMoistureSensor ✓).
 2. Start Edge Framework Phase 1 (core services) in parallel.
 3. Integrate Nano and Edge with MQTT protocol and shared telemetry schema.
 4. Release Nano v1.0.0 and Edge alpha together.
