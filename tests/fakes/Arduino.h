@@ -79,6 +79,8 @@ public:
 #define LOW 0
 #define INPUT 0
 #define OUTPUT 1
+#define INPUT_PULLUP 2
+#define INPUT_PULLDOWN 3
 #define CHANGE 1
 #define RISING 2
 #define FALLING 3
