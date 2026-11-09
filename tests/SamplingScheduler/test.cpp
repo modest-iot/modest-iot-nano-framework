@@ -299,6 +299,72 @@ void test_base_tick_zero_rejected() {
     assert(thrown);
 }
 
+void test_ticks_until_next_due_empty() {
+    printf("  [test] ticksUntilNextDue with no slots returns 0 ...\n");
+    SamplingScheduler scheduler(100);
+    assert(scheduler.ticksUntilNextDue() == 0);
+}
+
+void test_ticks_until_next_due_single_slot() {
+    printf("  [test] ticksUntilNextDue with single slot returns its countdown ...\n");
+    SamplingScheduler scheduler(100);
+    FakeHandler handler;
+    scheduler.add(&handler, 20, 500); // 5 ticks, initial ticksUntilDue = 1
+    assert(scheduler.ticksUntilNextDue() == 1);
+
+    // After advance(1), slot fires and re-arms to periodInTicks = 5
+    scheduler.advance(1);
+    assert(scheduler.ticksUntilNextDue() == 5);
+
+    // After advance(2), countdown decrements to 3
+    scheduler.advance(2);
+    assert(scheduler.ticksUntilNextDue() == 3);
+}
+
+void test_ticks_until_next_due_multiple_slots() {
+    printf("  [test] ticksUntilNextDue returns minimum across slots ...\n");
+    SamplingScheduler scheduler(100);
+    FakeHandler handler1;
+    FakeHandler handler2;
+    FakeHandler handler3;
+
+    scheduler.add(&handler1, 20, 100);  // 1 tick, ticksUntilDue = 1
+    scheduler.add(&handler2, 30, 500);  // 5 ticks, ticksUntilDue = 1
+    scheduler.add(&handler3, 40, 1000); // 10 ticks, ticksUntilDue = 1
+
+    // All start at 1 due to staggered phase
+    assert(scheduler.ticksUntilNextDue() == 1);
+
+    // After advance(1), all fire and re-arm
+    scheduler.advance(1);
+    // handler1 re-arms to 1, handler2 re-arms to 5, handler3 re-arms to 10
+    assert(scheduler.ticksUntilNextDue() == 1);
+
+    // After advance(1), handler1 fires again
+    scheduler.advance(1);
+    // handler1 re-arms to 1, handler2 countdown to 4, handler3 countdown to 9
+    assert(scheduler.ticksUntilNextDue() == 1);
+}
+
+void test_ticks_until_next_due_after_advance() {
+    printf("  [test] ticksUntilNextDue reflects re-armed slots after advance ...\n");
+    SamplingScheduler scheduler(100);
+    FakeHandler handler;
+    scheduler.add(&handler, 20, 500); // 5 ticks, ticksUntilDue = 1
+
+    // advance(1): fires, re-arms to 5
+    scheduler.advance(1);
+    assert(scheduler.ticksUntilNextDue() == 5);
+
+    // advance(4): countdown to 1, not due
+    scheduler.advance(4);
+    assert(scheduler.ticksUntilNextDue() == 1);
+
+    // advance(1): fires, re-arms to 5
+    scheduler.advance(1);
+    assert(scheduler.ticksUntilNextDue() == 5);
+}
+
 } // anonymous namespace
 
 // ---------------------------------------------------------------------------
@@ -322,6 +388,10 @@ void test_base_tick_zero_rejected() {
     test_same_handler_twice();
     test_zero_slots_advance();
     test_base_tick_zero_rejected();
+    test_ticks_until_next_due_empty();
+    test_ticks_until_next_due_single_slot();
+    test_ticks_until_next_due_multiple_slots();
+    test_ticks_until_next_due_after_advance();
 
     printf("[suite] SamplingScheduler: ALL PASSED\n\n");
     return 0;
