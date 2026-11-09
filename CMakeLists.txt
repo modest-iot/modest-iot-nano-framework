@@ -180,6 +180,14 @@ add_executable(test_RgbLed
 )
 target_include_directories(test_RgbLed PRIVATE tests/fakes src)
 
+add_executable(test_RelayActuator
+        tests/RelayActuator/test.cpp
+        src/Actuator.cpp
+        src/RelayActuator.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_RelayActuator PRIVATE tests/fakes src)
+
 add_executable(test_RfidSensor
         tests/RfidSensor/test.cpp
         src/Sensor.cpp
@@ -270,8 +278,17 @@ add_executable(test_WaterFlowSensor
 )
 target_include_directories(test_WaterFlowSensor PRIVATE tests/fakes src)
 
+add_executable(test_SoilMoistureSensor
+        tests/SoilMoistureSensor/test.cpp
+        src/Sensor.cpp
+        src/SoilMoistureSensor.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_SoilMoistureSensor PRIVATE tests/fakes src)
+
 add_test(NAME DigitalLightIntensitySensorTest COMMAND test_DigitalLightIntensitySensor)
 add_test(NAME RgbLedTest COMMAND test_RgbLed)
+add_test(NAME RelayActuatorTest COMMAND test_RelayActuator)
 add_test(NAME RfidSensorTest COMMAND test_RfidSensor)
 add_test(NAME BleConnectivityDriverTest COMMAND test_BleConnectivityDriver)
 add_test(NAME ModestLogTest COMMAND test_ModestLog)
@@ -284,9 +301,10 @@ add_test(NAME TelemetryPackageTest COMMAND test_TelemetryPackage)
 add_test(NAME TriggeringSchedulerTest COMMAND test_TriggeringScheduler)
 add_test(NAME CommandMarshalingTest COMMAND test_CommandMarshaling)
 add_test(NAME WaterFlowSensorTest COMMAND test_WaterFlowSensor)
+add_test(NAME SoilMoistureSensorTest COMMAND test_SoilMoistureSensor)
 
 add_custom_target(run_tests
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor
+        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor
         COMMENT "Executing all native host test suites..."
 )
