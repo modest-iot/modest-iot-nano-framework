@@ -92,6 +92,8 @@ run_test "test_ModestLog" \
 run_test "test_MqttGatewayClient" \
     src/MqttGatewayClient.cpp \
     src/WiFiConnectivityDriver.cpp \
+    src/Device.cpp \
+    src/SamplingScheduler.cpp \
     tests/MqttGatewayClient/test.cpp
 
 # 7. EngineConfig and Device Configuration Suite
@@ -129,6 +131,31 @@ run_test "test_CommandMarshaling" \
     src/Device.cpp \
     src/SamplingScheduler.cpp \
     tests/CommandMarshaling/test.cpp
+
+# 14. WaterFlowSensor Suite
+run_test "test_WaterFlowSensor" \
+    src/Sensor.cpp \
+    src/WaterFlowSensor.cpp \
+    tests/WaterFlowSensor/test.cpp
+
+# 15. SoilMoistureSensor Suite
+run_test "test_SoilMoistureSensor" \
+    src/Sensor.cpp \
+    src/SoilMoistureSensor.cpp \
+    tests/SoilMoistureSensor/test.cpp
+
+# 16. RelayActuator Suite
+run_test "test_RelayActuator" \
+    src/Actuator.cpp \
+    src/RelayActuator.cpp \
+    tests/RelayActuator/test.cpp
+
+# 17. DeepSleep Suite
+run_test "test_DeepSleep" \
+    src/Device.cpp \
+    src/SamplingScheduler.cpp \
+    src/Sensor.cpp \
+    tests/DeepSleep/test.cpp
 
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
