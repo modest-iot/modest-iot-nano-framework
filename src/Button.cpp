@@ -1,6 +1,6 @@
 /**
  * @file Button.cpp
- * @brief Implements debounced button sampling and press-event emission.
+ * @brief Implements debounced button press detection via interrupt-driven operation.
  * @date 2026-06-06
  * @version 1.0
  */
@@ -10,7 +10,7 @@
 
 const Event Button::BUTTON_PRESSED_EVENT = Event(Button::BUTTON_PRESSED_EVENT_IDENTIFIER);
 
-Button::Button(int signalGpioPin, unsigned long debounceDelayInMilliseconds, EventHandler* parentHandler)
+Button::Button(const int signalGpioPin, const unsigned long debounceDelayInMilliseconds, EventHandler* parentHandler)
     : Sensor(signalGpioPin, parentHandler),
       lastStableTimestamp(0),
       debounceDelayInMilliseconds(debounceDelayInMilliseconds),
@@ -21,10 +21,9 @@ Button::Button(int signalGpioPin, unsigned long debounceDelayInMilliseconds, Eve
 
 void Button::processEvent(Event& event) {
     if (event.identifier == MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER) {
-        unsigned long currentTimestamp = millis();
-        bool currentState = digitalRead(pin);
+        const unsigned long currentTimestamp = millis();
 
-        if (currentState != previousState) {
+        if (const bool currentState = digitalRead(pin); currentState != previousState) {
             if (currentTimestamp - lastStableTimestamp > debounceDelayInMilliseconds) {
                 lastStableTimestamp = currentTimestamp;
                 previousState = currentState;
