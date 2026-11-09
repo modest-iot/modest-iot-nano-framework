@@ -86,17 +86,8 @@ private:
     static constexpr auto       NETWORK_TASK_NAME                               = "NetworkWorker"; ///< FreeRTOS network task name.
     static constexpr auto       DEVICE_COMPONENT_NAME                           = "Device"; ///< Log component name.
 
-    /**
-     * @brief Power mode for the hardware timer (W16).
-     */
-    enum class PowerMode : uint8_t {
-        Periodic,   ///< Fixed-period timer alarm (default, backward compatible).
-        Tickless    ///< One-shot timer re-armed after each sampler dispatch.
-    };
-
     SamplingScheduler scheduler; ///< Per-slot sampling scheduler.
     bool engineStarted; ///< Guards against registration after engine start.
-    PowerMode powerMode; ///< Current power mode (W16).
 
     TaskHandle_t hardwareSamplingTaskHandle; ///< Handle for the hardware sampling task.
     TaskHandle_t networkDispatcherTaskHandle; ///< Handle for the network dispatcher task.
@@ -169,6 +160,16 @@ private:
     void enterLightSleep() const;
 
 public:
+    /**
+     * @brief Power mode for the hardware timer (W16).
+     */
+    enum class PowerMode : uint8_t {
+        Periodic,   ///< Fixed-period timer alarm (default, backward compatible).
+        Tickless    ///< One-shot timer re-armed after each sampler dispatch.
+    };
+
+    PowerMode powerMode; ///< Current power mode (W16).
+
     /**
      * @brief Static ISR handler for interrupt-driven sensor triggers.
      * @param handle Trigger handle (slot index in trigger table).
