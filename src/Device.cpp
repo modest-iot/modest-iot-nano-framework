@@ -7,14 +7,13 @@
 
 #include "Device.h"
 #include "ModestLog.h"
-#include <memory>
 #ifdef ARDUINO_ARCH_ESP32
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#include "freertos/idf_additions.h"
 #include "esp_attr.h"
 #endif
+
 
 #ifndef traceISR_EXIT_TO_SCHEDULER
 #define traceISR_EXIT_TO_SCHEDULER()
@@ -38,7 +37,7 @@ Device::Device(const unsigned long samplingIntervalInMilliseconds, const uint8_t
       pollingIntervalInMilliseconds(samplingIntervalInMilliseconds),
       hardwareTimerIndex(timerGroupIndex),
       commandQueueHandle(nullptr) {
-    (void)hardwareTimerIndex; ///< Stored for future use; not yet read.
+    (void) hardwareTimerIndex; ///< Stored for future use; not yet read.
 }
 
 Device::~Device() {
@@ -57,10 +56,10 @@ void IRAM_ATTR Device::handleHardwareTimerInterrupt(void *deviceInstance) {
         // Set bit 0 to wake the sampler task (bit-flag notification)
         BaseType_t higherPriorityTaskWoken = pdFALSE;
         xTaskNotifyFromISR(self->hardwareSamplingTaskHandle,
-                           static_cast<uint32_t>(Device::NotificationBitFlag::TimerTickArrived),
+                           static_cast<uint32_t>(NotificationBitFlag::TimerTickArrived),
                            eSetBits, &higherPriorityTaskWoken);
         if (higherPriorityTaskWoken)
-            portYIELD_FROM_ISR();
+        portYIELD_FROM_ISR();
     }
 }
 
@@ -80,27 +79,27 @@ void Device::initializeAsynchronousEngine(const EngineConfiguration &engineConfi
     commandQueueHandle = xQueueCreate(engineConfiguration.queueLength, sizeof(CommandEntry));
 
     xTaskCreatePinnedToCore(
-        &Device::executeHardwareSamplingContext, "HardwareWorker",
+        &executeHardwareSamplingContext, SAMPLER_TASK_NAME,
         engineConfiguration.samplerStackBytes, this, engineConfiguration.samplerPriority,
         &hardwareSamplingTaskHandle, engineConfiguration.samplerCore
     );
     xTaskCreatePinnedToCore(
-        &Device::executeNetworkDispatchContext, "NetworkWorker",
+        &executeNetworkDispatchContext, NETWORK_TASK_NAME,
         engineConfiguration.networkStackBytes, this, engineConfiguration.networkPriority,
         &networkDispatcherTaskHandle, engineConfiguration.networkCore
     );
 
-    hardwareTimer = timerBegin(1000000);
-    timerAttachInterruptArg(hardwareTimer, &Device::handleHardwareTimerInterrupt, this);
+    hardwareTimer = timerBegin(TIMER_FREQUENCY_IN_HERTZ);
+    timerAttachInterruptArg(hardwareTimer, &handleHardwareTimerInterrupt, this);
 
-    auto alarmIntervalInMicroseconds = static_cast<uint64_t>(pollingIntervalInMilliseconds) * 1000;
+    const auto alarmIntervalInMicroseconds = static_cast<uint64_t>(pollingIntervalInMilliseconds) *
+                                             MILLISECONDS_PER_MICROSECOND;
     timerAlarm(hardwareTimer, alarmIntervalInMicroseconds, true, 0);
 }
 
 bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, const int requestedEventIdentifier) {
-    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
+    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == INVALID_EVENT_IDENTIFIER)
         return false;
-    }
     // Legacy two-argument form: period 0 marks it for resolution at engine start
     // At engine start, legacy slots get periodInTicks = legacy count, reproducing round-robin
     const auto result = scheduler.add(targetSensorInstance, requestedEventIdentifier, 0);
@@ -109,11 +108,12 @@ bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, const i
 }
 
 bool Device::appendSensorToScheduler(Sensor *targetSensorInstance, const int requestedEventIdentifier) {
-    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
+    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == INVALID_EVENT_IDENTIFIER) {
         return false;
     }
     const uint32_t periodInMilliseconds = targetSensorInstance->getSamplingIntervalInMilliseconds();
-    const uint32_t minimumPeriodInMilliseconds = targetSensorInstance->getEffectiveMinimalSamplingIntervalInMilliseconds();
+    const uint32_t minimumPeriodInMilliseconds = targetSensorInstance->
+            getEffectiveMinimalSamplingIntervalInMilliseconds();
     return appendSensorToScheduler(targetSensorInstance, requestedEventIdentifier, periodInMilliseconds,
                                    minimumPeriodInMilliseconds);
 }
@@ -121,11 +121,11 @@ bool Device::appendSensorToScheduler(Sensor *targetSensorInstance, const int req
 bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, const int requestedEventIdentifier,
                                      const uint32_t periodInMilliseconds,
                                      const uint32_t minimumPeriodInMilliseconds) {
-    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
+    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == INVALID_EVENT_IDENTIFIER) {
         return false;
     }
     const auto result = scheduler.add(targetSensorInstance, requestedEventIdentifier,
-                                periodInMilliseconds, minimumPeriodInMilliseconds);
+                                      periodInMilliseconds, minimumPeriodInMilliseconds);
     if (result == SamplingScheduler::AddResult::ClampedToMinimum ||
         result == SamplingScheduler::AddResult::ClampedToTick) {
         const bool clampedToMinimum = result == SamplingScheduler::AddResult::ClampedToMinimum;
@@ -133,7 +133,7 @@ bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, const i
         [[maybe_unused]] const unsigned long clampPeriod = clampedToMinimum
                                                                ? static_cast<unsigned long>(minimumPeriodInMilliseconds)
                                                                : pollingIntervalInMilliseconds;
-        MODEST_LOG_W("Device", "Sensor period clamped to %s: %lu ms", clampReason, clampPeriod);
+        MODEST_LOG_W(DEVICE_COMPONENT_NAME, "Sensor period clamped to %s: %lu ms", clampReason, clampPeriod);
     }
     return result != SamplingScheduler::AddResult::TableFull &&
            result != SamplingScheduler::AddResult::InvalidArgument;
@@ -141,11 +141,11 @@ bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, const i
 
 bool Device::enqueueTelemetryPayload(TelemetryPackage **telemetryPackagePointerAddress) const {
     if (telemetryQueueHandle == nullptr || telemetryPackagePointerAddress == nullptr) return false;
-    
+
     // Assign envelope metadata before enqueue attempt so drops are visible as gaps
-    TelemetryPackage* packet = *telemetryPackagePointerAddress;
+    TelemetryPackage *packet = *telemetryPackagePointerAddress;
     packet->setEnvelopeMetadata(static_cast<uint32_t>(millis()), nextSequenceNumber++);
-    
+
     if (xQueueSend(telemetryQueueHandle, telemetryPackagePointerAddress, 0) == pdPASS) {
         packetsEnqueuedCount++;
         // Update the high water mark if the current queue size is greater
@@ -156,7 +156,7 @@ bool Device::enqueueTelemetryPayload(TelemetryPackage **telemetryPackagePointerA
         return true;
     }
     // Queue is full: drop the oldest packet and insert the new one
-    TelemetryPackage* oldest = nullptr;
+    TelemetryPackage *oldest = nullptr;
     if (xQueueReceive(telemetryQueueHandle, &oldest, 0) == pdPASS && oldest != nullptr) {
         delete oldest;
         packetsDroppedOldestCount++;
@@ -171,7 +171,7 @@ bool Device::enqueueTelemetryPayload(TelemetryPackage **telemetryPackagePointerA
     }
     packetsDroppedCount++;
     if (!firstDropLogged) {
-        MODEST_LOG_W("Device", "First packet dropped: telemetry queue full");
+        MODEST_LOG_W(DEVICE_COMPONENT_NAME, "First packet dropped: telemetry queue full");
         firstDropLogged = true;
     }
     return false;
@@ -179,21 +179,22 @@ bool Device::enqueueTelemetryPayload(TelemetryPackage **telemetryPackagePointerA
 
 bool Device::enqueueTelemetryPayload(std::unique_ptr<TelemetryPackage> telemetryPackageStandardUniquePointer) const {
     if (telemetryQueueHandle == nullptr || telemetryPackageStandardUniquePointer == nullptr) return false;
-    
+
     // Assign envelope metadata before enqueue attempt so drops are visible as gaps
     telemetryPackageStandardUniquePointer->setEnvelopeMetadata(static_cast<uint32_t>(millis()), nextSequenceNumber++);
-    
+
     TelemetryPackage *rawPackagePointer = telemetryPackageStandardUniquePointer.release();
     if (xQueueSend(telemetryQueueHandle, &rawPackagePointer, 0) == pdPASS) {
         // Ownership transferred to the queue.
         packetsEnqueuedCount++;
-        if (const auto currentQueueSize = static_cast<uint8_t>(uxQueueMessagesWaiting(telemetryQueueHandle)); currentQueueSize > queueHighWaterMarkCount) {
+        if (const auto currentQueueSize = static_cast<uint8_t>(uxQueueMessagesWaiting(telemetryQueueHandle));
+            currentQueueSize > queueHighWaterMarkCount) {
             queueHighWaterMarkCount = currentQueueSize;
         }
         return true;
     }
     // Queue is full: drop the oldest packet and insert the new one
-    TelemetryPackage* oldestPackage = nullptr;
+    TelemetryPackage *oldestPackage = nullptr;
     if (xQueueReceive(telemetryQueueHandle, &oldestPackage, 0) == pdPASS && oldestPackage != nullptr) {
         delete oldestPackage;
         packetsDroppedOldestCount++;
@@ -210,7 +211,7 @@ bool Device::enqueueTelemetryPayload(std::unique_ptr<TelemetryPackage> telemetry
     telemetryPackageStandardUniquePointer.reset(rawPackagePointer);
     packetsDroppedCount++;
     if (!firstDropLogged) {
-        MODEST_LOG_W("Device", "First packet dropped: telemetry queue full");
+        MODEST_LOG_W(DEVICE_COMPONENT_NAME, "First packet dropped: telemetry queue full");
         firstDropLogged = true;
     }
     return false;
@@ -224,31 +225,31 @@ void Device::executeHardwareSamplingContext(void *taskParameters) {
         xTaskNotifyWait(pdFALSE, pdTRUE, &notificationValue, portMAX_DELAY);
 
         // Check termination signal
-        if (notificationValue & static_cast<uint32_t>(Device::NotificationBitFlag::TerminationSignal)) {
+        if (notificationValue & static_cast<uint32_t>(NotificationBitFlag::TerminationSignal)) {
             break;
         }
 
         // Timer tick: read and clear the atomic pending tick counter
-        if (notificationValue & static_cast<uint32_t>(Device::NotificationBitFlag::TimerTickArrived)) {
+        if (notificationValue & static_cast<uint32_t>(NotificationBitFlag::TimerTickArrived)) {
             uint32_t elapsed = self->pendingTicks.exchange(0, std::memory_order_acq_rel);
             if (elapsed == 0) {
                 // Should not happen, but treat as 1 tick for safety
                 elapsed = 1;
             }
             if (elapsed > 1) {
-                self->missedTickCount += (elapsed - 1);
+                self->missedTickCount += elapsed - 1;
             }
             // Advance the scheduler by the elapsed tick count
             self->scheduler.advance(elapsed);
         }
 
         // Interrupt-driven sensor event (W13)
-        if (notificationValue & static_cast<uint32_t>(Device::NotificationBitFlag::SensorTrigger)) {
+        if (notificationValue & static_cast<uint32_t>(NotificationBitFlag::SensorTrigger)) {
             self->processTriggeredSensors();
         }
 
         // Command available from network task (W12)
-        if (notificationValue & static_cast<uint32_t>(Device::NotificationBitFlag::CommandAvailable)) {
+        if (notificationValue & static_cast<uint32_t>(NotificationBitFlag::CommandAvailable)) {
             self->processPendingCommands();
         }
     }
@@ -263,13 +264,14 @@ void Device::executeNetworkDispatchContext(void *taskParameters) {
         // Check for termination signal without clearing the notification
         uint32_t notificationValue;
         if (xTaskNotifyWait(pdFALSE, pdTRUE, &notificationValue, 0) == pdTRUE) {
-            if (notificationValue & static_cast<uint32_t>(Device::NotificationBitFlag::TerminationSignal)) {
+            if (notificationValue & static_cast<uint32_t>(NotificationBitFlag::TerminationSignal)) {
                 break;
             }
         }
 
         // Poll queue with a timeout so network maintenance (MQTT keep-alive, connection checks) executes regularly
-        if (xQueueReceive(self->telemetryQueueHandle, &incomingPolymorphicPacketPointer, pdMS_TO_TICKS(100)) ==
+        if (xQueueReceive(self->telemetryQueueHandle, &incomingPolymorphicPacketPointer,
+                          pdMS_TO_TICKS(NETWORK_QUEUE_RECEIVE_TIMEOUT_IN_MILLISECONDS)) ==
             pdPASS) {
             if (incomingPolymorphicPacketPointer != nullptr) {
                 self->processQueuedTelemetryData(incomingPolymorphicPacketPointer);
@@ -286,8 +288,8 @@ void Device::executeNetworkDispatchContext(void *taskParameters) {
  * @brief Default fallback implementation of CommandHandler interface.
  * Allows derived application controllers to completely omit empty override boilerplate.
  */
-void Device::handle(Command command) {
-    (void)command;
+void Device::handle(const Command command) {
+    (void) command;
     // Intentional default no-op for devices that only process Events up
 }
 
@@ -296,7 +298,7 @@ void Device::handle(Command command) {
  * Allows action/control-only nodes to ignore the network queue cycle seamlessly.
  */
 void Device::processQueuedTelemetryData(const TelemetryPackage *rawQueueItemPayload) const {
-    (void)rawQueueItemPayload;
+    (void) rawQueueItemPayload;
     // Intentional default no-op
 }
 
@@ -312,10 +314,10 @@ void Device::maintainNetworkServices() const {
 // Triggering Scheduler (W13) — Interrupt-driven sensor support
 // ============================================================================
 
-Device* Device::activeDevice = nullptr;
+Device *Device::activeDevice = nullptr;
 
 // ISR handle table: maps GPIO interrupt number to trigger handle (slot index + 1)
-static uint32_t isrHandleTable[64] = {};
+static uint32_t isrHandleTable[DeviceConstants::MAX_GPIO_INTERRUPTS] = {};
 
 /**
  * @brief Static C function pointer wrapper for the GPIO ISR.
@@ -351,16 +353,16 @@ static void c_interrupt_adapter(void) {
  * Called from the GPIO ISR when an interrupt-driven sensor fires.
  * Marks the sensor as triggered and wakes the sampler task.
  */
-void IRAM_ATTR Device::onSensorTrigger(uint32_t handle) {
+void IRAM_ATTR Device::onSensorTrigger(const uint32_t handle) {
     if (activeDevice != nullptr && handle > 0 && handle <= MAX_TRIGGERED_SENSORS) {
-        uint8_t index = static_cast<uint8_t>(handle - 1);
+        const auto index = static_cast<uint8_t>(handle - 1);
         activeDevice->triggerTable[index].wasTriggered = true;
         BaseType_t higherPriorityTaskWoken = pdFALSE;
         xTaskNotifyFromISR(activeDevice->hardwareSamplingTaskHandle,
-                           static_cast<uint32_t>(Device::NotificationBitFlag::SensorTrigger),
+                           static_cast<uint32_t>(NotificationBitFlag::SensorTrigger),
                            eSetBits, &higherPriorityTaskWoken);
         if (higherPriorityTaskWoken)
-            portYIELD_FROM_ISR();
+        portYIELD_FROM_ISR();
     }
 }
 
@@ -372,13 +374,13 @@ void IRAM_ATTR Device::onSensorTrigger(uint32_t handle) {
  * Uses getPin() for sourceId — no friend access needed.
  */
 void Device::processTriggeredSensors() {
-    for (uint8_t i = 0; i < MAX_TRIGGERED_SENSORS; i++) {
-        if (triggerTable[i].sensor != nullptr && triggerTable[i].wasTriggered) {
-            triggerTable[i].wasTriggered = false;
-            Event event(triggerTable[i].eventIdentifier);
-            event.sourceId = triggerTable[i].sensor->getPin();
+    for (auto &i: triggerTable) {
+        if (i.sensor != nullptr && i.wasTriggered) {
+            i.wasTriggered = false;
+            Event event(i.eventIdentifier);
+            event.sourceId = i.sensor->getPin();
             // Call on() which internally calls processEvent() — no friend access needed.
-            triggerTable[i].sensor->on(event);
+            i.sensor->on(event);
         }
     }
 }
@@ -387,9 +389,9 @@ void Device::processTriggeredSensors() {
  * @brief Registers a sensor for interrupt-driven operation.
  */
 uint32_t Device::appendSensorToTriggeringScheduler(Sensor *targetSensorInstance,
-                                                    int requestedEventIdentifier,
-                                                    int interruptMode) {
-    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
+                                                   const int requestedEventIdentifier,
+                                                   const int interruptMode) {
+    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == INVALID_EVENT_IDENTIFIER) {
         return 0;
     }
 
@@ -407,8 +409,8 @@ uint32_t Device::appendSensorToTriggeringScheduler(Sensor *targetSensorInstance,
 
             // Attach the GPIO interrupt using the C adapter function
             // (Arduino's attachInterrupt requires a plain C function pointer)
-            uint32_t handle = static_cast<uint32_t>(i + 1);
-            int interruptNumber = digitalPinToInterrupt(targetSensorInstance->getPin());
+            const uint32_t handle = static_cast<uint32_t>(i + 1);
+            const int interruptNumber = digitalPinToInterrupt(targetSensorInstance->getPin());
             isrHandleTable[interruptNumber] = handle;
             attachInterrupt(interruptNumber, c_interrupt_adapter, interruptMode);
 
@@ -424,19 +426,17 @@ uint32_t Device::appendSensorToTriggeringScheduler(Sensor *targetSensorInstance,
 /**
  * @brief Removes an interrupt-driven sensor registration.
  */
-void Device::removeSensorFromTriggeringScheduler(uint32_t triggerHandle) {
-    if (triggerHandle == 0 || triggerHandle > MAX_TRIGGERED_SENSORS) {
+void Device::removeSensorFromTriggeringScheduler(const uint32_t triggerHandle) {
+    if (triggerHandle == 0 || triggerHandle > MAX_TRIGGERED_SENSORS)
         return;
-    }
 
-    uint8_t index = static_cast<uint8_t>(triggerHandle - 1);
-    if (triggerTable[index].sensor != nullptr) {
+    if (const uint8_t index = static_cast<uint8_t>(triggerHandle - 1); triggerTable[index].sensor != nullptr) {
         // Detach the GPIO interrupt
         detachInterrupt(digitalPinToInterrupt(triggerTable[index].sensor->getPin()));
 
         // Clear the trigger table entry (all state is in Device, not Sensor)
         triggerTable[index].sensor = nullptr;
-        triggerTable[index].eventIdentifier = -1;
+        triggerTable[index].eventIdentifier = INVALID_EVENT_IDENTIFIER;
         triggerTable[index].interruptMode = CHANGE;
         triggerTable[index].wasTriggered = false;
     }
@@ -446,18 +446,17 @@ void Device::removeSensorFromTriggeringScheduler(uint32_t triggerHandle) {
  * @brief Registers a sensor with both the sampling and triggering schedulers.
  */
 bool Device::appendToBothSchedulers(Sensor *targetSensorInstance,
-                                     int requestedEventIdentifier,
-                                     int interruptMode) {
-    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == -1) {
+                                    const int requestedEventIdentifier,
+                                    const int interruptMode) {
+    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == INVALID_EVENT_IDENTIFIER)
         return false;
-    }
 
-    bool samplingOk = appendSensorToScheduler(targetSensorInstance, requestedEventIdentifier);
-    uint32_t triggerHandle = appendSensorToTriggeringScheduler(targetSensorInstance,
-                                                                requestedEventIdentifier,
-                                                                interruptMode);
+    const bool samplingOk = appendSensorToScheduler(targetSensorInstance, requestedEventIdentifier);
+    const uint32_t triggerHandle = appendSensorToTriggeringScheduler(targetSensorInstance,
+                                                                     requestedEventIdentifier,
+                                                                     interruptMode);
 
-    return samplingOk && (triggerHandle != 0);
+    return samplingOk && triggerHandle != 0;
 }
 
 // ============================================================================
@@ -471,18 +470,17 @@ bool Device::appendToBothSchedulers(Sensor *targetSensorInstance,
  * context to the sampler context. The sampler task drains the queue and
  * calls `targetHandler->handle(command)` on its own context.
  */
-bool Device::enqueueCommand(CommandHandler *targetHandler, Command command) {
+bool Device::enqueueCommand(CommandHandler *targetHandler, const Command command) {
     if (commandQueueHandle == nullptr || targetHandler == nullptr) {
         return false;
     }
 
-    CommandEntry entry(targetHandler, command);
+    const CommandEntry entry(targetHandler, command);
 
-    BaseType_t result = xQueueSend(commandQueueHandle, &entry, 0);
-    if (result == pdPASS) {
+    if (const BaseType_t result = xQueueSend(commandQueueHandle, &entry, 0); result == pdPASS) {
         // Wake the sampler task to process the command
         xTaskNotify(hardwareSamplingTaskHandle,
-                    static_cast<uint32_t>(Device::NotificationBitFlag::CommandAvailable),
+                    static_cast<uint32_t>(NotificationBitFlag::CommandAvailable),
                     eSetBits);
         return true;
     }
@@ -562,16 +560,16 @@ void Device::stopAsynchronousEngine() {
     // 2. Signal both tasks to terminate cooperatively
     if (hardwareSamplingTaskHandle != nullptr) {
         xTaskNotify(hardwareSamplingTaskHandle,
-                    static_cast<uint32_t>(Device::NotificationBitFlag::TerminationSignal), eSetBits);
+                    static_cast<uint32_t>(NotificationBitFlag::TerminationSignal), eSetBits);
     }
     if (networkDispatcherTaskHandle != nullptr) {
         xTaskNotify(networkDispatcherTaskHandle,
-                    static_cast<uint32_t>(Device::NotificationBitFlag::TerminationSignal), eSetBits);
+                    static_cast<uint32_t>(NotificationBitFlag::TerminationSignal), eSetBits);
     }
 
     // 3. Wait for tasks to terminate (they call vTaskDelete(nullptr) at loop exit)
     // Give them time to finish their current iteration and exit
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(pdMS_TO_TICKS(TASK_TERMINATION_WAIT_IN_MILLISECONDS));
 
     // 4. Clean up task handles (tasks should have already deleted themselves)
     hardwareSamplingTaskHandle = nullptr;

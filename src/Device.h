@@ -67,8 +67,25 @@ struct DiagnosticsSnapshot {
  * `Device` coordinates periodic sensor polling, queue-based telemetry handoff, and
  * dispatch hooks implemented by subclasses.
  */
+// Named constants to avoid magic numbers and strings.
+// MAX_GPIO_INTERRUPTS is at namespace scope because it's used by the file-level isrHandleTable in Device.cpp.
+namespace DeviceConstants {
+    constexpr uint8_t MAX_GPIO_INTERRUPTS = 64; ///< Maximum GPIO interrupt lines on ESP32.
+}
+
 class Device : public EventHandler, public CommandHandler {
 private:
+    // Named constants to avoid magic numbers and strings
+    static constexpr uint32_t TIMER_FREQUENCY_IN_HERTZ = 1000000; ///< Hardware timer frequency (1 MHz).
+    static constexpr uint32_t MILLISECONDS_PER_MICROSECOND = 1000; ///< Milliseconds to microseconds conversion.
+    static constexpr uint32_t NETWORK_QUEUE_RECEIVE_TIMEOUT_IN_MILLISECONDS = 100; ///< Network dispatch queue poll timeout.
+    static constexpr uint32_t TASK_TERMINATION_WAIT_IN_MILLISECONDS = 100; ///< Wait time for task termination.
+    static constexpr int INVALID_EVENT_IDENTIFIER = -1; ///< Sentinel for invalid event identifier.
+    static constexpr int INVALID_COMMAND_IDENTIFIER = -1; ///< Sentinel for invalid command identifier.
+    static constexpr auto SAMPLER_TASK_NAME = "HardwareWorker"; ///< FreeRTOS sampler task name.
+    static constexpr auto NETWORK_TASK_NAME = "NetworkWorker"; ///< FreeRTOS network task name.
+    static constexpr auto DEVICE_COMPONENT_NAME = "Device"; ///< Log component name.
+
     SamplingScheduler scheduler; ///< Per-slot sampling scheduler.
     bool engineStarted; ///< Guards against registration after engine start.
 
@@ -178,8 +195,8 @@ public:
         CommandHandler* targetHandler = nullptr; ///< CommandHandler that should process the command.
         Command command;                         ///< The command to execute.
 
-        CommandEntry() : command(-1) {}
-        CommandEntry(CommandHandler* handler, Command cmd) : targetHandler(handler), command(cmd) {}
+        CommandEntry() : command(INVALID_COMMAND_IDENTIFIER) {}
+        CommandEntry(CommandHandler* handler, const Command commandToExecute) : targetHandler(handler), command(commandToExecute) {}
     };
 
     /**
