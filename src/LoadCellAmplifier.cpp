@@ -132,7 +132,7 @@ long LoadCellAmplifier::readRawValueWithWait() const {
     // with the triggering scheduler.
     const unsigned long startTime = millis();
     while (digitalRead(pin) != LOW) {
-        if (millis() - startTime > READ_TIMEOUT_MS) {
+        if (millis() - startTime > READ_TIMEOUT_IN_MILLISECONDS) {
             return -1; // Timeout
         }
     }

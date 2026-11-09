@@ -46,7 +46,7 @@ private:
     static constexpr float  INITIAL_CACHED_WEIGHT               = 0.0f; ///< Initial value for cached weight.
     static constexpr float  INITIAL_LAST_NOTIFIED_WEIGHT        = -1.0f; ///< Initial value for the last notified weight.
     static constexpr int    MAX_FILTER_SIZE                     = 10; ///< Maximum size of the moving average filter.
-    static constexpr unsigned long READ_TIMEOUT_MS              = 100; ///< Timeout for sensor readiness (legacy, kept for calibration).
+    static constexpr unsigned long READ_TIMEOUT_IN_MILLISECONDS       = 100; ///< Timeout for sensor readiness (legacy, kept for calibration).
 
     /// Default sampling interval in milliseconds.
     /// @note HX711 output rate is typically 10 SPS (100 ms) or 80 SPS (12.5 ms) depending on RATE pin wiring.
