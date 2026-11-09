@@ -79,6 +79,27 @@ public:
 #define LOW 0
 #define INPUT 0
 #define OUTPUT 1
+#define CHANGE 1
+#define RISING 2
+#define FALLING 3
+
+// Mock GPIO interrupt APIs
+using InterruptHandler = void(*)();
+inline InterruptHandler fakeInterruptHandlers[64] = {};
+inline int fakeInterruptModes[64] = {};
+inline int digitalPinToInterrupt(const std::uint8_t pin) { return pin; }
+inline void attachInterrupt(int pin, InterruptHandler fn, int mode) {
+    if (pin >= 0 && pin < 64) {
+        fakeInterruptHandlers[pin] = fn;
+        fakeInterruptModes[pin] = mode;
+    }
+}
+inline void detachInterrupt(int pin) {
+    if (pin >= 0 && pin < 64) {
+        fakeInterruptHandlers[pin] = nullptr;
+        fakeInterruptModes[pin] = 0;
+    }
+}
 
 // Mock timing and clock simulation
 inline unsigned long fakeMillis = 0;

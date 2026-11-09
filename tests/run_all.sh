@@ -117,6 +117,13 @@ run_test "test_SamplingScheduler" \
 run_test "test_TelemetryPackage" \
     tests/TelemetryPackage/test.cpp
 
+# 12. Triggering Scheduler Suite
+run_test "test_TriggeringScheduler" \
+    src/Sensor.cpp \
+    src/Device.cpp \
+    src/SamplingScheduler.cpp \
+    tests/TriggeringScheduler/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="
