@@ -13,6 +13,10 @@
 
 /**
  * @brief Debounced button sensor that emits a press event on stable transitions.
+ *
+ * Uses interrupt-driven operation (FALLING edge) for zero-latency press detection.
+ * Debouncing is performed in the sampler task context via processEvent(), which is
+ * called from processTriggeredSensors() when the GPIO interrupt fires.
  * @ingroup sensors_module
  */
 class Button : public Sensor {
@@ -23,8 +27,12 @@ private:
 
 protected:
     /**
-     * @brief Samples and debounce input transitions for press detection.
+     * @brief Debounces and emits a press event when a stable FALLING edge is detected.
+     *
+     * Called from the sampler task via processTriggeredSensors() after the GPIO
+     * interrupt fires. Reads the current pin state and applies the debounce window.
      * @param event Mutable event request/response payload.
+     * @runs_on sampler
      */
     void processEvent(Event& event) override;
 
@@ -37,11 +45,10 @@ public:
     /** @brief Prebuilt event instance for button press notifications. */
     static const Event BUTTON_PRESSED_EVENT;
 
-    /// Default sampling interval in milliseconds.
-    /// @note Button debounce typically needs 20-50 ms polling for responsive feel.
+    /// Default sampling interval in milliseconds (used only for hybrid registration).
+    /// @note In interrupt mode, this value is not used for polling.
     static constexpr uint32_t DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS = 50;
-    /// Minimum sampling interval in milliseconds.
-    /// @note Below 10 ms the debounce logic cannot settle reliably.
+    /// Minimum sampling interval in milliseconds (used only for hybrid registration).
     static constexpr uint32_t MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS = 10;
 
     /**
@@ -49,8 +56,10 @@ public:
      * @param signalGpioPin Input GPIO pin connected to the button.
      * @param debounceDelayInMilliseconds Minimum stable interval before accepting a transition.
      * @param parentHandler Optional upstream handler for propagated events.
+     * @note Configures the pin as INPUT_PULLUP. Register via
+     * appendSensorToTriggeringScheduler() for interrupt-driven operation.
      */
-    Button(int signalGpioPin, unsigned long debounceDelayInMilliseconds = 50, EventHandler* parentHandler = nullptr);
+    explicit Button(int signalGpioPin, unsigned long debounceDelayInMilliseconds = 50, EventHandler* parentHandler = nullptr);
     ~Button() override = default;
 };
 
