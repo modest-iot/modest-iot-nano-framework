@@ -33,7 +33,7 @@ Actuator::Actuator(int signalGpioPin, CommandHandler* parentHandler)
  * @brief Executes the command locally and then forwards it to the configured handler.
  * @param command Command to handle.
  */
-void Actuator::handle(Command command) {
+void Actuator::handle(const Command command) {
     // 1. Process concrete hardware output actions
     executeCommand(command);
 
