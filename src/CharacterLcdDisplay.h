@@ -10,16 +10,17 @@
  */
 
 #include "Actuator.h"
-#include <Arduino.h>
-#include <LiquidCrystal_I2C.h>
+#include "Hd44780Driver.h"
 
 /**
  * @brief Actuator adapter for HD44780-compatible character Liquid Crystal displays over I2C.
+ * Composes Hd44780Driver for native I2C communication via Wire with PCF8574 I/O expander backpack,
+ * implementing the HD44780 4-bit mode protocol (no external library).
  * @ingroup actuators_module
  */
 class CharacterLcdDisplay : public Actuator {
 private:
-    LiquidCrystal_I2C physicalLcdScreen; ///< Underlying LiquidCrystal_I2C driver instance.
+    Hd44780Driver driver; ///< HD44780 protocol driver for I2C communication.
 
     // Instance-specific structural dimensions assigned at construction
     const uint8_t maximumRowCount; ///< Maximum number of rows supported.
@@ -28,12 +29,14 @@ private:
     // Contiguous memory allocation buffer tracking absolute dimensions safely
     char* characterScreenMatrixBuffer; ///< Buffer for storing characters to be displayed.
 
-    // ALIGNED PARADIGM: Variables hold raw state configurations without 'is' or 'has' prefixes
-    bool backlightEnabled; ///< Backlight state (true = on, false = off).
+    // HD44780 DDRAM address constants for cursor positioning
+    static constexpr uint8_t HD44780_DDRAM_ADDRESS_ROW_0 = 0x80; ///< DDRAM address for row 0, column 0.
+    static constexpr uint8_t HD44780_DDRAM_ADDRESS_ROW_1 = 0xC0; ///< DDRAM address for row 1, column 0.
+    static constexpr uint8_t HD44780_DDRAM_ADDRESS_ROW_2 = 0x94; ///< DDRAM address for row 2, column 0.
+    static constexpr uint8_t HD44780_DDRAM_ADDRESS_ROW_3 = 0xD4; ///< DDRAM address for row 3, column 0.
 
     // Private encapsulated layout routines to elevate code clarity
-    void initializeHardwareRegisters(); ///< Initializes hardware registers for the LCD.
-    void commitBuffersToPhysicalScreen(); ///< Writes buffered data to the physical screen.
+    void commitBuffersToPhysicalScreen() const; ///< Writes buffered data to the physical screen.
 
 protected:
     /**
@@ -51,7 +54,7 @@ public:
     static const Command TURN_BACKLIGHT_OFF_COMMAND;
 
     /**
-     * @param i2cAddress Mapped to the base framework 'pin' attribute via casting.
+     * @param i2cAddress I2C address of the PCF8574 backpack (e.g., 0x27, 0x3E).
      * @param columnCount Total number of columns (e.g., 16, 20, 40).
      * @param rowCount Total number of rows (e.g., 2, 4).
      * @param backlightInitialState Backlight state configuration upon physical initialization.
@@ -67,13 +70,13 @@ public:
      * @param rowIndex Target row to update.
      * @param nullTerminatedString Source string to copy into the row buffer.
      */
-    void setLineBuffer(uint8_t rowIndex, const char* nullTerminatedString);
+    void setLineBuffer(uint8_t rowIndex, const char* nullTerminatedString) const;
 
     /**
      * @brief Composite helper allowing multi-row string pointer arrays to be loaded concurrently.
      * @param multiLineArrayPointer Null-terminated array of C-string row values.
      */
-    void setLineBuffer(const char* multiLineArrayPointer[]);
+    void setLineBuffer(const char* multiLineArrayPointer[]) const;
 
     // ALIGNED PARADIGM: Active interrogative queries are reserved exclusively for methods
     /**
