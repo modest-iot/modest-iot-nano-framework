@@ -30,13 +30,13 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 | **Tier 2**: Reliability & Footprint     | W6–W10  | **Complete** ✓ |
 | **Tier 3**: Core Scheduling & Telemetry | W8, W11 | **Complete** ✓ |
 | **Tier 4**: Capabilities                | W12–W15 | **Complete** ✓   |
-| **Tier 5**: Optimization & Power        | W16–W19 | **In Progress** (W16 ✓, W17 ✓) |
+| **Tier 5**: Optimization & Power        | W16–W19 | **In Progress** (W16 ✓, W17 ✓, W19 ✓) |
 
 ### What's Delivered
 
-- **35 source headers** with full Doxygen documentation and `@runs_on` threading tags.
+- **37 source headers** with full Doxygen documentation and `@runs_on` threading tags.
 - **13 example sketches** covering diverse use cases (smart band, air quality, RFID access, smart greenhouse, weather station, crop monitoring, etc.).
-- **17 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
+- **19 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
 - **3 CI workflows**: host tests, compile examples, lint.
 - **Per-slot `SamplingScheduler`** with phase-aligned re-arming and minimum period enforcement.
 - **`EngineConfig`** for tunable FreeRTOS task stacks, priorities, and core pinning.
@@ -59,7 +59,7 @@ All Tier 4 items (W12–W15) are implemented. The framework now supports bidirec
 | **W16** | Tickless scheduling and light sleep  | Medium   | High       | **Complete** ✓ — `ticksUntilNextDue()`, PowerMode enum, ESP32 light sleep.   |
 | **W17** | Deep-sleep cycle and battery example | Low      | High       | **Complete** ✓ — PowerMode::DeepSleep, enterDeepSleep(), reportWakeReason(), RTC_DATA_ATTR, WeatherStation example.  |
 | **W18** | Telemetry pool and writer interface  | Medium   | High       | Static packet pool, `TelemetryWriter` abstraction for format decoupling. |
-| **W19** | Native servo and LCD drivers         | Low      | Medium     | Replace ESP32Servo and LiquidCrystal_I2C with native implementations.    |
+| **W19** | Native servo and LCD drivers         | Low      | Medium     | **Complete** ✓ — ServoMotor native LEDC, Hd44780Driver + CharacterLcdDisplay native I2C, library.properties updated.    |
 
 ### Component Expansion Tier 1 — **Complete** ✓
 
@@ -89,7 +89,7 @@ New examples: `SmartGreenhouseDevice` (Soil Moisture + DHT + Relay + ServoMotor)
 1. **W16: Tickless scheduling** — Implement `ticksUntilNextDue()` in `SamplingScheduler`. Integrate with ESP32 light sleep API.
 2. **W17: Deep sleep example** — **Complete** ✓: PowerMode::DeepSleep, enterDeepSleep(), reportWakeReason(), WeatherStation example with DHT22 + BH1750.
 3. **W18: Telemetry pool** — Static packet pool with placement-new. `TelemetryWriter` interface for format decoupling.
-4. **W19: Native drivers** — Replace ESP32Servo and LiquidCrystal_I2C with native implementations.
+4. **W19: Native drivers** — **Complete** ✓: ServoMotor native LEDC, CharacterLcdDisplay native I2C.
 
 **Phase 3: Library Release** (Estimated: 1 week)
 
@@ -876,7 +876,7 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 |-------------|------------------------|--------------------------------------------------------------------------------|
 | **Q4 2026** | Tier 4 complete ✓      | W12–W15: command marshaling, interrupts, non-blocking sensors, MQTT subscribe |
 | **Q4 2026** | Component Expansion ✓  | RelayActuator, SoilMoistureSensor, WaterFlowSensor with examples              |
-| **Q4 2026** | Tier 5 in progress     | W16 ✓: tickless scheduling and light sleep; W17 ✓: deep sleep with WeatherStation; W18–W19 pending |
+| **Q4 2026** | Tier 5 in progress     | W16 ✓: tickless scheduling and light sleep; W17 ✓: deep sleep with WeatherStation; W19 ✓: native drivers; W18 pending |
 | **Q1 2027** | Library release        | v1.0.0 tag, Arduino Library Manager submission                                 |
 
 ### Edge Framework Development
@@ -1000,8 +1000,8 @@ The Modest IoT dual-framework vision provides a complete, local-first IoT stack:
 The Nano Framework is **97% complete** (Tiers 0–4 done, Component Expansion Tier 1 done, Tier 5: W16 ✓, W17 ✓). The Edge Framework is **planned** with a clear DDD-based architecture and development roadmap.
 
 **Next steps**:
-1. Nano Framework Tier 4 is complete (W12–W15 ✓). Component Expansion Tier 1 is complete (RelayActuator, SoilMoistureSensor ✓). Tier 5: W16 ✓ (tickless scheduling), W17 ✓ (deep sleep).
-2. Complete Tier 5 with W18 (telemetry pool) and W19 (native drivers), or start Edge Framework Phase 1.
+1. Nano Framework Tier 4 is complete (W12–W15 ✓). Component Expansion Tier 1 is complete (RelayActuator, SoilMoistureSensor ✓). Tier 5: W16 ✓ (tickless scheduling), W17 ✓ (deep sleep), W19 ✓ (native drivers).
+2. Complete Tier 5 with W18 (telemetry pool), or start Edge Framework Phase 1.
 3. Integrate Nano and Edge with MQTT protocol and shared telemetry schema.
 4. Release Nano v1.0.0 and Edge alpha together.
 
