@@ -157,6 +157,12 @@ run_test "test_DeepSleep" \
     src/Sensor.cpp \
     tests/DeepSleep/test.cpp
 
+# 18. ServoMotor Suite
+run_test "test_ServoMotor" \
+    src/Actuator.cpp \
+    src/ServoMotor.cpp \
+    tests/ServoMotor/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="

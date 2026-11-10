@@ -161,6 +161,25 @@ inline void analogWrite(const std::uint8_t pin, const int val) {
     }
 }
 
+// Mock ESP32 LEDC PWM API for host testing (W19, core 3.x)
+inline int fakeLedcFreq[32] = {};
+inline int fakeLedcResolution[32] = {};
+inline int fakeLedcPin[32] = {};
+inline int fakeLedcDuty[32] = {};
+inline bool ledcAttach(uint8_t pin, uint32_t freq, uint8_t resolution) {
+    fakeLedcFreq[pin] = freq;
+    fakeLedcResolution[pin] = resolution;
+    fakeLedcPin[pin] = pin;
+    return true;
+}
+inline void ledcWrite(uint8_t pin, int duty) {
+    fakeLedcDuty[pin] = duty;
+}
+inline bool ledcDetach(uint8_t pin) {
+    (void)pin;
+    return true;
+}
+
 // Mock ESP32 deep sleep API for host testing (W17)
 #define RTC_DATA_ATTR
 enum esp_sleep_wakeup_cause_t {
