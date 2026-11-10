@@ -414,22 +414,33 @@ package "Actuators" #EEF0FF {
     #executeCommand(command : Command) : void
   }
 
+  class Hd44780Driver {
+    -i2cAddress : uint8_t
+    -backlightEnabled : bool
+    +Hd44780Driver(i2cAddress : uint8_t, backlightInitialState : bool = true)
+    +initialize() : void
+    +sendCommand(command : uint8_t) : void
+    +sendData(data : uint8_t) : void
+    +setBacklight(enable : bool) : void
+    +isBacklightOn() const : bool
+  }
+
   class CharacterLcdDisplay {
-    -physicalLcdScreen : LiquidCrystal_I2C
+    -driver : Hd44780Driver
     -maximumRowCount : const uint8_t
     -maximumColumnCount : const uint8_t
-    -backlightEnabled : bool
+    -characterScreenMatrixBuffer : char*
     +{static} UPDATE_TEXT_COMMAND_IDENTIFIER : int = 200
     +{static} TURN_BACKLIGHT_ON_COMMAND_IDENTIFIER : int = 201
     +{static} TURN_BACKLIGHT_OFF_COMMAND_IDENTIFIER : int = 202
-    +CharacterLcdDisplay(i2cAddress : uint8_t, columnCount : uint8_t, rowCount : uint8_t, parentHandler : CommandHandler* = nullptr)
+    +CharacterLcdDisplay(i2cAddress : uint8_t, columnCount : uint8_t, rowCount : uint8_t, backlightInitialState : bool = true, parentHandler : CommandHandler* = nullptr)
     +setLineBuffer(rowIndex : uint8_t, nullTerminatedString : const char*) : void
     +isBacklightOn() const : bool
     #executeCommand(command : Command) : void
   }
 
   class ServoMotor {
-    -embeddedServoDriver : Servo
+    -signalGpioPin : int
     -currentActiveAngleInDegrees : int
     -bufferedTargetAngleInDegrees : int
     +{static} LOCK_TO_MINIMUM_LIMIT_COMMAND_IDENTIFIER : int = 150
@@ -582,6 +593,7 @@ Actuator <|-- RelayActuator
 Actuator <|-- RgbLed
 RgbLed ..> RgbColor : uses
 Actuator <|-- CharacterLcdDisplay
+CharacterLcdDisplay *-- Hd44780Driver : composes
 Actuator <|-- ServoMotor
 Actuator <|-- Buzzer
 
