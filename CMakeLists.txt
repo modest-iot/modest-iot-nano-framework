@@ -288,6 +288,7 @@ target_include_directories(test_SoilMoistureSensor PRIVATE tests/fakes src)
 add_executable(test_PthSensor
         tests/PthSensor/test.cpp
         src/Sensor.cpp
+        src/BmeEnvironmentalSensor.cpp
         src/PthSensor.cpp
         ${TEST_FAKES}
 )
@@ -360,6 +361,15 @@ add_executable(test_OledDisplay
 )
 target_include_directories(test_OledDisplay PRIVATE tests/fakes src)
 
+add_executable(test_EnvironmentalGasSensor
+        tests/EnvironmentalGasSensor/test.cpp
+        src/Sensor.cpp
+        src/BmeEnvironmentalSensor.cpp
+        src/EnvironmentalGasSensor.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_EnvironmentalGasSensor PRIVATE tests/fakes src)
+
 add_test(NAME DigitalLightIntensitySensorTest COMMAND test_DigitalLightIntensitySensor)
 add_test(NAME RgbLedTest COMMAND test_RgbLed)
 add_test(NAME RelayActuatorTest COMMAND test_RelayActuator)
@@ -385,9 +395,10 @@ add_test(NAME DeepSleepTest COMMAND test_DeepSleep)
 add_test(NAME ServoMotorTest COMMAND test_ServoMotor)
 add_test(NAME CharacterLcdDisplayTest COMMAND test_CharacterLcdDisplay)
 add_test(NAME OledDisplayTest COMMAND test_OledDisplay)
+add_test(NAME EnvironmentalGasSensorTest COMMAND test_EnvironmentalGasSensor)
 
 add_custom_target(run_tests
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor test_PthSensor test_WaterLeakSensor test_DoorWindowSensor test_OneWireTemperatureSensor test_DhtSensor test_DeepSleep test_ServoMotor test_CharacterLcdDisplay test_OledDisplay
+        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor test_PthSensor test_WaterLeakSensor test_DoorWindowSensor test_OneWireTemperatureSensor test_DhtSensor test_DeepSleep test_ServoMotor test_CharacterLcdDisplay test_OledDisplay test_EnvironmentalGasSensor
         COMMENT "Executing all native host test suites..."
 )
