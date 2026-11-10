@@ -34,10 +34,10 @@ Actuator::Actuator(int signalGpioPin, CommandHandler* parentHandler)
  * @param command Command to handle.
  */
 void Actuator::handle(const Command command) {
-    // 1. Process concrete hardware output actions
+    // Execute hardware-specific command handling
     executeCommand(command);
 
-    // 2. Seamlessly propagate monitoring metrics upstream
+    // Propagate the command to the parent handler for monitoring
     if (commandHandler != nullptr) {
         commandHandler->handle(command);
     }}
