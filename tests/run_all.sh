@@ -163,6 +163,13 @@ run_test "test_ServoMotor" \
     src/ServoMotor.cpp \
     tests/ServoMotor/test.cpp
 
+# 19. CharacterLcdDisplay Suite
+run_test "test_CharacterLcdDisplay" \
+    src/Actuator.cpp \
+    src/CharacterLcdDisplay.cpp \
+    src/Hd44780Driver.cpp \
+    tests/CharacterLcdDisplay/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="

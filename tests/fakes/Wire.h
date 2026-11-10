@@ -11,11 +11,15 @@ public:
     int readFailureAt = -1;
     uint16_t raw = 0;
     int readIndex = 0;
+    int transmissionCount = 0; ///< Tracks number of beginTransmission calls (W19).
 
     static void begin() {}
-    static void beginTransmission(const uint8_t) {}
+    void beginTransmission(const uint8_t) { ++transmissionCount; }
     void write(const uint8_t command) { commands.push_back(command); }
-    [[nodiscard]] int endTransmission() const { return static_cast<int>(commands.size()) == failureAt ? 1 : 0; }
+    [[nodiscard]] int endTransmission(bool stop = false) const {
+        (void)stop;
+        return static_cast<int>(commands.size()) == failureAt ? 1 : 0;
+    }
     uint8_t requestFrom(const uint8_t, const uint8_t) { ++requests; readIndex = 0; return byteCount; }
     int read() {
         const int index = readIndex++;
