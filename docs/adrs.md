@@ -40,7 +40,8 @@ The 29 ADRs below span six categories that shaped the framework's architecture:
 | [ADR-026](#adr-026-cloud-to-device-mqtt-subscribe-w15)                                     | Cloud-to-Device MQTT Subscribe (W15)                          | Accepted | Connectivity |
 | [ADR-027](#adr-027-tickless-scheduling-and-light-sleep-w16)                                | Tickless Scheduling and Light Sleep (W16)                     | Accepted | Power        |
 | [ADR-028](#adr-028-deep-sleep-cycle-and-battery-example-w17)                               | Deep-Sleep Cycle and Battery Example (W17)                    | Accepted | Power        |
-| [ADR-029](#adr-029-native-servo-and-lcd-drivers-w19)                                       | Native Servo and LCD Drivers (W19)                            | Accepted | Dependencies |
+ | [ADR-029](#adr-029-native-servo-and-lcd-drivers-w19)                                       | Native Servo and LCD Drivers (W19)                            | Accepted | Dependencies |
+ | [ADR-030](#adr-030-bosch-environmental-sensor-base-class)                                   | Bosch Environmental Sensor Base Class                         | Accepted | Refactoring    |
 
 ### Status Legend
 
@@ -1052,6 +1053,63 @@ If 8-bit mode support is ever needed, it would be a separate driver class (e.g.,
 
 ---
 
+## ADR-030: Bosch Environmental Sensor Base Class
+
+**Status**: Accepted | **Date**: 2026-11-10 | **Supersedes**: N/A
+
+### Context
+
+The framework contains two Bosch environmental sensors:
+1. **PthSensor** (BME280) — Temperature, humidity, pressure via I²C.
+2. **EnvironmentalGasSensor** (BME680) — Temperature, humidity, pressure, and gas resistance via I²C.
+
+Both sensors share identical Bosch compensation formulas for temperature, pressure, and humidity. The calibration data reading code (digT1-3, digP1-9, digH1-6) is also identical, as is the I²C register access pattern. The only differences are:
+- Chip ID (0x60 for BME280, 0x61 for BME680)
+- Operating mode (normal for BME280, forced for BME680)
+- EnvironmentalGasSensor additionally reads gas calibration coefficients (digG1-3) and gas resistance data
+
+The three compensation formulas alone account for ~100 lines of identical code. The calibration reading adds another ~50 lines of duplication.
+
+### Decision
+
+Extract the shared Bosch compensation formulas, calibration reading, and I²C helpers into a `BmeEnvironmentalSensor` base class that both `PthSensor` and `EnvironmentalGasSensor` extend.
+
+**BmeEnvironmentalSensor** provides:
+- Shared calibration coefficients (digT1-3, digP1-9, digH1-6)
+- Shared compensation methods (`compensateTemperature`, `compensatePressure`, `compensateHumidity`)
+- Shared I²C helpers (`readRegister16`, `readCalibrationData`, `readRawData`)
+- Shared cached/last-notified fields for temperature, humidity, pressure
+- Shared epsilon-based change detection thresholds
+- Public getters (`getTemperatureInCelsius`, `getHumidityInPercentage`, `getPressureInHectopascals`, `getAltitudeInMeters`)
+
+**PthSensor** adds:
+- BME280 chip ID validation (0x60)
+- Normal mode configuration
+- `processEvent()` for three-value change detection
+
+**EnvironmentalGasSensor** adds:
+- BME680 chip ID validation (0x61)
+- Forced mode configuration
+- Gas calibration coefficients (digG1-3)
+- Gas resistance compensation and getter
+- `processEvent()` for four-value change detection
+
+### Consequences
+
+- **Positive**: Eliminates ~200 lines of duplicated compensation code. Single source of truth for Bosch formulas. Easier to maintain and test. Future BME sensors (e.g., BME280 variants) can extend the base class trivially.
+- **Negative**: Adds a level of indirection. The base class is abstract in practice (no standalone use case) but not formally `abstract` in C++.
+- **Rationale**: The compensation formulas are character-for-character identical between BME280 and BME680. The Bosch datasheet explicitly states these formulas are shared across the BME family. Extracting them into a base class follows the DRY principle and reduces maintenance burden.
+
+### References
+
+- `src/BmeEnvironmentalSensor.h`, `src/BmeEnvironmentalSensor.cpp`
+- `src/PthSensor.h`, `src/PthSensor.cpp`
+- `src/EnvironmentalGasSensor.h`, `src/EnvironmentalGasSensor.cpp`
+- `tests/PthSensor/test.cpp` (12 host tests)
+- `tests/EnvironmentalGasSensor/test.cpp` (11 host tests)
+
+---
+
 ## Consolidated Improvements Document
 
 The 8 individual improvement documents and the roadmap have been consolidated into a single `docs/improvements.md` file, organized by tier. This eliminates cross-document maintenance overhead while keeping all information accessible through headings and search.
@@ -1099,4 +1157,4 @@ For future architecture decisions, use this template:
 
 ---
 
-*Last updated: 2026-11-09 (29 ADRs: 13 original + 9 from improvements.md review + 1 DDD adoption + 4 from W12-W16 + 1 from W17 + 1 from W19)*
+*Last updated: 2026-11-10 (30 ADRs: 13 original + 9 from improvements.md review + 1 DDD adoption + 4 from W12-W16 + 1 from W17 + 1 from W19 + 1 BME base class)*
