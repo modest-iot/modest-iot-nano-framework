@@ -1,8 +1,7 @@
 /**
  * @file CharacterLcdDisplay.cpp
  * @brief Implements buffered text rendering and backlight control for I2C Liquid Crystal displays.
- * Composes Hd44780Driver for native HD44780 4-bit mode protocol via Wire with PCF8574 backpack,
- * eliminating the LiquidCrystal_I2C external dependency (W19).
+ * Composes Hd44780Driver for native HD44780 4-bit mode protocol via Wire with PCF8574 backpack.
  * @date 2026-06-06
  * @version 1.0
  */
