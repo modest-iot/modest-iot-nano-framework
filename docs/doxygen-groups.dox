@@ -127,7 +127,9 @@
  * @ingroup sensors_module
  * @{
  */
-// PthSensor (BME280) with temperature, humidity, and pressure compensation defined here
+// BmeEnvironmentalSensor (BME280/BME680 shared base class) defined here
+// PthSensor (BME280) extends BmeEnvironmentalSensor, defined here
+// EnvironmentalGasSensor (BME680) extends BmeEnvironmentalSensor, defined here
 /** @} */
 
 /**
