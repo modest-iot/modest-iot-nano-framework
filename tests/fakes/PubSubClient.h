@@ -18,7 +18,7 @@
 #define MQTT_CONNECT_UNAUTHORIZED    5
 
 // Forward declaration for callback signature
-typedef void (*MqttCallback)(char* topic, const byte* payload, unsigned int length);
+typedef void (*MqttCallback)(const char* topic, const byte* payload, unsigned int length);
 
 class PubSubClient {
 private:
@@ -166,8 +166,8 @@ public:
      */
     void processPendingMessages() {
         if (hasPendingMessage && messageCallback != nullptr) {
-            byte* payloadBytes = reinterpret_cast<byte*>(const_cast<char*>(pendingMessagePayload.c_str()));
-            messageCallback(const_cast<char*>(pendingMessageTopic.c_str()), 
+            const byte* payloadBytes = reinterpret_cast<const byte*>(pendingMessagePayload.c_str());
+            messageCallback(pendingMessageTopic.c_str(), 
                           payloadBytes, pendingMessagePayload.length());
             hasPendingMessage = false;
         }
