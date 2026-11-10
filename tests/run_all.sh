@@ -182,6 +182,7 @@ run_test "test_OledDisplay" \
 # 21. PthSensor Suite
 run_test "test_PthSensor" \
     src/Sensor.cpp \
+    src/BmeEnvironmentalSensor.cpp \
     src/PthSensor.cpp \
     tests/PthSensor/test.cpp
 
@@ -208,6 +209,13 @@ run_test "test_DhtSensor" \
     src/Sensor.cpp \
     src/DhtSensor.cpp \
     tests/DhtSensor/test.cpp
+
+# 26. EnvironmentalGasSensor Suite
+run_test "test_EnvironmentalGasSensor" \
+    src/Sensor.cpp \
+    src/BmeEnvironmentalSensor.cpp \
+    src/EnvironmentalGasSensor.cpp \
+    tests/EnvironmentalGasSensor/test.cpp
 
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"

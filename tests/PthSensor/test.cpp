@@ -29,9 +29,31 @@ public:
     using PthSensor::INITIAL_LAST_NOTIFIED_TEMPERATURE_IN_CELSIUS;
     using PthSensor::INITIAL_LAST_NOTIFIED_HUMIDITY_IN_PERCENTAGE;
     using PthSensor::INITIAL_LAST_NOTIFIED_PRESSURE_IN_HECTOPASCALS;
+    using PthSensor::tFine;
+    using PthSensor::digT1;
+    using PthSensor::digT2;
+    using PthSensor::digT3;
+    using PthSensor::digP1;
+    using PthSensor::digP2;
+    using PthSensor::digP3;
+    using PthSensor::digP4;
+    using PthSensor::digP5;
+    using PthSensor::digP6;
+    using PthSensor::digP7;
+    using PthSensor::digP8;
+    using PthSensor::digP9;
+    using PthSensor::digH1;
+    using PthSensor::digH2;
+    using PthSensor::digH3;
+    using PthSensor::digH4;
+    using PthSensor::digH5;
+    using PthSensor::digH6;
     using PthSensor::processEvent;
     using PthSensor::getDefaultSamplingIntervalInMilliseconds;
     using PthSensor::getMinimalSamplingIntervalInMilliseconds;
+    using PthSensor::compensateTemperature;
+    using PthSensor::compensatePressure;
+    using PthSensor::compensateHumidity;
 
     TestablePthSensor(int signalGpioPin, uint8_t i2cAddress = PthSensor::DEFAULT_I2C_ADDRESS,
                       EventHandler* parentHandler = nullptr)
