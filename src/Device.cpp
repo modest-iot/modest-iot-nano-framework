@@ -679,14 +679,14 @@ void Device::stopAsynchronousEngine() {
         return;
     }
 
-    // 1. Stop the hardware timer first to prevent new sampler ticks
+    // Stop the hardware timer to prevent new sampler ticks
     if (hardwareTimer != nullptr) {
         timerEnd(hardwareTimer);
         timerDetachInterrupt(hardwareTimer);
         hardwareTimer = nullptr;
     }
 
-    // 2. Signal both tasks to terminate cooperatively
+    // Signal both tasks to terminate cooperatively
     if (hardwareSamplingTaskHandle != nullptr) {
         xTaskNotify(hardwareSamplingTaskHandle,
                     static_cast<uint32_t>(NotificationBitFlag::TerminationSignal), eSetBits);
@@ -696,15 +696,14 @@ void Device::stopAsynchronousEngine() {
                     static_cast<uint32_t>(NotificationBitFlag::TerminationSignal), eSetBits);
     }
 
-    // 3. Wait for tasks to terminate (they call vTaskDelete(nullptr) at loop exit)
-    // Give them time to finish their current iteration and exit
+    // Wait for tasks to terminate — they call vTaskDelete(nullptr) at loop exit
     vTaskDelay(pdMS_TO_TICKS(TASK_TERMINATION_WAIT_IN_MILLISECONDS));
 
-    // 4. Clean up task handles (tasks should have already deleted themselves)
+    // Clean up task handles after tasks have deleted themselves
     hardwareSamplingTaskHandle = nullptr;
     networkDispatcherTaskHandle = nullptr;
 
-    // 5. Drain and delete any pending telemetry packets in the queue
+    // Drain and delete any pending telemetry packets in the queue
     if (telemetryQueueHandle != nullptr) {
         TelemetryPackage *pendingPacket = nullptr;
         while (xQueueReceive(telemetryQueueHandle, &pendingPacket, 0) == pdPASS) {
@@ -714,7 +713,7 @@ void Device::stopAsynchronousEngine() {
         telemetryQueueHandle = nullptr;
     }
 
-    // 6. Drain and delete the command queue
+    // Drain and delete the command queue
     if (commandQueueHandle != nullptr) {
         CommandEntry pendingCommand;
         while (xQueueReceive(commandQueueHandle, &pendingCommand, 0) == pdPASS) {
