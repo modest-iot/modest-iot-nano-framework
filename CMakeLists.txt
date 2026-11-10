@@ -65,7 +65,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
         "${ARDUINO_LIBS}/ArduinoJson/src"
         "${ARDUINO_LIBS}/MQTT/src"
-        "${ARDUINO_LIBS}/DHT_sensor_library"
         "${ESP32_PLATFORM_BASE}/libraries/BluetoothSerial/src"
         "${ESP32_PLATFORM_BASE}/libraries/BLE/src"
         "${ESP32_PLATFORM_BASE}/libraries/HTTPClient/src"
@@ -310,6 +309,14 @@ add_executable(test_DoorWindowSensor
 )
 target_include_directories(test_DoorWindowSensor PRIVATE tests/fakes src)
 
+add_executable(test_DhtSensor
+        tests/DhtSensor/test.cpp
+        src/Sensor.cpp
+        src/DhtSensor.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_DhtSensor PRIVATE tests/fakes src)
+
 add_executable(test_DeepSleep
         tests/DeepSleep/test.cpp
         src/Device.cpp
@@ -355,12 +362,13 @@ add_test(NAME SoilMoistureSensorTest COMMAND test_SoilMoistureSensor)
 add_test(NAME PthSensorTest COMMAND test_PthSensor)
 add_test(NAME WaterLeakSensorTest COMMAND test_WaterLeakSensor)
 add_test(NAME DoorWindowSensorTest COMMAND test_DoorWindowSensor)
+add_test(NAME DhtSensorTest COMMAND test_DhtSensor)
 add_test(NAME DeepSleepTest COMMAND test_DeepSleep)
 add_test(NAME ServoMotorTest COMMAND test_ServoMotor)
 add_test(NAME CharacterLcdDisplayTest COMMAND test_CharacterLcdDisplay)
 
 add_custom_target(run_tests
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor test_PthSensor test_WaterLeakSensor test_DoorWindowSensor test_DeepSleep test_ServoMotor test_CharacterLcdDisplay
+        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor test_PthSensor test_WaterLeakSensor test_DoorWindowSensor test_DhtSensor test_DeepSleep test_ServoMotor test_CharacterLcdDisplay
         COMMENT "Executing all native host test suites..."
 )
