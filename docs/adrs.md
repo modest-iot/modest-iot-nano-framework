@@ -516,7 +516,7 @@ Two alternatives were evaluated:
 ### Decision
 
 Maintain a centralized identifier registry with reserved ranges:
-- Framework events: 0-99 (currently 10, 20-23, 30-31, 40, 50-51, 60-61)
+- Framework events: 0-99 (currently 10, 20-23, 30-31, 40, 50-51, 60-61, 70-73)
 - Framework commands: 100-399 (currently 100-102, 150-152, 200-202, 250-252, 300-302, 304-307)
 - Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power events 910-919
 - User identifiers: 1000+
@@ -590,7 +590,7 @@ Consolidate all mocks into a centralized `tests/fakes/` directory with shared he
 
 - **Positive**: Single source of truth for mocks. Changes to a mock (e.g., adding a new API) benefit all test suites. Eliminates duplicate code.
 - **Negative**: All tests share the same mock interface; test-specific mocks require conditional compilation.
-- **Rationale**: With 11 test suites, the shared harness eliminates ~10× duplicate mock code and ensures consistent behavior across all tests.
+- **Rationale**: With 22 test suites, the shared harness eliminates ~22× duplicate mock code and ensures consistent behavior across all tests.
 
 ### References
 
