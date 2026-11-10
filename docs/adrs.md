@@ -544,7 +544,7 @@ The registry is documented in the README and in `docs/improvements.md`.
 
 ### Context
 
-The framework depends on third-party Arduino libraries (DHT, PubSubClient, ArduinoJson, etc.). Each dependency increases install friction, Flash/RAM footprint, and potential API breakage.
+The framework depends on third-party Arduino libraries (DHT, MQTT, ArduinoJson, etc.). Each dependency increases install friction, Flash/RAM footprint, and potential API breakage.
 
 Five principles were established to govern dependency decisions:
 1. Remove what is unused first. It costs nothing and cuts install friction.
@@ -555,7 +555,7 @@ Five principles were established to govern dependency decisions:
 
 ### Decision
 
-Apply the five principles to all dependency decisions. Delete `LoadCellController` and remove `HX711_Arduino_Library` and `EspSoftwareSerial` from `library.properties`. Retain `Adafruit_Unified_Sensor` as a transitive dependency of the DHT library. Pin `ArduinoJson (>=7.0.0)`.
+Apply the five principles to all dependency decisions. Delete `LoadCellController` and remove `HX711_Arduino_Library`, `EspSoftwareSerial`, and `Adafruit_Unified_Sensor` from `library.properties`. Pin `ArduinoJson (>=7.0.0)`.
 
 ### Consequences
 
@@ -585,7 +585,7 @@ Two alternatives were evaluated:
 
 ### Decision
 
-Consolidate all mocks into a centralized `tests/fakes/` directory with shared headers: `Arduino.h`, `Wire.h`, `SPI.h`, `BLEDevice.h`, `BLEServer.h`, `BLEUtils.h`, `PubSubClient.h`, `WiFi.h`, `ArduinoJson.h`, `Client.h`. All test suites include from the shared location.
+Consolidate all mocks into a centralized `tests/fakes/` directory with shared headers: `Arduino.h`, `Wire.h`, `SPI.h`, `BLEDevice.h`, `BLEServer.h`, `BLEUtils.h`, `MQTT.h`, `WiFi.h`, `ArduinoJson.h`, `Client.h`. All test suites include from the shared location.
 
 ### Consequences
 
@@ -1031,7 +1031,7 @@ Replace both external libraries with native implementations:
 
 ### Consequences
 
-- **Positive**: Zero external dependencies beyond ArduinoJson, PubSubClient, DHT sensor library, and Adafruit Unified Sensor. ~10KB flash footprint reduction. No library version conflicts. Framework is truly self-contained for v1.0.0 release.
+- **Positive**: Zero external dependencies beyond ArduinoJson, MQTT (>=2.5.3), and DHT sensor library. ~10KB flash footprint reduction. No library version conflicts. Framework is truly self-contained for v1.0.0 release.
 - **Negative**: ~250 lines of additional code for the HD44780 protocol. The LCD driver is specific to the PCF8574 backpack (most common I2C LCD backpack).
 - **Rationale**: Both ESP32Servo and LiquidCrystal_I2C are thin wrappers around ESP32 hardware peripherals. Replacing them with native implementations eliminates the dependencies while maintaining the same public API. The LEDC peripheral and I2C Wire API are stable across ESP32 Arduino core versions.
 
