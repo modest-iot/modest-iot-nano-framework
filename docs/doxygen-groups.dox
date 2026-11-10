@@ -115,6 +115,22 @@
 /** @} */
 
 /**
+ * @name Sensors: Security & Detection
+ * @ingroup sensors_module
+ * @{
+ */
+// Water leak and door/window sensors with interrupt-driven detection defined here
+/** @} */
+
+/**
+ * @name Sensors: Environmental & Pressure
+ * @ingroup sensors_module
+ * @{
+ */
+// PthSensor (BME280) with temperature, humidity, and pressure compensation defined here
+/** @} */
+
+/**
  * @name Sensors: Data Types
  * @ingroup sensors_module
  * @{
