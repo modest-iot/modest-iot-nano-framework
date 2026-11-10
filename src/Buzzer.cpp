@@ -31,7 +31,7 @@ Buzzer::Buzzer(const int signalGpioPin, CommandHandler* const parentHandler)
  * @brief Plays the default tone without a duration.
  */
 void Buzzer::playDefaultToneWithoutDuration() {
-    tone(pin, 1000); // Play a default 1kHz tone continuously
+    tone(pin, DEFAULT_TONE_FREQUENCY_IN_HERTZ);
     active = true;
 }
 

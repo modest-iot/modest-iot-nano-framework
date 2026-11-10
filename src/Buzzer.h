@@ -35,6 +35,8 @@ private:
      */
     unsigned long bufferedDuration;
 
+    static constexpr int DEFAULT_TONE_FREQUENCY_IN_HERTZ = 1000; ///< Default tone frequency for continuous sound.
+
     /**
      * @brief Plays a default 1kHz tone continuously without a specified duration.
      * Sets the `active` flag to true.
