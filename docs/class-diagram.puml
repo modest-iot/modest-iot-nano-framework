@@ -92,7 +92,7 @@ package "Core" #FAFAFA {
     +setPowerMode(mode : PowerMode) : void
     +getPowerMode() const : PowerMode
     +enterDeepSleep() const : void
-    +reportWakeReason() : void
+    +{static} reportWakeReason() : void
     +stopAsynchronousEngine() : void
     #initializeAsynchronousEngine(maximumQueueLength : uint8_t = 10) : void
     #initializeAsynchronousEngine(engineConfiguration : const EngineConfiguration&) : void
