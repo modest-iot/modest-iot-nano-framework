@@ -255,6 +255,44 @@ package "Sensors" #EEF6EE {
     #processEvent(event : Event&) : void
   }
 
+  class OneWireTemperatureSensor {
+    -cachedTemperatureInCelsius : float
+    -lastNotifiedTemperatureInCelsius : float
+    +OneWireTemperatureSensor(dataGpioPin : int, parentHandler : EventHandler* = nullptr)
+    +getTemperatureInCelsius() const : float
+    #processEvent(event : Event&) : void
+    #sendResetPulse() const : bool
+    #writeBit(bitValue : bool) const : void
+    #readBit() const : bool
+    #writeByte(data : uint8_t) const : void
+    #readByte() const : uint8_t
+    #startTemperatureConversion() const : void
+    #readTemperatureFromScratchpad() const : float
+  }
+
+  class Ssd1306Driver {
+    -i2cAddress : uint8_t
+    -displayWidth : uint8_t
+    -displayHeight : uint8_t
+    +Ssd1306Driver(i2cAddress : uint8_t, displayWidth : uint8_t, displayHeight : uint8_t)
+    +initialize() : void
+    +sendCommand(command : uint8_t) : void
+    +sendData(data : const uint8_t*, length : size_t) : void
+    +setContrast(contrast : uint8_t) : void
+    +setInvert(invert : bool) : void
+    +setBacklight(enable : bool) : void
+  }
+
+  class OledDisplay {
+    -driver : Ssd1306Driver
+    -frameBuffer[1024] : uint8_t
+    +OledDisplay(i2cAddress : uint8_t, parentHandler : CommandHandler* = nullptr)
+    +setText(text : const char*, x : uint8_t, y : uint8_t) : void
+    +clear() : void
+    +setBacklight(enable : bool) : void
+    #executeCommand(command : Command) : void
+  }
+
   class WaterFlowSensor {
     -pulseCount : volatile uint32_t
     -cachedFlowRateInLitersPerMinute : float
@@ -619,6 +657,7 @@ Sensor <|-- WaterFlowSensor
 Sensor <|-- PthSensor
 Sensor <|-- WaterLeakSensor
 Sensor <|-- DoorWindowSensor
+Sensor <|-- OneWireTemperatureSensor
 Sensor <|-- PassiveInfraredSensor
 Sensor <|-- DigitalLightIntensitySensor
 Sensor <|-- GasSensor
@@ -633,6 +672,8 @@ Actuator <|-- CharacterLcdDisplay
 CharacterLcdDisplay *-- Hd44780Driver : composes
 Actuator <|-- ServoMotor
 Actuator <|-- Buzzer
+Actuator <|-- OledDisplay
+OledDisplay *-- Ssd1306Driver : composes
 
 ConnectivityDriver <|.. WiFiConnectivityDriver : implements
 ConnectivityDriver <|.. BleConnectivityDriver : implements
