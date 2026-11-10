@@ -551,7 +551,7 @@ DiagnosticsSnapshot Device::diagnostics() const {
     snapshot.freeHeapBytes = 0;
     snapshot.minFreeHeapBytes = 0;
 #endif
-    snapshot.uptimeSeconds = millis() / 1000;
+    snapshot.uptimeSeconds = millis() / MILLISECONDS_PER_MICROSECOND;
 
     // Query FreeRTOS stack high-water marks (returned in StackType_t words, not bytes)
     if (hardwareSamplingTaskHandle != nullptr) {
