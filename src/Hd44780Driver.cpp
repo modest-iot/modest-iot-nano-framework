@@ -1,7 +1,6 @@
 /**
  * @file Hd44780Driver.cpp
  * @brief Implements the HD44780 4-bit mode I2C protocol using PCF8574 backpack.
- * Native implementation eliminating the LiquidCrystal_I2C external dependency (W19).
  * @date 2026-11-09
  * @version 1.0
  */
