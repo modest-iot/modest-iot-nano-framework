@@ -94,7 +94,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         "${ESP32_TOOLS_BASE}/qio_qspi/include"
         "${ESP32_PLATFORM_BASE}/variants/esp32da"
         "${ESP32_TOOLS_BASE}/include/newlib/platform_include/"
-        "${CMAKE_CURRENT_SOURCE_DIR}/include_indexer"
 )
 
 # 4. IDE Code-Completion Indexer Targets
