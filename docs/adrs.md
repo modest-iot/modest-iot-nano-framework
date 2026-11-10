@@ -8,7 +8,7 @@ Each ADR documents **why** a decision was made, not just **what** was decided. T
 
 The Modest IoT Nano Framework is a lightweight, deterministic IoT framework for ESP32-based devices. It provides a Mediator design pattern for sensor-actuator wiring, a per-slot sampling scheduler, a telemetry pipeline with ownership safety, and connectivity drivers for Wi-Fi, BLE, and MQTT. The framework runs on FreeRTOS with two isolated tasks: a sampler task for all sensor/actuator I/O and a network task for asynchronous transmission.
 
-The 28 ADRs below span six categories that shaped the framework's architecture:
+The 29 ADRs below span six categories that shaped the framework's architecture:
 
 | #                                                                                          | Title                                                         | Status   | Category     |
 |--------------------------------------------------------------------------------------------|---------------------------------------------------------------|----------|--------------|
@@ -40,6 +40,7 @@ The 28 ADRs below span six categories that shaped the framework's architecture:
 | [ADR-026](#adr-026-cloud-to-device-mqtt-subscribe-w15)                                     | Cloud-to-Device MQTT Subscribe (W15)                          | Accepted | Connectivity |
 | [ADR-027](#adr-027-tickless-scheduling-and-light-sleep-w16)                                | Tickless Scheduling and Light Sleep (W16)                     | Accepted | Power        |
 | [ADR-028](#adr-028-deep-sleep-cycle-and-battery-example-w17)                               | Deep-Sleep Cycle and Battery Example (W17)                    | Accepted | Power        |
+| [ADR-029](#adr-029-native-servo-and-lcd-drivers-w19)                                       | Native Servo and LCD Drivers (W19)                            | Accepted | Dependencies |
 
 ### Status Legend
 
@@ -58,10 +59,10 @@ The 28 ADRs below span six categories that shaped the framework's architecture:
 | **Diagnostics**  | 2     | Sensor fault events with debounced threshold; on-demand `DiagnosticsSnapshot`                        |
 | **Threading**    | 5     | Single-context sampler model; `EngineConfig`; cooperative shutdown; notification redesign; command marshaling |
 | **API Design**   | 2     | `serialize` overload rename; identifier registry with reserved ranges                                |
-| **Dependencies** | 2     | Retain ArduinoJson; five hygiene principles for dependency decisions                                 |
+| **Dependencies** | 3     | Retain ArduinoJson; five hygiene principles for dependency decisions; native servo and LCD drivers |
 | **Testing**      | 2     | Shared mock harness; golden host tests for JSON serialization                                        |
 | **Architecture** | 1     | DDD adoption, bounded contexts, ubiquitous language, embedded-friendly subset                        |
-| **Power**        | 2     | Tickless scheduling with light sleep; deep sleep with RTC memory for battery operation   |
+| **Power**        | 3     | Tickless scheduling with light sleep; deep sleep with RTC memory; native drivers for battery operation |
 
 ---
 
@@ -1000,6 +1001,57 @@ A shared glossary ensures consistent terminology across both frameworks:
 
 ---
 
+## ADR-029: Native Servo and LCD Drivers (W19)
+
+**Status**: Accepted | **Date**: 2026-11-09 | **Supersedes**: N/A
+
+### Context
+
+The framework depended on two external libraries for actuator control:
+1. **ESP32Servo** — Used by `ServoMotor` for PWM-based servo control via the `Servo` class.
+2. **LiquidCrystal_I2C** — Used by `CharacterLcdDisplay` for I2C-based HD44780 LCD control via a PCF8574 backpack.
+
+These dependencies added ~10KB of flash footprint, introduced library version conflicts (LiquidCrystal_I2C has many forks), and prevented the framework from being truly self-contained. The ESP32 Arduino core provides native APIs (`ledcAttach`, `ledcWrite`, `Wire`) that can replace both libraries entirely.
+
+Three alternatives were evaluated:
+1. **Retain external libraries** — Simple, but adds dependencies and version conflicts.
+2. **Replace only ESP32Servo** — Removes the servo dependency but keeps LiquidCrystal_I2C.
+3. **Replace both with native implementations** — Eliminates both dependencies, making the framework self-contained.
+
+### Decision
+
+Replace both external libraries with native implementations:
+
+**ServoMotor**: Uses `ledcAttach()`/`ledcWrite()` at 50Hz with 13-bit LEDC resolution. The ESP32 Arduino core 3.x API is pin-based (not channel-based), simplifying the implementation. The angle-to-duty-cycle conversion uses the existing pulse width constants (500-2400µs range).
+
+**CharacterLcdDisplay**: Implements the HD44780 4-bit mode protocol natively via `Wire` with PCF8574 I/O expander backpack. The implementation includes the full initialization sequence (8-bit to 4-bit mode transition), enable pulse timing (~1µs high, ~37µs low), cursor positioning via DDRAM addresses (0x80, 0xC0, 0x94, 0xD4), and backlight control via PCF8574 bit manipulation.
+
+**library.properties**: Removed `ESP32Servo` and `LiquidCrystal_I2C` from the `depends=` field.
+
+### Consequences
+
+- **Positive**: Zero external dependencies beyond ArduinoJson, PubSubClient, DHT sensor library, and Adafruit Unified Sensor. ~10KB flash footprint reduction. No library version conflicts. Framework is truly self-contained for v1.0.0 release.
+- **Negative**: ~250 lines of additional code for the HD44780 protocol. The LCD driver is specific to the PCF8574 backpack (most common I2C LCD backpack).
+- **Rationale**: Both ESP32Servo and LiquidCrystal_I2C are thin wrappers around ESP32 hardware peripherals. Replacing them with native implementations eliminates the dependencies while maintaining the same public API. The LEDC peripheral and I2C Wire API are stable across ESP32 Arduino core versions.
+
+### Design Note: 4-Bit Mode Only
+
+The `Hd44780Driver` supports only **4-bit mode** due to the PCF8574 I2C backpack hardware constraint. The PCF8574 I/O expander has 8 pins, but only 4 are available for data lines (P0–P3 map to HD44780 D4–D7). The remaining pins are consumed by control signals: Enable (P5), Register Select (P7), Backlight (P4), and Read/Write (P6, typically grounded).
+
+8-bit mode requires 8 data lines (D0–D7), which the PCF8574 cannot provide. Supporting 8-bit mode would require either two PCF8574 chips (impractical) or a direct parallel connection using 11 GPIO pins (a fundamentally different hardware design). All 13 examples using CharacterLcdDisplay use I2C backpacks with 4-bit mode, and no component in the framework requires 8-bit mode.
+
+If 8-bit mode support is ever needed, it would be a separate driver class (e.g., `Hd44780ParallelDriver`) using direct GPIO connections, not an extension of the I2C-based `Hd44780Driver`.
+
+### References
+
+- `src/ServoMotor.h`, `src/ServoMotor.cpp`
+- `src/CharacterLcdDisplay.h`, `src/CharacterLcdDisplay.cpp`
+- `tests/ServoMotor/test.cpp` (10 host tests)
+- `tests/CharacterLcdDisplay/test.cpp` (10 host tests)
+- `library.properties`
+
+---
+
 ## Consolidated Improvements Document
 
 The 8 individual improvement documents and the roadmap have been consolidated into a single `docs/improvements.md` file, organized by tier. This eliminates cross-document maintenance overhead while keeping all information accessible through headings and search.
@@ -1047,4 +1099,4 @@ For future architecture decisions, use this template:
 
 ---
 
-*Last updated: 2026-11-09 (28 ADRs: 13 original + 9 from improvements.md review + 1 DDD adoption + 4 from W12-W16 + 1 from W17)*
+*Last updated: 2026-11-09 (29 ADRs: 13 original + 9 from improvements.md review + 1 DDD adoption + 4 from W12-W16 + 1 from W17 + 1 from W19)*
