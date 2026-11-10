@@ -295,6 +295,14 @@ add_executable(test_DeepSleep
 )
 target_include_directories(test_DeepSleep PRIVATE tests/fakes src)
 
+add_executable(test_ServoMotor
+        tests/ServoMotor/test.cpp
+        src/Actuator.cpp
+        src/ServoMotor.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_ServoMotor PRIVATE tests/fakes src)
+
 add_test(NAME DigitalLightIntensitySensorTest COMMAND test_DigitalLightIntensitySensor)
 add_test(NAME RgbLedTest COMMAND test_RgbLed)
 add_test(NAME RelayActuatorTest COMMAND test_RelayActuator)
@@ -312,9 +320,10 @@ add_test(NAME CommandMarshalingTest COMMAND test_CommandMarshaling)
 add_test(NAME WaterFlowSensorTest COMMAND test_WaterFlowSensor)
 add_test(NAME SoilMoistureSensorTest COMMAND test_SoilMoistureSensor)
 add_test(NAME DeepSleepTest COMMAND test_DeepSleep)
+add_test(NAME ServoMotorTest COMMAND test_ServoMotor)
 
 add_custom_target(run_tests
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor test_DeepSleep
+        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor test_DeepSleep test_ServoMotor
         COMMENT "Executing all native host test suites..."
 )
