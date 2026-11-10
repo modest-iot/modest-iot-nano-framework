@@ -1,13 +1,13 @@
 /**
  * @file WeatherStation.ino
  * @brief Battery-powered weather station demonstrating ESP32 deep sleep cycles.
- * @date 2026-11-09
+ * @date 2026-11-10
  * @version 1.0
  *
  * This example shows how to use PowerMode::DeepSleep for battery-powered
  * outdoor weather monitoring. The device wakes from deep sleep, reads air
- * temperature, humidity, and light intensity, reports the readings via Serial,
- * and returns to deep sleep.
+ * temperature, humidity, pressure, and light intensity, reports the readings
+ * via Serial, and returns to deep sleep.
  *
  * **Energy Saving**: Deep sleep reduces power consumption from ~100mA (active)
  * to ~10µA (sleeping), a 10,000x reduction. With 5-minute sleep intervals,
@@ -51,6 +51,7 @@ RTC_DATA_ATTR uint32_t rtcSequenceCounter = 0; ///< Telemetry sequence counter
 class WeatherStation : public Device {
 private:
     DhtSensor dhtSensor;
+    PthSensor pthSensor;
     DigitalLightIntensitySensor lightSensor;
 
 public:
@@ -66,6 +67,7 @@ public:
         uint8_t timerChannel = DEFAULT_TIMER_CHANNEL)
         : Device(deepSleepIntervalInMilliseconds, timerChannel),
           dhtSensor(dhtSensorPin, DHT22, this),
+          pthSensor(0, PthSensor::DEFAULT_I2C_ADDRESS, this),
           lightSensor(0, DigitalLightIntensitySensor::DEFAULT_I2C_ADDRESS,
                       DigitalLightIntensitySensor::DEFAULT_LIGHT_DETECTED_THRESHOLD_IN_LUX, this)
     {
@@ -91,6 +93,9 @@ public:
         // Register the DHT sensor for temperature and humidity
         appendSensorToScheduler(&dhtSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
+        // Register the PthSensor for atmospheric pressure
+        appendSensorToScheduler(&pthSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+
         // Register the light sensor for ambient light detection
         appendSensorToScheduler(&lightSensor, DigitalLightIntensitySensor::LIGHT_DETECTED_EVENT_IDENTIFIER);
     }
@@ -106,9 +111,10 @@ public:
         if (event.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER) {
             char buffer[128];
             snprintf(buffer, sizeof(buffer),
-                     "[WeatherStation] Temp: %.1f°C, Humidity: %.1f%%, Light: %.1f lux",
+                     "[WeatherStation] Temp: %.1f°C, Humidity: %.1f%%, Pressure: %.1f hPa, Light: %.1f lux",
                      dhtSensor.getTemperatureInCelsius(),
                      dhtSensor.getRelativeHumidityInPercentage(),
+                     pthSensor.getPressureInHectopascals(),
                      lightSensor.getIlluminanceInLux());
             Serial.println(buffer);
             Serial.println("[WeatherStation] Entering deep sleep (~10µA) until next sample...");
