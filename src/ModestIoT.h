@@ -49,5 +49,8 @@
 #include "RelayActuator.h"
 #include "SoilMoistureSensor.h"
 #include "WaterFlowSensor.h"
+#include "PthSensor.h"
+#include "WaterLeakSensor.h"
+#include "DoorWindowSensor.h"
 
 #endif // MODEST_IOT_H
