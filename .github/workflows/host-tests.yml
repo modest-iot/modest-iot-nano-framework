@@ -10,6 +10,8 @@ jobs:
   host-tests:
     name: Run Unit Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    env:
+      ACTIONS_RUNNER_NODE_VERSION: 24
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
