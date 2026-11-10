@@ -10,7 +10,6 @@
  */
 
 #include "Actuator.h"
-#include <ESP32Servo.h>
 
 /**
  * @brief Actuator adapter for hobby servo motors driven through ESP32 PWM.
@@ -18,7 +17,6 @@
  */
 class ServoMotor : public Actuator {
 private:
-    Servo embeddedServoDriver; ///< Underlying ESP32 servo driver instance.
     int currentActiveAngleInDegrees; ///< Currently active angle in degrees.       
     int bufferedTargetAngleInDegrees; ///< Buffered target angle in degrees.      
 
@@ -30,6 +28,13 @@ private:
 
     static constexpr int PRIMARY_HARDWARE_TIMER_CHANNEL = 0; ///< Primary hardware timer channel.
     static constexpr int SECONDARY_HARDWARE_TIMER_CHANNEL = 1; ///< Secondary hardware timer channel.
+
+    /**
+     * @brief Converts an angle to a duty cycle and writes it to the LEDC channel.
+     * @param angleInDegrees Angle in degrees (clamped to 0-180).
+     * @runs_on sampler task
+     */
+    void writeAngle(int angleInDegrees) const;
 
 protected:
     /**
@@ -43,9 +48,9 @@ public:
     static constexpr int LOCK_TO_MAXIMUM_LIMIT_COMMAND_IDENTIFIER = 151;
     static constexpr int DRIVE_TO_BUFFERED_ANGLE_COMMAND_IDENTIFIER = 152;
 
-    static constexpr Command LOCK_TO_MINIMUM_LIMIT_COMMAND = Command(LOCK_TO_MINIMUM_LIMIT_COMMAND_IDENTIFIER);
-    static constexpr Command LOCK_TO_MAXIMUM_LIMIT_COMMAND = Command(LOCK_TO_MAXIMUM_LIMIT_COMMAND_IDENTIFIER);
-    static constexpr Command DRIVE_TO_BUFFERED_ANGLE_COMMAND = Command(DRIVE_TO_BUFFERED_ANGLE_COMMAND_IDENTIFIER);
+    static constexpr auto LOCK_TO_MINIMUM_LIMIT_COMMAND = Command(LOCK_TO_MINIMUM_LIMIT_COMMAND_IDENTIFIER);
+    static constexpr auto LOCK_TO_MAXIMUM_LIMIT_COMMAND = Command(LOCK_TO_MAXIMUM_LIMIT_COMMAND_IDENTIFIER);
+    static constexpr auto DRIVE_TO_BUFFERED_ANGLE_COMMAND = Command(DRIVE_TO_BUFFERED_ANGLE_COMMAND_IDENTIFIER);
 
     /**
      * @brief Constructs a servo actuator.
