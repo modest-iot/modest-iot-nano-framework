@@ -21,12 +21,25 @@ public:
     ~WiFiClient() override = default;
 };
 
+class IPAddress {
+private:
+    uint32_t address;
+public:
+    IPAddress() : address(0) {}
+    IPAddress(uint8_t a, uint8_t b, uint8_t c, uint8_t d)
+        : address(a | (b << 8) | (c << 16) | (d << 24)) {}
+    [[nodiscard]] bool isSet() const { return address != 0; }
+    [[nodiscard]] uint32_t value() const { return address; }
+};
+
 class WiFiClass {
 private:
     wl_status_t currentStatus;
     std::string connectedSsid;
     std::string connectedPassword;
     bool isPersistent;
+    int32_t signalStrengthInDbm;
+    IPAddress localAddress;
 
 public:
     static inline int beginCallCount = 0;
@@ -40,7 +53,8 @@ public:
     }
 
     WiFiClass()
-        : currentStatus(WL_DISCONNECTED), isPersistent(false) {}
+        : currentStatus(WL_DISCONNECTED), isPersistent(false),
+          signalStrengthInDbm(0), localAddress() {}
 
     void persistent(bool p) {
         isPersistent = p;
@@ -69,6 +83,22 @@ public:
 
     void disconnect() {
         currentStatus = WL_DISCONNECTED;
+    }
+
+    [[nodiscard]] IPAddress localIP() const {
+        return localAddress;
+    }
+
+    void setLocalIP(const IPAddress& ip) {
+        localAddress = ip;
+    }
+
+    [[nodiscard]] int32_t RSSI() const {
+        return signalStrengthInDbm;
+    }
+
+    void setSignalStrength(int32_t rssi) {
+        signalStrengthInDbm = rssi;
     }
 };
 
