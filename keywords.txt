@@ -39,9 +39,11 @@ RelayActuator	KEYWORD1
 SoilMoistureSensor	KEYWORD1
 WaterFlowSensor	KEYWORD1
 PthSensor	KEYWORD1
+BmeEnvironmentalSensor	KEYWORD1
 WaterLeakSensor	KEYWORD1
 DoorWindowSensor	KEYWORD1
 OneWireTemperatureSensor	KEYWORD1
+EnvironmentalGasSensor	KEYWORD1
 Ssd1306Driver	KEYWORD1
 OledDisplay	KEYWORD1
 WiFiConnectivityDriver	KEYWORD1
@@ -232,6 +234,7 @@ setMinimalSamplingIntervalInMilliseconds	KEYWORD8
 getDefaultSamplingIntervalInMilliseconds	KEYWORD8
 getMinimalSamplingIntervalInMilliseconds	KEYWORD8
 getMoistureLevel	KEYWORD2
+getGasResistanceInKOhms	KEYWORD2
 isActive	KEYWORD2
 
 # RelayActuator commands
@@ -244,3 +247,6 @@ TOGGLE_RELAY_COMMAND_IDENTIFIER	LITERAL1
 
 # SoilMoistureSensor constants
 MOISTURE_CHANGE_EPSILON	LITERAL1
+
+# EnvironmentalGasSensor constants
+GAS_RESISTANCE_CHANGE_EPSILON	LITERAL1
