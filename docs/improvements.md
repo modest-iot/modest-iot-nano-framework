@@ -556,6 +556,62 @@ Demonstrates `WaterFlowSensor` with `appendToBothSchedulers()` using CHANGE edge
 
 ---
 
+## Component Expansion Tier 2 (Complete)
+
+Added three components to broaden IoT coverage for weather stations, home security, and industrial monitoring.
+
+| Component | Type | Dependencies | Use Case |
+|-----------|------|-------------|----------|
+| PthSensor | Sensor | I²C (`Wire`) | Temperature, humidity, pressure (weather stations, indoor air quality) |
+| WaterLeakSensor | Sensor | `digitalRead()` | Water leak detection (home security, industrial monitoring) |
+| DoorWindowSensor | Sensor | `digitalRead()` | Door/window open/close detection (home security, perimeter monitoring) |
+
+### PthSensor
+
+**Readings**: Temperature (°C), humidity (%), pressure (hPa) via I²C with Bosch BME280 compensation formulas.
+
+**Change Detection**: Epsilon-based for all three values (0.1°C, 0.1%, 0.1 hPa).
+
+**Sampling**: Default 2000ms, minimum 250ms.
+
+**Tests**: 9 host tests covering initialization, reading, change detection, and event emission.
+
+**Source**: `src/PthSensor.h`, `src/PthSensor.cpp`, `tests/PthSensor/test.cpp`
+
+### WaterLeakSensor
+
+**Events**: `WATER_LEAK_DETECTED_EVENT` (70), `WATER_LEAK_CLEARED_EVENT` (71).
+
+**API**: Extends `Sensor` with `isWaterLeakDetected()` getter. Uses `INPUT_PULLUP` — water bridges contacts to GND, reading LOW.
+
+**Tests**: 6 host tests covering constructor, leak detection, leak cleared, and propagation suppression.
+
+**Source**: `src/WaterLeakSensor.h`, `src/WaterLeakSensor.cpp`, `tests/WaterLeakSensor/test.cpp`
+
+### DoorWindowSensor
+
+**Events**: `DOOR_OPENED_EVENT` (72), `DOOR_CLOSED_EVENT` (73).
+
+**API**: Extends `Sensor` with `isDoorOpen()` getter. Uses `INPUT` — reed switch connects GPIO to VCC when open, reading HIGH.
+
+**Tests**: 6 host tests covering constructor, door opened, door closed, and propagation suppression.
+
+**Source**: `src/DoorWindowSensor.h`, `src/DoorWindowSensor.cpp`, `tests/DoorWindowSensor/test.cpp`
+
+### HomeSecurityDevice Example
+
+Bundles `WaterLeakSensor` + `DoorWindowSensor` + `PassiveInfraredSensor` + `Buzzer` for home security monitoring. All sensors use interrupt-driven operation via `appendSensorToTriggeringScheduler()` for zero-latency event detection.
+
+**Source**: `examples/HomeSecurityDevice/HomeSecurityDevice.ino`
+
+### WeatherStation Example Update
+
+Updated `WeatherStation` example to include `PthSensor` alongside `DhtSensor` and `DigitalLightIntensitySensor` for comprehensive environmental monitoring (temperature, humidity, pressure, and light).
+
+**Source**: `examples/WeatherStation/WeatherStation.ino`
+
+---
+
 ## Tier 5: Optimization and Power (In Progress)
 
 ### W16: Tickless scheduling and light sleep — **Complete** ✓
