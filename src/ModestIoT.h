@@ -49,10 +49,12 @@
 #include "RelayActuator.h"
 #include "SoilMoistureSensor.h"
 #include "WaterFlowSensor.h"
+#include "BmeEnvironmentalSensor.h"
 #include "PthSensor.h"
 #include "WaterLeakSensor.h"
 #include "DoorWindowSensor.h"
 #include "OneWireTemperatureSensor.h"
+#include "EnvironmentalGasSensor.h"
 #include "Ssd1306Driver.h"
 #include "OledDisplay.h"
 
