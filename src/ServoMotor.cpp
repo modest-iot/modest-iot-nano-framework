@@ -10,15 +10,15 @@
 #include <Arduino.h>
 
 
-static constexpr int LEDC_RESOLUTION_BITS = 13;
-static constexpr int LEDC_MAX_DUTY = (1 << LEDC_RESOLUTION_BITS) - 1;
+static constexpr int LEDC_PERIPHERAL_RESOLUTION_BITS = 13;
+static constexpr int LEDC_PERIPHERAL_MAX_DUTY = (1 << LEDC_PERIPHERAL_RESOLUTION_BITS) - 1;
 
 ServoMotor::ServoMotor(const int signalGpioPin, const int initialAngleInDegrees, CommandHandler* parentHandler)
     : Actuator(signalGpioPin, parentHandler),
       currentActiveAngleInDegrees(initialAngleInDegrees),
       bufferedTargetAngleInDegrees(initialAngleInDegrees)
 {
-    ledcAttach(pin, HARDWARE_PWM_FREQUENCY_IN_HERTZ, LEDC_RESOLUTION_BITS);
+    ledcAttach(pin, HARDWARE_PWM_FREQUENCY_IN_HERTZ, LEDC_PERIPHERAL_RESOLUTION_BITS);
     writeAngle(currentActiveAngleInDegrees);
 }
 
@@ -46,7 +46,7 @@ void ServoMotor::writeAngle(const int angleInDegrees) const {
 
     static constexpr int pulseWidthRange = MAXIMUM_PULSE_WIDTH_IN_MICROSECONDS - MINIMUM_PULSE_WIDTH_IN_MICROSECONDS;
     const int duty = (clampedAngle * pulseWidthRange) / MAXIMUM_PHYSICAL_ANGLE_IN_DEGREES;
-    const int scaledDuty = (duty * LEDC_MAX_DUTY) / pulseWidthRange;
+    const int scaledDuty = (duty * LEDC_PERIPHERAL_MAX_DUTY) / pulseWidthRange;
 
     ledcWrite(pin, scaledDuty);
 }
