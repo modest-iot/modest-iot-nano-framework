@@ -341,9 +341,8 @@ Then open `docs/build/html/index.html` in your browser.
    - Alternatively, in the Arduino IDE: Sketch > Include Library > Add .ZIP Library.
 3. **Install Dependencies**: The framework requires the following Arduino libraries (install via Library Manager):
    - `DHT sensor library` (for `DhtSensor`)
-   - `Adafruit Unified Sensor` (transitive dependency of DHT)
    - `ArduinoJson (>=7.0.0)` (for telemetry serialization)
-   - `PubSubClient` (for `MqttGatewayClient`)
+   - `MQTT (>=2.5.3)` (for `MqttGatewayClient`)
 4. **Verify Structure**: The library should be organized as:
    ```plaintext
    Modest-IoT-Nano-Framework/
@@ -423,8 +422,9 @@ Contributions, improvements, and extensions are welcome under the MIT License. Y
 
 ## Future Directions
 
-- **Tier 4**: `Device::post` command marshaling for cross-task commands, interrupt triggers for Button and PIR, HX711 data-ready and ultrasonic echo capture.
-- **Tier 5**: Tickless scheduling, deep-sleep battery profiles, telemetry packet pool, and `TelemetryWriter` format abstraction.
+- **Tier 5**: Telemetry packet pool (W18) to eliminate heap allocation for telemetry records.
+- **DHT native implementation**: Replace DHT sensor library with native single-wire protocol (v1.1.0).
+- **Edge Framework Phase 1**: Python-based edge server with MQTT broker, device registry, and telemetry ingestion.
 - **MicroPython Edition**: A planned port to MicroPython in a separate repository.
 
 ## Contact
