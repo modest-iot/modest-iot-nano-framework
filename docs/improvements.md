@@ -11,7 +11,7 @@ All 8 improvement briefs and the roadmap are consolidated in this single documen
 | Tier                                    | Items                                                  | Goal                                                                                                | Exit criterion                                                                                                       | Status       |
 |-----------------------------------------|--------------------------------------------------------|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|--------------|
 | 0: Make it correct and shippable        | W1, W2, W3, W4                                         | Everything compiles, repo is clean, rules are written down                                          | All examples compile cleanly; clean repo layout                                                                      | **Complete** |
-| 1: Safety net and visibility            | W5                                                     | Regressions caught automatically via host tests & CI                                                | CI green on PRs/pushes; all 19 host test suites pass; examples compile in CI; lint passes                           | **Complete** |
+| 1: Safety net and visibility            | W5                                                     | Regressions caught automatically via host tests & CI                                                | CI green on PRs/pushes; all 22 host test suites pass; examples compile in CI; lint passes                           | **Complete** |
 | 2: Reliability, diagnostics & footprint | W6 (logging/high-water/sensor conversion), W7, W9, W10 | Reconnection robust, tasks tunable, BLE modern, zero-cost logs, sensor fault events with conversion | Soak test reconnects; logs available behind macro; BLE tests pass; diagnostics snapshot works; sensors report faults | **Complete** |
 | 3: Core performance and DX              | W8, then W11                                           | Per-slot intervals, bounded memory use for telemetry                                                | Scheduler host tests pass; all examples use per-sensor intervals; telemetry ownership and queue policy complete      | **Complete** |
 | 4: Capabilities                         | W12, W13, W14, W15, rest of W6                         | Edge-driven sensing, remote commands, fault events                                                  | Bidirectional MQTT verified; interrupt-driven sensors tested                                                         | **Complete** (W12 ✓, W13 ✓, W14 ✓, W15 ✓) |
@@ -181,12 +181,12 @@ Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power ev
 **Test Runner & CI**:
 - Implemented `tests/run_all.sh` with strict warnings (`-Wall -Wextra -Werror`) and Address/Undefined sanitizers.
 - Added GitHub Actions workflows:
-  - `host-tests.yml`: runs all 19 test suites on Ubuntu and macOS.
-  - `compile-examples.yml`: compiles all 13 examples across ESP32 and ESP32-S3 boards.
+  - `host-tests.yml`: runs all 22 test suites on Ubuntu and macOS.
+  - `compile-examples.yml`: compiles all 15 examples across ESP32 and ESP32-S3 boards.
   - `lint.yml`: validates `library.properties` with Arduino Library Manager compliance.
 - Registered all test targets in `CMakeLists.txt` with CTest integration.
 
-**Test Suites (19 total)**:
+**Test Suites (22 total)**:
 
 | #  | Suite                                | What It Tests                                                          |
 |----|--------------------------------------|------------------------------------------------------------------------|
@@ -327,7 +327,7 @@ Converted sensors: `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `Digita
 - Two `protected` attributes in `Sensor` for runtime tuning (`samplingIntervalInMilliseconds`, `minimalSamplingIntervalInMilliseconds`).
 - Two pure virtual methods (`getDefaultSamplingIntervalInMilliseconds`, `getMinimalSamplingIntervalInMilliseconds`).
 - Four non-virtual getter/setter methods combining overrides with virtual defaults.
-- Virtual method implementations in all 10 sensor subclasses.
+- Virtual method implementations in all 15 sensor subclasses.
 - `Device::appendSensorToScheduler(Sensor*, int)` overload queries effective period polymorphically.
 - `[[deprecated]]` removed from `EventHandler*` two-argument overload — valid fallback for non-Sensor handlers.
 
@@ -453,7 +453,7 @@ Give other tasks a safe way to act on the sampler's objects.
 - **PIR conversion**: Updated `PassiveInfraredSensor` documentation to indicate interrupt-driven operation via `appendSensorToTriggeringScheduler()` with `CHANGE` edge. Both motion detected (RISING) and motion stopped (FALLING) are captured.
 - **WaterFlowSensor (new component)**: Hybrid sensor using `appendToBothSchedulers()`. Interrupt captures every Hall effect pulse (CHANGE edge), periodic sampling computes liters/minute from pulse delta. YF-S201 constant: 7 pulses/ml.
 - **Examples migrated**: `ToggableLedDevice`, `SmartBandMqtt`, `AirConditioningDevice` (Button → interrupt), `PerimeterMonitor`, `OutdoorSecurityLightController` (PIR → interrupt).
-- **Host tests**: 16 test cases in `tests/TriggeringScheduler/test.cpp` + 6 new tests in `tests/WaterFlowSensor/test.cpp`. All 14 test suites pass.
+- **Host tests**: 16 test cases in `tests/TriggeringScheduler/test.cpp` + 6 new tests in `tests/WaterFlowSensor/test.cpp`. All 22 test suites pass.
 
 **API Design** (following `appendSensorToScheduler` naming pattern):
 
@@ -699,7 +699,7 @@ public:
 
 **Hd44780Driver (new component)**: Extracted HD44780 4-bit mode I2C protocol into a standalone driver class. Implements full initialization sequence, enable pulse timing, PCF8574 backpack communication, cursor positioning via DDRAM addresses, and backlight control. CharacterLcdDisplay composes `Hd44780Driver` instead of implementing the protocol directly. 10 host tests in `tests/CharacterLcdDisplay/test.cpp`.
 
-**library.properties**: Removed `ESP32Servo` and `LiquidCrystal_I2C` from the `depends=` field. Framework now has zero external dependencies beyond ArduinoJson, PubSubClient, DHT sensor library, and Adafruit Unified Sensor.
+**library.properties**: Removed `ESP32Servo` and `LiquidCrystal_I2C` from the `depends=` field. Framework now has only 3 external dependencies: ArduinoJson, PubSubClient, and DHT sensor library.
 
 **Source**: `src/ServoMotor.h`, `src/ServoMotor.cpp`, `src/Hd44780Driver.h`, `src/Hd44780Driver.cpp`, `src/CharacterLcdDisplay.h`, `src/CharacterLcdDisplay.cpp`
 
@@ -729,7 +729,7 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT today, and
 |----------------------------|-----------------------------------|-----------------------------------------------|-------------------------------------------------------|
 | Timing model               | Cooperative polling; jitter grows | Timer ISR plus sampler task; per-slot periods | Same engine; interrupt-driven sensors                 |
 | Sample period accuracy     | Depends on `loop()` duration      | Per-slot periods independent of slot count    | Same                                                  |
-| Worst-case stall           | Any blocking call                 | HX711 up to 100 ms, ultrasonic up to 30 ms    | Interrupt-driven HX711/ultrasonic; documented budgets |
+| Worst-case stall           | Any blocking call                 | Interrupt-driven HX711/ultrasonic; documented budgets    | Interrupt-driven HX711/ultrasonic; documented budgets |
 | Edge latency (button, PIR) | Up to one `loop()` pass           | Up to one polling period                      | Interrupt mode: task wake-up latency                  |
 | Network isolation          | A slow publish blocks sensing     | Isolated in the network task                  | Isolated, with bounded queue policy                   |
 | Heap behaviour             | Usually static                    | `unique_ptr` ownership, drop-oldest policy    | Same; pool only if measurement justifies it           |
