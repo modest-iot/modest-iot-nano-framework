@@ -78,15 +78,46 @@ public:
 
     /**
      * @brief Sets the cooldown interval between Wi-Fi connection attempts.
-     * @param intervalMs Cooldown period in milliseconds (default: 10000ms).
+     * @param intervalInMilliseconds Cooldown period in milliseconds (default: 10000ms).
      */
-    void setReconnectInterval(unsigned long intervalMs);
+    void setReconnectInterval(unsigned long intervalInMilliseconds);
 
     /**
      * @brief Gets the configured cooldown interval between Wi-Fi connection attempts.
      * @return Cooldown period in milliseconds.
      */
     [[nodiscard]] unsigned long getReconnectInterval() const;
+
+    /**
+     * @brief Returns the detailed Wi-Fi connection status from the ESP32 SDK.
+     * @return Raw wl_status_t value (WL_CONNECTED, WL_NO_SSID_AVAIL, etc.).
+     */
+    [[nodiscard]] wl_status_t getWiFiStatus() const;
+
+    /**
+     * @brief Disconnects from the current Wi-Fi access point.
+     * @note Useful before entering deep sleep to conserve power.
+     */
+    void disconnect();
+
+    /**
+     * @brief Returns the IP address assigned by the access point.
+     * @return The local IP address after a successful connection.
+     */
+    [[nodiscard]] IPAddress getLocalIpAddress() const;
+
+    /**
+     * @brief Returns the signal strength in dBm.
+     * @return RSSI value (negative, e.g., -50 dBm for strong signal).
+     */
+    [[nodiscard]] int32_t getSignalStrengthInDbm() const;
+
+    /**
+     * @brief Blocks until Wi-Fi connects or the timeout expires.
+     * @param timeoutMilliseconds Maximum time to wait in milliseconds.
+     * @return `true` if connected within the timeout, `false` otherwise.
+     */
+    bool waitForConnection(unsigned long timeoutMilliseconds);
 };
 
 #endif // WIFI_CONNECTIVITY_DRIVER_H

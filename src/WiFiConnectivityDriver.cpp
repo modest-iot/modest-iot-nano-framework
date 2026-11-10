@@ -34,9 +34,8 @@ void WiFiConnectivityDriver::connect() {
     // Avoid re-triggering allocation requests if connection handshakes are actively executing
     // unless the cooldown period has expired to allow recovering from transient AP outages.
     if (WiFi.status() != WL_CONNECTED) {
-        unsigned long currentTimestamp = millis();
-        if (!provisioningRequested || (lastConnectAttemptTimestamp == 0) || 
-            (currentTimestamp - lastConnectAttemptTimestamp >= reconnectIntervalMilliseconds)) {
+        if (const unsigned long currentTimestamp = millis(); !provisioningRequested || lastConnectAttemptTimestamp == 0 ||
+                                                       currentTimestamp - lastConnectAttemptTimestamp >= reconnectIntervalMilliseconds) {
             provisioningRequested = true;
             lastConnectAttemptTimestamp = currentTimestamp;
             MODEST_LOG_I("WiFi", "Initiating Wi-Fi connection to SSID: %s", networkSsidIdentifier);
@@ -46,7 +45,7 @@ void WiFiConnectivityDriver::connect() {
 }
 
 bool WiFiConnectivityDriver::isConnected() {
-    bool currentLinkStatus = (WiFi.status() == WL_CONNECTED);
+    const bool currentLinkStatus = WiFi.status() == WL_CONNECTED;
     if (currentLinkStatus) {
         provisioningRequested = false; // Reset volatile transit flag upon verified link auth
     }
@@ -71,10 +70,45 @@ Client& WiFiConnectivityDriver::getNetworkSocket() const {
     return *hardwareSocket;
 }
 
-void WiFiConnectivityDriver::setReconnectInterval(unsigned long intervalMs) {
-    reconnectIntervalMilliseconds = intervalMs;
+void WiFiConnectivityDriver::setReconnectInterval(const unsigned long intervalInMilliseconds) {
+    reconnectIntervalMilliseconds = intervalInMilliseconds;
 }
 
 unsigned long WiFiConnectivityDriver::getReconnectInterval() const {
     return reconnectIntervalMilliseconds;
+}
+
+// ReSharper disable once CppMemberFunctionMayBeStatic
+wl_status_t WiFiConnectivityDriver::getWiFiStatus() const {
+    return WiFi.status();
+}
+
+void WiFiConnectivityDriver::disconnect() {
+    WiFi.disconnect();
+    provisioningRequested = false;
+}
+
+// ReSharper disable once CppMemberFunctionMayBeStatic
+IPAddress WiFiConnectivityDriver::getLocalIpAddress() const {
+    return WiFi.localIP();
+}
+
+// ReSharper disable once CppMemberFunctionMayBeStatic
+int32_t WiFiConnectivityDriver::getSignalStrengthInDbm() const {
+    return WiFi.RSSI();
+}
+
+bool WiFiConnectivityDriver::waitForConnection(unsigned long timeoutMilliseconds) {
+    if (isConnected()) {
+        return true;
+    }
+    connect();
+    unsigned long startTimestamp = millis();
+    while (millis() - startTimestamp < timeoutMilliseconds) {
+        if (isConnected()) {
+            return true;
+        }
+        delay(100);
+    }
+    return isConnected();
 }
