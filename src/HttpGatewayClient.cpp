@@ -15,16 +15,16 @@ HttpGatewayClient::HttpGatewayClient(ConnectivityDriver& transportDriver, const 
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 bool HttpGatewayClient::sendTelemetryRecord(const TelemetryPackage& abstractTelemetryPayload) {
-    // 1. Guard capability health checks first before allocating memory
+    // Check transport capability before allocating memory
     if (!communicationTransportDriver.canTransmit()) {
         communicationTransportDriver.connect();
         return false;
     }
 
-    // 2. Perform polymorphic package data serialization mapping
+    // Serialize the telemetry package to JSON
     const String serializedPayloadOutput = abstractTelemetryPayload.toJsonString();
 
-    // 3. Execute HTTP Layer transactions safely within the NetworkWorker thread context
+    // Execute HTTP POST within the NetworkWorker thread context
     HTTPClient httpClientEndpoint;
     httpClientEndpoint.begin(serviceEndpointUrl);
     httpClientEndpoint.addHeader("Content-Type", contentTypeHeader);
