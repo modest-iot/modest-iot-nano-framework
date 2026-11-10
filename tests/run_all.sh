@@ -190,7 +190,13 @@ run_test "test_DoorWindowSensor" \
     src/DoorWindowSensor.cpp \
     tests/DoorWindowSensor/test.cpp
 
-# 23. DhtSensor Suite
+# 23. OneWireTemperatureSensor Suite
+run_test "test_OneWireTemperatureSensor" \
+    src/Sensor.cpp \
+    src/OneWireTemperatureSensor.cpp \
+    tests/OneWireTemperatureSensor/test.cpp
+
+# 24. DhtSensor Suite
 run_test "test_DhtSensor" \
     src/Sensor.cpp \
     src/DhtSensor.cpp \

@@ -41,6 +41,7 @@ WaterFlowSensor	KEYWORD1
 PthSensor	KEYWORD1
 WaterLeakSensor	KEYWORD1
 DoorWindowSensor	KEYWORD1
+OneWireTemperatureSensor	KEYWORD1
 WiFiConnectivityDriver	KEYWORD1
 
 #######################################

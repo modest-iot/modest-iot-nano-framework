@@ -52,5 +52,6 @@
 #include "PthSensor.h"
 #include "WaterLeakSensor.h"
 #include "DoorWindowSensor.h"
+#include "OneWireTemperatureSensor.h"
 
 #endif // MODEST_IOT_H
