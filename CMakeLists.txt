@@ -216,6 +216,7 @@ add_executable(test_MqttGatewayClient
         src/WiFiConnectivityDriver.cpp
         src/Device.cpp
         src/SamplingScheduler.cpp
+        src/Sensor.cpp
         ${TEST_FAKES}
 )
 target_include_directories(test_MqttGatewayClient PRIVATE tests/fakes src)

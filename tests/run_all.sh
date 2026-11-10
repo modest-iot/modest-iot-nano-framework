@@ -94,6 +94,7 @@ run_test "test_MqttGatewayClient" \
     src/WiFiConnectivityDriver.cpp \
     src/Device.cpp \
     src/SamplingScheduler.cpp \
+    src/Sensor.cpp \
     tests/MqttGatewayClient/test.cpp
 
 # 7. EngineConfig and Device Configuration Suite
