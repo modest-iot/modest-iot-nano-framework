@@ -36,6 +36,7 @@
 #include "PulseSensor.h"
 #include "Led.h"
 #include "RgbLed.h"
+#include "Hd44780Driver.h"
 #include "CharacterLcdDisplay.h"
 #include "ServoMotor.h"
 #include "GasSensor.h"
@@ -47,5 +48,6 @@
 #include "RfidSensor.h"
 #include "RelayActuator.h"
 #include "SoilMoistureSensor.h"
+#include "WaterFlowSensor.h"
 
 #endif // MODEST_IOT_H
