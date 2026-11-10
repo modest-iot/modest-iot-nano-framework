@@ -7,9 +7,9 @@
 
 #include "MqttGatewayClient.h"
 #include "ModestLog.h"
-#include <ArduinoJson.h>   // W15: JSON parsing for incoming command payloads
+#include <ArduinoJson.h>   // JSON parsing for incoming command payloads
 
-// W15: Static pointer for callback access (set by constructor)
+// Static pointer for callback access (set by constructor)
 static MqttGatewayClient* gActiveMqttClient = nullptr;
 
 MqttGatewayClient::MqttGatewayClient(ConnectivityDriver& transportDriver, Client& networkClient, 
@@ -72,13 +72,13 @@ void MqttGatewayClient::ensureBrokerSessionConnection() {
 
     // Rate-limit connection attempts to avoid blocking the network task during outages
     if (const unsigned long currentTimestamp = millis(); lastReconnectAttemptTimestamp == 0 ||
-                                                   (currentTimestamp - lastReconnectAttemptTimestamp >= reconnectIntervalMilliseconds)) {
+                                                   currentTimestamp - lastReconnectAttemptTimestamp >= reconnectIntervalMilliseconds) {
         lastReconnectAttemptTimestamp = currentTimestamp;
         MODEST_LOG_I("MQTT", "Attempting connection to broker for client ID: %s", clientIdentifier);
 
         if (mqttClient.connect(clientIdentifier)) {
             MODEST_LOG_I("MQTT", "Connected to MQTT broker successfully.");
-            // W15: Subscribe to the inbound command topic after successful connection
+            // Subscribe to the inbound command topic after successful connection
             subscribeToTopic();
         } else {
             MODEST_LOG_W("MQTT", "Failed to connect to MQTT broker, state: %d", mqttClient.state());
@@ -110,7 +110,7 @@ int MqttGatewayClient::getClientState() {
     return mqttClient.state();
 }
 
-void MqttGatewayClient::setReconnectInterval(unsigned long intervalMilliseconds) {
+void MqttGatewayClient::setReconnectInterval(const unsigned long intervalMilliseconds) {
     reconnectIntervalMilliseconds = intervalMilliseconds;
 }
 
@@ -185,9 +185,13 @@ const char* MqttGatewayClient::getSubscribeTopic() const {
     return subscribeTopic;
 }
 
-// ============================================================================
-// W15: Cloud-to-device MQTT subscribe
-// ============================================================================
+/**
+ * @name Cloud-to-device MQTT subscribe
+ * @{
+ *
+ * @brief Subscribes to an MQTT topic for inbound commands and marshals
+ * parsed JSON payloads to the Device via enqueueCommand().
+ */
 
 void MqttGatewayClient::subscribeToTopic() {
     if (subscribeTopic == nullptr) {
@@ -201,7 +205,7 @@ void MqttGatewayClient::subscribeToTopic() {
     }
 }
 
-void MqttGatewayClient::mqttMessageCallback(char* topic, const byte* payload, unsigned int length) {
+void MqttGatewayClient::mqttMessageCallback(const char* topic, const byte* payload, const unsigned int length) {
     (void)topic; // Used only in MODEST_LOG_D, which may be compiled out
     if (gActiveMqttClient == nullptr || gActiveMqttClient->targetDevice == nullptr) {
         return;
@@ -224,8 +228,7 @@ void MqttGatewayClient::mqttMessageCallback(char* topic, const byte* payload, un
 
     // Parse JSON to extract command identifier
     JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, gActiveMqttClient->subscribePayloadBuffer);
-    if (error != DeserializationError::Ok) {
+    if (const DeserializationError error = deserializeJson(doc, gActiveMqttClient->subscribePayloadBuffer); error != DeserializationError::Ok) {
         MODEST_LOG_W("MQTT", "Failed to parse command JSON (error code: %d)", static_cast<int>(error));
         return;
     }
@@ -241,6 +244,6 @@ void MqttGatewayClient::mqttMessageCallback(char* topic, const byte* payload, un
 
     // Marshal the command to the sampler task via Device::enqueueCommand()
     // The Device is both the target handler and the marshaler, ensuring cross-task safety
-    Command command(commandId);
+    const Command command(commandId);
     gActiveMqttClient->targetDevice->enqueueCommand(gActiveMqttClient->targetDevice, command);
 }

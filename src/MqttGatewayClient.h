@@ -25,7 +25,7 @@ private:
     
     const char* clientIdentifier; ///< Unique client identifier.
     const char* publishTopic; ///< MQTT topic for publishing telemetry.
-    const char* subscribeTopic; ///< MQTT topic for subscribing to inbound commands (W15).
+    const char* subscribeTopic; ///< MQTT topic for subscribing to inbound commands.
 
     unsigned long lastReconnectAttemptTimestamp; ///< Timestamp of the last broker connection attempt.
     unsigned long reconnectIntervalMilliseconds; ///< Minimum cooldown between reconnect attempts in milliseconds.
@@ -37,7 +37,7 @@ private:
     static constexpr size_t MAX_TELEMETRY_PAYLOAD_SIZE = 512; ///< Maximum serialized payload size in bytes.
     char serializationBuffer[MAX_TELEMETRY_PAYLOAD_SIZE]; ///< Fixed-size buffer for JSON serialization.
 
-    // W15: Cloud-to-device command infrastructure
+    // Cloud-to-device command infrastructure
     Device* targetDevice; ///< Device that receives incoming MQTT commands via enqueueCommand().
     static constexpr size_t MAX_SUBSCRIBE_PAYLOAD_SIZE = 256; ///< Maximum inbound command payload size.
     char subscribePayloadBuffer[MAX_SUBSCRIBE_PAYLOAD_SIZE]; ///< Fixed-size buffer for incoming command JSON.
@@ -53,13 +53,13 @@ private:
      * @param payload Raw JSON payload bytes.
      * @param length Length of the payload in bytes.
      */
-    static void mqttMessageCallback(char* topic, const byte* payload, unsigned int length);
+    static void mqttMessageCallback(const char* topic, const byte* payload, unsigned int length);
 
     static constexpr uint16_t DEFAULT_RECONNECT_INTERVAL_MILLISECONDS = 5000; ///< Default cooldown between broker reconnection attempts.
     static constexpr uint8_t DEFAULT_MQTT_QOS = 0; ///< Default Quality of Service for MQTT subscribe.
 
     void ensureBrokerSessionConnection(); ///< Ensures broker session is active with rate-limited backoff.
-    void subscribeToTopic(); ///< Subscribes to the inbound command topic after successful connection (W15).
+    void subscribeToTopic(); ///< Subscribes to the inbound command topic after successful connection.
 
 public:
     /**
@@ -68,7 +68,7 @@ public:
      * @param brokerIpAddress The network IP or domain address of your MQTT Broker.
      * @param brokerPort The port of your broker instance (typically 1883 for unencrypted TCP).
      * @param publishTopic Target MQTT topic string destination for publishing telemetry records.
-     * @param subscribeTopic MQTT topic to subscribe to for inbound cloud-to-device commands (W15).
+     * @param subscribeTopic MQTT topic to subscribe to for inbound cloud-to-device commands.
      *        Pass nullptr to disable subscribe (publish-only mode).
      * @param targetDevice Device that receives incoming commands via enqueueCommand().
      *        Commands are marshaled to the sampler task for cross-task safety.
