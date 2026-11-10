@@ -34,7 +34,7 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 
 ### What's Delivered
 
-- **43 source headers** with full Doxygen documentation and `@runs_on` threading tags.
+- **45 source headers** with full Doxygen documentation and `@runs_on` threading tags.
 - **15 example sketches** covering diverse use cases (smart band, air quality, RFID access, smart greenhouse, weather station, crop monitoring, home security, etc.).
 - **26 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
 - **3 CI workflows**: host tests, compile examples, lint.
@@ -46,7 +46,7 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 - **Sensor fault events** (IDs 22/23) with debounced threshold state machine.
 - **Telemetry pipeline** with `unique_ptr` ownership, drop-oldest policy, bounded serialization, envelope metadata.
 - **MQTT keep-alive** with rate-limited reconnection backoff.
-- **29 Architecture Decision Records** documenting all key architectural choices, including DDD adoption (ADR-023).
+- **30 Architecture Decision Records** documenting all key architectural choices, including DDD adoption (ADR-023).
 
 ### Remaining Work: Tier 4 (Capabilities) — **Complete** ✓
 
@@ -87,7 +87,7 @@ Components for weather stations, home security, and industrial monitoring:
 
 New examples: `HomeSecurityDevice` (Water Leak + Door/Window + PIR + Buzzer), `WeatherStation` updated with PthSensor.
 
-### Component Expansion Tier 3 — **In Progress**
+### Component Expansion Tier 3 — **Complete** ✓
 
 Popular IoT components for maximum v1.0.0 adoption:
 
@@ -150,7 +150,7 @@ Widely available sensors with simple I²C or analog interfaces:
 
 **Tier 3: Niche Components** (P2–P4, deferred)
 
-Accelerometer/IMU (MPU6050/BNO055), rain sensor, flame sensor, stepper motor, OLED display — serve specific domains and may require new library dependencies.
+Accelerometer/IMU (MPU6050/BNO055), rain sensor, flame sensor, stepper motor — serve specific domains and may require new library dependencies.
 
 **Example-Driven Adoption**:
 
@@ -165,7 +165,7 @@ New examples bundle multiple components to demonstrate complete use cases:
 
 **Library Release Impact**:
 
-- **v1.0.0**: Current 15 sensors + 6 actuators + Tier 1 and Tier 2 components (Relay, Soil Moisture, WaterFlow, PthSensor, Water Leak, Door/Window).
+- **v1.0.0**: 18 sensors + 7 actuators + Tier 1, Tier 2, and Tier 3 components (Relay, Soil Moisture, WaterFlow, PthSensor, Water Leak, Door/Window, OneWireTemperature, OledDisplay, EnvironmentalGas).
 - **v1.1.0**: Tier 2 components (BME280, Water Leak, Door/Window) with new examples.
 - **v1.2.0**: Tier 3 components as needed, based on community feedback.
 
@@ -867,7 +867,7 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 |-----------------------------|-------------------------|----------------------------------|----------------------------|
 | **Consistent patterns**     | Mediator, CQRS, events  | Same patterns at edge scale      | One mental model for both  |
 | **AI-assisted development** | Clean, documented API   | Python/ML ecosystem              | AI generates code for both |
-| **Test infrastructure**     | 22 host test suites, CI | Python pytest, integration tests | Full-stack testing         |
+| **Test infrastructure**     | 26 host test suites, CI | Python pytest, integration tests | Full-stack testing         |
 | **Documentation**           | Doxygen, ADRs, README   | Sphinx, OpenAPI specs            | Unified documentation      |
 
 ### 4.2 For IoT Products
@@ -1022,7 +1022,7 @@ The Modest IoT dual-framework vision provides a complete, local-first IoT stack:
 - **Together** they form a scalable, offline-resilient, AI-ready IoT platform.
 - **DDD-guided design** ensures consistent terminology, clear context boundaries, and appropriate patterns for each framework (see ADR-023).
 
-The Nano Framework is **97% complete** (Tiers 0–4 done, Component Expansion Tier 1 and Tier 2 done, Tier 5: W16 ✓, W17 ✓, W19 ✓). The Edge Framework is **planned** with a clear DDD-based architecture and development roadmap.
+The Nano Framework is **99% complete** (Tiers 0–4 done, Component Expansion Tiers 1–3 done, Tier 5: W16 ✓, W17 ✓, W19 ✓, W18 deferred to v1.1.0). The Edge Framework is **planned** with a clear DDD-based architecture and development roadmap.
 
 **Next steps**:
 1. Nano Framework Tier 4 is complete (W12–W15 ✓). Component Expansion Tier 1 is complete (RelayActuator, SoilMoistureSensor ✓). Component Expansion Tier 2 is complete (PthSensor, WaterLeakSensor, DoorWindowSensor ✓). Tier 5: W16 ✓ (tickless scheduling), W17 ✓ (deep sleep), W19 ✓ (native drivers).
