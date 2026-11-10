@@ -11,7 +11,7 @@ All 8 improvement briefs and the roadmap are consolidated in this single documen
 | Tier                                    | Items                                                  | Goal                                                                                                | Exit criterion                                                                                                       | Status       |
 |-----------------------------------------|--------------------------------------------------------|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|--------------|
 | 0: Make it correct and shippable        | W1, W2, W3, W4                                         | Everything compiles, repo is clean, rules are written down                                          | All examples compile cleanly; clean repo layout                                                                      | **Complete** |
-| 1: Safety net and visibility            | W5                                                     | Regressions caught automatically via host tests & CI                                                | CI green on PRs/pushes; all 22 host test suites pass; examples compile in CI; lint passes                           | **Complete** |
+| 1: Safety net and visibility            | W5                                                     | Regressions caught automatically via host tests & CI                                                | CI green on PRs/pushes; all 25 host test suites pass; examples compile in CI; lint passes                           | **Complete** |
 | 2: Reliability, diagnostics & footprint | W6 (logging/high-water/sensor conversion), W7, W9, W10 | Reconnection robust, tasks tunable, BLE modern, zero-cost logs, sensor fault events with conversion | Soak test reconnects; logs available behind macro; BLE tests pass; diagnostics snapshot works; sensors report faults | **Complete** |
 | 3: Core performance and DX              | W8, then W11                                           | Per-slot intervals, bounded memory use for telemetry                                                | Scheduler host tests pass; all examples use per-sensor intervals; telemetry ownership and queue policy complete      | **Complete** |
 | 4: Capabilities                         | W12, W13, W14, W15, rest of W6                         | Edge-driven sensing, remote commands, fault events                                                  | Bidirectional MQTT verified; interrupt-driven sensors tested                                                         | **Complete** (W12 ✓, W13 ✓, W14 ✓, W15 ✓) |
@@ -72,7 +72,7 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 - **Verified**: Local `arduino-cli compile` cleanly builds all 15 examples across ESP32 targets with `--library .` configured.
 - **Verified**: `library.properties` `depends=` syntax formatted for Arduino Library Manager compliance.
 - **Verified**: Bluetooth Classic fails on modern ESP32 variants (S2, S3, C3, C6, H2); resolved via target guards and `BleConnectivityDriver`.
-- **Verified**: Host test harness executes 22 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/relay_actuator`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`, `tests/triggering_scheduler`, `tests/command_marshaling`, `tests/water_flow_sensor`, `tests/soil_moisture_sensor`, `tests/deep_sleep`, `tests/servo_motor`, `tests/character_lcd_display`, `tests/door_window_sensor`, `tests/water_leak_sensor`, `tests/pth_sensor`) under Address and Undefined sanitizers.
+- **Verified**: Host test harness executes 25 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/relay_actuator`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`, `tests/triggering_scheduler`, `tests/command_marshaling`, `tests/water_flow_sensor`, `tests/soil_moisture_sensor`, `tests/deep_sleep`, `tests/servo_motor`, `tests/character_lcd_display`, `tests/door_window_sensor`, `tests/water_leak_sensor`, `tests/pth_sensor`, `tests/one_wire_temperature_sensor`, `tests/oled_display`) under Address and Undefined sanitizers.
 - **Verified**: Logging facility (`MODEST_LOG_*`) works with host capture sink and `MIOT_LOG_*` aliases.
 - **Verified**: MQTT gateway reconnection and keep-alive verified with host tests.
 - **Remaining**: Performance, latency, memory and power figures (reasoned, to be measured on hardware).
@@ -165,6 +165,7 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 | Commands | 250 to 252   | `Buzzer`                                             |
 | Commands | 300 to 302   | `RelayActuator`                                      |
 | Commands | 304 to 306   | `RgbLed`                                             |
+| Commands | 350 to 352   | `OledDisplay`                                        |
 
 Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power events 910-919. User identifiers from 1000.
 
@@ -199,7 +200,7 @@ Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power ev
 | 4  | `tests/RfidSensor/`                  | CRC calculation, SPI mock, card communication                          |
 | 5  | `tests/BleConnectivityDriver/`       | BLE NUS GATT service, notifications, RX callbacks                      |
 | 6  | `tests/ModestLog/`                   | `MODEST_LOG_*` level filtering, sink redirection, `MIOT_LOG_*` aliases |
-| 7  | `tests/MqttGatewayClient/`           | MQTT keep-alive, reconnect backoff, client state                       |
+| 7  | `tests/MqttGatewayClient/`           | MQTT keep-alive, reconnect backoff, MQTT Things client state           |
 | 8  | `tests/DiagnosticsSnapshot/`         | `DiagnosticsSnapshot`, shared counters, enqueue edge cases             |
 | 9  | `tests/SensorFault/`                 | Fault threshold, latching, recovery events, counter reset              |
 | 10 | `tests/SamplingScheduler/`           | Per-slot periods, phase alignment, minimum enforcement                 |
@@ -215,6 +216,9 @@ Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power ev
 | 20 | `tests/PthSensor/`                   | BME280 I²C sensor, compensation formulas, altitude calculation        |
 | 21 | `tests/WaterLeakSensor/`             | Digital input, leak detection, propagation suppression                |
 | 22 | `tests/DoorWindowSensor/`            | Digital input, open/close detection, propagation suppression          |
+| 23 | `tests/OneWireTemperatureSensor/`    | 1-Wire protocol, DS18B20 temperature, change detection                |
+| 24 | `tests/OledDisplay/`                 | SSD1306 I²C protocol, frame buffer, text rendering, drawing           |
+| 25 | `tests/EnvironmentalGasSensor/`      | BME680 I²C sensor, gas resistance, compensation formulas              |
 
 **Source**: `tests/fakes/`, `tests/run_all.sh`, `.github/workflows/`, `CMakeLists.txt`
 
@@ -351,6 +355,7 @@ Converted sensors: `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `Digita
 | `PthSensor`                   | 2000         | 250          |
 | `WaterLeakSensor`             | 100          | 20           |
 | `DoorWindowSensor`            | 100          | 20           |
+| `OneWireTemperatureSensor`    | 1000         | 100          |
 
 **Example Migration**: All 15 examples migrated. `ClassicBlinker` uses explicit four-argument `EventHandler*` overload. 14 other examples automatically use `Sensor*` overload.
 
@@ -624,6 +629,41 @@ Updated `WeatherStation` example to include `PthSensor` alongside `DhtSensor` an
 
 ---
 
+## Component Expansion Tier 3 (In Progress)
+
+Adding three popular IoT components to maximize v1.0.0 adoption: DS18B20 1-Wire temperature, SSD1306 OLED display, and BME680 environmental gas sensor.
+
+| Component | Type | Dependencies | Use Case | Status |
+|-----------|------|-------------|----------|--------|
+| OneWireTemperatureSensor | Sensor | GPIO (1-Wire) | High-accuracy temperature (weather stations, aquariums) | **Complete** |
+| OledDisplay | Actuator | I²C (`Wire`) | OLED display (portable devices, dashboards) | **Complete** |
+| Ssd1306Driver | Driver | I²C (`Wire`) | SSD1306 protocol driver for OledDisplay | **Complete** |
+| EnvironmentalGasSensor | Sensor | I²C (`Wire`) | Air quality monitoring (VOC, gas resistance) | Pending |
+
+### OneWireTemperatureSensor
+
+**Readings**: Temperature (°C) via native 1-Wire bit-banging protocol (DS18B20).
+
+**Change Detection**: Epsilon-based (`TEMPERATURE_CHANGE_EPSILON = 0.1f` °C).
+
+**Sampling**: Default 1000ms, minimum 100ms.
+
+**Tests**: 8 host tests covering constructor, pin configuration, sampling intervals, cached value access, and change detection.
+
+**Source**: `src/OneWireTemperatureSensor.h`, `src/OneWireTemperatureSensor.cpp`, `tests/OneWireTemperatureSensor/test.cpp`
+
+### OledDisplay + Ssd1306Driver
+
+**Ssd1306Driver**: Native SSD1306 I²C protocol driver with initialization, command/data methods, and display control. Follows the `Hd44780Driver` pattern.
+
+**OledDisplay**: Actuator with 1KB frame buffer (128x64), 5x7 font bitmap, text rendering, and drawing primitives. Commands: `UPDATE_DISPLAY_COMMAND` (350), `CLEAR_DISPLAY_COMMAND` (351), `SET_BACKLIGHT_COMMAND` (352).
+
+**Tests**: 14 host tests covering constructor, commands, text rendering, drawing primitives, and edge cases.
+
+**Source**: `src/Ssd1306Driver.h`, `src/Ssd1306Driver.cpp`, `src/OledDisplay.h`, `src/OledDisplay.cpp`, `tests/OledDisplay/test.cpp`
+
+---
+
 ## Tier 5: Optimization and Power (In Progress)
 
 ### W16: Tickless scheduling and light sleep — **Complete** ✓
@@ -724,7 +764,7 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT today, and
 | Debugging       | `Serial.println` scattered                   | `MODEST_LOG_*`, stack high-water marks, sensor fault events       | Same                                                     |
 | Networking      | Blocking connect/publish in `loop()`         | Separate network task, reconnect policy, keep-alive               | Same, plus cloud-to-device commands                      |
 | Cloud-to-device | Hand-rolled callback                         | Not supported                                                     | Mediator-routed commands through `Device::post`          |
-| Testing         | Rarely possible off-device                   | 22 host test suites with CI                                       | Same                                                     |
+| Testing         | Rarely possible off-device                   | 25 host test suites with CI                                       | Same                                                     |
 
 ### Performance
 
