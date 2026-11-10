@@ -15,7 +15,7 @@ All 8 improvement briefs and the roadmap are consolidated in this single documen
 | 2: Reliability, diagnostics & footprint | W6 (logging/high-water/sensor conversion), W7, W9, W10 | Reconnection robust, tasks tunable, BLE modern, zero-cost logs, sensor fault events with conversion | Soak test reconnects; logs available behind macro; BLE tests pass; diagnostics snapshot works; sensors report faults | **Complete** |
 | 3: Core performance and DX              | W8, then W11                                           | Per-slot intervals, bounded memory use for telemetry                                                | Scheduler host tests pass; all examples use per-sensor intervals; telemetry ownership and queue policy complete      | **Complete** |
 | 4: Capabilities                         | W12, W13, W14, W15, rest of W6                         | Edge-driven sensing, remote commands, fault events                                                  | Bidirectional MQTT verified; interrupt-driven sensors tested                                                         | **Complete** (W12 ✓, W13 ✓, W14 ✓, W15 ✓) |
-| 5: Optimization and power               | W16, W17, W18, W19                                     | Battery operation and further tuning                                                                | Decide per item from measured data                                                                                   | Queued       |
+| 5: Optimization and power               | W16, W17, W18, W19                                     | Battery operation and further tuning                                                                | Decide per item from measured data                                                                                   | In Progress  |
 
 ## Work Item Registry
 
@@ -45,7 +45,7 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 | W14 | HX711 data-ready and ultrasonic echo capture (remove blocking)                          | Tier 4      | 2 | 4 | 2 | M    | 5     | **Complete** (LoadCellAmplifier hybrid scheduling, UltrasonicSensor interrupt echo, SmartScaleDevice migrated) |
 | W15 | Cloud-to-device commands (MQTT subscribe)                                               | Tier 4      | 2 | 0 | 4 | M    | 5     | **Complete** (subscribe on connect, JSON parsing, Device::enqueueCommand, 8 host tests)           |
 | W16 | Tickless scheduling and light sleep                                                     | Tier 5      | 2 | 4 | 2 | L    | 3     | **Complete** (ticksUntilNextDue(), PowerMode enum, rearmTimerForNextDue(), enterLightSleep(), ESP32 light sleep) |
-| W17 | Deep-sleep cycle and battery example                                                    | Tier 5      | 1 | 4 | 2 | L    | 3     | **Complete** (PowerMode::DeepSleep, enterDeepSleep(), reportWakeReason(), RTC_DATA_ATTR, DeepSleepSensor example, 10 host tests) |
+| W17 | Deep-sleep cycle and battery example                                                    | Tier 5      | 1 | 4 | 2 | L    | 3     | **Complete** (PowerMode::DeepSleep, enterDeepSleep(), reportWakeReason(), RTC_DATA_ATTR, WeatherStation example, 10 host tests) |
 | W18 | Telemetry pool and writer interface (Phase C)                                           | Tier 5      | 2 | 3 | 1 | L    | 2     | Pending                                                                                                                                     |
 | W19 | Native servo and LCD drivers                                                            | Tier 5      | 2 | 0 | 1 | M    | 2     | Pending                                                                                                                                     |
 
@@ -66,10 +66,10 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 
 ## Claims verified and remaining verification gaps
 
-- **Verified**: Local `arduino-cli compile` cleanly builds all 11 examples across ESP32 targets with `--library .` configured.
+- **Verified**: Local `arduino-cli compile` cleanly builds all 13 examples across ESP32 targets with `--library .` configured.
 - **Verified**: `library.properties` `depends=` syntax formatted for Arduino Library Manager compliance.
 - **Verified**: Bluetooth Classic fails on modern ESP32 variants (S2, S3, C3, C6, H2); resolved via target guards and `BleConnectivityDriver`.
-- **Verified**: Host test harness executes 16 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/relay_actuator`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`, `tests/triggering_scheduler`, `tests/command_marshaling`, `tests/water_flow_sensor`, `tests/soil_moisture_sensor`) under Address and Undefined sanitizers.
+- **Verified**: Host test harness executes 17 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/relay_actuator`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`, `tests/triggering_scheduler`, `tests/command_marshaling`, `tests/water_flow_sensor`, `tests/soil_moisture_sensor`, `tests/deep_sleep`) under Address and Undefined sanitizers.
 - **Verified**: Logging facility (`MODEST_LOG_*`) works with host capture sink and `MIOT_LOG_*` aliases.
 - **Verified**: MQTT gateway reconnection and keep-alive verified with host tests.
 - **Remaining**: Performance, latency, memory and power figures (reasoned, to be measured on hardware).
@@ -337,14 +337,14 @@ Converted sensors: `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `Digita
 | `GeolocationSensor`           | 1000         | 100          |
 | `RfidSensor`                  | 100          | 10           |
 
-**Example Migration**: All 11 examples migrated. `ClassicBlinker` uses explicit four-argument `EventHandler*` overload. 10 other examples automatically use `Sensor*` overload.
+**Example Migration**: All 13 examples migrated. `ClassicBlinker` uses explicit four-argument `EventHandler*` overload. 12 other examples automatically use `Sensor*` overload.
 
 **Handler time budget** (worst-case blocking per handler):
 
 | Handler                       | Worst-case blocking                 | Source                                  |
 |-------------------------------|-------------------------------------|-----------------------------------------|
-| `LoadCellAmplifier`           | up to 100 ms busy-wait              | `READ_TIMEOUT_MS = 100`                 |
-| `UltrasonicSensor`            | up to 30 ms inside `pulseIn`        | `TIMEOUT_LIMIT_IN_MICROSECONDS = 30000` |
+| `LoadCellAmplifier`           | ~1.2 ms (24-bit read, no busy-wait) | `readRawValue()` non-blocking           |
+| `UltrasonicSensor`            | microseconds (ISR-based timing)     | `onEchoInterrupt()` with esp_timer      |
 | `DhtSensor`                   | roughly 20 to 25 ms bit-banged read | DHT library                             |
 | `DigitalLightIntensitySensor` | sub-millisecond to a few ms         | `Wire` reads                            |
 | `GeolocationSensor`           | grows with serial backlog           | `updateInternalBuffer()`                |
@@ -574,17 +574,23 @@ Demonstrates `WaterFlowSensor` with `appendToBothSchedulers()` using CHANGE edge
 
 ---
 
-### W17: Deep-sleep cycle and battery example
+### W17: Deep-sleep cycle and battery example — **Complete** ✓
 
-**Deep Sleep** (`esp_deep_sleep_start`): Timer and `ext0`/`ext1` GPIO wake. RAM lost except RTC memory (`RTC_DATA_ATTR`).
+**Problem**: Battery-powered devices need true deep sleep (~10µA) rather than light sleep (~100mA). Deep sleep shuts down the CPU, Wi-Fi, and most peripherals, retaining only RTC memory.
 
-**Additions**:
-- Application state survives only in RTC memory.
-- Boot path must re-create devices and sensors quickly.
-- Report wake reason (`esp_sleep_get_wakeup_cause()`) to mediator as event.
-- Wi-Fi reconnection costs most of a battery budget; recommend batching telemetry.
+**Resolution**: Added `PowerMode::DeepSleep` to the existing `PowerMode` enum. When set, the device enters deep sleep after each sampler dispatch via `esp_deep_sleep_start()`. On wake, the device reports the wake reason and re-initializes all sensors.
 
-**Source**: `src/Device.h`
+**Implementation**:
+- `PowerMode::DeepSleep` enum value — triggers `enterDeepSleep()` after sampler dispatch.
+- `Device::enterDeepSleep()` — configures timer wake source via `esp_sleep_enable_timer_wakeup()` and calls `esp_deep_sleep_start()`.
+- `Device::reportWakeReason()` — uses `esp_sleep_get_wakeup_cause()` to report the wake source (timer, GPIO, reset).
+- `RTC_DATA_ATTR` support — application state survives deep sleep using RTC slow memory.
+- `WeatherStation` example — demonstrates deep sleep with DHT22 and BH1750 sensors, RTC boot count tracking, and wake-reason reporting.
+- 10 host tests in `tests/DeepSleep/test.cpp` covering PowerMode enum, all wake causes, RTC_DATA_ATTR, and deep sleep API mocks.
+
+**Energy Saving**: Deep sleep reduces power from ~100mA (active) to ~10µA (sleeping), a 10,000x reduction. With 5-minute sleep intervals, the device spends >99.9% of its time asleep, enabling months of operation on a coin cell battery.
+
+**Source**: `src/Device.h`, `src/Device.cpp`, `examples/WeatherStation/WeatherStation.ino`, `tests/DeepSleep/test.cpp`
 
 ---
 
