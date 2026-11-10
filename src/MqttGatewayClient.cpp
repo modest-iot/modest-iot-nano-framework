@@ -205,7 +205,7 @@ void MqttGatewayClient::subscribeToTopic() {
     }
 }
 
-void MqttGatewayClient::mqttMessageCallback(const String& topic, const String& payload) {
+void MqttGatewayClient::mqttMessageCallback(String& topic, String& payload) {
     (void)topic; // Used only in MODEST_LOG_D, which may be compiled out
     if (gActiveMqttClient == nullptr || gActiveMqttClient->targetDevice == nullptr) {
         return;

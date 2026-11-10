@@ -52,7 +52,7 @@ private:
      * @param topic MQTT topic of the incoming message.
      * @param payload Message payload as a String.
      */
-    static void mqttMessageCallback(const String& topic, const String& payload);
+    static void mqttMessageCallback(String& topic, String& payload);
 
     static constexpr uint16_t DEFAULT_RECONNECT_INTERVAL_MILLISECONDS = 5000; ///< Default cooldown between broker reconnection attempts.
     static constexpr uint8_t DEFAULT_MQTT_QOS = 0; ///< Default Quality of Service for MQTT subscribe.
