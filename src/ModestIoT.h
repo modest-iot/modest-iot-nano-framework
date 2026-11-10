@@ -53,5 +53,7 @@
 #include "WaterLeakSensor.h"
 #include "DoorWindowSensor.h"
 #include "OneWireTemperatureSensor.h"
+#include "Ssd1306Driver.h"
+#include "OledDisplay.h"
 
 #endif // MODEST_IOT_H

@@ -172,31 +172,38 @@ run_test "test_CharacterLcdDisplay" \
     src/Hd44780Driver.cpp \
     tests/CharacterLcdDisplay/test.cpp
 
-# 20. PthSensor Suite
+# 20. OledDisplay Suite
+run_test "test_OledDisplay" \
+    src/Actuator.cpp \
+    src/OledDisplay.cpp \
+    src/Ssd1306Driver.cpp \
+    tests/OledDisplay/test.cpp
+
+# 21. PthSensor Suite
 run_test "test_PthSensor" \
     src/Sensor.cpp \
     src/PthSensor.cpp \
     tests/PthSensor/test.cpp
 
-# 21. WaterLeakSensor Suite
+# 22. WaterLeakSensor Suite
 run_test "test_WaterLeakSensor" \
     src/Sensor.cpp \
     src/WaterLeakSensor.cpp \
     tests/WaterLeakSensor/test.cpp
 
-# 22. DoorWindowSensor Suite
+# 23. DoorWindowSensor Suite
 run_test "test_DoorWindowSensor" \
     src/Sensor.cpp \
     src/DoorWindowSensor.cpp \
     tests/DoorWindowSensor/test.cpp
 
-# 23. OneWireTemperatureSensor Suite
+# 24. OneWireTemperatureSensor Suite
 run_test "test_OneWireTemperatureSensor" \
     src/Sensor.cpp \
     src/OneWireTemperatureSensor.cpp \
     tests/OneWireTemperatureSensor/test.cpp
 
-# 24. DhtSensor Suite
+# 25. DhtSensor Suite
 run_test "test_DhtSensor" \
     src/Sensor.cpp \
     src/DhtSensor.cpp \
