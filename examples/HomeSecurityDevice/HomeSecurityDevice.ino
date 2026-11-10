@@ -19,56 +19,55 @@
 #define PIR_SENSOR_PIN 18
 #define BUZZER_PIN 25
 
-// Event identifiers
-#define WATER_LEAK_DETECTED_EVENT_IDENTIFIER 70
-#define WATER_LEAK_CLEARED_EVENT_IDENTIFIER 71
-#define DOOR_OPENED_EVENT_IDENTIFIER 72
-#define DOOR_CLOSED_EVENT_IDENTIFIER 73
-#define MOTION_DETECTED_EVENT_IDENTIFIER 40
-#define MOTION_STOPPED_EVENT_IDENTIFIER 41
-
 class HomeSecurityDevice : public Device {
 private:
-    WaterLeakSensor& waterLeakSensor;
-    DoorWindowSensor& doorWindowSensor;
-    PassiveInfraredSensor& pirSensor;
-    Buzzer& buzzer;
+    WaterLeakSensor waterLeakSensor;
+    DoorWindowSensor doorWindowSensor;
+    PassiveInfraredSensor pirSensor;
+    Buzzer buzzer;
 
 public:
-    HomeSecurityDevice(WaterLeakSensor& waterLeakSensor,
-                       DoorWindowSensor& doorWindowSensor,
-                       PassiveInfraredSensor& pirSensor,
-                       Buzzer& buzzer)
-        : Device("HomeSecurity", 200, 0, 1, 10)
-        , waterLeakSensor(waterLeakSensor)
-        , doorWindowSensor(doorWindowSensor)
-        , pirSensor(pirSensor)
-        , buzzer(buzzer)
+    HomeSecurityDevice()
+        : Device(200, 0)
+        , waterLeakSensor(WATER_LEAK_SENSOR_PIN, this)
+        , doorWindowSensor(DOOR_WINDOW_SENSOR_PIN, this)
+        , pirSensor(PIR_SENSOR_PIN, this)
+        , buzzer(BUZZER_PIN, this)
     {
+        // Launch internal background task workers with a safe queue boundary depth of 5
+        initializeAsynchronousEngine(5);
+
+        // Register all sensors with interrupt-driven operation (CHANGE edge)
+        appendSensorToTriggeringScheduler(
+            &waterLeakSensor, WaterLeakSensor::WATER_LEAK_DETECTED_EVENT_IDENTIFIER, CHANGE);
+        appendSensorToTriggeringScheduler(
+            &doorWindowSensor, DoorWindowSensor::DOOR_OPENED_EVENT_IDENTIFIER, CHANGE);
+        appendSensorToTriggeringScheduler(
+            &pirSensor, PassiveInfraredSensor::MOTION_DETECTED_EVENT_IDENTIFIER, CHANGE);
     }
 
 protected:
-    void on(Event& event) override {
+    void on(Event event) override {
         switch (event.identifier) {
-            case WATER_LEAK_DETECTED_EVENT_IDENTIFIER:
+            case WaterLeakSensor::WATER_LEAK_DETECTED_EVENT_IDENTIFIER:
                 Serial.println("[HomeSecurity] ⚠️  WATER LEAK DETECTED!");
                 buzzer.handle(Buzzer::PLAY_TONE_COMMAND);
                 break;
-            case WATER_LEAK_CLEARED_EVENT_IDENTIFIER:
+            case WaterLeakSensor::WATER_LEAK_CLEARED_EVENT_IDENTIFIER:
                 Serial.println("[HomeSecurity] ✓ Water leak cleared.");
                 break;
-            case DOOR_OPENED_EVENT_IDENTIFIER:
+            case DoorWindowSensor::DOOR_OPENED_EVENT_IDENTIFIER:
                 Serial.println("[HomeSecurity] 🚪 Door/window opened!");
                 buzzer.handle(Buzzer::PLAY_TONE_COMMAND);
                 break;
-            case DOOR_CLOSED_EVENT_IDENTIFIER:
+            case DoorWindowSensor::DOOR_CLOSED_EVENT_IDENTIFIER:
                 Serial.println("[HomeSecurity] 🚪 Door/window closed.");
                 break;
-            case MOTION_DETECTED_EVENT_IDENTIFIER:
+            case PassiveInfraredSensor::MOTION_DETECTED_EVENT_IDENTIFIER:
                 Serial.println("[HomeSecurity] 🏃 Motion detected!");
                 buzzer.handle(Buzzer::PLAY_TONE_COMMAND);
                 break;
-            case MOTION_STOPPED_EVENT_IDENTIFIER:
+            case PassiveInfraredSensor::MOTION_STOPPED_EVENT_IDENTIFIER:
                 Serial.println("[HomeSecurity] Motion stopped.");
                 break;
             default:
@@ -77,30 +76,20 @@ protected:
     }
 };
 
-// Sensor and actuator instances
-WaterLeakSensor waterLeakSensor(WATER_LEAK_SENSOR_PIN);
-DoorWindowSensor doorWindowSensor(DOOR_WINDOW_SENSOR_PIN);
-PassiveInfraredSensor pirSensor(PIR_SENSOR_PIN);
-Buzzer buzzer(BUZZER_PIN, &waterLeakSensor);
-
 // Application instance
-HomeSecurityDevice homeSecurityApp(waterLeakSensor, doorWindowSensor, pirSensor, buzzer);
+static HomeSecurityDevice* homeSecurityApp = nullptr;
 
 void setup() {
     Serial.begin(115200);
     Serial.println("[HomeSecurity] Initializing home security system...");
 
-    // Register all sensors with interrupt-driven operation
-    homeSecurityApp.appendSensorToTriggeringScheduler(
-        &waterLeakSensor, WaterLeakSensor::WATER_LEAK_DETECTED_EVENT_IDENTIFIER, CHANGE);
-    homeSecurityApp.appendSensorToTriggeringScheduler(
-        &doorWindowSensor, DoorWindowSensor::DOOR_OPENED_EVENT_IDENTIFIER, CHANGE);
-    homeSecurityApp.appendSensorToTriggeringScheduler(
-        &pirSensor, PassiveInfraredSensor::MOTION_DETECTED_EVENT_IDENTIFIER, CHANGE);
+    // Boot the framework application
+    homeSecurityApp = new HomeSecurityDevice();
 
     Serial.println("[HomeSecurity] System armed. Monitoring...");
 }
 
 void loop() {
     // All event handling is interrupt-driven; main loop remains idle.
+    vTaskDelay(pdMS_TO_TICKS(60000));
 }
