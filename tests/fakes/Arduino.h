@@ -119,9 +119,11 @@ inline void detachInterrupt(int pin) {
 
 // Mock timing and clock simulation
 inline unsigned long fakeMillis = 0;
+inline unsigned long fakeMicros = 0;
 inline unsigned long millis() { return fakeMillis; }
+inline unsigned long micros() { return fakeMicros; }
 inline void delay(const unsigned long ms) { fakeMillis += ms; }
-inline void delayMicroseconds(const unsigned int us) { (void)us; }
+inline void delayMicroseconds(const unsigned int us) { fakeMicros += us; }
 
 // Mock ESP32 high-resolution timer (nanoseconds since boot)
 inline int64_t fakeTimerNanoseconds = 0;

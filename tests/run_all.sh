@@ -190,6 +190,12 @@ run_test "test_DoorWindowSensor" \
     src/DoorWindowSensor.cpp \
     tests/DoorWindowSensor/test.cpp
 
+# 23. DhtSensor Suite
+run_test "test_DhtSensor" \
+    src/Sensor.cpp \
+    src/DhtSensor.cpp \
+    tests/DhtSensor/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="
