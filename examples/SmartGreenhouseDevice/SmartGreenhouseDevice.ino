@@ -102,11 +102,11 @@ public:
                 float temperature = temperatureSensor.getTemperatureInCelsius();
                 if (temperature > TEMPERATURE_HIGH_THRESHOLD) {
                     ventMotor.setTargetAngleBufferInDegrees(VENT_OPEN_ANGLE);
-                    ventMotor.handle(ServoMotor::MOVE_SERVO_COMMAND);
+                    ventMotor.handle(ServoMotor::DRIVE_TO_BUFFERED_ANGLE_COMMAND);
                     logMessage(VENT_ON_MESSAGE);
                 } else {
                     ventMotor.setTargetAngleBufferInDegrees(VENT_CLOSED_ANGLE);
-                    ventMotor.handle(ServoMotor::MOVE_SERVO_COMMAND);
+                    ventMotor.handle(ServoMotor::DRIVE_TO_BUFFERED_ANGLE_COMMAND);
                     logMessage(VENT_OFF_MESSAGE);
                 }
             }
