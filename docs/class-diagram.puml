@@ -237,6 +237,7 @@ package "Sensors" #EEF6EE {
     +getTemperatureInCelsius() const : float
     +getHumidityInPercentage() const : float
     +getPressureInHectopascals() const : float
+    +getAltitudeInMeters(seaLevelPressureInHectopascals : float) const : float
     #processEvent(event : Event&) : void
   }
 
