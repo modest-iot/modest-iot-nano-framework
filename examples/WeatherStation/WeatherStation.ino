@@ -78,7 +78,7 @@ public:
         ++rtcBootCount;
 
         // Report how the device woke up
-        reportWakeReason();
+        Device::reportWakeReason();
 
         // Announce boot with energy saving status
         char buffer[128];
