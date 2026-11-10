@@ -267,6 +267,7 @@ add_executable(test_CommandMarshaling
         tests/CommandMarshaling/test.cpp
         src/Device.cpp
         src/SamplingScheduler.cpp
+        src/Sensor.cpp
         ${TEST_FAKES}
 )
 target_include_directories(test_CommandMarshaling PRIVATE tests/fakes src)

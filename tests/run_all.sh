@@ -131,6 +131,7 @@ run_test "test_TriggeringScheduler" \
 run_test "test_CommandMarshaling" \
     src/Device.cpp \
     src/SamplingScheduler.cpp \
+    src/Sensor.cpp \
     tests/CommandMarshaling/test.cpp
 
 # 14. WaterFlowSensor Suite
