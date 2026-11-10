@@ -131,6 +131,14 @@
 /** @} */
 
 /**
+ * @name Sensors: Temperature & 1-Wire
+ * @ingroup sensors_module
+ * @{
+ */
+// OneWireTemperatureSensor (DS18B20) with native 1-Wire protocol defined here
+/** @} */
+
+/**
  * @name Sensors: Data Types
  * @ingroup sensors_module
  * @{
@@ -169,6 +177,14 @@
  * @{
  */
 // Character LCD display with buffered text and backlight defined here
+/** @} */
+
+/**
+ * @name Actuators: OLED Display
+ * @ingroup actuators_module
+ * @{
+ */
+// OledDisplay (SSD1306) with frame buffer, text rendering, and Ssd1306Driver defined here
 /** @} */
 
 /**
