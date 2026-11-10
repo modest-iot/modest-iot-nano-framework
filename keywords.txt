@@ -60,6 +60,7 @@ canTransmit	KEYWORD2
 changeDetected	KEYWORD2
 commitBuffersToPhysicalScreen	KEYWORD2
 connect	KEYWORD2
+disconnect	KEYWORD2
 diagnostics	KEYWORD2
 enqueueTelemetryPayload	KEYWORD2
 ensureBrokerSessionConnection	KEYWORD2
@@ -80,6 +81,9 @@ getUid	KEYWORD2
 getUidBytes	KEYWORD2
 getClientState	KEYWORD2
 getReconnectInterval	KEYWORD2
+getSignalStrengthInDbm	KEYWORD2
+getLocalIpAddress	KEYWORD2
+getWiFiStatus	KEYWORD2
 handle	KEYWORD2
 handleAccurateModeLogic	KEYWORD2
 handleCalibratingModeLogic	KEYWORD2
@@ -108,6 +112,7 @@ reportReadSuccess	KEYWORD2
 reset	KEYWORD2
 sendTelemetryRecord	KEYWORD2
 service	KEYWORD2
+waitForConnection	KEYWORD2
 setGain	KEYWORD2
 setGasCalibrationParameters	KEYWORD2
 setReceivedDataCallback	KEYWORD2
