@@ -41,6 +41,7 @@ private:
     static constexpr int    CALIBRATION_SAMPLES                 = 10; ///< Number of samples for calibration.
     static constexpr int    HX711_BIT_COUNT                     = 24; ///< Number of bits to read from HX711.
     static constexpr int    HX711_CLOCK_PULSE_DELAY_US          = 1; ///< Delay in microseconds for clock pulses.
+    static constexpr int    HX711_POWER_DOWN_DELAY_IN_MICROSECONDS = 100; ///< Delay to keep clock HIGH for power-down.
     static constexpr long   HX711_SIGN_BIT_MASK                 = 0x800000; ///< Mask for 24-bit sign bit.
     static constexpr long   HX711_SIGN_EXTENSION_MASK           = 0xFF000000; ///< Mask for sign extension to 32-bit.
     static constexpr float  INITIAL_CACHED_WEIGHT               = 0.0f; ///< Initial value for cached weight.

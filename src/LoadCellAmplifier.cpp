@@ -175,7 +175,7 @@ void LoadCellAmplifier::setGain(const int gain) {
 // ReSharper disable once CppMemberFunctionMayBeConst
 void LoadCellAmplifier::powerDown()  {
     digitalWrite(clockGpioPin, HIGH);
-    delayMicroseconds(100); // Datasheet says > 60us
+    delayMicroseconds(HX711_POWER_DOWN_DELAY_IN_MICROSECONDS);
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
