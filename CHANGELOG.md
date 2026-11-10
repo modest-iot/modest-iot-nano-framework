@@ -13,7 +13,7 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Thread-safe communication via FreeRTOS queues and notification bits
 - DiagnosticsSnapshot for runtime monitoring (heap, stack, uptime)
 
-#### Sensors (15 total)
+#### Sensors (18 total)
 - **DhtSensor**: Native DHT11/DHT22 single-wire protocol implementation
 - **UltrasonicSensor**: HC-SR04 with interrupt-driven echo capture (no pulseIn blocking)
 - **LoadCellAmplifier**: HX711 with interrupt-driven data-ready detection
@@ -29,20 +29,26 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - **WaterFlowSensor**: YF-S201 hybrid sensor (interrupt + periodic)
 - **WaterLeakSensor**: YL-83/FR-101 water leak detection
 - **DoorWindowSensor**: A313/MY-103LY magnetic reed switch detection
+- **OneWireTemperatureSensor**: DS18B20 1-Wire digital temperature sensor
+- **EnvironmentalGasSensor**: BME680 I²C sensor (temperature, humidity, pressure, gas resistance)
+- **BmeEnvironmentalSensor**: Abstract base class for Bosch BME280/BME680 compensation formulas
 
-#### Actuators (6 total)
+#### Actuators (7 total)
 - **Led**: Digital output with on/off/toggle commands
 - **RgbLed**: RGB LED with color mixing
 - **ServoMotor**: Native LEDC PWM servo control (no ESP32Servo dependency)
 - **Buzzer**: Tone generation with frequency/duration buffering
 - **CharacterLcdDisplay**: HD44780 I²C LCD via native Hd44780Driver
 - **RelayActuator**: Digital relay control with on/off/toggle commands
+- **OledDisplay**: SSD1306 OLED display (128x64) via native Ssd1306Driver
 
 #### Connectivity
-- **MqttGatewayClient**: MQTT client using MQTT Things (256dpi/arduino-mqtt)
+- **MqttGatewayClient**: MQTT client using MQTT Things (256dpi/arduino-mqtt), replaced deprecated PubSubClient
 - **HttpGatewayClient**: HTTP POST telemetry client
 - **BleConnectivityDriver**: BLE NUS connectivity driver
 - **WiFiConnectivityDriver**: Wi-Fi connection management
+- **Ssd1306Driver**: Native SSD1306 I²C protocol driver for OLED displays
+- **Hd44780Driver**: Native HD44780 I²C protocol driver for LCD displays
 
 #### Power Management
 - **Tickless Scheduling**: One-shot timer with `ticksUntilNextDue()` for optimal sleep
@@ -77,14 +83,14 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - WaterFlowMonitor, HomeSecurityDevice, CropMonitoringStation, WeatherStation
 
 ### Testing
-- 23 host test suites covering all sensors, actuators, scheduler, MQTT, and telemetry
+- 26 host test suites covering all sensors, actuators, scheduler, MQTT, and telemetry
 - CI workflows: host tests, ESP32 compilation, linting
 - AddressSanitizer and UndefinedBehaviorSanitizer enabled in tests
 
 ### Documentation
-- 29 Architecture Decision Records (ADRs)
+- 30 Architecture Decision Records (ADRs)
 - Doxygen documentation with API navigation tree
-- Class diagram (PlantUML) covering all 40 source headers
+- Class diagram (PlantUML) covering all 45 source headers
 - User stories and improvement tracking
 
 ### Technical Details
