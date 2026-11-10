@@ -62,7 +62,6 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 - Replacing ArduinoJson (no viable embedded alternative).
 - TLS/SSL implementation (use ESP32's built-in NetworkClientSecure).
 - DHT sensor library native implementation (deferred to v1.1.0).
-- PubSubClient replacement (deferred to v1.1.0, MQTT Things candidate).
 - Targeted (per-instance) commands until a use case appears.
 - Switchable sensor power rails and ADC/DMA sampling.
 - Non-ESP32 targets.
@@ -103,7 +102,7 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 | `LiquidCrystal_I2C`       | ~~`CharacterLcdDisplay`~~     | **Removed**              | Replaced with native HD44780 I2C protocol via `Hd44780Driver`                       |
 | `DHT sensor library`      | `DhtSensor`                   | yes                      | Pulls in Adafruit Unified Sensor transitively                                        |
 | `ESP32Servo`              | ~~`ServoMotor`~~              | **Removed**              | Replaced with native LEDC PWM via `ledcAttach()`/`ledcWrite()`                      |
-| `PubSubClient`            | `MqttGatewayClient`           | yes                      |                                                                                      |
+| `MQTT (>=2.5.3)`          | `MqttGatewayClient`           | yes                      | Replaced deprecated PubSubClient with MQTT Things (256dpi/arduino-mqtt)             |
 | `ArduinoJson`             | `TelemetryPackage` (needed)   | yes, pinned to `>=7.0.0` | Code uses the v7 `JsonDocument` type                                                 |
 | `HX711`                   | ~~`LoadCellController` only~~ | **Removed**              | `LoadCellController` deleted; `LoadCellAmplifier` implements HX711 protocol natively |
 | `EspSoftwareSerial`       | nothing                       | **Removed**              | Not referenced anywhere                                                              |
@@ -178,14 +177,14 @@ Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power ev
 ### W5: Host test harness plus CI
 
 **Shared Mock Harness**:
-- Created centralized `tests/fakes/` with `Arduino.h`, `Wire.h`, `SPI.h`, `BLEDevice.h`, `BLEServer.h`, `BLEUtils.h`, `PubSubClient.h`, `WiFi.h`, `ArduinoJson.h`, `Client.h`.
+- Created centralized `tests/fakes/` with `Arduino.h`, `Wire.h`, `SPI.h`, `BLEDevice.h`, `BLEServer.h`, `BLEUtils.h`, `MQTT.h`, `WiFi.h`, `ArduinoJson.h`, `Client.h`.
 - Eliminated duplicate per-suite fake directories.
 - Resolved all Clang-Tidy warnings: deprecated C headers to C++ headers, unused includes, const/static qualifications.
 
 **Test Runner & CI**:
 - Implemented `tests/run_all.sh` with strict warnings (`-Wall -Wextra -Werror`) and Address/Undefined sanitizers.
 - Added GitHub Actions workflows:
-  - `host-tests.yml`: runs all 22 test suites on Ubuntu and macOS.
+  - `host-tests.yml`: runs all 26 test suites on Ubuntu and macOS.
   - `compile-examples.yml`: compiles all 15 examples across ESP32 and ESP32-S3 boards.
   - `lint.yml`: validates `library.properties` with Arduino Library Manager compliance.
 - Registered all test targets in `CMakeLists.txt` with CTest integration.
@@ -480,8 +479,6 @@ appendToBothSchedulers(&flowSensor,
                        RISING);
 ```
 
-**Remaining**: Convert Button, PIR, and WaterFlowSensor to use the triggering scheduler. Add ADR for the notification redesign.
-
 **Source**: `src/Device.h`, `src/Device.cpp`, `src/Sensor.h`, `tests/TriggeringScheduler/test.cpp`
 
 ---
@@ -629,7 +626,7 @@ Updated `WeatherStation` example to include `PthSensor` alongside `DhtSensor` an
 
 ---
 
-## Component Expansion Tier 3 (In Progress)
+## Component Expansion Tier 3 (Complete)
 
 Adding three popular IoT components to maximize v1.0.0 adoption: DS18B20 1-Wire temperature, SSD1306 OLED display, and BME680 environmental gas sensor.
 
@@ -754,7 +751,7 @@ public:
 
 **Hd44780Driver (new component)**: Extracted HD44780 4-bit mode I2C protocol into a standalone driver class. Implements full initialization sequence, enable pulse timing, PCF8574 backpack communication, cursor positioning via DDRAM addresses, and backlight control. CharacterLcdDisplay composes `Hd44780Driver` instead of implementing the protocol directly. 10 host tests in `tests/CharacterLcdDisplay/test.cpp`.
 
-**library.properties**: Removed `ESP32Servo` and `LiquidCrystal_I2C` from the `depends=` field. Framework now has only 3 external dependencies: ArduinoJson, PubSubClient, and DHT sensor library.
+**library.properties**: Removed `ESP32Servo`, `LiquidCrystal_I2C`, and `PubSubClient` from the `depends=` field. Framework now has only 3 external dependencies: ArduinoJson, MQTT (>=2.5.3), and DHT sensor library.
 
 **Source**: `src/ServoMotor.h`, `src/ServoMotor.cpp`, `src/Hd44780Driver.h`, `src/Hd44780Driver.cpp`, `src/CharacterLcdDisplay.h`, `src/CharacterLcdDisplay.cpp`
 
@@ -800,7 +797,7 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT today, and
 | Flash                    | Smallest             | Framework, Wi-Fi, BLE driver                                                    | Smaller than today if Bluetooth/MQTT optional      |
 | Static RAM               | Small                | Slot table, per-object state                                                    | Slot table gains a few words per slot              |
 | Heap fragmentation       | Low                  | Lower with explicit ownership                                                   | Same; pool in Tier 5 if measured                   |
-| Third-party dependencies | As needed            | Only those used (DHT, PubSubClient, ArduinoJson) — ESP32Servo and LiquidCrystal_I2C removed | Same                                               |
+| Third-party dependencies | As needed            | Only those used (DHT, MQTT, ArduinoJson) — ESP32Servo, LiquidCrystal_I2C, and PubSubClient removed | Same                                               |
 | Logging overhead         | User-controlled      | Zero when compiled out; UART cost when on                                       | Same                                               |
 
 ---
