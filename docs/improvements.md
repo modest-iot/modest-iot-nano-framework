@@ -66,10 +66,10 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 
 ## Claims verified and remaining verification gaps
 
-- **Verified**: Local `arduino-cli compile` cleanly builds all 13 examples across ESP32 targets with `--library .` configured.
+- **Verified**: Local `arduino-cli compile` cleanly builds all 15 examples across ESP32 targets with `--library .` configured.
 - **Verified**: `library.properties` `depends=` syntax formatted for Arduino Library Manager compliance.
 - **Verified**: Bluetooth Classic fails on modern ESP32 variants (S2, S3, C3, C6, H2); resolved via target guards and `BleConnectivityDriver`.
-- **Verified**: Host test harness executes 19 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/relay_actuator`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`, `tests/triggering_scheduler`, `tests/command_marshaling`, `tests/water_flow_sensor`, `tests/soil_moisture_sensor`, `tests/deep_sleep`, `tests/servo_motor`, `tests/character_lcd_display`) under Address and Undefined sanitizers.
+- **Verified**: Host test harness executes 22 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/relay_actuator`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`, `tests/triggering_scheduler`, `tests/command_marshaling`, `tests/water_flow_sensor`, `tests/soil_moisture_sensor`, `tests/deep_sleep`, `tests/servo_motor`, `tests/character_lcd_display`, `tests/door_window_sensor`, `tests/water_leak_sensor`, `tests/pth_sensor`) under Address and Undefined sanitizers.
 - **Verified**: Logging facility (`MODEST_LOG_*`) works with host capture sink and `MIOT_LOG_*` aliases.
 - **Verified**: MQTT gateway reconnection and keep-alive verified with host tests.
 - **Remaining**: Performance, latency, memory and power figures (reasoned, to be measured on hardware).
@@ -153,6 +153,9 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 | Events   | 30, 31       | `PassiveInfraredSensor` motion detected, stopped     |
 | Events   | 40           | `GasSensor` digital gas detected                     |
 | Events   | 50, 51       | `DigitalLightIntensitySensor` light detected, absent |
+| Events   | 60, 61       | `RfidSensor` card detected, removed                  |
+| Events   | 70, 71       | `WaterLeakSensor` leak detected, cleared             |
+| Events   | 72, 73       | `DoorWindowSensor` door opened, closed               |
 | Commands | 100 to 102   | `Led`                                                |
 | Commands | 150 to 152   | `ServoMotor`                                         |
 | Commands | 200 to 202   | `CharacterLcdDisplay`                                |
@@ -206,6 +209,9 @@ Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power ev
 | 17 | `tests/DeepSleep/`                   | PowerMode enum, wake causes, RTC_DATA_ATTR, deep sleep API mocks      |
 | 18 | `tests/ServoMotor/`                  | Native LEDC PWM, angle commands, state tracking, parent propagation   |
 | 19 | `tests/CharacterLcdDisplay/`         | HD44780 4-bit I2C protocol, cursor positioning, backlight control     |
+| 20 | `tests/PthSensor/`                   | BME280 I²C sensor, compensation formulas, altitude calculation        |
+| 21 | `tests/WaterLeakSensor/`             | Digital input, leak detection, propagation suppression                |
+| 22 | `tests/DoorWindowSensor/`            | Digital input, open/close detection, propagation suppression          |
 
 **Source**: `tests/fakes/`, `tests/run_all.sh`, `.github/workflows/`, `CMakeLists.txt`
 
@@ -339,8 +345,11 @@ Converted sensors: `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `Digita
 | `LoadCellAmplifier`           | 1000         | 100          |
 | `GeolocationSensor`           | 1000         | 100          |
 | `RfidSensor`                  | 100          | 10           |
+| `PthSensor`                   | 2000         | 250          |
+| `WaterLeakSensor`             | 100          | 20           |
+| `DoorWindowSensor`            | 100          | 20           |
 
-**Example Migration**: All 13 examples migrated. `ClassicBlinker` uses explicit four-argument `EventHandler*` overload. 12 other examples automatically use `Sensor*` overload.
+**Example Migration**: All 15 examples migrated. `ClassicBlinker` uses explicit four-argument `EventHandler*` overload. 14 other examples automatically use `Sensor*` overload.
 
 **Handler time budget** (worst-case blocking per handler):
 
@@ -574,7 +583,7 @@ Added three components to broaden IoT coverage for weather stations, home securi
 
 **Sampling**: Default 2000ms, minimum 250ms.
 
-**Tests**: 9 host tests covering initialization, reading, change detection, and event emission.
+**Tests**: 12 host tests covering initialization, reading, change detection, altitude calculation, and event emission.
 
 **Source**: `src/PthSensor.h`, `src/PthSensor.cpp`, `tests/PthSensor/test.cpp`
 
@@ -712,7 +721,7 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT today, and
 | Debugging       | `Serial.println` scattered                   | `MODEST_LOG_*`, stack high-water marks, sensor fault events       | Same                                                     |
 | Networking      | Blocking connect/publish in `loop()`         | Separate network task, reconnect policy, keep-alive               | Same, plus cloud-to-device commands                      |
 | Cloud-to-device | Hand-rolled callback                         | Not supported                                                     | Mediator-routed commands through `Device::post`          |
-| Testing         | Rarely possible off-device                   | 19 host test suites with CI                                       | Same                                                     |
+| Testing         | Rarely possible off-device                   | 22 host test suites with CI                                       | Same                                                     |
 
 ### Performance
 
