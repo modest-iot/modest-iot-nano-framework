@@ -54,6 +54,7 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 | `LoadCellAmplifier` | HX711 load cell amplifier for weight measurement. |
 | `PassiveInfraredSensor` | PIR motion detection with motion started/stopped events. |
 | `PulseSensor` | Heart rate or pulse detection from analog signal. |
+| `OneWireTemperatureSensor` | DS18B20 1-Wire temperature sensor with native bit-banging protocol. |
 | `PthSensor` | I²C BME280 sensor for temperature, humidity, and pressure with altitude calculation. |
 | `RfidSensor` | SPI RFID card reader with CRC calculation and card communication. |
 | `SoilMoistureSensor` | Analog soil moisture sensor with epsilon-based change detection. |
@@ -73,6 +74,7 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 | `RelayActuator` | Digital relay with on/off/toggle commands for AC/DC load control. |
 | `ServoMotor` | PWM servo motor with angle positioning (native LEDC driver). |
 | `CharacterLcdDisplay` | I²C 16x2 character LCD with text, cursor, and backlight control (native HD44780 driver). |
+| `OledDisplay` | I²C SSD1306 OLED display (128x64) with frame buffer, text rendering, and drawing primitives. |
 
 ### Connectivity
 
@@ -160,6 +162,7 @@ Event and command identifiers are plain integers. The framework reserves ranges 
 | Commands | 250–252 | `Buzzer` |
 | Commands | 300–302 | `RelayActuator` |
 | Commands | 304–306 | `RgbLed` |
+| Commands | 350–352 | `OledDisplay` |
 | **User range** | **1000+** | **Reserved for application-defined identifiers** |
 
 ## Sampling Scheduler
@@ -288,6 +291,8 @@ The framework includes 22 host unit test suites that run natively without hardwa
 | `tests/PthSensor/` | BME280 I²C sensor, compensation formulas, altitude calculation |
 | `tests/WaterLeakSensor/` | Digital input, leak detection, propagation suppression |
 | `tests/DoorWindowSensor/` | Digital input, open/close detection, propagation suppression |
+| `tests/OneWireTemperatureSensor/` | 1-Wire protocol, DS18B20 temperature, change detection |
+| `tests/OledDisplay/` | SSD1306 I²C protocol, frame buffer, text rendering, drawing |
 
 Run all tests locally:
 
