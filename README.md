@@ -56,6 +56,7 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 | `PulseSensor` | Heart rate or pulse detection from analog signal. |
 | `OneWireTemperatureSensor` | DS18B20 1-Wire temperature sensor with native bit-banging protocol. |
 | `PthSensor` | I²C BME280 sensor for temperature, humidity, and pressure with altitude calculation. |
+| `EnvironmentalGasSensor` | I²C BME680 sensor for temperature, humidity, pressure, and gas resistance (VOC detection). |
 | `RfidSensor` | SPI RFID card reader with CRC calculation and card communication. |
 | `SoilMoistureSensor` | Analog soil moisture sensor with epsilon-based change detection. |
 | `UltrasonicSensor` | HC-SR04 ultrasonic distance measurement. |
@@ -265,7 +266,7 @@ The framework ships with 15 example sketches demonstrating various use cases:
 
 ## Testing
 
-The framework includes 22 host unit test suites that run natively without hardware:
+The framework includes 26 host unit test suites that run natively without hardware:
 
 | Suite | What It Tests |
 |---|---|
@@ -293,6 +294,7 @@ The framework includes 22 host unit test suites that run natively without hardwa
 | `tests/DoorWindowSensor/` | Digital input, open/close detection, propagation suppression |
 | `tests/OneWireTemperatureSensor/` | 1-Wire protocol, DS18B20 temperature, change detection |
 | `tests/OledDisplay/` | SSD1306 I²C protocol, frame buffer, text rendering, drawing |
+| `tests/EnvironmentalGasSensor/` | BME680 I²C sensor, gas resistance, compensation formulas |
 
 Run all tests locally:
 
