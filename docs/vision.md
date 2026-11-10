@@ -75,6 +75,18 @@ Zero-dependency components added for broader IoT coverage:
 
 New examples: `SmartGreenhouseDevice` (Soil Moisture + DHT + Relay + ServoMotor), `WaterFlowMonitor` (YF-S201 hybrid scheduling), `WeatherStation` (deep sleep with DHT22 + BH1750), `CropMonitoringStation` (tickless scheduling with MQTT telemetry).
 
+### Component Expansion Tier 2 — **Complete** ✓
+
+Components for weather stations, home security, and industrial monitoring:
+
+| Component                | Type     | Interface        | Use Case                                                                |
+|--------------------------|----------|------------------|-------------------------------------------------------------------------|
+| **PthSensor**            | Sensor   | I²C (BME280)     | Temperature, humidity, pressure for weather stations and air quality    |
+| **WaterLeakSensor**      | Sensor   | `digitalRead()`  | Water leak detection for home security and industrial monitoring        |
+| **DoorWindowSensor**     | Sensor   | `digitalRead()`  | Door/window open/close detection for home security and perimeter        |
+
+New examples: `HomeSecurityDevice` (Water Leak + Door/Window + PIR + Buzzer), `WeatherStation` updated with PthSensor.
+
 ### Nano Framework Completion Roadmap
 
 **Phase 1: Tier 4 Completion** (Estimated: 1–2 weeks)
@@ -112,16 +124,16 @@ Components requiring only `digitalRead()` or `analogRead()` — no external libr
 
 Both components are implemented with host tests and integrated into the `SmartGreenhouseDevice` example.
 
-**Tier 2: Common I²C/Analog Sensors** (P1, ~5 hours total)
+**Tier 2: Common I²C/Analog Sensors** (P1, **Complete** ✓)
 
 Widely available sensors with simple I²C or analog interfaces:
 
-| Component              | Type   | Interface                     | Enables                               |
-|------------------------|--------|-------------------------------|---------------------------------------|
-| **BME280 Sensor**      | Sensor | I²C (temp/humidity/pressure)  | Weather station and altitude tracking |
-| **Water Leak Sensor**  | Sensor | `digitalRead()`               | Home security flood detection         |
-| **Door/Window Sensor** | Sensor | `digitalRead()` (reed switch) | Home security access monitoring       |
-| **WaterFlowSensor**    | Sensor | Interrupt (YF-S201, ~450 ppl) | Water consumption tracking, leak detection, smart irrigation (requires W13) |
+| Component              | Type   | Interface                     | Enables                               | Status |
+|------------------------|--------|-------------------------------|---------------------------------------|--------|
+| **PthSensor**          | Sensor | I²C (temp/humidity/pressure)  | Weather station and altitude tracking | ✓      |
+| **WaterLeakSensor**    | Sensor | `digitalRead()`               | Home security flood detection         | ✓      |
+| **DoorWindowSensor**   | Sensor | `digitalRead()` (reed switch) | Home security access monitoring       | ✓      |
+| **WaterFlowSensor**    | Sensor | Interrupt (YF-S201, ~450 ppl) | Water consumption tracking, leak detection, smart irrigation (requires W13) | ✓      |
 
 **Tier 3: Niche Components** (P2–P4, deferred)
 
@@ -997,10 +1009,10 @@ The Modest IoT dual-framework vision provides a complete, local-first IoT stack:
 - **Together** they form a scalable, offline-resilient, AI-ready IoT platform.
 - **DDD-guided design** ensures consistent terminology, clear context boundaries, and appropriate patterns for each framework (see ADR-023).
 
-The Nano Framework is **97% complete** (Tiers 0–4 done, Component Expansion Tier 1 done, Tier 5: W16 ✓, W17 ✓). The Edge Framework is **planned** with a clear DDD-based architecture and development roadmap.
+The Nano Framework is **97% complete** (Tiers 0–4 done, Component Expansion Tier 1 and Tier 2 done, Tier 5: W16 ✓, W17 ✓, W19 ✓). The Edge Framework is **planned** with a clear DDD-based architecture and development roadmap.
 
 **Next steps**:
-1. Nano Framework Tier 4 is complete (W12–W15 ✓). Component Expansion Tier 1 is complete (RelayActuator, SoilMoistureSensor ✓). Tier 5: W16 ✓ (tickless scheduling), W17 ✓ (deep sleep), W19 ✓ (native drivers).
+1. Nano Framework Tier 4 is complete (W12–W15 ✓). Component Expansion Tier 1 is complete (RelayActuator, SoilMoistureSensor ✓). Component Expansion Tier 2 is complete (PthSensor, WaterLeakSensor, DoorWindowSensor ✓). Tier 5: W16 ✓ (tickless scheduling), W17 ✓ (deep sleep), W19 ✓ (native drivers).
 2. Complete Tier 5 with W18 (telemetry pool), or start Edge Framework Phase 1.
 3. Integrate Nano and Edge with MQTT protocol and shared telemetry schema.
 4. Release Nano v1.0.0 and Edge alpha together.
