@@ -221,6 +221,39 @@ package "Sensors" #EEF6EE {
     #processEvent(event : Event&) : void
   }
 
+  class PthSensor {
+    -i2cAddress : uint8_t
+    -cachedTemperatureInCelsius : float
+    -cachedHumidityInPercentage : float
+    -cachedPressureInHectopascals : float
+    -lastNotifiedTemperatureInCelsius : float
+    -lastNotifiedHumidityInPercentage : float
+    -lastNotifiedPressureInHectopascals : float
+    -initialized : bool
+    -calibration coefficients
+    +PthSensor(signalGpioPin : int, i2cAddress : uint8_t, parentHandler : EventHandler* = nullptr)
+    +initialize() : bool
+    +isInitialized() const : bool
+    +getTemperatureInCelsius() const : float
+    +getHumidityInPercentage() const : float
+    +getPressureInHectopascals() const : float
+    #processEvent(event : Event&) : void
+  }
+
+  class WaterLeakSensor {
+    #lastState : bool
+    +WaterLeakSensor(signalGpioPin : int, parentHandler : EventHandler* = nullptr)
+    +isWaterLeakDetected() const : bool
+    #processEvent(event : Event&) : void
+  }
+
+  class DoorWindowSensor {
+    #lastState : bool
+    +DoorWindowSensor(signalGpioPin : int, parentHandler : EventHandler* = nullptr)
+    +isDoorOpen() const : bool
+    #processEvent(event : Event&) : void
+  }
+
   class WaterFlowSensor {
     -pulseCount : volatile uint32_t
     -cachedFlowRateInLitersPerMinute : float
@@ -582,6 +615,9 @@ Sensor <|-- PulseSensor
 Sensor <|-- LoadCellAmplifier
 Sensor <|-- SoilMoistureSensor
 Sensor <|-- WaterFlowSensor
+Sensor <|-- PthSensor
+Sensor <|-- WaterLeakSensor
+Sensor <|-- DoorWindowSensor
 Sensor <|-- PassiveInfraredSensor
 Sensor <|-- DigitalLightIntensitySensor
 Sensor <|-- GasSensor
