@@ -11,7 +11,7 @@ All 8 improvement briefs and the roadmap are consolidated in this single documen
 | Tier                                    | Items                                                  | Goal                                                                                                | Exit criterion                                                                                                       | Status       |
 |-----------------------------------------|--------------------------------------------------------|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|--------------|
 | 0: Make it correct and shippable        | W1, W2, W3, W4                                         | Everything compiles, repo is clean, rules are written down                                          | All examples compile cleanly; clean repo layout                                                                      | **Complete** |
-| 1: Safety net and visibility            | W5                                                     | Regressions caught automatically via host tests & CI                                                | CI green on PRs/pushes; all 11 host test suites pass; examples compile in CI; lint passes                            | **Complete** |
+| 1: Safety net and visibility            | W5                                                     | Regressions caught automatically via host tests & CI                                                | CI green on PRs/pushes; all 19 host test suites pass; examples compile in CI; lint passes                           | **Complete** |
 | 2: Reliability, diagnostics & footprint | W6 (logging/high-water/sensor conversion), W7, W9, W10 | Reconnection robust, tasks tunable, BLE modern, zero-cost logs, sensor fault events with conversion | Soak test reconnects; logs available behind macro; BLE tests pass; diagnostics snapshot works; sensors report faults | **Complete** |
 | 3: Core performance and DX              | W8, then W11                                           | Per-slot intervals, bounded memory use for telemetry                                                | Scheduler host tests pass; all examples use per-sensor intervals; telemetry ownership and queue policy complete      | **Complete** |
 | 4: Capabilities                         | W12, W13, W14, W15, rest of W6                         | Edge-driven sensing, remote commands, fault events                                                  | Bidirectional MQTT verified; interrupt-driven sensors tested                                                         | **Complete** (W12 ✓, W13 ✓, W14 ✓, W15 ✓) |
@@ -47,7 +47,7 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 | W16 | Tickless scheduling and light sleep                                                     | Tier 5      | 2 | 4 | 2 | L    | 3     | **Complete** (ticksUntilNextDue(), PowerMode enum, rearmTimerForNextDue(), enterLightSleep(), ESP32 light sleep) |
 | W17 | Deep-sleep cycle and battery example                                                    | Tier 5      | 1 | 4 | 2 | L    | 3     | **Complete** (PowerMode::DeepSleep, enterDeepSleep(), reportWakeReason(), RTC_DATA_ATTR, WeatherStation example, 10 host tests) |
 | W18 | Telemetry pool and writer interface (Phase C)                                           | Tier 5      | 2 | 3 | 1 | L    | 2     | Pending                                                                                                                                     |
-| W19 | Native servo and LCD drivers                                                            | Tier 5      | 2 | 0 | 1 | M    | 2     | Pending                                                                                                                                     |
+| W19 | Native servo and LCD drivers                                                            | Tier 5      | 2 | 0 | 1 | M    | 2     | **Complete** (ServoMotor native LEDC, Hd44780Driver + CharacterLcdDisplay native I2C, library.properties updated, 20 host tests) |
 
 ## Dependencies between items
 
@@ -69,7 +69,7 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 - **Verified**: Local `arduino-cli compile` cleanly builds all 13 examples across ESP32 targets with `--library .` configured.
 - **Verified**: `library.properties` `depends=` syntax formatted for Arduino Library Manager compliance.
 - **Verified**: Bluetooth Classic fails on modern ESP32 variants (S2, S3, C3, C6, H2); resolved via target guards and `BleConnectivityDriver`.
-- **Verified**: Host test harness executes 17 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/relay_actuator`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`, `tests/triggering_scheduler`, `tests/command_marshaling`, `tests/water_flow_sensor`, `tests/soil_moisture_sensor`, `tests/deep_sleep`) under Address and Undefined sanitizers.
+- **Verified**: Host test harness executes 19 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/relay_actuator`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`, `tests/triggering_scheduler`, `tests/command_marshaling`, `tests/water_flow_sensor`, `tests/soil_moisture_sensor`, `tests/deep_sleep`, `tests/servo_motor`, `tests/character_lcd_display`) under Address and Undefined sanitizers.
 - **Verified**: Logging facility (`MODEST_LOG_*`) works with host capture sink and `MIOT_LOG_*` aliases.
 - **Verified**: MQTT gateway reconnection and keep-alive verified with host tests.
 - **Remaining**: Performance, latency, memory and power figures (reasoned, to be measured on hardware).
@@ -97,9 +97,9 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 
 | Dependency                | Used by                       | Declared in `depends=`   | Notes                                                                                |
 |---------------------------|-------------------------------|--------------------------|--------------------------------------------------------------------------------------|
-| `LiquidCrystal_I2C`       | `CharacterLcdDisplay`         | yes                      | Many forks with differing APIs                                                       |
+| `LiquidCrystal_I2C`       | ~~`CharacterLcdDisplay`~~     | **Removed**              | Replaced with native HD44780 I2C protocol via `Hd44780Driver`                       |
 | `DHT sensor library`      | `DhtSensor`                   | yes                      | Pulls in Adafruit Unified Sensor transitively                                        |
-| `ESP32Servo`              | `ServoMotor`                  | yes                      |                                                                                      |
+| `ESP32Servo`              | ~~`ServoMotor`~~              | **Removed**              | Replaced with native LEDC PWM via `ledcAttach()`/`ledcWrite()`                      |
 | `PubSubClient`            | `MqttGatewayClient`           | yes                      |                                                                                      |
 | `ArduinoJson`             | `TelemetryPackage` (needed)   | yes, pinned to `>=7.0.0` | Code uses the v7 `JsonDocument` type                                                 |
 | `HX711`                   | ~~`LoadCellController` only~~ | **Removed**              | `LoadCellController` deleted; `LoadCellAmplifier` implements HX711 protocol natively |
@@ -178,12 +178,12 @@ Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power ev
 **Test Runner & CI**:
 - Implemented `tests/run_all.sh` with strict warnings (`-Wall -Wextra -Werror`) and Address/Undefined sanitizers.
 - Added GitHub Actions workflows:
-  - `host-tests.yml`: runs all 16 test suites on Ubuntu and macOS.
-  - `compile-examples.yml`: compiles all 11 examples across ESP32 and ESP32-S3 boards.
+  - `host-tests.yml`: runs all 19 test suites on Ubuntu and macOS.
+  - `compile-examples.yml`: compiles all 13 examples across ESP32 and ESP32-S3 boards.
   - `lint.yml`: validates `library.properties` with Arduino Library Manager compliance.
 - Registered all test targets in `CMakeLists.txt` with CTest integration.
 
-**Test Suites (16 total)**:
+**Test Suites (19 total)**:
 
 | #  | Suite                                | What It Tests                                                          |
 |----|--------------------------------------|------------------------------------------------------------------------|
@@ -203,6 +203,9 @@ Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power ev
 | 14 | `tests/CommandMarshaling/`           | Command queue, cross-task marshaling, enqueue edge cases               |
 | 15 | `tests/WaterFlowSensor/`             | Hybrid scheduling, pulse counting, flow rate change detection          |
 | 16 | `tests/SoilMoistureSensor/`          | AnalogRead moisture, epsilon-based change detection, event emission    |
+| 17 | `tests/DeepSleep/`                   | PowerMode enum, wake causes, RTC_DATA_ATTR, deep sleep API mocks      |
+| 18 | `tests/ServoMotor/`                  | Native LEDC PWM, angle commands, state tracking, parent propagation   |
+| 19 | `tests/CharacterLcdDisplay/`         | HD44780 4-bit I2C protocol, cursor positioning, backlight control     |
 
 **Source**: `tests/fakes/`, `tests/run_all.sh`, `.github/workflows/`, `CMakeLists.txt`
 
@@ -625,15 +628,15 @@ public:
 
 ---
 
-### W19: Native servo and LCD drivers
+### W19: Native servo and LCD drivers — **Complete** ✓
 
-**ESP32Servo Replacement**: About 60-100 lines using `ledcAttach` and `ledcWrite` at 50 Hz with a 500-2500 microsecond pulse range. Risk: LEDC API differs between core 2.x and 3.x.
+**ESP32Servo Replacement**: ServoMotor now uses native `ledcAttach()`/`ledcWrite()` at 50 Hz with 13-bit LEDC resolution. ESP32 Arduino core 3.x API (pin-based, not channel-based). 10 host tests in `tests/ServoMotor/test.cpp`.
 
-**LiquidCrystal_I2C Replacement**: About 100 lines for an HD44780 through a PCF8574 backpack (4-bit mode, init sequence, timing). Risk: backpack pin maps and 3.3V vs 5V behavior vary.
+**Hd44780Driver (new component)**: Extracted HD44780 4-bit mode I2C protocol into a standalone driver class. Implements full initialization sequence, enable pulse timing, PCF8574 backpack communication, cursor positioning via DDRAM addresses, and backlight control. CharacterLcdDisplay composes `Hd44780Driver` instead of implementing the protocol directly. 10 host tests in `tests/CharacterLcdDisplay/test.cpp`.
 
-**Recommendation**: Wrap first behind small internal interfaces, decide with data.
+**library.properties**: Removed `ESP32Servo` and `LiquidCrystal_I2C` from the `depends=` field. Framework now has zero external dependencies beyond ArduinoJson, PubSubClient, DHT sensor library, and Adafruit Unified Sensor.
 
-**Source**: `src/ServoMotor.h`, `src/CharacterLcdDisplay.h`
+**Source**: `src/ServoMotor.h`, `src/ServoMotor.cpp`, `src/Hd44780Driver.h`, `src/Hd44780Driver.cpp`, `src/CharacterLcdDisplay.h`, `src/CharacterLcdDisplay.cpp`
 
 ---
 
@@ -653,7 +656,7 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT today, and
 | Debugging       | `Serial.println` scattered                   | `MODEST_LOG_*`, stack high-water marks, sensor fault events       | Same                                                     |
 | Networking      | Blocking connect/publish in `loop()`         | Separate network task, reconnect policy, keep-alive               | Same, plus cloud-to-device commands                      |
 | Cloud-to-device | Hand-rolled callback                         | Not supported                                                     | Mediator-routed commands through `Device::post`          |
-| Testing         | Rarely possible off-device                   | 11 host test suites with CI                                       | Same                                                     |
+| Testing         | Rarely possible off-device                   | 19 host test suites with CI                                       | Same                                                     |
 
 ### Performance
 
@@ -677,7 +680,7 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT today, and
 | Flash                    | Smallest             | Framework, Wi-Fi, BLE driver                                                    | Smaller than today if Bluetooth/MQTT optional      |
 | Static RAM               | Small                | Slot table, per-object state                                                    | Slot table gains a few words per slot              |
 | Heap fragmentation       | Low                  | Lower with explicit ownership                                                   | Same; pool in Tier 5 if measured                   |
-| Third-party dependencies | As needed            | Only those used (DHT, LiquidCrystal_I2C, ESP32Servo, PubSubClient, ArduinoJson) | Same                                               |
+| Third-party dependencies | As needed            | Only those used (DHT, PubSubClient, ArduinoJson) — ESP32Servo and LiquidCrystal_I2C removed | Same                                               |
 | Logging overhead         | User-controlled      | Zero when compiled out; UART cost when on                                       | Same                                               |
 
 ---
