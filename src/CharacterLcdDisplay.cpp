@@ -7,6 +7,7 @@
  */
 
 #include "CharacterLcdDisplay.h"
+#include <cstring>
 
 const Command CharacterLcdDisplay::UPDATE_TEXT_COMMAND = Command(UPDATE_TEXT_COMMAND_IDENTIFIER);
 const Command CharacterLcdDisplay::TURN_BACKLIGHT_ON_COMMAND = Command(TURN_BACKLIGHT_ON_COMMAND_IDENTIFIER);
