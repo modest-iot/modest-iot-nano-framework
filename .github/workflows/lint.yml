@@ -10,6 +10,8 @@ jobs:
   lint:
     name: Arduino Library Lint
     runs-on: ubuntu-latest
+    env:
+      ACTIONS_RUNNER_NODE_VERSION: 24
 
     steps:
       - name: Checkout repository
