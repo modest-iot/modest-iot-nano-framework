@@ -71,10 +71,16 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - **Retained**: ArduinoJson (>=7.0.0) - no viable embedded alternative
 
 #### Performance Improvements
-- LoadCellAmplifier: Eliminated 100ms busy-wait via interrupt-driven data-ready
-- UltrasonicSensor: Eliminated 30ms pulseIn() blocking via interrupt-driven echo
-- Button: Zero-latency press detection via GPIO interrupt
-- PassiveInfraredSensor: Zero-latency motion detection via GPIO interrupt
+- LoadCellAmplifier: Eliminated 100ms busy-wait via interrupt-driven data-ready (W14)
+- UltrasonicSensor: Eliminated 30ms pulseIn() blocking via interrupt-driven echo (W14)
+- Button: Zero-latency press detection via GPIO interrupt (W13)
+- PassiveInfraredSensor: Zero-latency motion detection via GPIO interrupt (W13)
+- WaterFlowSensor: Hybrid interrupt + periodic scheduling for YF-S201 pulse counting (W13)
+
+#### Refactoring
+- BmeEnvironmentalSensor: Extracted shared Bosch BME280/BME680 compensation formulas into abstract base class, eliminating ~200 lines of duplicated code between PthSensor and EnvironmentalGasSensor
+- Hd44780Driver: Extracted HD44780 I²C protocol from CharacterLcdDisplay into standalone driver class
+- Ssd1306Driver: Extracted SSD1306 I²C protocol from OledDisplay into standalone driver class
 
 ### Examples (15 total)
 - ClassicBlinker, ToggableLedDevice, SmartBandMqtt, AirConditioningDevice
