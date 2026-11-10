@@ -72,7 +72,7 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 - **Verified**: Local `arduino-cli compile` cleanly builds all 15 examples across ESP32 targets with `--library .` configured.
 - **Verified**: `library.properties` `depends=` syntax formatted for Arduino Library Manager compliance.
 - **Verified**: Bluetooth Classic fails on modern ESP32 variants (S2, S3, C3, C6, H2); resolved via target guards and `BleConnectivityDriver`.
-- **Verified**: Host test harness executes 25 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/relay_actuator`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`, `tests/triggering_scheduler`, `tests/command_marshaling`, `tests/water_flow_sensor`, `tests/soil_moisture_sensor`, `tests/deep_sleep`, `tests/servo_motor`, `tests/character_lcd_display`, `tests/door_window_sensor`, `tests/water_leak_sensor`, `tests/pth_sensor`, `tests/one_wire_temperature_sensor`, `tests/oled_display`) under Address and Undefined sanitizers.
+- **Verified**: Host test harness executes 26 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/relay_actuator`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`, `tests/triggering_scheduler`, `tests/command_marshaling`, `tests/water_flow_sensor`, `tests/soil_moisture_sensor`, `tests/deep_sleep`, `tests/servo_motor`, `tests/character_lcd_display`, `tests/door_window_sensor`, `tests/water_leak_sensor`, `tests/pth_sensor`, `tests/one_wire_temperature_sensor`, `tests/oled_display`, `tests/environmental_gas_sensor`) under Address and Undefined sanitizers.
 - **Verified**: Logging facility (`MODEST_LOG_*`) works with host capture sink and `MIOT_LOG_*` aliases.
 - **Verified**: MQTT gateway reconnection and keep-alive verified with host tests.
 - **Remaining**: Performance, latency, memory and power figures (reasoned, to be measured on hardware).
@@ -638,7 +638,7 @@ Adding three popular IoT components to maximize v1.0.0 adoption: DS18B20 1-Wire 
 | OneWireTemperatureSensor | Sensor | GPIO (1-Wire) | High-accuracy temperature (weather stations, aquariums) | **Complete** |
 | OledDisplay | Actuator | I²C (`Wire`) | OLED display (portable devices, dashboards) | **Complete** |
 | Ssd1306Driver | Driver | I²C (`Wire`) | SSD1306 protocol driver for OledDisplay | **Complete** |
-| EnvironmentalGasSensor | Sensor | I²C (`Wire`) | Air quality monitoring (VOC, gas resistance) | Pending |
+| EnvironmentalGasSensor | Sensor | I²C (`Wire`) | Air quality monitoring (VOC, gas resistance) | **Complete** |
 
 ### OneWireTemperatureSensor
 
@@ -661,6 +661,18 @@ Adding three popular IoT components to maximize v1.0.0 adoption: DS18B20 1-Wire 
 **Tests**: 14 host tests covering constructor, commands, text rendering, drawing primitives, and edge cases.
 
 **Source**: `src/Ssd1306Driver.h`, `src/Ssd1306Driver.cpp`, `src/OledDisplay.h`, `src/OledDisplay.cpp`, `tests/OledDisplay/test.cpp`
+
+### EnvironmentalGasSensor
+
+**Readings**: Temperature (°C), humidity (%), pressure (hPa), and gas resistance (kΩ) via Bosch BME680 compensation formulas.
+
+**Change Detection**: Separate epsilon thresholds per value type (0.1°C, 0.1%, 0.1 hPa, 1000 kΩ).
+
+**Sampling**: Default 2000ms, minimum 500ms.
+
+**Tests**: 11 host tests covering constructor, all four compensation formulas, change detection, and event emission.
+
+**Source**: `src/EnvironmentalGasSensor.h`, `src/EnvironmentalGasSensor.cpp`, `tests/EnvironmentalGasSensor/test.cpp`
 
 ---
 
@@ -764,7 +776,7 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT today, and
 | Debugging       | `Serial.println` scattered                   | `MODEST_LOG_*`, stack high-water marks, sensor fault events       | Same                                                     |
 | Networking      | Blocking connect/publish in `loop()`         | Separate network task, reconnect policy, keep-alive               | Same, plus cloud-to-device commands                      |
 | Cloud-to-device | Hand-rolled callback                         | Not supported                                                     | Mediator-routed commands through `Device::post`          |
-| Testing         | Rarely possible off-device                   | 25 host test suites with CI                                       | Same                                                     |
+| Testing         | Rarely possible off-device                   | 26 host test suites with CI                                       | Same                                                     |
 
 ### Performance
 
