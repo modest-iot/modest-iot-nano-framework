@@ -34,9 +34,9 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 
 ### What's Delivered
 
-- **37 source headers** with full Doxygen documentation and `@runs_on` threading tags.
-- **13 example sketches** covering diverse use cases (smart band, air quality, RFID access, smart greenhouse, weather station, crop monitoring, etc.).
-- **19 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
+- **40 source headers** with full Doxygen documentation and `@runs_on` threading tags.
+- **15 example sketches** covering diverse use cases (smart band, air quality, RFID access, smart greenhouse, weather station, crop monitoring, home security, etc.).
+- **22 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
 - **3 CI workflows**: host tests, compile examples, lint.
 - **Per-slot `SamplingScheduler`** with phase-aligned re-arming and minimum period enforcement.
 - **`EngineConfig`** for tunable FreeRTOS task stacks, priorities, and core pinning.
@@ -46,7 +46,7 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 - **Sensor fault events** (IDs 22/23) with debounced threshold state machine.
 - **Telemetry pipeline** with `unique_ptr` ownership, drop-oldest policy, bounded serialization, envelope metadata.
 - **MQTT keep-alive** with rate-limited reconnection backoff.
-- **27 Architecture Decision Records** documenting all key architectural choices, including DDD adoption (ADR-023).
+- **29 Architecture Decision Records** documenting all key architectural choices, including DDD adoption (ADR-023).
 
 ### Remaining Work: Tier 4 (Capabilities) — **Complete** ✓
 
@@ -152,7 +152,7 @@ New examples bundle multiple components to demonstrate complete use cases:
 
 **Library Release Impact**:
 
-- **v1.0.0**: Current 12 sensors + 6 actuators + Tier 1 components (Relay, Soil Moisture, WaterFlow).
+- **v1.0.0**: Current 15 sensors + 6 actuators + Tier 1 and Tier 2 components (Relay, Soil Moisture, WaterFlow, PthSensor, Water Leak, Door/Window).
 - **v1.1.0**: Tier 2 components (BME280, Water Leak, Door/Window) with new examples.
 - **v1.2.0**: Tier 3 components as needed, based on community feedback.
 
@@ -854,7 +854,7 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 |-----------------------------|-------------------------|----------------------------------|----------------------------|
 | **Consistent patterns**     | Mediator, CQRS, events  | Same patterns at edge scale      | One mental model for both  |
 | **AI-assisted development** | Clean, documented API   | Python/ML ecosystem              | AI generates code for both |
-| **Test infrastructure**     | 11 host test suites, CI | Python pytest, integration tests | Full-stack testing         |
+| **Test infrastructure**     | 22 host test suites, CI | Python pytest, integration tests | Full-stack testing         |
 | **Documentation**           | Doxygen, ADRs, README   | Sphinx, OpenAPI specs            | Unified documentation      |
 
 ### 4.2 For IoT Products
@@ -971,10 +971,10 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 | Metric                  | Target                                 |
 |-------------------------|----------------------------------------|
 | **Compilation success** | 100% across ESP32 variants             |
-| **Test coverage**       | 100% pass rate, 17 test suites         |
+| **Test coverage**       | 100% pass rate, 22 test suites         |
 | **Flash footprint**     | <30 KB overhead                        |
 | **RAM footprint**       | <2 KB overhead                         |
-| **Example count**       | 13 diverse examples                    |
+| **Example count**       | 15 diverse examples                    |
 | **CI workflows**        | 3 (host tests, compile examples, lint) |
 
 ### Edge Framework
