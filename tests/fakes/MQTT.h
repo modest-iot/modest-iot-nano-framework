@@ -1,10 +1,10 @@
-#ifndef FAKE_PUB_SUB_CLIENT_H
-#define FAKE_PUB_SUB_CLIENT_H
+#ifndef FAKE_MQTT_H
+#define FAKE_MQTT_H
 
 #include "Client.h"
 #include <cstdint>
 #include <string>
-#include <functional>
+#include <cstring>
 
 #define MQTT_CONNECTION_TIMEOUT     -4
 #define MQTT_CONNECTION_LOST        -3
@@ -17,17 +17,17 @@
 #define MQTT_CONNECT_BAD_CREDENTIALS 4
 #define MQTT_CONNECT_UNAUTHORIZED    5
 
-// Forward declaration for callback signature
-typedef void (*MqttCallback)(const char* topic, const byte* payload, unsigned int length);
+// MQTT Things callback signatures (uses Arduino String from Arduino.h)
+typedef void (*MQTTClientCallbackSimple)(String& topic, String& payload);
 
-class PubSubClient {
+class MQTTClient {
 private:
     [[maybe_unused]] Client* networkClient;
     std::string serverHost;
-    uint16_t serverPort;
+    int serverPort;
     bool isBrokerConnected;
-    int clientState;
-    MqttCallback messageCallback; ///< W15: Callback for subscribed messages
+    int lastErrorCode;
+    MQTTClientCallbackSimple messageCallback;
 
 public:
     // Simulation controls for testing
@@ -39,8 +39,8 @@ public:
     static inline std::string lastTopic = "";
     static inline std::string lastPayload = "";
     static inline std::string lastClientId = "";
-    
-    // W15: Subscribe simulation controls
+
+    // Subscribe simulation controls
     static inline int subscribeCount = 0;
     static inline std::string lastSubscribeTopic = "";
     static inline int lastSubscribeQos = 0;
@@ -67,39 +67,73 @@ public:
         hasPendingMessage = false;
     }
 
-    explicit PubSubClient(Client& client)
-        : networkClient(&client), serverPort(1883), isBrokerConnected(false), clientState(MQTT_DISCONNECTED), messageCallback(nullptr) {}
+    /**
+     * @brief Constructor — MQTT Things takes optional buffer sizes, not Client&.
+     * The Client is passed via begin().
+     */
+    explicit MQTTClient(int /*readBufSize*/ = 128, int /*writeBufSize*/ = 128)
+        : networkClient(nullptr), serverPort(1883), isBrokerConnected(false), 
+          lastErrorCode(MQTT_DISCONNECTED), messageCallback(nullptr) {}
 
-    PubSubClient& setServer(const char* ip, uint16_t port) {
-        serverHost = ip != nullptr ? ip : "";
-        serverPort = port;
-        return *this;
+    /**
+     * @brief Initialize with Client only.
+     */
+    void begin(Client& client) {
+        networkClient = &client;
     }
 
+    /**
+     * @brief Initialize with hostname, port, and Client.
+     * MQTT Things signature: begin(hostname, port, client)
+     */
+    void begin(const char* host, int port, Client& client) {
+        begin(client);
+        serverHost = host ? host : "";
+        serverPort = port;
+    }
+
+    /**
+     * @brief Connect to the broker with the given client ID.
+     * MQTT Things signature: connect(clientId)
+     */
     bool connect(const char* id) {
         connectAttemptCount++;
-        lastClientId = id != nullptr ? id : "";
+        lastClientId = id ? id : "";
         if (simulateConnectFailure) {
             isBrokerConnected = false;
-            clientState = MQTT_CONNECT_FAILED;
+            lastErrorCode = MQTT_CONNECT_FAILED;
             return false;
         }
         isBrokerConnected = true;
-        clientState = MQTT_CONNECTED;
+        lastErrorCode = MQTT_CONNECTED;
         return true;
-    }
-
-    bool connect(const char* id, const char* user, const char* pass) {
-        (void)user;
-        (void)pass;
-        return connect(id);
     }
 
     void disconnect() {
         isBrokerConnected = false;
-        clientState = MQTT_DISCONNECTED;
+        lastErrorCode = MQTT_DISCONNECTED;
     }
 
+    /**
+     * @brief Publish a message to a topic.
+     * MQTT Things signature: publish(topic, payload, length)
+     */
+    bool publish(const char* topic, const char* payload, int length) {
+        if (!isBrokerConnected) {
+            return false;
+        }
+        if (simulatePublishFailure) {
+            return false;
+        }
+        publishCount++;
+        lastTopic = topic ? topic : "";
+        lastPayload = std::string(payload ? payload : "", length);
+        return true;
+    }
+
+    /**
+     * @brief Publish with null-terminated payload (MQTT Things also provides this overload).
+     */
     bool publish(const char* topic, const char* payload) {
         if (!isBrokerConnected) {
             return false;
@@ -108,11 +142,14 @@ public:
             return false;
         }
         publishCount++;
-        lastTopic = topic != nullptr ? topic : "";
-        lastPayload = payload != nullptr ? payload : "";
+        lastTopic = topic ? topic : "";
+        lastPayload = payload ? payload : "";
         return true;
     }
 
+    /**
+     * @brief MQTT Things loop() — processes pending MQTT packets.
+     */
     bool loop() {
         loopCount++;
         processPendingMessages();
@@ -123,17 +160,23 @@ public:
         return isBrokerConnected;
     }
 
-    [[nodiscard]] int state() const {
-        return clientState;
+    /**
+     * @brief Returns the last error code (replaces PubSubClient::state()).
+     */
+    [[nodiscard]] int lastError() const {
+        return lastErrorCode;
     }
 
     void setMockConnected(bool connected) {
         isBrokerConnected = connected;
-        clientState = connected ? MQTT_CONNECTED : MQTT_DISCONNECTED;
+        lastErrorCode = connected ? MQTT_CONNECTED : MQTT_DISCONNECTED;
     }
-    
-    // W15: Subscribe support
-    bool subscribe(const char* topic, uint8_t qos = 0) {
+
+    /**
+     * @brief Subscribe to a topic.
+     * MQTT Things signature: subscribe(topic, qos)
+     */
+    bool subscribe(const char* topic, int qos = 0) {
         if (!isBrokerConnected) {
             return false;
         }
@@ -141,37 +184,41 @@ public:
             return false;
         }
         subscribeCount++;
-        lastSubscribeTopic = topic != nullptr ? topic : "";
+        lastSubscribeTopic = topic ? topic : "";
         lastSubscribeQos = qos;
         return true;
     }
-    
-    void setCallback(MqttCallback callback) {
+
+    /**
+     * @brief Register a callback for incoming messages.
+     * MQTT Things signature: onMessage(void(*)(String& topic, String& payload))
+     */
+    void onMessage(MQTTClientCallbackSimple callback) {
         messageCallback = callback;
     }
-    
+
     /**
      * @brief Simulates an incoming MQTT message on a subscribed topic.
      * Triggers the callback if one is registered.
      */
     static void simulateIncomingMessage(const char* topic, const char* payload) {
-        pendingMessageTopic = topic != nullptr ? topic : "";
-        pendingMessagePayload = payload != nullptr ? payload : "";
+        pendingMessageTopic = topic ? topic : "";
+        pendingMessagePayload = payload ? payload : "";
         hasPendingMessage = true;
     }
-    
+
     /**
      * @brief Processes pending messages by invoking the callback.
      * Called by loop() to simulate message delivery.
      */
     void processPendingMessages() {
         if (hasPendingMessage && messageCallback != nullptr) {
-            const byte* payloadBytes = reinterpret_cast<const byte*>(pendingMessagePayload.c_str());
-            messageCallback(pendingMessageTopic.c_str(), 
-                          payloadBytes, pendingMessagePayload.length());
+            String topicStr(pendingMessageTopic.c_str());
+            String payloadStr(pendingMessagePayload.c_str());
+            messageCallback(topicStr, payloadStr);
             hasPendingMessage = false;
         }
     }
 };
 
-#endif // FAKE_PUB_SUB_CLIENT_H
+#endif // FAKE_MQTT_H

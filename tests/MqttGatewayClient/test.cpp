@@ -59,7 +59,7 @@ public:
     }
 };
 
-// W15: Mock Device for testing incoming command delivery via enqueueCommand()
+// Mock Device for testing incoming command delivery via enqueueCommand()
 class MockDevice : public Device {
 public:
     int lastCommandId = -1;
@@ -104,7 +104,7 @@ public:
     // Test 1: Successful Connection, Publishing, and Keep-Alive Servicing
     // =========================================================================
     {
-        PubSubClient::resetMockState();
+        MQTTClient::resetMockState();
         fakeMillis = 1000;
 
         MockConnectivityDriver mockDriver;
@@ -119,32 +119,32 @@ public:
 
         assert(sent);
         assert(gateway.isConnected());
-        assert(PubSubClient::connectAttemptCount == 1);
-        assert(PubSubClient::lastClientId == "Node-01");
-        assert(PubSubClient::publishCount == 1);
-        assert(PubSubClient::lastTopic == "telemetry/vitals");
-        assert(PubSubClient::lastPayload.find("\"id\":42") != std::string::npos);
-        assert(PubSubClient::lastPayload.find("\"value\":23.5") != std::string::npos);
+        assert(MQTTClient::connectAttemptCount == 1);
+        assert(MQTTClient::lastClientId == "Node-01");
+        assert(MQTTClient::publishCount == 1);
+        assert(MQTTClient::lastTopic == "telemetry/vitals");
+        assert(MQTTClient::lastPayload.find("\"id\":42") != std::string::npos);
+        assert(MQTTClient::lastPayload.find("\"value\":23.5") != std::string::npos);
         // Verify envelope metadata is present
-        assert(PubSubClient::lastPayload.find("\"timestamp\":") != std::string::npos);
-        assert(PubSubClient::lastPayload.find("\"sequence\":") != std::string::npos);
-        assert(PubSubClient::loopCount == 1);
+        assert(MQTTClient::lastPayload.find("\"timestamp\":") != std::string::npos);
+        assert(MQTTClient::lastPayload.find("\"sequence\":") != std::string::npos);
+        assert(MQTTClient::loopCount == 1);
 
         // Verify service() / loop() executes keep-alive without publishing new data
         gateway.service();
-        assert(PubSubClient::loopCount == 2);
-        assert(PubSubClient::publishCount == 1); // No new publish
+        assert(MQTTClient::loopCount == 2);
+        assert(MQTTClient::publishCount == 1); // No new publish
 
         gateway.loop();
-        assert(PubSubClient::loopCount == 3);
-        assert(PubSubClient::publishCount == 1);
+        assert(MQTTClient::loopCount == 3);
+        assert(MQTTClient::publishCount == 1);
     }
 
     // =========================================================================
     // Test 2: MQTT Reconnect Rate-Limiting & Backoff during Broker Outage
     // =========================================================================
     {
-        PubSubClient::resetMockState();
+        MQTTClient::resetMockState();
         fakeMillis = 10000;
 
         MockConnectivityDriver mockDriver;
@@ -154,47 +154,47 @@ public:
         assert(gateway.getReconnectInterval() == 5000);
 
         // Simulate broker refusal / timeout
-        PubSubClient::simulateConnectFailure = true;
+        MQTTClient::simulateConnectFailure = true;
 
         SampleTelemetryPackage package(1, 10.0f);
 
         // First attempt at t = 10000ms: Should attempt connect and fail
         bool sent1 = gateway.sendTelemetryRecord(package);
         assert(!sent1);
-        assert(PubSubClient::connectAttemptCount == 1);
+        assert(MQTTClient::connectAttemptCount == 1);
         assert(!gateway.isConnected());
 
         // Second attempt at t = 11000ms (+1000ms, cooldown not elapsed): Must NOT attempt connect
         fakeMillis = 11000;
         bool sent2 = gateway.sendTelemetryRecord(package);
         assert(!sent2);
-        assert(PubSubClient::connectAttemptCount == 1); // Connect count remains 1
+        assert(MQTTClient::connectAttemptCount == 1); // Connect count remains 1
 
         // Third attempt at t = 14999ms (+4999ms, cooldown not elapsed): Must NOT attempt connect
         fakeMillis = 14999;
         gateway.service();
-        assert(PubSubClient::connectAttemptCount == 1);
+        assert(MQTTClient::connectAttemptCount == 1);
 
         // Fourth attempt at t = 15001ms (+5001ms, cooldown elapsed): Should attempt connect
         fakeMillis = 15001;
         gateway.service();
-        assert(PubSubClient::connectAttemptCount == 2); // Connect attempted again
+        assert(MQTTClient::connectAttemptCount == 2); // Connect attempted again
 
         // Broker recovers at t = 20002ms
         fakeMillis = 20002;
-        PubSubClient::simulateConnectFailure = false;
+        MQTTClient::simulateConnectFailure = false;
         bool sent3 = gateway.sendTelemetryRecord(package);
         assert(sent3);
-        assert(PubSubClient::connectAttemptCount == 3);
+        assert(MQTTClient::connectAttemptCount == 3);
         assert(gateway.isConnected());
-        assert(PubSubClient::publishCount == 1);
+        assert(MQTTClient::publishCount == 1);
     }
 
     // =========================================================================
     // Test 3: Transport Link Down Gating & Recovery Trigger
     // =========================================================================
     {
-        PubSubClient::resetMockState();
+        MQTTClient::resetMockState();
         fakeMillis = 30000;
 
         MockConnectivityDriver mockDriver;
@@ -206,19 +206,19 @@ public:
         bool sent = gateway.sendTelemetryRecord(package);
         assert(!sent);
         assert(mockDriver.connectCalls == 1); // Triggered link recovery
-        assert(PubSubClient::connectAttemptCount == 0); // Did not attempt broker connection while transport down
+        assert(MQTTClient::connectAttemptCount == 0); // Did not attempt broker connection while transport down
 
         // Service while transport down
         gateway.service();
         assert(mockDriver.connectCalls == 2);
-        assert(PubSubClient::connectAttemptCount == 0);
+        assert(MQTTClient::connectAttemptCount == 0);
 
         // Transport comes back up
         mockDriver.setLinkConnected(true);
         sent = gateway.sendTelemetryRecord(package);
         assert(sent);
-        assert(PubSubClient::connectAttemptCount == 1);
-        assert(PubSubClient::publishCount == 1);
+        assert(MQTTClient::connectAttemptCount == 1);
+        assert(MQTTClient::publishCount == 1);
     }
 
     // =========================================================================
@@ -277,7 +277,7 @@ public:
     // Test 5: Gateway Send Statistics Tracking
     // =========================================================================
     {
-        PubSubClient::resetMockState();
+        MQTTClient::resetMockState();
         fakeMillis = 1000;
 
         MockConnectivityDriver mockDriver;
@@ -331,7 +331,7 @@ public:
     // Test 6: Bounded Serialization Buffer - Oversized Payload
     // =========================================================================
     {
-        PubSubClient::resetMockState();
+        MQTTClient::resetMockState();
         fakeMillis = 1000;
 
         MockConnectivityDriver mockDriver;
@@ -342,7 +342,7 @@ public:
         SampleTelemetryPackage package(42, 23.5f);
         bool sent = gateway.sendTelemetryRecord(package);
         assert(sent);
-        assert(PubSubClient::publishCount == 1);
+        assert(MQTTClient::publishCount == 1);
 
         GatewayStatistics stats = gateway.getStatistics();
         assert(stats.sendsSucceeded == 1);
@@ -350,10 +350,10 @@ public:
     }
 
     // =========================================================================
-    // Test 7: W15 - Subscribe topic stored and returned
+    // Test 7: Subscribe topic stored and returned
     // =========================================================================
     {
-        PubSubClient::resetMockState();
+        MQTTClient::resetMockState();
         fakeMillis = 1000;
 
         MockConnectivityDriver mockDriver;
@@ -367,10 +367,10 @@ public:
     }
 
     // =========================================================================
-    // Test 8: W15 - Legacy constructor has no subscribe topic
+    // Test 8: Legacy constructor has no subscribe topic
     // =========================================================================
     {
-        PubSubClient::resetMockState();
+        MQTTClient::resetMockState();
         fakeMillis = 1000;
 
         MockConnectivityDriver mockDriver;
@@ -382,10 +382,10 @@ public:
     }
 
     // =========================================================================
-    // Test 9: W15 - Subscribe on successful connection
+    // Test 9: Subscribe on successful connection
     // =========================================================================
     {
-        PubSubClient::resetMockState();
+        MQTTClient::resetMockState();
         fakeMillis = 1000;
 
         MockConnectivityDriver mockDriver;
@@ -398,16 +398,16 @@ public:
         SampleTelemetryPackage package(1, 1.0f);
         gateway.sendTelemetryRecord(package);
 
-        assert(PubSubClient::subscribeCount == 1);
-        assert(PubSubClient::lastSubscribeTopic == "commands/in");
-        assert(PubSubClient::lastSubscribeQos == 0);
+        assert(MQTTClient::subscribeCount == 1);
+        assert(MQTTClient::lastSubscribeTopic == "commands/in");
+        assert(MQTTClient::lastSubscribeQos == 0);
     }
 
     // =========================================================================
-    // Test 10: W15 - Incoming command JSON parsed and delivered via enqueueCommand
+    // Test 10: Incoming command JSON parsed and delivered via enqueueCommand
     // =========================================================================
     {
-        PubSubClient::resetMockState();
+        MQTTClient::resetMockState();
         fakeMillis = 1000;
 
         MockConnectivityDriver mockDriver;
@@ -422,7 +422,7 @@ public:
         assert(gateway.isConnected());
 
         // Simulate incoming command: {"commandId": 5}
-        PubSubClient::simulateIncomingMessage("commands/in", "{\"commandId\":5}");
+        MQTTClient::simulateIncomingMessage("commands/in", "{\"commandId\":5}");
 
         // Process via service() -> mqttClient.loop() -> callback -> enqueueCommand -> handle
         gateway.service();
@@ -433,10 +433,10 @@ public:
     }
 
     // =========================================================================
-    // Test 11: W15 - Multiple commands delivered sequentially
+    // Test 11: Multiple commands delivered sequentially
     // =========================================================================
     {
-        PubSubClient::resetMockState();
+        MQTTClient::resetMockState();
         fakeMillis = 1000;
 
         MockConnectivityDriver mockDriver;
@@ -450,14 +450,14 @@ public:
         gateway.sendTelemetryRecord(package);
 
         // First command
-        PubSubClient::simulateIncomingMessage("commands/in", "{\"commandId\":10}");
+        MQTTClient::simulateIncomingMessage("commands/in", "{\"commandId\":10}");
         gateway.service();
         assert(mockDevice.enqueueCommandCallCount == 1);
         assert(mockDevice.handleCallCount == 1);
         assert(mockDevice.lastCommandId == 10);
 
         // Second command
-        PubSubClient::simulateIncomingMessage("commands/in", "{\"commandId\":20}");
+        MQTTClient::simulateIncomingMessage("commands/in", "{\"commandId\":20}");
         gateway.service();
         assert(mockDevice.enqueueCommandCallCount == 2);
         assert(mockDevice.handleCallCount == 2);
@@ -465,10 +465,10 @@ public:
     }
 
     // =========================================================================
-    // Test 12: W15 - Missing commandId field is ignored
+    // Test 12: Missing commandId field is ignored
     // =========================================================================
     {
-        PubSubClient::resetMockState();
+        MQTTClient::resetMockState();
         fakeMillis = 1000;
 
         MockConnectivityDriver mockDriver;
@@ -482,7 +482,7 @@ public:
         gateway.sendTelemetryRecord(package);
 
         // Send malformed JSON without commandId
-        PubSubClient::simulateIncomingMessage("commands/in", "{\"otherField\":\"value\"}");
+        MQTTClient::simulateIncomingMessage("commands/in", "{\"otherField\":\"value\"}");
         gateway.service();
 
         // Handler should NOT have been called
@@ -491,10 +491,10 @@ public:
     }
 
     // =========================================================================
-    // Test 13: W15 - Invalid JSON is ignored
+    // Test 13: Invalid JSON is ignored
     // =========================================================================
     {
-        PubSubClient::resetMockState();
+        MQTTClient::resetMockState();
         fakeMillis = 1000;
 
         MockConnectivityDriver mockDriver;
@@ -508,7 +508,7 @@ public:
         gateway.sendTelemetryRecord(package);
 
         // Send invalid JSON
-        PubSubClient::simulateIncomingMessage("commands/in", "not json at all");
+        MQTTClient::simulateIncomingMessage("commands/in", "not json at all");
         gateway.service();
 
         // Handler should NOT have been called
@@ -517,10 +517,10 @@ public:
     }
 
     // =========================================================================
-    // Test 14: W15 - Publish-only mode does not subscribe
+    // Test 14: Publish-only mode does not subscribe
     // =========================================================================
     {
-        PubSubClient::resetMockState();
+        MQTTClient::resetMockState();
         fakeMillis = 1000;
 
         MockConnectivityDriver mockDriver;
@@ -533,7 +533,7 @@ public:
         gateway.sendTelemetryRecord(package);
 
         // Subscribe should NOT have been called
-        assert(PubSubClient::subscribeCount == 0);
+        assert(MQTTClient::subscribeCount == 0);
     }
 
     std::printf("All MqttGatewayClient and WiFi Reconnection tests passed successfully!\n");
