@@ -64,10 +64,8 @@ file(GLOB ESP32_PORT_INCLUDES "${ESP32_TOOLS_BASE}/include/*/port/include")
 target_include_directories(${PROJECT_NAME} PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
         "${ARDUINO_LIBS}/ArduinoJson/src"
-        "${ARDUINO_LIBS}/PubSubClient/src"
-        "${ARDUINO_LIBS}/LiquidCrystal_I2C"
+        "${ARDUINO_LIBS}/MQTT/src"
         "${ARDUINO_LIBS}/DHT_sensor_library"
-        "${ARDUINO_LIBS}/ESP32Servo/src"
         "${ESP32_PLATFORM_BASE}/libraries/BluetoothSerial/src"
         "${ESP32_PLATFORM_BASE}/libraries/BLE/src"
         "${ESP32_PLATFORM_BASE}/libraries/HTTPClient/src"
