@@ -12,7 +12,7 @@
 #include "GatewayClient.h"
 #include "TelemetryPackage.h"
 #include "Device.h"
-#include <PubSubClient.h>   // Extends standard PubSubClient compilation visibility
+#include <MQTT.h>   // MQTT Things (256dpi/arduino-mqtt), actively maintained replacement for PubSubClient
 
 /**
  * @brief Gateway adapter that publishes `TelemetryPackage` payloads to an MQTT topic
@@ -21,7 +21,7 @@
  */
 class MqttGatewayClient : public GatewayClient {
 private:
-    PubSubClient mqttClient; ///< Underlying MQTT client instance.
+    MQTTClient mqttClient; ///< Underlying MQTT client instance (MQTT Things).
     
     const char* clientIdentifier; ///< Unique client identifier.
     const char* publishTopic; ///< MQTT topic for publishing telemetry.
@@ -43,17 +43,16 @@ private:
     char subscribePayloadBuffer[MAX_SUBSCRIBE_PAYLOAD_SIZE]; ///< Fixed-size buffer for incoming command JSON.
 
     /**
-     * @brief Static callback invoked by PubSubClient when a subscribed message arrives.
+     * @brief Static callback invoked by MQTTClient when a subscribed message arrives.
      *
      * Parses the JSON payload to extract the command identifier and marshals it
      * to the sampler task via Device::enqueueCommand(). Runs in the network task context
      * when mqttClient.loop() is called.
      *
      * @param topic MQTT topic of the incoming message.
-     * @param payload Raw JSON payload bytes.
-     * @param length Length of the payload in bytes.
+     * @param payload Message payload as a String.
      */
-    static void mqttMessageCallback(const char* topic, const byte* payload, unsigned int length);
+    static void mqttMessageCallback(const String& topic, const String& payload);
 
     static constexpr uint16_t DEFAULT_RECONNECT_INTERVAL_MILLISECONDS = 5000; ///< Default cooldown between broker reconnection attempts.
     static constexpr uint8_t DEFAULT_MQTT_QOS = 0; ///< Default Quality of Service for MQTT subscribe.
@@ -109,7 +108,7 @@ public:
 
     /**
      * @brief Periodic background upkeep routine for MQTT ping packets and keep-alive handling.
-     * Maintains broker connection and executes PubSubClient loop processing.
+     * Maintains broker connection and processes pending MQTT messages.
      */
     void service() override;
 
@@ -125,8 +124,8 @@ public:
     [[nodiscard]] bool isConnected() override;
 
     /**
-     * @brief Returns the internal state integer reported by PubSubClient.
-     * @return PubSubClient state integer (e.g. 0 = MQTT_CONNECTED).
+     * @brief Returns the last error code from the MQTT client.
+     * @return MQTT client error code.
      */
     [[nodiscard]] int getClientState();
 
