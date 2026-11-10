@@ -3,7 +3,7 @@
 **Version**: 1.0.0  
 **Author**: Angel Velasquez  
 **Date created**: 2025-03-23  
-**Last updated**: 2026-11-06
+**Last updated**: 2026-11-10
 
 ## Overview
 
@@ -54,8 +54,13 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 | `LoadCellAmplifier` | HX711 load cell amplifier for weight measurement. |
 | `PassiveInfraredSensor` | PIR motion detection with motion started/stopped events. |
 | `PulseSensor` | Heart rate or pulse detection from analog signal. |
+| `PthSensor` | I²C BME280 sensor for temperature, humidity, and pressure with altitude calculation. |
 | `RfidSensor` | SPI RFID card reader with CRC calculation and card communication. |
+| `SoilMoistureSensor` | Analog soil moisture sensor with epsilon-based change detection. |
 | `UltrasonicSensor` | HC-SR04 ultrasonic distance measurement. |
+| `WaterFlowSensor` | YF-S201 water flow sensor with hybrid interrupt/periodic scheduling. |
+| `WaterLeakSensor` | Digital water leak detection (YL-83/FR-101) with interrupt-driven operation. |
+| `DoorWindowSensor` | Digital door/window open/close detection (A313/MY-103LY) with interrupt-driven operation. |
 
 ### Actuators
 
@@ -65,8 +70,9 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 | `Buzzer` | PWM-driven buzzer with tone frequency and duration. |
 | `Led` | Digital LED with on/off/toggle commands. |
 | `RgbLed` | PWM-driven RGB LED with color mixing, common-anode support, and predefined colors. |
-| `ServoMotor` | PWM servo motor with angle positioning. |
-| `CharacterLcdDisplay` | I²C 16x2 character LCD with text, cursor, and backlight control. |
+| `RelayActuator` | Digital relay with on/off/toggle commands for AC/DC load control. |
+| `ServoMotor` | PWM servo motor with angle positioning (native LEDC driver). |
+| `CharacterLcdDisplay` | I²C 16x2 character LCD with text, cursor, and backlight control (native HD44780 driver). |
 
 ### Connectivity
 
@@ -145,11 +151,15 @@ Event and command identifiers are plain integers. The framework reserves ranges 
 | Events | 30–31 | `PassiveInfraredSensor` motion detected/stopped |
 | Events | 40 | `GasSensor` digital gas detected |
 | Events | 50–51 | `DigitalLightIntensitySensor` light detected/absent |
+| Events | 60–61 | `RfidSensor` card detected/removed |
+| Events | 70–71 | `WaterLeakSensor` leak detected/cleared |
+| Events | 72–73 | `DoorWindowSensor` door opened/closed |
 | Commands | 100–102 | `Led` |
 | Commands | 150–152 | `ServoMotor` |
 | Commands | 200–202 | `CharacterLcdDisplay` |
 | Commands | 250–252 | `Buzzer` |
-| Commands | 300–303 | `RgbLed` |
+| Commands | 300–302 | `RelayActuator` |
+| Commands | 304–306 | `RgbLed` |
 | **User range** | **1000+** | **Reserved for application-defined identifiers** |
 
 ## Sampling Scheduler
@@ -230,7 +240,7 @@ Provides keep-alive servicing via `service()`, reconnection backoff, and bounded
 
 ## Examples
 
-The framework ships with 10 example sketches demonstrating various use cases:
+The framework ships with 15 example sketches demonstrating various use cases:
 
 | Example | Description |
 |---|---|
@@ -244,10 +254,15 @@ The framework ships with 10 example sketches demonstrating various use cases:
 | `RfidAccessController` | SPI RFID card reader with access control; demonstrates CRC calculation and card communication. |
 | `SmartScaleDevice` | Four HX711 load cells for precision weighing; demonstrates multi-sensor averaging. |
 | `ToggableLedDevice` | Button-controlled LED with MQTT telemetry; demonstrates CQRS command/event separation. |
+| `SmartGreenhouseDevice` | Soil moisture, DHT, relay pump, and servo vent; demonstrates event-driven irrigation control. |
+| `WaterFlowMonitor` | YF-S201 water flow sensor with hybrid interrupt/periodic scheduling. |
+| `WeatherStation` | Battery-powered weather station with deep sleep, DHT22, BH1750, and PthSensor. |
+| `CropMonitoringStation` | Multi-sensor agricultural monitoring with tickless scheduling and MQTT telemetry. |
+| `HomeSecurityDevice` | Water leak, door/window, PIR, and buzzer; demonstrates interrupt-driven home security. |
 
 ## Testing
 
-The framework includes 11 host unit test suites that run natively without hardware:
+The framework includes 22 host unit test suites that run natively without hardware:
 
 | Suite | What It Tests |
 |---|---|
@@ -262,6 +277,17 @@ The framework includes 11 host unit test suites that run natively without hardwa
 | `tests/SensorFault/` | Fault threshold, latching, recovery events, counter reset |
 | `tests/SamplingScheduler/` | Per-slot periods, phase alignment, minimum enforcement |
 | `tests/TelemetryPackage/` | Golden JSON serialization, envelope metadata, bounded buffer overflow |
+| `tests/TriggeringScheduler/` | Interrupt-driven sensor registration, trigger table, ISR handler |
+| `tests/CommandMarshaling/` | Command queue, cross-task marshaling, enqueue edge cases |
+| `tests/WaterFlowSensor/` | Hybrid scheduling, pulse counting, flow rate change detection |
+| `tests/SoilMoistureSensor/` | AnalogRead moisture, epsilon-based change detection, event emission |
+| `tests/DeepSleep/` | PowerMode enum, wake causes, RTC_DATA_ATTR, deep sleep API mocks |
+| `tests/ServoMotor/` | Native LEDC PWM, angle commands, state tracking, parent propagation |
+| `tests/CharacterLcdDisplay/` | HD44780 4-bit I2C protocol, cursor positioning, backlight control |
+| `tests/RelayActuator/` | Relay on/off/toggle commands, state tracking, parent propagation |
+| `tests/PthSensor/` | BME280 I²C sensor, compensation formulas, altitude calculation |
+| `tests/WaterLeakSensor/` | Digital input, leak detection, propagation suppression |
+| `tests/DoorWindowSensor/` | Digital input, open/close detection, propagation suppression |
 
 Run all tests locally:
 
@@ -311,8 +337,6 @@ Then open `docs/build/html/index.html` in your browser.
    - `Adafruit Unified Sensor` (transitive dependency of DHT)
    - `ArduinoJson (>=7.0.0)` (for telemetry serialization)
    - `PubSubClient` (for `MqttGatewayClient`)
-   - `LiquidCrystal_I2C` (for `CharacterLcdDisplay`)
-   - `HX711` (for `LoadCellAmplifier`)
 4. **Verify Structure**: The library should be organized as:
    ```plaintext
    Modest-IoT-Nano-Framework/
