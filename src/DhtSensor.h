@@ -17,13 +17,7 @@
  * @ingroup sensors_module
  */
 class DhtSensor : public Sensor {
-private:
-    DHT physicalDhtSensor; ///< Underlying DHT sensor instance.
-    float cachedTemperatureInCelsius; ///< Last successful temperature reading.
-    float cachedRelativeHumidityInPercentage; ///< Last successful humidity reading.
-
-    static constexpr int SENSOR_ERROR_SUPPRESSION_IDENTIFIER = -1; ///< Identifier used to suppress error events.
-
+public:
     /// DHT11 model type identifier, matches DHT library constant `DHT11`.
     static constexpr uint8_t SENSOR_MODEL_DHT11 = 11;
     /// DHT22 model type identifier, matches DHT library constant `DHT22`.
@@ -32,6 +26,13 @@ private:
     static constexpr uint8_t SENSOR_MODEL_DHT21 = 21;
     /// AM2301 model type identifier, equivalent to DHT21.
     static constexpr uint8_t SENSOR_MODEL_AM2301 = 21;
+
+private:
+    DHT physicalDhtSensor; ///< Underlying DHT sensor instance.
+    float cachedTemperatureInCelsius; ///< Last successful temperature reading.
+    float cachedRelativeHumidityInPercentage; ///< Last successful humidity reading.
+
+    static constexpr int SENSOR_ERROR_SUPPRESSION_IDENTIFIER = -1; ///< Identifier used to suppress error events.
 
     /// Minimum sampling interval for DHT11 model in milliseconds.
     /// @note DHT11 specification limits readings to 1 Hz (1000 ms).
