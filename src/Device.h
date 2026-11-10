@@ -105,7 +105,7 @@ private:
     // Notification infrastructure
     std::atomic<uint32_t> pendingTicks; ///< ISR-incremented tick counter for bit-flag notifications.
 
-    // Triggering scheduler infrastructure (W13)
+    // Triggering scheduler infrastructure
     /**
      * @brief Entry in the trigger table for an interrupt-driven sensor.
      *
@@ -143,7 +143,7 @@ private:
     static void IRAM_ATTR handleHardwareTimerInterrupt(void* deviceInstance);
 
     /**
-     * @brief Re-arms the hardware timer for the next due sensor sample (W16).
+     * @brief Re-arms the hardware timer for the next due sensor sample.
      *
      * Calculates the time until the next sensor sample is due using
      * `scheduler.ticksUntilNextDue()` and sets a one-shot alarm for that interval.
@@ -151,7 +151,7 @@ private:
     void rearmTimerForNextDue() const;
 
     /**
-     * @brief Enters ESP32 light sleep mode until the next timer alarm (W16).
+     * @brief Enters ESP32 light sleep mode until the next timer alarm.
      *
      * Configures the timer as the wake source and calls `esp_light_sleep_start()`.
      * The CPU halts until the hardware timer fires, reducing idle power consumption.
@@ -160,7 +160,7 @@ private:
     void enterLightSleep() const;
 
     /**
-     * @brief Enters ESP32 deep sleep mode until the timer alarm (W17).
+     * @brief Enters ESP32 deep sleep mode until the timer alarm.
      *
      * Configures the timer as the wake source and calls `esp_deep_sleep_start()`.
      * Unlike light sleep, deep sleep shuts down the CPU, Wi-Fi, and most peripherals
@@ -172,25 +172,25 @@ private:
 
 public:
     /**
-     * @brief Power mode for the hardware timer (W16).
+     * @brief Power mode for the hardware timer.
      */
     enum class PowerMode : uint8_t {
         Periodic,   ///< Fixed-period timer alarm (default, backward compatible).
         Tickless,   ///< One-shot timer re-armed after each sampler dispatch.
-        DeepSleep   ///< Full CPU shutdown, RTC memory only, timer wake (W17).
+        DeepSleep   ///< Full CPU shutdown, RTC memory only, timer wake.
     };
 
-    PowerMode powerMode; ///< Current power mode (W16/W17).
+    PowerMode powerMode; ///< Current power mode.
 
     /**
-     * @brief Reports the wake reason from the last sleep cycle (W17).
+     * @brief Reports the wake reason from the last sleep cycle.
      *
      * Uses `esp_sleep_get_wakeup_cause()` to determine how the device woke up
      * (timer, GPIO, touchpad, ULP, or reset) and prints the result to Serial.
      * Call early in setup() to diagnose unexpected wake cycles.
      * @runs_on any task
      */
-    void reportWakeReason() const;
+    static void reportWakeReason();
 
     /**
      * @brief Static ISR handler for interrupt-driven sensor triggers.
@@ -232,7 +232,7 @@ public:
      * @brief Handle for the inbound command queue.
      * @note Declared public so host tests can simulate queue state.
      */
-    QueueHandle_t commandQueueHandle; ///< Handle for the inbound command queue (W12).
+    QueueHandle_t commandQueueHandle; ///< Handle for the inbound command queue.
 
     /**
      * @brief Entry in the command queue for cross-task command marshaling.
@@ -404,7 +404,7 @@ protected:
     virtual void maintainNetworkServices() const;
 
     /**
-     * @brief Sets the power mode for the hardware timer (W16).
+     * @brief Sets the power mode for the hardware timer.
      * @param mode Power mode: Periodic (default) or Tickless.
      *
      * In Periodic mode, the hardware timer fires at a fixed interval.
@@ -446,14 +446,14 @@ public:
      * |-------------|-------------------|--------------------------------|
      * | Bit 0 (0x1) | TimerTickArrived  | Hardware timer ISR             |
      * | Bit 1 (0x2) | TerminationSignal | stopAsynchronousEngine()       |
-     * | Bit 2 (0x4) | SensorTrigger     | GPIO ISR (W13)                 |
-     * | Bit 3 (0x8) | CommandAvailable  | Device::enqueueCommand() (W12) |
+     * | Bit 2 (0x4) | SensorTrigger     | GPIO ISR                       |
+     * | Bit 3 (0x8) | CommandAvailable  | Device::enqueueCommand()       |
      */
     enum class NotificationBitFlag : uint32_t {
         TimerTickArrived    = 0x1, ///< Hardware timer tick arrived.
         TerminationSignal   = 0x2, ///< Engine termination signal.
-        SensorTrigger       = 0x4, ///< Interrupt-driven sensor event (W13).
-        CommandAvailable    = 0x8  ///< Command marshaled from network task (W12).
+        SensorTrigger       = 0x4, ///< Interrupt-driven sensor event.
+        CommandAvailable    = 0x8  ///< Command marshaled from network task.
     };
 
     /**

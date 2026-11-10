@@ -38,8 +38,7 @@ Device::Device(const unsigned long samplingIntervalInMilliseconds, const uint8_t
       pollingIntervalInMilliseconds(samplingIntervalInMilliseconds),
       hardwareTimerIndex(timerGroupIndex),
       powerMode(PowerMode::Periodic),
-      commandQueueHandle(nullptr),
-      telemetryGateway(nullptr) {
+      commandQueueHandle(nullptr) {
     (void) hardwareTimerIndex; ///< Stored for future use; not yet read.
 }
 
@@ -246,8 +245,7 @@ void Device::executeHardwareSamplingContext(void *taskParameters) {
             // Advance the scheduler by the elapsed tick count
             self->scheduler.advance(elapsed);
 
-            // W16: Re-arm timer in tickless mode and enter light sleep
-            // W17: Enter deep sleep when configured
+            // Power management: re-arm timer and enter sleep mode based on power mode
             if (self->powerMode == PowerMode::Tickless) {
                 self->rearmTimerForNextDue();
                 self->enterLightSleep();
@@ -257,12 +255,12 @@ void Device::executeHardwareSamplingContext(void *taskParameters) {
             }
         }
 
-        // Interrupt-driven sensor event (W13)
+        // Interrupt-driven sensor event
         if (notificationValue & static_cast<uint32_t>(NotificationBitFlag::SensorTrigger)) {
             self->processTriggeredSensors();
         }
 
-        // Command available from network task (W12)
+        // Command available from network task
         if (notificationValue & static_cast<uint32_t>(NotificationBitFlag::CommandAvailable)) {
             self->processPendingCommands();
         }
@@ -324,9 +322,14 @@ void Device::maintainNetworkServices() const {
     // Intentional default no-op
 }
 
-// ============================================================================
-// Triggering Scheduler (W13) — Interrupt-driven sensor support
-// ============================================================================
+/**
+ * @name Triggering Scheduler
+ * @{
+ *
+ * @brief Interrupt-driven sensor support.
+ * Interrupt-driven sensors register a GPIO ISR that marks a trigger flag;
+ * the sampler task drains these flags and dispatches events.
+ */
 
 Device *Device::activeDevice = nullptr;
 
@@ -473,9 +476,14 @@ bool Device::appendToBothSchedulers(Sensor *targetSensorInstance,
     return samplingOk && triggerHandle != 0;
 }
 
-// ============================================================================
-// Command Marshaling (W12) — Cross-task command delivery
-// ============================================================================
+/**
+ * @name Command Marshaling
+ * @{
+ *
+ * @brief Cross-task command delivery.
+ * Commands received in the network task are enqueued and processed
+ * in the sampler task for thread safety.
+ */
 
 /**
  * @brief Enqueues a command for execution on the sampler task context.
@@ -559,7 +567,7 @@ DiagnosticsSnapshot Device::diagnostics() const {
 }
 
 /**
- * @brief Re-arms the hardware timer for the next due sensor sample (W16).
+ * @brief Re-arms the hardware timer for the next due sensor sample.
  *
  * Calculates the time until the next sensor sample is due using
  * `scheduler.ticksUntilNextDue()` and sets a one-shot alarm for that interval.
@@ -578,7 +586,7 @@ void Device::rearmTimerForNextDue() const {
 }
 
 /**
- * @brief Enters ESP32 light sleep mode until the next timer alarm (W16).
+ * @brief Enters ESP32 light sleep mode until the next timer alarm.
  *
  * Configures the hardware timer as the wake source and calls `esp_light_sleep_start()`.
  * The CPU halts until the timer fires, reducing idle power consumption.
@@ -600,7 +608,7 @@ void Device::enterLightSleep() const {
 }
 
 /**
- * @brief Enters ESP32 deep sleep mode until the timer alarm (W17).
+ * @brief Enters ESP32 deep sleep mode until the timer alarm.
  *
  * Calculates the sleep duration from `scheduler.ticksUntilNextDue()`, configures
  * the timer wake source, and calls `esp_deep_sleep_start()`. Unlike light sleep,
@@ -624,16 +632,15 @@ void Device::enterDeepSleep() const {
 }
 
 /**
- * @brief Reports the wake reason from the last sleep cycle (W17).
+ * @brief Reports the wake reason from the last sleep cycle.
  *
  * Uses `esp_sleep_get_wakeup_cause()` to determine how the device woke up
  * and prints the result to Serial. Call early in setup() to diagnose
  * unexpected wake cycles.
  */
-void Device::reportWakeReason() const {
+void Device::reportWakeReason() {
 #ifdef ARDUINO_ARCH_ESP32
-    const auto wakeupCause = esp_sleep_get_wakeup_cause();
-    switch (wakeupCause) {
+    switch (esp_sleep_get_wakeup_cause()) {
         case ESP_SLEEP_WAKEUP_EXT0:
             Serial.println(F("[Device] Wakeup: External signal (RTC_IO)"));
             break;
