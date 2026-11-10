@@ -221,7 +221,7 @@ package "Sensors" #EEF6EE {
     #processEvent(event : Event&) : void
   }
 
-  class PthSensor {
+  class BmeEnvironmentalSensor {
     -i2cAddress : uint8_t
     -cachedTemperatureInCelsius : float
     -cachedHumidityInPercentage : float
@@ -231,15 +231,26 @@ package "Sensors" #EEF6EE {
     -lastNotifiedPressureInHectopascals : float
     -initialized : bool
     -calibration coefficients
-    +PthSensor(signalGpioPin : int, i2cAddress : uint8_t, parentHandler : EventHandler* = nullptr)
-    +initialize() : bool
     +isInitialized() const : bool
     +getTemperatureInCelsius() const : float
     +getHumidityInPercentage() const : float
     +getPressureInHectopascals() const : float
     +getAltitudeInMeters(seaLevelPressureInHectopascals : float) const : float
+    #readRegister16(registerAddress : uint8_t) const : int16_t
+    #readCalibrationData() : bool
+    #readRawData(rawTemperature, rawPressure, rawHumidity) const : bool
+    #compensateTemperature(rawTemperature) : float
+    #compensatePressure(rawPressure) const : float
+    #compensateHumidity(rawHumidity) const : float
+  }
+
+  class PthSensor {
+    +PthSensor(signalGpioPin : int, i2cAddress : uint8_t, parentHandler : EventHandler* = nullptr)
+    +initialize() : bool
     #processEvent(event : Event&) : void
   }
+
+  BmeEnvironmentalSensor <|-- PthSensor
 
   class WaterLeakSensor {
     #lastState : bool
@@ -292,6 +303,18 @@ package "Sensors" #EEF6EE {
     +setBacklight(enable : bool) : void
     #executeCommand(command : Command) : void
   }
+
+  class EnvironmentalGasSensor {
+    -cachedGasResistanceInKOhms : float
+    -lastNotifiedGasResistanceInKOhms : float
+    -gas calibration coefficients
+    +EnvironmentalGasSensor(signalGpioPin : int, i2cAddress : uint8_t, parentHandler : EventHandler* = nullptr)
+    +initialize() : bool
+    +getGasResistanceInKOhms() const : float
+    #processEvent(event : Event&) : void
+  }
+
+  BmeEnvironmentalSensor <|-- EnvironmentalGasSensor
 
   class WaterFlowSensor {
     -pulseCount : volatile uint32_t
@@ -658,6 +681,7 @@ Sensor <|-- PthSensor
 Sensor <|-- WaterLeakSensor
 Sensor <|-- DoorWindowSensor
 Sensor <|-- OneWireTemperatureSensor
+Sensor <|-- EnvironmentalGasSensor
 Sensor <|-- PassiveInfraredSensor
 Sensor <|-- DigitalLightIntensitySensor
 Sensor <|-- GasSensor
