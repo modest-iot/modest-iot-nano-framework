@@ -170,6 +170,24 @@ run_test "test_CharacterLcdDisplay" \
     src/Hd44780Driver.cpp \
     tests/CharacterLcdDisplay/test.cpp
 
+# 20. PthSensor Suite
+run_test "test_PthSensor" \
+    src/Sensor.cpp \
+    src/PthSensor.cpp \
+    tests/PthSensor/test.cpp
+
+# 21. WaterLeakSensor Suite
+run_test "test_WaterLeakSensor" \
+    src/Sensor.cpp \
+    src/WaterLeakSensor.cpp \
+    tests/WaterLeakSensor/test.cpp
+
+# 22. DoorWindowSensor Suite
+run_test "test_DoorWindowSensor" \
+    src/Sensor.cpp \
+    src/DoorWindowSensor.cpp \
+    tests/DoorWindowSensor/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="
