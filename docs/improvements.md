@@ -15,7 +15,7 @@ All 8 improvement briefs and the roadmap are consolidated in this single documen
 | 2: Reliability, diagnostics & footprint | W6 (logging/high-water/sensor conversion), W7, W9, W10 | Reconnection robust, tasks tunable, BLE modern, zero-cost logs, sensor fault events with conversion | Soak test reconnects; logs available behind macro; BLE tests pass; diagnostics snapshot works; sensors report faults | **Complete** |
 | 3: Core performance and DX              | W8, then W11                                           | Per-slot intervals, bounded memory use for telemetry                                                | Scheduler host tests pass; all examples use per-sensor intervals; telemetry ownership and queue policy complete      | **Complete** |
 | 4: Capabilities                         | W12, W13, W14, W15, rest of W6                         | Edge-driven sensing, remote commands, fault events                                                  | Bidirectional MQTT verified; interrupt-driven sensors tested                                                         | **Complete** (W12 ✓, W13 ✓, W14 ✓, W15 ✓) |
-| 5: Optimization and power               | W16, W17, W18, W19                                     | Battery operation and further tuning                                                                | Decide per item from measured data                                                                                   | In Progress  |
+| 5: Optimization and power               | W16, W17, W18, W19                                     | Battery operation and further tuning                                                                | Decide per item from measured data                                                                                   | **Complete** (W16 ✓, W17 ✓, W19 ✓, W18 deferred to v1.1.0) |
 
 ## Work Item Registry
 
@@ -59,7 +59,10 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 
 ## Deliberately out of scope
 
-- Replacing DHT, PubSubClient, ArduinoJson or TLS.
+- Replacing ArduinoJson (no viable embedded alternative).
+- TLS/SSL implementation (use ESP32's built-in NetworkClientSecure).
+- DHT sensor library native implementation (deferred to v1.1.0).
+- PubSubClient replacement (deferred to v1.1.0, MQTT Things candidate).
 - Targeted (per-instance) commands until a use case appears.
 - Switchable sensor power rails and ADC/DMA sampling.
 - Non-ESP32 targets.
@@ -104,7 +107,7 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 | `ArduinoJson`             | `TelemetryPackage` (needed)   | yes, pinned to `>=7.0.0` | Code uses the v7 `JsonDocument` type                                                 |
 | `HX711`                   | ~~`LoadCellController` only~~ | **Removed**              | `LoadCellController` deleted; `LoadCellAmplifier` implements HX711 protocol natively |
 | `EspSoftwareSerial`       | nothing                       | **Removed**              | Not referenced anywhere                                                              |
-| `Adafruit_Unified_Sensor` | nothing directly              | **Retained**             | Transitive via DHT library; kept for safety                                          |
+| `Adafruit_Unified_Sensor` | nothing directly              | **Removed**              | Not used anywhere; removed from library.properties                                   |
 
 **Resolution**:
 - Deleted `LoadCellController.h/.cpp` and its `keywords.txt` entry.
