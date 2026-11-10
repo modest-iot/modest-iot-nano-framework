@@ -34,9 +34,9 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 
 ### What's Delivered
 
-- **40 source headers** with full Doxygen documentation and `@runs_on` threading tags.
+- **42 source headers** with full Doxygen documentation and `@runs_on` threading tags.
 - **15 example sketches** covering diverse use cases (smart band, air quality, RFID access, smart greenhouse, weather station, crop monitoring, home security, etc.).
-- **22 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
+- **25 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
 - **3 CI workflows**: host tests, compile examples, lint.
 - **Per-slot `SamplingScheduler`** with phase-aligned re-arming and minimum period enforcement.
 - **`EngineConfig`** for tunable FreeRTOS task stacks, priorities, and core pinning.
@@ -86,6 +86,19 @@ Components for weather stations, home security, and industrial monitoring:
 | **DoorWindowSensor**     | Sensor   | `digitalRead()`  | Door/window open/close detection for home security and perimeter        |
 
 New examples: `HomeSecurityDevice` (Water Leak + Door/Window + PIR + Buzzer), `WeatherStation` updated with PthSensor.
+
+### Component Expansion Tier 3 — **In Progress**
+
+Popular IoT components for maximum v1.0.0 adoption:
+
+| Component                | Type     | Interface        | Use Case                                                                | Status |
+|--------------------------|----------|------------------|-------------------------------------------------------------------------|--------|
+| **OneWireTemperatureSensor** | Sensor | GPIO (1-Wire)    | High-accuracy temperature for weather stations and aquariums            | **Complete** |
+| **OledDisplay**          | Actuator | I²C (SSD1306)    | OLED display for portable devices and dashboards                        | **Complete** |
+| **Ssd1306Driver**        | Driver   | I²C (SSD1306)    | SSD1306 protocol driver for OledDisplay                                 | **Complete** |
+| **EnvironmentalGasSensor** | Sensor | I²C (BME680)     | Air quality monitoring with VOC and gas resistance                      | Pending |
+
+New examples: `OneWireTemperatureMonitor` (DS18B20 multi-sensor), `OledWeatherDisplay` (OLED + PthSensor), `AirQualityMonitorV2` (BME680 + MQTT).
 
 ### Nano Framework Completion Roadmap
 
@@ -971,7 +984,7 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 | Metric                  | Target                                 |
 |-------------------------|----------------------------------------|
 | **Compilation success** | 100% across ESP32 variants             |
-| **Test coverage**       | 100% pass rate, 22 test suites         |
+| **Test coverage**       | 100% pass rate, 25 test suites         |
 | **Flash footprint**     | <30 KB overhead                        |
 | **RAM footprint**       | <2 KB overhead                         |
 | **Example count**       | 15 diverse examples                    |
