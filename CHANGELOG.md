@@ -46,7 +46,7 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - **MqttGatewayClient**: MQTT client using MQTT Things (256dpi/arduino-mqtt), replaced deprecated PubSubClient
 - **HttpGatewayClient**: HTTP POST telemetry client
 - **BleConnectivityDriver**: BLE NUS connectivity driver
-- **WiFiConnectivityDriver**: Wi-Fi connection management
+- **WiFiConnectivityDriver**: Wi-Fi connection management with status enumeration, disconnect, IP address reporting, signal strength (RSSI), and connection timeout
 - **Ssd1306Driver**: Native SSD1306 I²C protocol driver for OLED displays
 - **Hd44780Driver**: Native HD44780 I²C protocol driver for LCD displays
 
