@@ -263,7 +263,7 @@ The framework ships with 16 example sketches demonstrating various use cases:
 | `WeatherStation` | Battery-powered weather station with deep sleep, DHT22, BH1750, and PthSensor. |
 | `CropMonitoringStation` | Multi-sensor agricultural monitoring with tickless scheduling and MQTT telemetry. |
 | `HomeSecurityDevice` | Water leak, door/window, PIR, and buzzer; demonstrates interrupt-driven home security. |
-| `HttpTelemetryDemo` | DHT22 sensor with HTTP POST telemetry, Bearer token authentication, and statistics tracking. |
+| `HttpTelemetryDemo` | DHT22 sensor with HTTP telemetry, Bearer token acquisition via GET request, response body parsing, and authenticated POST telemetry. |
 
 ## Testing
 
