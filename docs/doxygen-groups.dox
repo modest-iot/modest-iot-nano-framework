@@ -260,6 +260,6 @@
  * @ingroup gateway_module
  * @{
  */
-// HTTP and MQTT gateway clients defined here
+// HTTP, MQTT, and BLE NUS gateway clients defined here
 /** @} */
 

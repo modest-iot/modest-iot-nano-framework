@@ -298,6 +298,7 @@ The framework includes 27 host unit test suites that run natively without hardwa
 | `tests/OneWireTemperatureSensor/` | 1-Wire protocol, DS18B20 temperature, change detection |
 | `tests/OledDisplay/` | SSD1306 I²C protocol, frame buffer, text rendering, drawing |
 | `tests/EnvironmentalGasSensor/` | BME680 I²C sensor, gas resistance, compensation formulas |
+| `tests/DhtSensor/` | DHT single-wire protocol, temperature/humidity, CRC validation |
 
 Run all tests locally:
 

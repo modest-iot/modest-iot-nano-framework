@@ -654,14 +654,14 @@ package "Gateway" #FFF8EE {
     +getStatistics() : GatewayStatistics
     +sendRequest(method : HttpMethod, payload : const char*) : bool
     +sendTelemetryRecord(abstractTelemetryPayload : const TelemetryPackage&) : bool
+    -executeHttpRequest(method : HttpMethod, payload : const char*) : bool
   }
 
   class BleGatewayClient {
-    -bleTransportDriver : BleConnectivityDriver&
     -serializationBuffer : char[512]
     -sendsSucceededCount : uint32_t
     -sendsFailedCount : uint32_t
-    +BleGatewayClient(transportDriver : BleConnectivityDriver&, deviceName : const char*)
+    +BleGatewayClient(transportDriver : ConnectivityDriver&, deviceName : const char*)
     +sendTelemetryRecord(payload : const TelemetryPackage&) : bool
     +service() : void
     +loop() : void
@@ -670,7 +670,7 @@ package "Gateway" #FFF8EE {
   }
 
   class MqttGatewayClient {
-    -mqttClient : PubSubClient
+    -mqttClient : MQTTClient
     -clientIdentifier : const char*
     -publishTopic : const char*
     -subscribeTopic : const char*
@@ -757,7 +757,7 @@ Device   "0..4" o--> Sensor : triggerTable
 GatewayClient     --> ConnectivityDriver : uses
 GatewayClient     ..> TelemetryPackage   : serializes
 
-MqttGatewayClient *-- PubSubClient : owns
+MqttGatewayClient *-- MQTTClient : owns
 MqttGatewayClient --> Client       : uses socket
 MqttGatewayClient --> Device       : enqueueCommand
 

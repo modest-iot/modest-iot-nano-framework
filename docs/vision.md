@@ -34,9 +34,9 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 
 ### What's Delivered
 
-- **45 source headers** with full Doxygen documentation and `@runs_on` threading tags.
-- **15 example sketches** covering diverse use cases (smart band, air quality, RFID access, smart greenhouse, weather station, crop monitoring, home security, etc.).
-- **26 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
+- **47 source headers** with full Doxygen documentation and `@runs_on` threading tags.
+- **16 example sketches** covering diverse use cases (smart band, air quality, RFID access, smart greenhouse, weather station, crop monitoring, home security, HTTP telemetry, etc.).
+- **27 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
 - **3 CI workflows**: host tests, compile examples, lint.
 - **Per-slot `SamplingScheduler`** with phase-aligned re-arming and minimum period enforcement.
 - **`EngineConfig`** for tunable FreeRTOS task stacks, priorities, and core pinning.
@@ -984,10 +984,10 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 | Metric                  | Target                                 |
 |-------------------------|----------------------------------------|
 | **Compilation success** | 100% across ESP32 variants             |
-| **Test coverage**       | 100% pass rate, 26 test suites         |
+| **Test coverage**       | 100% pass rate, 27 test suites         |
 | **Flash footprint**     | <30 KB overhead                        |
 | **RAM footprint**       | <2 KB overhead                         |
-| **Example count**       | 15 diverse examples                    |
+| **Example count**       | 16 diverse examples                    |
 | **CI workflows**        | 3 (host tests, compile examples, lint) |
 
 ### Edge Framework
