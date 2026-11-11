@@ -61,6 +61,7 @@ changeDetected	KEYWORD2
 commitBuffersToPhysicalScreen	KEYWORD2
 connect	KEYWORD2
 disconnect	KEYWORD2
+getSignalStrengthInDbm	KEYWORD2
 diagnostics	KEYWORD2
 enqueueTelemetryPayload	KEYWORD2
 ensureBrokerSessionConnection	KEYWORD2

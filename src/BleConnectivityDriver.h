@@ -12,6 +12,7 @@
 #include "ConnectivityDriver.h"
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 
 #if defined(CONFIG_BT_ENABLED) || defined(ARDUINO_ARCH_ESP32) || defined(TEST_MOCK_BLE)
 
@@ -21,6 +22,7 @@ class BLEService;
 class BLECharacteristic;
 class BLEServerCallbacks;
 class BLECharacteristicCallbacks;
+class BLEAdvertising;
 
 /**
  * @brief Bluetooth Low Energy (BLE) connectivity adapter implementing the Nordic UART Service (NUS).
@@ -51,10 +53,11 @@ private:
     BLEService* bleService;
     BLECharacteristic* txCharacteristic;
     BLECharacteristic* rxCharacteristic;
-    BLEServerCallbacks* serverCallbacksHandler;
-    BLECharacteristicCallbacks* rxCallbacksHandler;
 
     DataReceivedCallback onDataReceivedHandler;
+
+    std::unique_ptr<BLEServerCallbacks> serverCallbacksHandler;
+    std::unique_ptr<BLECharacteristicCallbacks> rxCallbacksHandler;
 
 public:
     /**
@@ -135,6 +138,20 @@ public:
      * @brief Internal hook invoked when a central peer disconnects.
      */
     void handlePeerDisconnected();
+
+    /**
+     * @brief Disconnects the currently connected BLE peer and stops advertising.
+     * @note Useful before entering deep sleep to conserve power.
+     */
+    void disconnect();
+
+    /**
+     * @brief Returns the signal strength in dBm of the connected peer.
+     * @return Always returns 0, as the ESP32 BLE server API does not expose RSSI.
+     * @note RSSI is only available during scanning (BLEAdvertisedDevice::getRSSI())
+     * or from a BLE client perspective (BLEClient::getRssi()).
+     */
+    [[nodiscard]] int32_t getSignalStrengthInDbm() const;
 
     /**
      * @brief Internal hook invoked when data is received on the RX characteristic.

@@ -122,6 +122,7 @@ public:
         services.push_back(s);
         return s;
     }
+
 };
 
 #endif // FAKE_BLE_SERVER_H
