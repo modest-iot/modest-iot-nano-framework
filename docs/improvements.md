@@ -17,6 +17,32 @@ All 8 improvement briefs and the roadmap are consolidated in this single documen
 | 4: Capabilities                         | W12, W13, W14, W15, rest of W6                         | Edge-driven sensing, remote commands, fault events                                                  | Bidirectional MQTT verified; interrupt-driven sensors tested                                                         | **Complete** (W12 ✓, W13 ✓, W14 ✓, W15 ✓) |
 | 5: Optimization and power               | W16, W17, W18, W19                                     | Battery operation and further tuning                                                                | Decide per item from measured data                                                                                   | **Complete** (W16 ✓, W17 ✓, W19 ✓, W18 deferred to v1.1.0) |
 
+## Pre-Release Readiness Assessment
+
+**Feature completeness**: All Tiers 0–5 are complete (W18 deferred to v1.1.0). The framework is **feature-complete for v1.0.0** with 18 sensors, 7 actuators, 3 gateway clients, and 16 examples.
+
+**Production readiness**: Comprehensive evaluation identified **4 items that should be addressed before Arduino Library submission** and **6 items that can wait for v1.1.0+**. None require architectural changes; all are additive features fitting the existing patterns.
+
+### Pre-Release Prerequisites (Block v1.0.0 Submission)
+
+| ID   | Work Item                        | Priority | Complexity | Description                                                                                   |
+|------|----------------------------------|----------|------------|-----------------------------------------------------------------------------------------------|
+| **W20** | Persistent configuration store  | High     | Medium     | `ConfigurationStore` using ESP32 NVS (`Preferences`) with schema validation for credentials, endpoints, and runtime settings. |
+| **W21** | Time synchronization            | High     | Medium     | `TimeSync` component with NTP support over WiFi and RTC fallback for deep-sleep devices. Replaces `millis()` timestamps with absolute time. |
+| **W22** | TLS/SSL examples & documentation | High     | Low        | MQTT over TLS example using `NetworkClientSecure`. Document secure HTTP configuration in README. |
+| **W23** | Command payload support         | High     | Low        | Add optional `int32_t` payload to `Command` constructor. Update actuator commands to use payloads where applicable (e.g., servo angle, LED brightness). |
+
+### Post-Release Improvements (v1.1.0+)
+
+| ID   | Work Item                        | Target    | Complexity | Description                                                                                   |
+|------|----------------------------------|-----------|------------|-----------------------------------------------------------------------------------------------|
+| **W24** | Telemetry buffering with persistence | v1.1.0 | High | `TelemetryBuffer` with LittleFS persistence for offline replay when network is unavailable. |
+| **W25** | Power manager & battery monitoring | v1.1.0 | Medium | `PowerManager` with battery voltage sensing, configurable sleep modes beyond tickless/deep-sleep. |
+| **W26** | Firmware version in telemetry    | v1.1.0 | Low        | Add optional `schemaVersion` and `firmwareVersion` fields to telemetry envelope metadata. |
+| **W27** | OTA update support               | v1.2.0   | High       | `OtaUpdater` component with WiFi transport. Edge Framework Phase 3 handles OTA orchestration. |
+| **W28** | Event aggregation & rules        | v1.2.0   | High       | `EventAggregator` or `RuleEngine` for composite event patterns (e.g., "motion AND door opened"). |
+| **W29** | Multi-device coordination        | v1.3.0   | High       | ESP-NOW or MQTT-based device-to-device messaging for relay nodes and distributed sensing. |
+
 ## Work Item Registry
 
 Prioritization method: each work item is scored 0 to 5 on three benefits, and sized by cost. Scores reflect architectural value; revisit them after diagnostics data is captured.
@@ -46,8 +72,18 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 | W15 | Cloud-to-device commands (MQTT subscribe)                                               | Tier 4      | 2 | 0 | 4 | M    | 5     | **Complete** (subscribe on connect, JSON parsing, Device::enqueueCommand, 8 host tests)           |
 | W16 | Tickless scheduling and light sleep                                                     | Tier 5      | 2 | 4 | 2 | L    | 3     | **Complete** (ticksUntilNextDue(), PowerMode enum, rearmTimerForNextDue(), enterLightSleep(), ESP32 light sleep) |
 | W17 | Deep-sleep cycle and battery example                                                    | Tier 5      | 1 | 4 | 2 | L    | 3     | **Complete** (PowerMode::DeepSleep, enterDeepSleep(), reportWakeReason(), RTC_DATA_ATTR, WeatherStation example, 10 host tests) |
-| W18 | Telemetry pool and writer interface (Phase C)                                           | Tier 5      | 2 | 3 | 1 | L    | 2     | Pending                                                                                                                                     |
+| W18 | Telemetry pool and writer interface (Phase C)                                           | Tier 5      | 2 | 3 | 1 | L    | 2     | Pending (deferred to v1.1.0)                                                                                                               |
 | W19 | Native servo and LCD drivers                                                            | Tier 5      | 2 | 0 | 1 | M    | 2     | **Complete** (ServoMotor native LEDC, Hd44780Driver + CharacterLcdDisplay native I2C, library.properties updated, 20 host tests) |
+| W20 | Persistent configuration store (ESP32 NVS)                                              | Pre-release | 5 | 1 | 5 | M    | 9     | Pending — `ConfigurationStore` with schema validation for credentials, endpoints, runtime settings     |
+| W21 | Time synchronization (NTP + RTC fallback)                                               | Pre-release | 4 | 2 | 4 | M    | 7     | Pending — `TimeSync` component replaces `millis()` timestamps with absolute time                     |
+| W22 | TLS/SSL examples & documentation                                                        | Pre-release | 5 | 3 | 4 | S    | 10    | Pending — MQTT over TLS example, secure HTTP configuration documentation                            |
+| W23 | Command payload support                                                                 | Pre-release | 3 | 0 | 4 | S    | 7     | Pending — optional `int32_t` payload in `Command` constructor                                       |
+| W24 | Telemetry buffering with LittleFS persistence                                           | v1.1.0      | 3 | 3 | 2 | L    | 4     | Deferred — `TelemetryBuffer` for offline replay when network unavailable                            |
+| W25 | Power manager & battery monitoring                                                      | v1.1.0      | 2 | 4 | 2 | M    | 5     | Deferred — `PowerManager` with battery voltage sensing and configurable sleep modes                 |
+| W26 | Firmware version in telemetry envelope                                                  | v1.1.0      | 2 | 0 | 3 | XS   | 10    | Deferred — optional `schemaVersion` and `firmwareVersion` fields in envelope metadata               |
+| W27 | OTA update support                                                                      | v1.2.0      | 4 | 2 | 3 | L    | 5     | Deferred — `OtaUpdater` component with WiFi transport                                              |
+| W28 | Event aggregation & rules engine                                                        | v1.2.0      | 3 | 1 | 4 | L    | 4     | Deferred — `EventAggregator` for composite event patterns                                          |
+| W29 | Multi-device coordination (ESP-NOW / MQTT)                                              | v1.3.0      | 2 | 2 | 3 | L    | 3     | Deferred — device-to-device messaging for relay nodes and distributed sensing                       |
 
 ## Dependencies between items
 
@@ -60,10 +96,20 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 ## Deliberately out of scope
 
 - Replacing ArduinoJson (no viable embedded alternative).
-- TLS/SSL implementation (use ESP32's built-in NetworkClientSecure).
+- TLS/SSL implementation in the framework (use ESP32's built-in `NetworkClientSecure`; provide examples in W22).
 - Targeted (per-instance) commands until a use case appears.
 - Switchable sensor power rails and ADC/DMA sampling.
 - Non-ESP32 targets.
+
+## Deferred to Future Versions
+
+The following items are explicitly deferred to post-v1.0.0 releases. They are in-scope features that depend on v1.0.0 stability and community feedback:
+
+- **OTA updates** (W27, v1.2.0): Requires stable v1.0.0 baseline and Edge Framework Phase 3 orchestration.
+- **Telemetry buffering with persistence** (W24, v1.1.0): Requires heap measurement data from field deployments to size the pool correctly.
+- **Event aggregation & rules engine** (W28, v1.2.0): Application-layer feature; can be implemented by users using the event handler pattern.
+- **Multi-device coordination** (W29, v1.3.0): Niche use case; ESP-NOW or MQTT-based approach TBD based on community demand.
+- **On-device ML inference** (Tier 5, v1.3.0+): `AiMicroModelController` is opt-in and requires ML runtime dependencies. Deferred until core stability is proven.
 
 ## Claims verified and remaining verification gaps
 
