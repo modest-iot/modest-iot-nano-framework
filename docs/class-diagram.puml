@@ -637,23 +637,36 @@ package "Gateway" #FFF8EE {
     -serializationBuffer : char[512]
     -responseBuffer : char[512]
     -responseBodyLength : size_t
-    +{static} HTTP_METHOD_GET : const char*
-    +{static} HTTP_METHOD_POST : const char*
-    +{static} HTTP_METHOD_PUT : const char*
-    +{static} HTTP_METHOD_PATCH : const char*
-    +{static} HTTP_METHOD_DELETE : const char*
+    +{static} HttpMethod::Get : enum
+    +{static} HttpMethod::Post : enum
+    +{static} HttpMethod::Put : enum
+    +{static} HttpMethod::Patch : enum
+    +{static} HttpMethod::Delete : enum
     +{static} HTTP_HEADER_CONTENT_TYPE : const char*
     +{static} HTTP_HEADER_AUTHORIZATION : const char*
-    +HttpGatewayClient(transportDriver : ConnectivityDriver&, targetEndpoint : const char*, method : const char*)
+    +HttpGatewayClient(transportDriver : ConnectivityDriver&, targetEndpoint : const char*, method : HttpMethod)
     +setAuthorizationHeader(header : const char*) : void
-    +setHttpMethod(method : const char*) : void
+    +setHttpMethod(method : HttpMethod) : void
     +getLastResponseStatusCode() : int
     +getResponseBody() : const char*
     +getResponseBodyLength() : size_t
     +isConnected() : bool
     +getStatistics() : GatewayStatistics
-    +sendRequest(method : const char*, payload : const char*) : bool
+    +sendRequest(method : HttpMethod, payload : const char*) : bool
     +sendTelemetryRecord(abstractTelemetryPayload : const TelemetryPackage&) : bool
+  }
+
+  class BleGatewayClient {
+    -bleTransportDriver : BleConnectivityDriver&
+    -serializationBuffer : char[512]
+    -sendsSucceededCount : uint32_t
+    -sendsFailedCount : uint32_t
+    +BleGatewayClient(transportDriver : BleConnectivityDriver&, deviceName : const char*)
+    +sendTelemetryRecord(payload : const TelemetryPackage&) : bool
+    +service() : void
+    +loop() : void
+    +isConnected() : bool
+    +getStatistics() : GatewayStatistics
   }
 
   class MqttGatewayClient {
@@ -729,6 +742,7 @@ ConnectivityDriver <|.. BleConnectivityDriver : implements
 
 GatewayClient <|-- HttpGatewayClient
 GatewayClient <|-- MqttGatewayClient
+GatewayClient <|-- BleGatewayClient
 
 Device <|-- CustomDevice
 
