@@ -61,7 +61,6 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 
 - Replacing ArduinoJson (no viable embedded alternative).
 - TLS/SSL implementation (use ESP32's built-in NetworkClientSecure).
-- DHT sensor library native implementation (deferred to v1.1.0).
 - Targeted (per-instance) commands until a use case appears.
 - Switchable sensor power rails and ADC/DMA sampling.
 - Non-ESP32 targets.
@@ -100,7 +99,7 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 | Dependency                | Used by                       | Declared in `depends=`   | Notes                                                                                |
 |---------------------------|-------------------------------|--------------------------|--------------------------------------------------------------------------------------|
 | `LiquidCrystal_I2C`       | ~~`CharacterLcdDisplay`~~     | **Removed**              | Replaced with native HD44780 I2C protocol via `Hd44780Driver`                       |
-| `DHT sensor library`      | `DhtSensor`                   | yes                      | Pulls in Adafruit Unified Sensor transitively                                        |
+| `DHT sensor library`      | ~~`DhtSensor`~~         | **Removed**              | Replaced with native single-wire protocol in `DhtSensor`                  |
 | `ESP32Servo`              | ~~`ServoMotor`~~              | **Removed**              | Replaced with native LEDC PWM via `ledcAttach()`/`ledcWrite()`                      |
 | `MQTT (>=2.5.3)`          | `MqttGatewayClient`           | yes                      | Replaced deprecated PubSubClient with MQTT Things (256dpi/arduino-mqtt)             |
 | `ArduinoJson`             | `TelemetryPackage` (needed)   | yes, pinned to `>=7.0.0` | Code uses the v7 `JsonDocument` type                                                 |
@@ -414,7 +413,7 @@ Sampler Task (Core 1)                    Network Task (Core 1)
 
 ---
 
-## Tier 4: Capabilities (Pending)
+## Tier 4: Capabilities (Complete)
 
 ### W12: `Device::enqueueCommand` command marshaling
 
@@ -675,9 +674,51 @@ Adding three popular IoT components to maximize v1.0.0 adoption: DS18B20 1-Wire 
 
 **Source**: `src/EnvironmentalGasSensor.h`, `src/EnvironmentalGasSensor.cpp`, `tests/EnvironmentalGasSensor/test.cpp`
 
+### BmeEnvironmentalSensor
+
+**Purpose**: Abstract base class for Bosch BME280/BME680 I²C sensors, extracting shared compensation formulas and calibration data parsing. Eliminates ~200 lines of duplicated code between `PthSensor` (BME280) and `EnvironmentalGasSensor` (BME680).
+
+**Design**: Template-based compensation with digital calibration coefficients. `PthSensor` and `EnvironmentalGasSensor` inherit and extend with model-specific registers and gas resistance (BME680 only).
+
+**Source**: `src/BmeEnvironmentalSensor.h`, `src/BmeEnvironmentalSensor.cpp`
+
 ---
 
-## Tier 5: Optimization and Power (In Progress)
+## Gateway Client Enhancements (Complete)
+
+Enhanced the GatewayClient family with production-ready features for all three transport options.
+
+### BleGatewayClient (New Component)
+
+**BleGatewayClient**: BLE NUS gateway client extending `GatewayClient` with JSON lines framing, fixed-size 512-byte serialization buffer, statistics tracking (`sendsSucceededCount`/`sendsFailedCount`), `service()`/`loop()` for advertising restart, and `isConnected()` override. Completes the GatewayClient family alongside MqttGatewayClient and HttpGatewayClient.
+
+**Tests**: 8 host tests covering constructor, send failure when not connected, successful send with JSON verification, multiple sends, service/loop advertising restart, connection state tracking, and mixed success/failure statistics.
+
+**Source**: `src/BleGatewayClient.h`, `src/BleGatewayClient.cpp`, `tests/BleGatewayClient/test.cpp`
+
+### HttpGatewayClient Enhancements
+
+**HttpGatewayClient**: Enhanced from a basic HTTP POST stub to a production-ready HTTP telemetry client. Added statistics tracking, authentication support (`setAuthorizationHeader()`), configurable HTTP methods via `enum class HttpMethod` (GET/POST/PUT/PATCH/DELETE), response status code reporting (`getLastResponseStatusCode()`), response body capture (`getResponseBody()` with 512-byte fixed buffer), `sendRequest()` for general HTTP requests independent of TelemetryPackage, `isConnected()` override, and `getStatistics()` override. Refactored with `executeHttpRequest()` to eliminate duplication.
+
+**HttpTelemetryDemo example**: Demonstrates Bearer token authentication flow, Wi-Fi connection verification, and HTTP POST telemetry with a DHT22 sensor.
+
+**Source**: `src/HttpGatewayClient.h`, `src/HttpGatewayClient.cpp`, `examples/HttpTelemetryDemo/HttpTelemetryDemo.ino`
+
+### WiFiConnectivityDriver Enhancements
+
+Added 5 must-have features: `getWiFiStatus()` (returns `wl_status_t`), `disconnect()` (resets provisioning flag), `getLocalIpAddress()` (returns `IPAddress`), `getSignalStrengthInDbm()` (returns RSSI in dBm), and `waitForConnection()` (blocking with timeout, 100ms polling).
+
+**Source**: `src/WiFiConnectivityDriver.h`, `src/WiFiConnectivityDriver.cpp`
+
+### BleConnectivityDriver Enhancements
+
+Added `disconnect()` method (stops advertising, resets connected flag) and `getSignalStrengthInDbm()` method (returns 0 with documentation that ESP32 BLE server API doesn't expose RSSI). Replaced raw `new`/`delete` with `std::unique_ptr` for callback handlers.
+
+**Source**: `src/BleConnectivityDriver.h`, `src/BleConnectivityDriver.cpp`
+
+---
+
+## Tier 5: Optimization and Power (Complete)
 
 ### W16: Tickless scheduling and light sleep — **Complete** ✓
 
@@ -755,9 +796,11 @@ public:
 
 **Hd44780Driver (new component)**: Extracted HD44780 4-bit mode I2C protocol into a standalone driver class. Implements full initialization sequence, enable pulse timing, PCF8574 backpack communication, cursor positioning via DDRAM addresses, and backlight control. CharacterLcdDisplay composes `Hd44780Driver` instead of implementing the protocol directly. 10 host tests in `tests/CharacterLcdDisplay/test.cpp`.
 
-**library.properties**: Removed `ESP32Servo`, `LiquidCrystal_I2C`, and `PubSubClient` from the `depends=` field. Framework now has only 3 external dependencies: ArduinoJson, MQTT (>=2.5.3), and DHT sensor library.
+**library.properties**: Removed `ESP32Servo`, `LiquidCrystal_I2C`, `PubSubClient`, and `DHT sensor library` from the `depends=` field. Framework now has only 2 external dependencies: ArduinoJson (>=7.0.0) and MQTT (>=2.5.3).
 
-**Source**: `src/ServoMotor.h`, `src/ServoMotor.cpp`, `src/Hd44780Driver.h`, `src/Hd44780Driver.cpp`, `src/CharacterLcdDisplay.h`, `src/CharacterLcdDisplay.cpp`
+**DHT Native Implementation**: Replaced `DHT sensor library` with native single-wire protocol in `DhtSensor`. Implemented `sendStartSignal()`, `readBit()`, `readData()`, and `validateChecksum()` methods. All timing magic numbers replaced with named constants (e.g., `DHT22_START_SIGNAL_LOW_TIME_IN_MICROSECONDS`). DHT11 and DHT22 model-specific start signal durations supported. CRC validation (8-bit checksum) via `validateChecksum()`. 11 host tests in `tests/DhtSensor/test.cpp`.
+
+**Source**: `src/ServoMotor.h`, `src/ServoMotor.cpp`, `src/Hd44780Driver.h`, `src/Hd44780Driver.cpp`, `src/CharacterLcdDisplay.h`, `src/CharacterLcdDisplay.cpp`, `src/DhtSensor.h`, `src/DhtSensor.cpp`
 
 ---
 
@@ -776,8 +819,8 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT today, and
 | Timing mistakes | Easy: a blocking call stalls everything      | Handler budgets documented; blocking HX711/ultrasonic removed     | Same, plus interrupt-driven sensors                      |
 | Debugging       | `Serial.println` scattered                   | `MODEST_LOG_*`, stack high-water marks, sensor fault events       | Same                                                     |
 | Networking      | Blocking connect/publish in `loop()`         | Separate network task, reconnect policy, keep-alive               | Same, plus cloud-to-device commands                      |
-| Cloud-to-device | Hand-rolled callback                         | Not supported                                                     | Mediator-routed commands through `Device::post`          |
-| Testing         | Rarely possible off-device                   | 26 host test suites with CI                                       | Same                                                     |
+| Cloud-to-device | Hand-rolled callback                         | Not supported                                                     | Mediator-routed commands through `Device::enqueueCommand` |
+| Testing         | Rarely possible off-device                   | 27 host test suites with CI                                       | Same                                                     |
 
 ### Performance
 
@@ -801,7 +844,7 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT today, and
 | Flash                    | Smallest             | Framework, Wi-Fi, BLE driver                                                    | Smaller than today if Bluetooth/MQTT optional      |
 | Static RAM               | Small                | Slot table, per-object state                                                    | Slot table gains a few words per slot              |
 | Heap fragmentation       | Low                  | Lower with explicit ownership                                                   | Same; pool in Tier 5 if measured                   |
-| Third-party dependencies | As needed            | Only those used (DHT, MQTT, ArduinoJson) — ESP32Servo, LiquidCrystal_I2C, and PubSubClient removed | Same                                               |
+| Third-party dependencies | As needed            | Only those used (ArduinoJson, MQTT) — ESP32Servo, LiquidCrystal_I2C, PubSubClient, DHT, Adafruit, and HX711 removed | Same                                               |
 | Logging overhead         | User-controlled      | Zero when compiled out; UART cost when on                                       | Same                                               |
 
 ---
