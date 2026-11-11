@@ -50,6 +50,22 @@
 /** @} */
 
 /**
+ * @name Core: Scheduling
+ * @ingroup core_module
+ * @{
+ */
+// SamplingScheduler with per-slot countdown-based scheduling and tickless sleep support defined here
+/** @} */
+
+/**
+ * @name Core: Logging
+ * @ingroup core_module
+ * @{
+ */
+// ModestLog zero-overhead compile-time logging with tag and level filtering defined here
+/** @} */
+
+/**
  * @defgroup sensors_module Sensors
  * @ingroup framework_modules
  * @brief Sensor adapters that emit framework events.
@@ -80,6 +96,30 @@
  * @{
  */
 // DHT and ultrasonic distance sensors defined here
+/** @} */
+
+/**
+ * @name Sensors: Gas & VOC Detection
+ * @ingroup sensors_module
+ * @{
+ */
+// GasSensor (SGP30/SGP40) with calibration and operating modes defined here
+/** @} */
+
+/**
+ * @name Sensors: Geolocation & Light
+ * @ingroup sensors_module
+ * @{
+ */
+// GeolocationSensor (GPS/NMEA) and DigitalLightIntensitySensor defined here
+/** @} */
+
+/**
+ * @name Sensors: Motion & Security
+ * @ingroup sensors_module
+ * @{
+ */
+// PassiveInfraredSensor with interrupt-driven motion detection defined here
 /** @} */
 
 /**
@@ -236,6 +276,7 @@
  * @{
  */
 // Wi-Fi connectivity driver for ESP32 defined here
+// BLE NUS connectivity driver for ESP32 defined here
 /** @} */
 
 /**
@@ -248,11 +289,11 @@
  */
 
 /**
- * @name Gateway: Generic Abstraction
+ * @name Gateway: Base Abstraction
  * @ingroup gateway_module
  * @{
  */
-// Generic EdgeGatewayClient defined here
+// GatewayClient base class and GatewayStatistics defined here
 /** @} */
 
 /**

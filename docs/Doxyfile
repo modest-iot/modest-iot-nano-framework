@@ -10,8 +10,8 @@ CREATE_SUBDIRS         = NO
 INPUT                  = src docs/doxygen-mainpage.md docs/doxygen-groups.dox README.md
 FILE_PATTERNS          = *.h *.cpp *.md *.dox
 RECURSIVE              = YES
-EXCLUDE                = cmake cmake-build-debug examples tests
-EXCLUDE_PATTERNS       = */docs/build/* */cmake-build-debug/*
+EXCLUDE                = cmake cmake-build-debug cmake-build-test examples tests
+EXCLUDE_PATTERNS       = */docs/build/* */cmake-build-*/*
 USE_MDFILE_AS_MAINPAGE = docs/doxygen-mainpage.md
 
 # Parsing and extraction

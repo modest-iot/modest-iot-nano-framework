@@ -1,16 +1,20 @@
 # Modest IoT Nano-framework (C++ Edition)
 
 This API reference documents the public abstractions and built-in components in
-`Modest-IoT-Nano-Framework`.
+`Modest-IoT-Nano-Framework` (v1.0.0).
 
 ## Architecture Overview
 
-The framework follows an event-driven, CQRS-inspired model:
+The framework follows an event-driven, CQRS-inspired model adapted for resource-constrained
+ESP32 microcontrollers:
 
-- Sensors emit `Event` objects through `EventHandler`.
-- Actuators consume `Command` objects through `CommandHandler`.
-- `Device` orchestrates asynchronous sampling, scheduling, and telemetry dispatch.
+- **Sensors** emit `Event` objects through `EventHandler`.
+- **Actuators** consume `Command` objects through `CommandHandler`.
+- `Device` orchestrates asynchronous sampling, scheduling, and telemetry dispatch
+  across two FreeRTOS tasks (sampler and network).
 - `TelemetryPackage` provides a serialization contract for transport clients.
+- `SamplingScheduler` manages per-slot countdown-based scheduling with tickless sleep support.
+- `ModestLog` provides zero-overhead compile-time logging with tag and level filtering.
 
 ## Main API Entry Point
 
@@ -20,21 +24,32 @@ For sketch-level use, include:
 #include <ModestIoT.h>
 ```
 
-This umbrella header imports core engine contracts, connectivity adapters, and
-available built-in peripherals.
+This umbrella header imports all 46 source headers: core engine contracts, connectivity
+adapters, gateway clients, and 18 built-in sensors plus 7 actuators.
 
 ## Module Navigation
 
-- @ref core_module
-- @ref sensors_module
-- @ref actuators_module
-- @ref connectivity_module
-- @ref gateway_module
+- @ref core_module — Device, Sensor, Actuator, Event, Command, TelemetryPackage, SamplingScheduler, ModestLog
+- @ref sensors_module — 18 sensor implementations (environmental, security, biometric, etc.)
+- @ref actuators_module — 7 actuator implementations (LED, display, servo, buzzer, etc.)
+- @ref connectivity_module — WiFi and BLE transport drivers
+- @ref gateway_module — MQTT, HTTP, and BLE NUS telemetry gateways
+
+## Key Features
+
+- **Asynchronous engine**: Two FreeRTOS tasks isolate hardware I/O from network operations.
+- **Per-slot scheduler**: Each sensor declares its own sampling period; tickless sleep reduces power.
+- **Interrupt-driven sensors**: GPIO triggers are marshaled to the sampler task for safe execution.
+- **Cross-task commands**: `Device::enqueueCommand()` enables cloud-to-device control via MQTT subscribe.
+- **Fault detection**: Configurable consecutive-failure threshold per sensor instance.
+- **Diagnostics**: `Device::diagnostics()` reports stack, heap, queue, and timing metrics.
+- **Host testing**: Platform-independent core compiles natively for unit testing (27 test suites).
 
 ## Documentation Conventions
 
 - Header files are the source of truth for API contracts and extension points.
 - `@brief`, `@param`, and `@return` are used for stable public behavior.
+- `@runs_on` tags document the FreeRTOS task context for each method.
 - Internal constants are documented only when they affect integration behavior.
 
 ## Generating The Docs
