@@ -92,6 +92,10 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Updated Tier 4 status from "Pending" to "Complete" in improvements tracking
 - Removed DHT sensor library from README dependencies (replaced with native implementation)
 - Fixed ADR count from 30 to 31 and source header count from 47 to 46
+- Added Pre-Release Readiness Assessment (W20–W29) to vision.md and improvements.md with blocking and deferred items
+- Updated improvements.md comparison table reflecting current capabilities and planned features
+- Complete rewrite of keywords.txt (276 → 419 lines) with all 46 source headers, drivers, methods, and nested types
+- Enhanced Doxygen documentation: mainpage with key features and architecture overview, 5 new subgroup sections, and wildcard build directory exclusion
 
 ### Examples (16 total)
 - ClassicBlinker, ToggableLedDevice, SmartBandMqtt, AirConditioningDevice
@@ -107,9 +111,10 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 
 ### Documentation
 - 31 Architecture Decision Records (ADRs)
-- Doxygen documentation with API navigation tree
+- Doxygen documentation with API navigation tree, key features section, and `@runs_on` threading tags
 - Class diagram (PlantUML) covering all 46 source headers
-- User stories and improvement tracking
+- User stories and improvement tracking with pre-release readiness assessment (W20–W29)
+- `keywords.txt` comprehensive rewrite: 419 lines with all 46 source headers, drivers, methods, and nested types
 
 ### Technical Details
 - ESP32 Arduino core 3.x compatible

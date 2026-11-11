@@ -3,7 +3,7 @@
 **Version**: 1.0.0  
 **Author**: Angel Velasquez  
 **Date created**: 2025-03-23  
-**Last updated**: 2026-11-10
+**Last updated**: 2026-11-11
 
 ## Overview
 
@@ -426,7 +426,9 @@ Contributions, improvements, and extensions are welcome under the MIT License. Y
 
 ## Future Directions
 
-- **Tier 5**: Telemetry packet pool (W18) to eliminate heap allocation for telemetry records.
+- **Pre-Release Prerequisites (W20–W23)**: Persistent configuration via ESP32 NVS, NTP time synchronization, TLS/SSL examples, and command payload support — required before Arduino Library submission.
+- **v1.1.0**: Telemetry packet pool (W18), telemetry buffering with LittleFS persistence, power manager with battery monitoring, and firmware version in telemetry.
+- **v1.2.0**: Over-the-air (OTA) updates and event aggregation for composite sensor rules.
 - **Edge Framework Phase 1**: Python-based edge server with MQTT broker, device registry, and telemetry ingestion.
 - **MicroPython Edition**: A planned port to MicroPython in a separate repository.
 
