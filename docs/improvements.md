@@ -852,46 +852,54 @@ public:
 
 ## Comparison with traditional development
 
-Compares three points: a traditional Arduino `loop()` app, Modest IoT today, and Modest IoT once Tiers 0 to 4 are done.
+Compares three points: a traditional Arduino `loop()` app, Modest IoT today (Tiers 0–5 complete), and Modest IoT after all pre-release prerequisites (W20–W23) and deferred features (W24–W29) are implemented.
 
 ### Developer experience
 
-| Aspect          | Traditional `loop()`                         | Modest IoT today                                                  | Modest IoT after Tier 4                                  |
-|-----------------|----------------------------------------------|-------------------------------------------------------------------|----------------------------------------------------------|
-| First build     | Works with the board package                 | All examples compile in CI                                        | All examples compile in CI; only used libraries declared |
-| Structure       | One growing `loop()` with `millis()` flags   | Sensors emit events, a `Device` mediates, actuators take commands | Same, plus documented threading rules and an ID registry |
-| Adding a sensor | New globals, new timing variable, new branch | Subclass or reuse, register in the scheduler                      | One line with a per-sensor default period                |
-| Sampling rates  | Hand-written per-sensor timers               | Per-slot periods, minimums enforced, staggering handled           | Same                                                     |
-| Timing mistakes | Easy: a blocking call stalls everything      | Handler budgets documented; blocking HX711/ultrasonic removed     | Same, plus interrupt-driven sensors                      |
-| Debugging       | `Serial.println` scattered                   | `MODEST_LOG_*`, stack high-water marks, sensor fault events       | Same                                                     |
-| Networking      | Blocking connect/publish in `loop()`         | Separate network task, reconnect policy, keep-alive               | Same, plus cloud-to-device commands                      |
-| Cloud-to-device | Hand-rolled callback                         | Not supported                                                     | Mediator-routed commands through `Device::enqueueCommand` |
-| Testing         | Rarely possible off-device                   | 27 host test suites with CI                                       | Same                                                     |
+| Aspect          | Traditional `loop()`                         | Modest IoT today (Tiers 0–5)                                                  | Modest IoT with all planned features                                  |
+|-----------------|----------------------------------------------|-------------------------------------------------------------------------------|-----------------------------------------------------------------------|
+| First build     | Works with the board package                 | All 16 examples compile in CI; 2 dependencies                                 | Same, plus OTA update capability                                      |
+| Structure       | One growing `loop()` with `millis()` flags   | Sensors emit events, a `Device` mediates, actuators take commands             | Same, with event aggregation for composite patterns                   |
+| Adding a sensor | New globals, new timing variable, new branch | Subclass or reuse, register in the scheduler; per-sensor default periods      | Same, plus battery monitoring for power-aware sensors                 |
+| Sampling rates  | Hand-written per-sensor timers               | Per-slot periods, minimums enforced, staggering handled                       | Same, with tickless scheduling reducing idle wake-ups                 |
+| Timing mistakes | Easy: a blocking call stalls everything      | Handler budgets documented; blocking HX711/ultrasonic removed; interrupt-driven sensors | Same, with power manager for configurable sleep modes           |
+| Debugging       | `Serial.println` scattered                   | `MODEST_LOG_*`, stack high-water marks, sensor fault events, diagnostics      | Same, plus firmware version in telemetry for fleet tracking           |
+| Configuration   | Hardcoded credentials and intervals          | Hardcoded in examples; no persistent storage                                  | `ConfigurationStore` with ESP32 NVS for credentials, endpoints, settings |
+| Time handling   | `millis()` from boot                         | `millis()` timestamps; no synchronization                                     | `TimeSync` with NTP over WiFi and RTC fallback for absolute time      |
+| Networking      | Blocking connect/publish in `loop()`         | Separate network task, reconnect policy, keep-alive, TLS examples             | Same, with TLS/SSL as documented best practice                        |
+| Cloud-to-device | Hand-rolled callback                         | Mediator-routed commands through `Device::enqueueCommand`                     | Same, with `int32_t` payload support for parameterized commands       |
+| Offline data    | Lost when network unavailable                | Drop-oldest queue policy; no persistence                                      | `TelemetryBuffer` with LittleFS persistence for offline replay        |
+| Updates         | Manual reflashing required                   | Manual reflashing required                                                    | OTA updates via `OtaUpdater` component                                |
+| Testing         | Rarely possible off-device                   | 27 host test suites with CI, sanitizers enabled                               | Same, plus integration tests for new components                      |
 
 ### Performance
 
-| Aspect                     | Traditional `loop()`              | Modest IoT today                              | Modest IoT after Tier 4                               |
-|----------------------------|-----------------------------------|-----------------------------------------------|-------------------------------------------------------|
-| Timing model               | Cooperative polling; jitter grows | Timer ISR plus sampler task; per-slot periods | Same engine; interrupt-driven sensors                 |
-| Sample period accuracy     | Depends on `loop()` duration      | Per-slot periods independent of slot count    | Same                                                  |
-| Worst-case stall           | Any blocking call                 | Interrupt-driven HX711/ultrasonic; documented budgets    | Interrupt-driven HX711/ultrasonic; documented budgets |
-| Edge latency (button, PIR) | Up to one `loop()` pass           | Up to one polling period                      | Interrupt mode: task wake-up latency                  |
-| Network isolation          | A slow publish blocks sensing     | Isolated in the network task                  | Isolated, with bounded queue policy                   |
-| Heap behaviour             | Usually static                    | `unique_ptr` ownership, drop-oldest policy    | Same; pool only if measurement justifies it           |
-| CPU when idle              | Spins in `loop()`                 | Sleeps between ticks                          | Fewer idle wake-ups; sleep modes in Tier 5            |
-| Energy                     | High unless hand-tuned            | Same as traditional                           | Modestly better; large savings with Tier 5            |
+| Aspect                     | Traditional `loop()`              | Modest IoT today (Tiers 0–5)                              | Modest IoT with all planned features                               |
+|----------------------------|-----------------------------------|-----------------------------------------------------------|--------------------------------------------------------------------|
+| Timing model               | Cooperative polling; jitter grows | Timer ISR plus sampler task; per-slot periods; interrupt-driven sensors | Same, with tickless scheduling and configurable sleep modes |
+| Sample period accuracy     | Depends on `loop()` duration      | Per-slot periods independent of slot count                | Same, with NTP-synchronized timestamps for server-side correlation |
+| Worst-case stall           | Any blocking call                 | Interrupt-driven HX711/ultrasonic; documented budgets     | Same, with power manager handling sleep/wake transitions           |
+| Edge latency (button, PIR) | Up to one `loop()` pass           | Interrupt mode: task wake-up latency                      | Same, with event aggregation for composite event patterns          |
+| Network isolation          | A slow publish blocks sensing     | Isolated in the network task; bounded queue policy        | Same, with telemetry buffering preventing data loss during outages |
+| Heap behaviour             | Usually static                    | `unique_ptr` ownership, drop-oldest policy                | Same; pool if measurement justifies it; LittleFS for persistence   |
+| CPU when idle              | Spins in `loop()`                 | Sleeps between ticks; tickless and deep sleep supported   | Optimized sleep modes via `PowerManager`; battery-aware scheduling |
+| Energy                     | High unless hand-tuned            | Deep sleep: ~10µA; light sleep via tickless mode          | Battery monitoring enables adaptive sleep strategies               |
+| Time synchronization      | None; boot-relative only          | `millis()` timestamps; manual boot-time mapping needed    | NTP-synchronized absolute time; RTC fallback for deep-sleep devices |
+| Secure communication      | Manual TLS setup if needed        | TLS examples provided; `NetworkClientSecure` documented   | TLS/SSL as standard practice; certificate pinning documented       |
 
 ### Resource consumption
 
-| Resource                 | Traditional `loop()` | Modest IoT today                                                                | Modest IoT after Tier 4                            |
-|--------------------------|----------------------|---------------------------------------------------------------------------------|----------------------------------------------------|
-| Task stacks              | `loop()` task only   | 4096 B sampler + 8192 B network, configurable                                   | Same defaults, configurable through `EngineConfig` |
-| Queue and packets        | None                 | Queue of pointers + one heap packet per reading                                 | Same; bounded by queue policy                      |
-| Flash                    | Smallest             | Framework, Wi-Fi, BLE driver                                                    | Smaller than today if Bluetooth/MQTT optional      |
-| Static RAM               | Small                | Slot table, per-object state                                                    | Slot table gains a few words per slot              |
-| Heap fragmentation       | Low                  | Lower with explicit ownership                                                   | Same; pool in Tier 5 if measured                   |
-| Third-party dependencies | As needed            | Only those used (ArduinoJson, MQTT) — ESP32Servo, LiquidCrystal_I2C, PubSubClient, DHT, Adafruit, and HX711 removed | Same                                               |
-| Logging overhead         | User-controlled      | Zero when compiled out; UART cost when on                                       | Same                                               |
+| Resource                 | Traditional `loop()` | Modest IoT today (Tiers 0–5)                                                                | Modest IoT with all planned features                            |
+|--------------------------|----------------------|---------------------------------------------------------------------------------------------|----------------------------------------------------------------|
+| Task stacks              | `loop()` task only   | 4096 B sampler + 8192 B network, configurable via `EngineConfig`                            | Same defaults; PowerManager adds minimal stack for sleep handling |
+| Queue and packets        | None                 | Queue of pointers + one heap packet per reading; bounded by queue policy                    | Same; TelemetryBuffer adds LittleFS storage for offline replay |
+| Flash                    | Smallest             | Framework, Wi-Fi, BLE driver; only 2 dependencies (ArduinoJson, MQTT)                      | Moderate increase: ConfigurationStore, TimeSync, OtaUpdater, TelemetryBuffer |
+| Static RAM               | Small                | Slot table, per-object state; trigger table (4 slots)                                      | Same; ConfigurationStore adds NVS-backed settings cache        |
+| Heap fragmentation       | Low                  | Lower with explicit ownership; `unique_ptr` transfer                                       | Same; pool in Tier 5 if measured; LittleFS reduces heap pressure |
+| Third-party dependencies | As needed            | Only those used (ArduinoJson, MQTT) — ESP32Servo, LiquidCrystal_I2C, PubSubClient, DHT, Adafruit, and HX711 removed | Same; no new external dependencies for planned features      |
+| Logging overhead         | User-controlled      | Zero when compiled out; UART cost when on                                                  | Same                                                           |
+| Persistent storage       | Manual SPIFFS/LittleFS | None; credentials and settings hardcoded                                                  | ConfigurationStore uses ESP32 NVS; TelemetryBuffer uses LittleFS |
+| Security overhead        | None by default      | TLS examples provided; no framework-level TLS enforcement                                  | TLS examples and documentation; `NetworkClientSecure` usage guided |
 
 ---
 
