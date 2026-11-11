@@ -241,7 +241,7 @@
 /**
  * @defgroup gateway_module Gateway
  * @ingroup framework_modules
- * @brief Telemetry gateway clients for HTTP and MQTT publication flows.
+ * @brief Telemetry gateway clients for HTTP, MQTT, and BLE NUS publication flows.
  *
  * The gateway module provides abstractions and implementations for
  * serializing and transmitting telemetry payloads to edge/cloud endpoints.
