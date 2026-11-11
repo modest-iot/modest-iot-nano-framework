@@ -21,7 +21,7 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 
 ### Current Status
 
-**Tiers 0–4 Complete, Tier 5 Nearly Complete** (as of 2026-11-10):
+**All Tiers Complete; Pre-Release Prerequisites Remaining** (as of 2026-11-11):
 
 | Tier                                    | Items   | Status          |
 |-----------------------------------------|---------|-----------------|
@@ -31,6 +31,7 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 | **Tier 3**: Core Scheduling & Telemetry | W8, W11 | **Complete** ✓ |
 | **Tier 4**: Capabilities                | W12–W15 | **Complete** ✓   |
 | **Tier 5**: Optimization & Power        | W16–W19 | **Complete** (W16 ✓, W17 ✓, W19 ✓, W18 deferred to v1.1.0) |
+| **Pre-Release**: Prerequisites          | W20–W23 | **Pending** — ConfigurationStore, TimeSync, TLS examples, Command payload |
 
 ### What's Delivered
 
@@ -52,13 +53,13 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 
 All Tier 4 items (W12–W15) are implemented. The framework now supports bidirectional MQTT communication, interrupt-driven sensors, and non-blocking HX711/ultrasonic operation.
 
-### Remaining Work: Tier 5 (Optimization & Power)
+### Remaining Work: Tier 5 (Optimization & Power) — **Complete** (W18 deferred to v1.1.0)
 
 | ID      | Work Item                            | Priority | Complexity | Description                                                              |
 |---------|--------------------------------------|----------|------------|--------------------------------------------------------------------------|
 | **W16** | Tickless scheduling and light sleep  | Medium   | High       | **Complete** ✓ — `ticksUntilNextDue()`, PowerMode enum, ESP32 light sleep.   |
 | **W17** | Deep-sleep cycle and battery example | Low      | High       | **Complete** ✓ — PowerMode::DeepSleep, enterDeepSleep(), reportWakeReason(), RTC_DATA_ATTR, WeatherStation example.  |
-| **W18** | Telemetry pool and writer interface  | Medium   | High       | Static packet pool, `TelemetryWriter` abstraction for format decoupling. |
+| **W18** | Telemetry pool and writer interface  | Medium   | High       | **Deferred to v1.1.0** — Static packet pool, `TelemetryWriter` abstraction for format decoupling. Requires heap measurements from field deployments. |
 | **W19** | Native servo and LCD drivers         | Low      | Medium     | **Complete** ✓ — ServoMotor native LEDC, Hd44780Driver + CharacterLcdDisplay native I2C, library.properties updated.    |
 
 ### Component Expansion Tier 1 — **Complete** ✓
@@ -112,9 +113,35 @@ Production-ready features across all three transport options:
 | **WiFiConnectivityDriver** | Enhanced         | `getWiFiStatus()`, `disconnect()`, `getLocalIpAddress()`, RSSI, `waitForConnection()` |
 | **BleConnectivityDriver** | Enhanced          | `disconnect()`, `getSignalStrengthInDbm()`, `unique_ptr` for callbacks      |
 
+### Pre-Release Considerations
+
+**Comprehensive evaluation** of the framework identified gaps that affect production readiness for real-world IoT deployments. The items below are categorized by their impact on the v1.0.0 Arduino Library submission decision.
+
+**Should Block v1.0.0 Submission** (Critical for production use):
+
+| Gap | Impact | Recommendation | Effort |
+|-----|--------|----------------|--------|
+| **No persistent configuration** | Credentials, endpoints, and sampling intervals are hardcoded in examples. Field devices cannot be reconfigured without reflashing. | Add `ConfigurationStore` using ESP32 NVS (`Preferences`) with schema validation. | Medium |
+| **No time synchronization** | Telemetry uses `millis()` (device boot time). Server-side correlation requires manual boot-time mapping. | Add `TimeSync` component with NTP support over WiFi, fallback to RTC for deep-sleep devices. | Medium |
+| **No TLS/SSL examples** | MQTT uses unencrypted TCP (port 1883) in examples. HTTP has no certificate pinning. Production deployments require encrypted communication. | Add MQTT over TLS example using `NetworkClientSecure`. Document secure configuration in README. | Low |
+| **Command payload limitation** | `Command` carries only an identifier. Cannot send parameterized commands (e.g., "set temperature to 25°C"). | Add optional `int32_t` payload to `Command` constructor. Update actuator commands to use payloads where applicable. | Low |
+
+**Should Not Block v1.0.0** (Addressable in v1.1.0+):
+
+| Gap | Impact | Recommendation | Target Version |
+|-----|--------|----------------|----------------|
+| **No OTA update mechanism** | Deployed devices cannot receive bug fixes or feature updates without manual intervention. | Add `OtaUpdater` component with WiFi transport. Edge Framework Phase 3 handles OTA orchestration. | v1.2.0 |
+| **No telemetry buffering** | Drop-oldest policy discards data when queue is full. No persistent buffer for offline scenarios. | Add `TelemetryBuffer` with LittleFS persistence for offline replay. | v1.1.0 |
+| **No event aggregation** | Events processed independently. No mechanism to correlate events from multiple sensors. | Add `EventAggregator` or `RuleEngine` for composite event patterns (e.g., "motion AND door opened"). | v1.2.0 |
+| **Limited power management** | DeepSleep mode exists but no light sleep configuration beyond tickless, no battery monitoring. | Add `PowerManager` with battery voltage sensing and configurable sleep modes. | v1.1.0 |
+| **No multi-device coordination** | Each device communicates independently. No mesh or device-to-device communication. | Consider ESP-NOW or MQTT-based device-to-device messaging for relay nodes. | v1.3.0 |
+| **No firmware version in telemetry** | No standard way to report firmware version in telemetry envelope. | Add optional `schemaVersion` and `firmwareVersion` fields to envelope metadata. | v1.1.0 |
+
+**Assessment**: The framework is **ready for v1.0.0 submission** with the four blocking items addressed. These are additive features that do not require architectural changes. The modular design and clear abstractions make them straightforward to implement while maintaining existing patterns.
+
 ### Nano Framework Completion Roadmap
 
-**Phase 1: Tier 4 Completion** (Estimated: 1–2 weeks)
+**Phase 1: Tier 4 Completion** (Estimated: 1–2 weeks) — **Complete** ✓
 
 1. **W12: `Device::enqueueCommand` command marshaling** — **Complete**: Command queue consumed by sampler task with `CommandAvailable` bit-flag notification. Enables cloud-to-device commands.
 2. **W13: Interrupt triggers** — **Complete**: Button/PIR converted to interrupt-driven, WaterFlowSensor added as hybrid sensor with `appendToBothSchedulers()`. All examples migrated.
@@ -123,10 +150,17 @@ Production-ready features across all three transport options:
 
 **Phase 2: Tier 5 Completion** (Estimated: 2–3 weeks)
 
-1. **W16: Tickless scheduling** — Implement `ticksUntilNextDue()` in `SamplingScheduler`. Integrate with ESP32 light sleep API.
+1. **W16: Tickless scheduling** — **Complete** ✓: `ticksUntilNextDue()` in `SamplingScheduler`, ESP32 light sleep integration.
 2. **W17: Deep sleep example** — **Complete** ✓: PowerMode::DeepSleep, enterDeepSleep(), reportWakeReason(), WeatherStation example with DHT22 + BH1750.
-3. **W18: Telemetry pool** — Static packet pool with placement-new. `TelemetryWriter` interface for format decoupling.
+3. **W18: Telemetry pool** — Static packet pool with placement-new. `TelemetryWriter` interface for format decoupling. Deferred to v1.1.0.
 4. **W19: Native drivers** — **Complete** ✓: ServoMotor native LEDC, CharacterLcdDisplay native I2C.
+
+**Phase 2.5: Pre-Release Prerequisites** (Estimated: 1–2 weeks)
+
+1. **Persistent configuration** — `ConfigurationStore` using ESP32 NVS with schema validation.
+2. **Time synchronization** — `TimeSync` component with NTP support and RTC fallback.
+3. **TLS/SSL examples** — MQTT over TLS example, secure HTTP configuration documentation.
+4. **Command payload support** — Optional `int32_t` payload in `Command` constructor.
 
 **Phase 3: Library Release** (Estimated: 1 week)
 
@@ -913,7 +947,8 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 |-------------|------------------------|--------------------------------------------------------------------------------|
 | **Q4 2026** | Tier 4 complete ✓      | W12–W15: command marshaling, interrupts, non-blocking sensors, MQTT subscribe |
 | **Q4 2026** | Component Expansion ✓  | RelayActuator, SoilMoistureSensor, WaterFlowSensor with examples              |
-| **Q4 2026** | Tier 5 in progress     | W16 ✓: tickless scheduling and light sleep; W17 ✓: deep sleep with WeatherStation; W19 ✓: native drivers; W18 pending |
+| **Q4 2026** | Tier 5 complete ✓      | W16 ✓: tickless scheduling; W17 ✓: deep sleep with WeatherStation; W19 ✓: native drivers; W18 deferred to v1.1.0 |
+| **Q4 2026** | Pre-release prereqs    | W20–W23: ConfigurationStore, TimeSync, TLS examples, Command payload support  |
 | **Q1 2027** | Library release        | v1.0.0 tag, Arduino Library Manager submission                                 |
 
 ### Edge Framework Development
@@ -1034,12 +1069,13 @@ The Modest IoT dual-framework vision provides a complete, local-first IoT stack:
 - **Together** they form a scalable, offline-resilient, AI-ready IoT platform.
 - **DDD-guided design** ensures consistent terminology, clear context boundaries, and appropriate patterns for each framework (see ADR-023).
 
-The Nano Framework is **99% complete** (Tiers 0–4 done, Component Expansion Tiers 1–3 done, Tier 5: W16 ✓, W17 ✓, W19 ✓, W18 deferred to v1.1.0). The Edge Framework is **planned** with a clear DDD-based architecture and development roadmap.
+The Nano Framework is **feature-complete for v1.0.0** (Tiers 0–4 done, Component Expansion Tiers 1–3 done, Tier 5: W16 ✓, W17 ✓, W19 ✓, W18 deferred to v1.1.0). Four pre-release prerequisites remain: persistent configuration, time synchronization, TLS/SSL examples, and command payload support. The Edge Framework is **planned** with a clear DDD-based architecture and development roadmap.
 
 **Next steps**:
-1. Nano Framework Tier 4 is complete (W12–W15 ✓). Component Expansion Tier 1 is complete (RelayActuator, SoilMoistureSensor ✓). Component Expansion Tier 2 is complete (PthSensor, WaterLeakSensor, DoorWindowSensor ✓). Tier 5: W16 ✓ (tickless scheduling), W17 ✓ (deep sleep), W19 ✓ (native drivers).
-2. Complete Tier 5 with W18 (telemetry pool), or start Edge Framework Phase 1.
-3. Integrate Nano and Edge with MQTT protocol and shared telemetry schema.
-4. Release Nano v1.0.0 and Edge alpha together.
+1. Nano Framework Tiers 0–4 are complete. Component Expansion Tiers 1–3 are complete. Tier 5: W16 ✓ (tickless scheduling), W17 ✓ (deep sleep), W19 ✓ (native drivers).
+2. Complete Phase 2.5 pre-release prerequisites: ConfigurationStore, TimeSync, TLS examples, and Command payload support.
+3. Submit Nano v1.0.0 to Arduino Library Manager.
+4. Start Edge Framework Phase 1 development.
+5. Integrate Nano and Edge with MQTT protocol and shared telemetry schema.
 
 This vision positions Modest IoT as a **leading open-source IoT platform** for developers who want architectural discipline, local-first processing, and AI-ready infrastructure — without vendor lock-in or cloud dependency.
