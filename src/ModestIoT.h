@@ -31,6 +31,7 @@
 #include "BleConnectivityDriver.h"
 #include "HttpGatewayClient.h"
 #include "MqttGatewayClient.h"
+#include "BleGatewayClient.h"
 //@} // Layer-Isolated Network Comprehension
 
 /** @name Hardware Peripheral Driver Subsystems */
