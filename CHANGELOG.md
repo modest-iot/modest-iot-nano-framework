@@ -44,7 +44,8 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 
 #### Connectivity
 - **MqttGatewayClient**: MQTT client using MQTT Things (256dpi/arduino-mqtt), replaced deprecated PubSubClient
-- **HttpGatewayClient**: HTTP telemetry client with authentication, statistics, named constants for HTTP methods (`HTTP_METHOD_*`) and headers (`HTTP_HEADER_CONTENT_TYPE`, `HTTP_HEADER_AUTHORIZATION`), fixed-size buffer, response status code reporting, `sendRequest()` for general HTTP requests, and `getResponseBody()` for response body capture
+- **HttpGatewayClient**: HTTP telemetry client with authentication, statistics, named constants for HTTP methods (`HTTP_METHOD_*`) and headers (`HTTP_HEADER_CONTENT_TYPE`, `HTTP_HEADER_AUTHORIZATION`), fixed-size buffer, response status code reporting, `sendRequest()` for general HTTP requests, `getResponseBody()` for response body capture, and `setServiceEndpointUrl()` for dynamic endpoint switching
+- **GatewayClient**: Added `setServiceEndpointUrl()` method to allow switching the target endpoint URL at runtime
 - **BleConnectivityDriver**: BLE NUS connectivity driver with disconnect support; RSSI reporting returns 0 (ESP32 BLE server API does not expose RSSI)
 - **WiFiConnectivityDriver**: Wi-Fi connection management with status enumeration, disconnect, IP address reporting, signal strength (RSSI), and connection timeout
 - **Ssd1306Driver**: Native SSD1306 I²C protocol driver for OLED displays
