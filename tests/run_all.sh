@@ -217,6 +217,13 @@ run_test "test_EnvironmentalGasSensor" \
     src/EnvironmentalGasSensor.cpp \
     tests/EnvironmentalGasSensor/test.cpp
 
+# 27. BleGatewayClient Suite
+run_test "test_BleGatewayClient" \
+    -DTEST_MOCK_BLE \
+    src/BleGatewayClient.cpp \
+    src/BleConnectivityDriver.cpp \
+    tests/BleGatewayClient/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="
