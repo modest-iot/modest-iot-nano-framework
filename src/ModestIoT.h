@@ -12,7 +12,8 @@
  * @version 1.0
  */
 
-/// --- 1. CORE ASYNCHRONOUS ENGINE & SIGNALING PRIMITIVES ---
+/** @name Core Asynchronous Engine & Signaling Primitives */
+//@{
 #include "ModestLog.h"
 #include "Event.h"
 #include "Command.h"
@@ -21,15 +22,19 @@
 #include "TelemetryPackage.h"
 #include "Device.h"
 #include "LocationData.h"
+//@} // Core Asynchronous Engine & Signaling Primitives
 
-/// --- 2. LAYER-ISOLATED NETWORK COMPREHENSION ---
+/** @name Layer-Isolated Network Comprehension */
+//@{
 #include "ConnectivityDriver.h"
 #include "WiFiConnectivityDriver.h"
 #include "BleConnectivityDriver.h"
 #include "HttpGatewayClient.h"
 #include "MqttGatewayClient.h"
+//@} // Layer-Isolated Network Comprehension
 
-/// --- 3. HARDWARE PERIPHERAL DRIVER SUBSYSTEMS ---
+/** @name Hardware Peripheral Driver Subsystems */
+//@{
 #include "Button.h"
 #include "DhtSensor.h"
 #include "UltrasonicSensor.h"
@@ -57,5 +62,7 @@
 #include "EnvironmentalGasSensor.h"
 #include "Ssd1306Driver.h"
 #include "OledDisplay.h"
+
+//@} // Hardware Peripheral Driver Subsystems
 
 #endif // MODEST_IOT_H

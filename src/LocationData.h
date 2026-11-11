@@ -16,31 +16,41 @@
  * @ingroup sensors_module
  */
 struct LocationData {
-    // --- Position ---
-    float latitudeInDegrees;
-    float longitudeInDegrees;
-    float altitudeInMeters;
+    /** @name Position */
+    //@{
+    float latitudeInDegrees;  ///< Latitude in decimal degrees.
+    float longitudeInDegrees; ///< Longitude in decimal degrees.
+    float altitudeInMeters;   ///< Altitude in meters above sea level.
+    //@} // Position
 
-    // --- Movement ---
-    float speedInKnots;
-    float courseInDegrees;
+    /** @name Movement */
+    //@{
+    float speedInKnots;   ///< Speed over ground in knots.
+    float courseInDegrees; ///< Course over ground in degrees (0–360).
+    //@} // Movement
 
-    // --- Fix Quality & Precision ---
-    int fixQuality;           ///< 0: Invalid, 1: GPS Fix, 2: DGPS Fix
-    int satellitesTracked;
-    float horizontalDilutionOfPrecision; ///< HDOP
+    /** @name Fix Quality & Precision */
+    //@{
+    int fixQuality;                  ///< 0: Invalid, 1: GPS Fix, 2: DGPS Fix.
+    int satellitesTracked;           ///< Number of satellites in view.
+    float horizontalDilutionOfPrecision; ///< HDOP value.
+    //@} // Fix Quality & Precision
 
-    // --- Time & Date ---
-    int year;                 ///< YY format
-    int month;
-    int day;
-    int hour;
-    int minute;
-    int second;
-    int milliseconds;
+    /** @name Time & Date */
+    //@{
+    int year;         ///< Year in YY format.
+    int month;        ///< Month (1–12).
+    int day;          ///< Day of month (1–31).
+    int hour;         ///< Hour (0–23, UTC).
+    int minute;       ///< Minute (0–59).
+    int second;       ///< Second (0–59).
+    int milliseconds; ///< Milliseconds (0–999).
+    //@} // Time & Date
 
-    // --- Status ---
-    bool isDataValid;         ///< True if status is 'A' (Active/Valid)
+    /** @name Status */
+    //@{
+    bool isDataValid; ///< True if status is 'A' (Active/Valid).
+    //@} // Status
 
     /**
      * @brief Checks if this location data is equal to another.

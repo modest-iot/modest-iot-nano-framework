@@ -78,6 +78,15 @@ public:
     [[nodiscard]] virtual GatewayStatistics getStatistics() const {
         return {}; // Default: no tracking
     }
+
+    /**
+     * @brief Updates the target endpoint URL for subsequent requests.
+     * @param targetEndpoint The new endpoint URL.
+     * Useful when switching between authentication and telemetry endpoints.
+     */
+    void setServiceEndpointUrl(const char* targetEndpoint) {
+        serviceEndpointUrl = targetEndpoint;
+    }
 };
 
 #endif // GATEWAY_CLIENT_H

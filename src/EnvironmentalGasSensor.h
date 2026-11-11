@@ -29,58 +29,61 @@
  */
 class EnvironmentalGasSensor : public BmeEnvironmentalSensor {
 protected:
-    // BME680 gas-specific calibration coefficients
-    int8_t digG1;
-    uint8_t digG2;
-    int8_t digG3;
+    /** @name BME680 Gas Calibration Coefficients */
+    //@{
+    int8_t digG1;  ///< Gas calibration coefficient G1.
+    uint8_t digG2; ///< Gas calibration coefficient G2.
+    int8_t digG3;  ///< Gas calibration coefficient G3.
+    //@} // BME680 Gas Calibration Coefficients
 
-    /// Cached gas resistance from the most recent successful sample.
-    float cachedGasResistanceInKOhms;
-    
-    /// Last-notified gas resistance for change detection.
-    float lastNotifiedGasResistanceInKOhms;
-    
-    /// Gas resistance change detection threshold.
-    static constexpr float GAS_RESISTANCE_CHANGE_EPSILON = 1000.0f;
-    
-    /// Initial gas resistance cached value.
-    static constexpr float INITIAL_CACHED_GAS_RESISTANCE_IN_KOHMS = 0.0f;
-    
-    /// Initial gas resistance last-notified value (sentinel to ensure first reading emits event).
-    static constexpr float INITIAL_LAST_NOTIFIED_GAS_RESISTANCE_IN_KOHMS = -1.0f;
+    float cachedGasResistanceInKOhms;      ///< Cached gas resistance in kilo-ohms.
+    float lastNotifiedGasResistanceInKOhms; ///< Last-notified gas resistance for change detection.
 
-    /// BME680 chip-specific configuration constants.
-    static constexpr uint8_t BME680_CHIP_ID_VALUE = 0x61;
-    static constexpr uint8_t BME680_MODE_FORCED = 0x01;
-    static constexpr uint8_t BME680_REGISTER_GAS_DATA = 0x2A;
-    static constexpr uint8_t BME680_REGISTER_CALIBRATION_GAS = 0xE3;
-    static constexpr uint8_t BME680_CALIBRATION_GAS_BYTE_COUNT = 3;
-    static constexpr uint8_t BME680_RAW_GAS_DATA_BYTE_COUNT = 3;
+    /** @name Gas Resistance Change Detection */
+    //@{
+    static constexpr float GAS_RESISTANCE_CHANGE_EPSILON = 1000.0f; ///< Minimum gas resistance change to emit event (kΩ).
+    static constexpr float INITIAL_CACHED_GAS_RESISTANCE_IN_KOHMS = 0.0f; ///< Initial cached gas resistance.
+    static constexpr float INITIAL_LAST_NOTIFIED_GAS_RESISTANCE_IN_KOHMS = -1.0f; ///< Initial last-notified gas resistance sentinel.
+    //@} // Gas Resistance Change Detection
 
-    /// BME680 gas resistance lookup table constants (from Bosch datasheet).
-    static constexpr int32_t BME680_GAS_CONST_ARRAY_0 = 2600;
-    static constexpr int32_t BME680_GAS_CONST_ARRAY_1 = 2560;
-    static constexpr int32_t BME680_GAS_CONST_ARRAY_2 = 2520;
-    static constexpr int32_t BME680_GAS_CONST_ARRAY_3 = 2480;
-    static constexpr int32_t BME680_GAS_CONST_ARRAY_4 = 2440;
-    static constexpr int32_t BME680_GAS_CONST_ARRAY_5 = 2400;
-    static constexpr int32_t BME680_GAS_CONST_ARRAY_6 = 2360;
-    static constexpr int32_t BME680_GAS_CONST_ARRAY_7 = 2320;
-    static constexpr int32_t BME680_GAS_CONST_ARRAY_8 = 2280;
-    static constexpr int32_t BME680_GAS_CONST_ARRAY_9 = 2240;
-    static constexpr int32_t BME680_GAS_CONST_ARRAY_10 = 2200;
-    static constexpr int32_t BME680_GAS_CONST_ARRAY_11 = 2160;
-    static constexpr int32_t BME680_GAS_CONST_ARRAY_12 = 2120;
-    static constexpr int32_t BME680_GAS_CONST_ARRAY_13 = 2080;
-    static constexpr int32_t BME680_GAS_CONST_ARRAY_14 = 2040;
-    static constexpr int32_t BME680_GAS_CONST_ARRAY_15 = 2000;
+    /** @name BME680 Chip-Specific Configuration */
+    //@{
+    static constexpr uint8_t BME680_CHIP_ID_VALUE = 0x61; ///< BME680 chip ID value.
+    static constexpr uint8_t BME680_MODE_FORCED = 0x01;   ///< Forced measurement mode.
+    static constexpr uint8_t BME680_REGISTER_GAS_DATA = 0x2A; ///< Gas data register address.
+    static constexpr uint8_t BME680_REGISTER_CALIBRATION_GAS = 0xE3; ///< Gas calibration register address.
+    static constexpr uint8_t BME680_CALIBRATION_GAS_BYTE_COUNT = 3; ///< Gas calibration byte count.
+    static constexpr uint8_t BME680_RAW_GAS_DATA_BYTE_COUNT = 3; ///< Raw gas data byte count.
+    //@} // BME680 Chip-Specific Configuration
 
-    /// BME680 gas resistance calculation constants.
-    static constexpr int32_t BME680_GAS_SHIFT_15 = 15;
-    static constexpr int32_t BME680_GAS_SHIFT_24 = 24;
-    static constexpr int32_t BME680_GAS_SHIFT_9 = 9;
-    static constexpr int32_t BME680_GAS_SHIFT_1 = 1;
-    static constexpr float BME680_OHMS_TO_KOHMS = 1000.0f;
+    /** @name BME680 Gas Resistance Lookup Table */
+    //@{
+    static constexpr int32_t BME680_GAS_CONST_ARRAY_0 = 2600;  ///< Gas lookup table entry 0.
+    static constexpr int32_t BME680_GAS_CONST_ARRAY_1 = 2560;  ///< Gas lookup table entry 1.
+    static constexpr int32_t BME680_GAS_CONST_ARRAY_2 = 2520;  ///< Gas lookup table entry 2.
+    static constexpr int32_t BME680_GAS_CONST_ARRAY_3 = 2480;  ///< Gas lookup table entry 3.
+    static constexpr int32_t BME680_GAS_CONST_ARRAY_4 = 2440;  ///< Gas lookup table entry 4.
+    static constexpr int32_t BME680_GAS_CONST_ARRAY_5 = 2400;  ///< Gas lookup table entry 5.
+    static constexpr int32_t BME680_GAS_CONST_ARRAY_6 = 2360;  ///< Gas lookup table entry 6.
+    static constexpr int32_t BME680_GAS_CONST_ARRAY_7 = 2320;  ///< Gas lookup table entry 7.
+    static constexpr int32_t BME680_GAS_CONST_ARRAY_8 = 2280;  ///< Gas lookup table entry 8.
+    static constexpr int32_t BME680_GAS_CONST_ARRAY_9 = 2240;  ///< Gas lookup table entry 9.
+    static constexpr int32_t BME680_GAS_CONST_ARRAY_10 = 2200; ///< Gas lookup table entry 10.
+    static constexpr int32_t BME680_GAS_CONST_ARRAY_11 = 2160; ///< Gas lookup table entry 11.
+    static constexpr int32_t BME680_GAS_CONST_ARRAY_12 = 2120; ///< Gas lookup table entry 12.
+    static constexpr int32_t BME680_GAS_CONST_ARRAY_13 = 2080; ///< Gas lookup table entry 13.
+    static constexpr int32_t BME680_GAS_CONST_ARRAY_14 = 2040; ///< Gas lookup table entry 14.
+    static constexpr int32_t BME680_GAS_CONST_ARRAY_15 = 2000; ///< Gas lookup table entry 15.
+    //@} // BME680 Gas Resistance Lookup Table
+
+    /** @name BME680 Gas Resistance Calculation */
+    //@{
+    static constexpr int32_t BME680_GAS_SHIFT_15 = 15;   ///< Gas calculation shift amount 15.
+    static constexpr int32_t BME680_GAS_SHIFT_24 = 24;   ///< Gas calculation shift amount 24.
+    static constexpr int32_t BME680_GAS_SHIFT_9 = 9;     ///< Gas calculation shift amount 9.
+    static constexpr int32_t BME680_GAS_SHIFT_1 = 1;     ///< Gas calculation shift amount 1.
+    static constexpr float BME680_OHMS_TO_KOHMS = 1000.0f; ///< Ohms to kilo-ohms conversion factor.
+    //@} // BME680 Gas Resistance Calculation
 
     /**
      * @brief Reads gas calibration coefficients (digG1-3).

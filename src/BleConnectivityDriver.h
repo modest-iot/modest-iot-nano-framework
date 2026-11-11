@@ -38,26 +38,28 @@ public:
     /// @brief Callback signature for handling inbound data arriving on the RX characteristic.
     using DataReceivedCallback = void (*)(const char* data, size_t length);
 
-    // Nordic Semiconductor UART Service (NUS) 128-bit standard UUID constants
-    static constexpr auto NUS_SERVICE_UUID           = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E";
-    static constexpr auto NUS_RX_CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E";
-    static constexpr auto NUS_TX_CHARACTERISTIC_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E";
+    /** @name Nordic UART Service (NUS) UUID Constants */
+    //@{
+    static constexpr auto NUS_SERVICE_UUID           = "6E400001-B5A3-F393-E0A9-E50E24DCCA9E"; ///< NUS service UUID.
+    static constexpr auto NUS_RX_CHARACTERISTIC_UUID = "6E400002-B5A3-F393-E0A9-E50E24DCCA9E"; ///< NUS RX characteristic UUID.
+    static constexpr auto NUS_TX_CHARACTERISTIC_UUID = "6E400003-B5A3-F393-E0A9-E50E24DCCA9E"; ///< NUS TX characteristic UUID.
+    //@} // Nordic UART Service (NUS) UUID Constants
 
 private:
-    const char* localDeviceName;
-    volatile bool deviceConnected;
-    bool advertisingActive;
-    bool initialized;
+    const char* localDeviceName; ///< Local Bluetooth advertising broadcast identifier.
+    volatile bool deviceConnected; ///< Whether a central peer is currently connected.
+    bool advertisingActive; ///< Whether BLE advertising is currently active.
+    bool initialized; ///< Whether the BLE stack and GATT server are initialized.
 
-    BLEServer* bleServer;
-    BLEService* bleService;
-    BLECharacteristic* txCharacteristic;
-    BLECharacteristic* rxCharacteristic;
+    BLEServer* bleServer; ///< BLE GATT server instance.
+    BLEService* bleService; ///< NUS service instance.
+    BLECharacteristic* txCharacteristic; ///< TX characteristic for outbound notifications.
+    BLECharacteristic* rxCharacteristic; ///< RX characteristic for inbound writes.
 
-    DataReceivedCallback onDataReceivedHandler;
+    DataReceivedCallback onDataReceivedHandler; ///< Callback for inbound RX data.
 
-    std::unique_ptr<BLEServerCallbacks> serverCallbacksHandler;
-    std::unique_ptr<BLECharacteristicCallbacks> rxCallbacksHandler;
+    std::unique_ptr<BLEServerCallbacks> serverCallbacksHandler; ///< Server connection/disconnection callbacks.
+    std::unique_ptr<BLECharacteristicCallbacks> rxCallbacksHandler; ///< RX characteristic write callbacks.
 
 public:
     /**

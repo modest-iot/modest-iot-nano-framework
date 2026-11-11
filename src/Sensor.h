@@ -75,14 +75,16 @@ private:
     bool isFaulted; ///< Whether the sensor is currently in a faulted state.
 
 public:
-    /// --- FRAMEWORK-WIDE UNIFIED SENSOR SPECIFICATION EVENTS ---
-    static constexpr int DATA_READ_EVENT_IDENTIFIER = 20;
-    static constexpr int MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER = 21;
-    static constexpr int SENSOR_FAULT_EVENT_IDENTIFIER = 22;
-    static constexpr int SENSOR_RECOVERED_EVENT_IDENTIFIER = 23;
+    /** @name Framework-Wide Unified Sensor Specification Events */
+    //@{
+    static constexpr int DATA_READ_EVENT_IDENTIFIER = 20; ///< Emitted when a new sensor reading is available.
+    static constexpr int MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER = 21; ///< Triggered by the scheduler to request a reading.
+    static constexpr int SENSOR_FAULT_EVENT_IDENTIFIER = 22; ///< Emitted after consecutive read failures exceed the threshold.
+    static constexpr int SENSOR_RECOVERED_EVENT_IDENTIFIER = 23; ///< Emitted when a faulted sensor recovers.
 
-    static constexpr Event DATA_READ_EVENT = Event(DATA_READ_EVENT_IDENTIFIER);
-    static constexpr Event MEASURE_DATA_REQUESTED_EVENT = Event(MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+    static constexpr Event DATA_READ_EVENT = Event(DATA_READ_EVENT_IDENTIFIER); ///< Prebuilt data read event.
+    static constexpr Event MEASURE_DATA_REQUESTED_EVENT = Event(MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER); ///< Prebuilt measure request event.
+    //@} // Framework-Wide Unified Sensor Specification Events
     /**
      * @brief Constructs a Sensor with a pin and optional event handler.
      * @param signalGpioPin The GPIO pin for the sensor.

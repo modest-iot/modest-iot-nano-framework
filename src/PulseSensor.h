@@ -26,17 +26,21 @@ private:
     int runningSignalTrough; ///< Trough value of the signal.
     int adaptiveThresholdValue; ///< Adaptive threshold value.
 
-    /// --- SCOPED EXPLICIT CONSTANTS (ELIMINATING MAGIC NUMBERS) ---
+    /** @name Pulse Detection Constants */
+    //@{
     static constexpr int DEFAULT_STABILIZATION_PEAK_BASELINE = 512; ///< Default stabilization peak baseline.
     static constexpr int HEARTBEAT_IGNITION_MINIMUM_AMPLITUDE = 100; ///< Minimum amplitude for heartbeat ignition.
     static constexpr unsigned long DEBOUNCE_HEARTBEAT_WINDOW_IN_MILLISECONDS = 300; ///< Debounce a heartbeat window in milliseconds.
     static constexpr int PROPAGATION_SUPPRESSION_IDENTIFIER = -1; ///< Identifier for propagation suppression.
-    
-    // Mathematical normalization scaling figures
+    //@} // Pulse Detection Constants
+
+    /** @name Mathematical Normalization Scaling Figures */
+    //@{
     static constexpr int MILLISECONDS_PER_MINUTE_COEFFICIENT = 60000; ///< Milliseconds per minute coefficient.
     static constexpr int MINIMUM_PHYSIOLOGICAL_HEART_RATE_BPM = 30; ///< Minimum physiological heart rate in BPM.
     static constexpr int MAXIMUM_PHYSIOLOGICAL_HEART_RATE_BPM = 200; ///< Maximum physiological heart rate in BPM.
     static constexpr int DOUBLE_DEBOUNCE_MULTIPLIER = 2; ///< Multiplier for double debouncing.
+    //@} // Mathematical Normalization Scaling Figures
 
     /// Default sampling interval in milliseconds.
     /// @note Pulse waveform resolution requires ~20 ms sampling for accurate BPM detection.

@@ -49,13 +49,16 @@ protected:
     void executeCommand(Command command) override;
 
 public:
-    static constexpr int UPDATE_DISPLAY_COMMAND_IDENTIFIER = 350;
-    static constexpr int CLEAR_DISPLAY_COMMAND_IDENTIFIER = 351;
-    static constexpr int SET_BACKLIGHT_COMMAND_IDENTIFIER = 352;
+    /** @name Display Commands */
+    //@{
+    static constexpr int UPDATE_DISPLAY_COMMAND_IDENTIFIER = 350; ///< Command identifier to update the display.
+    static constexpr int CLEAR_DISPLAY_COMMAND_IDENTIFIER = 351; ///< Command identifier to clear the display.
+    static constexpr int SET_BACKLIGHT_COMMAND_IDENTIFIER = 352; ///< Command identifier to toggle the backlight.
 
-    static const Command UPDATE_DISPLAY_COMMAND;
-    static const Command CLEAR_DISPLAY_COMMAND;
-    static const Command SET_BACKLIGHT_COMMAND;
+    static const Command UPDATE_DISPLAY_COMMAND; ///< Prebuilt command to update the display.
+    static const Command CLEAR_DISPLAY_COMMAND;  ///< Prebuilt command to clear the display.
+    static const Command SET_BACKLIGHT_COMMAND;  ///< Prebuilt command to toggle the backlight.
+    //@} // Display Commands
 
     /**
      * @param i2cAddress I2C address of the SSD1306 controller (0x3C or 0x3D).

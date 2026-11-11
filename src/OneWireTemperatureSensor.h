@@ -25,18 +25,23 @@ protected:
     float cachedTemperatureInCelsius; ///< Last successful temperature reading.
     float lastNotifiedTemperatureInCelsius; ///< Last temperature that triggered a DATA_READ_EVENT.
 
-    /// --- Change Detection ---
+    /** @name Change Detection */
+    //@{
     static constexpr float TEMPERATURE_CHANGE_EPSILON = 0.1f; ///< Minimum temperature change to emit event (°C).
     static constexpr float INITIAL_CACHED_TEMPERATURE_IN_CELSIUS = 0.0f; ///< Initial cached temperature value.
     static constexpr float INITIAL_LAST_NOTIFIED_TEMPERATURE_IN_CELSIUS = -1.0f; ///< Initial last-notified sentinel (protected for tests).
     static constexpr int PROPAGATION_SUPPRESSION_IDENTIFIER = -1; ///< Identifier for propagation suppression (protected for tests).
+    //@} // Change Detection
 
-    /// --- Sampling Intervals ---
+    /** @name Sampling Intervals */
+    //@{
     static constexpr uint32_t DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS = 1000; ///< Default sampling interval.
     static constexpr uint32_t MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS = 100; ///< Minimum sampling interval.
+    //@} // Sampling Intervals
 
 private:
-    /// --- 1-Wire Protocol Timing Constants (microseconds) ---
+    /** @name 1-Wire Protocol Timing Constants (microseconds) */
+    //@{
     /// @note All timing values from the DS18B20 datasheet, 1-Wire Specification.
     static constexpr uint32_t ONE_WIRE_RESET_PULSE_LOW_TIME_IN_MICROSECONDS = 480; ///< Master reset pulse LOW duration.
     static constexpr uint32_t ONE_WIRE_RESET_PULSE_HIGH_TIME_IN_MICROSECONDS = 70; ///< Master release HIGH duration after reset pulse.
@@ -46,20 +51,27 @@ private:
     static constexpr uint32_t ONE_WIRE_WRITE_RECOVERY_TIME_IN_MICROSECONDS = 2; ///< Recovery gap between write slots.
     static constexpr uint32_t ONE_WIRE_READ_SAMPLE_TIME_IN_MICROSECONDS = 9; ///< Read slot sample time after master pull-down.
     static constexpr uint32_t ONE_WIRE_READ_SLOT_TIME_IN_MICROSECONDS = 60; ///< Read slot total duration.
+    //@} // 1-Wire Protocol Timing Constants
 
-    /// --- DS18B20 Command Constants ---
+    /** @name DS18B20 Command Constants */
+    //@{
     static constexpr uint8_t DS18B20_CONVERT_T_COMMAND = 0x44; ///< Start temperature conversion.
     static constexpr uint8_t DS18B20_READ_SCRATCHPAD_COMMAND = 0xBE; ///< Read scratchpad (9 bytes).
     static constexpr uint8_t DS18B20_SKIP_ROM_COMMAND = 0xCC; ///< Skip ROM (address all devices on bus).
+    //@} // DS18B20 Command Constants
 
-    /// --- Scratchpad Layout ---
+    /** @name Scratchpad Layout */
+    //@{
     static constexpr uint8_t DS18B20_SCRATCHPAD_BYTE_COUNT = 9; ///< Total bytes in DS18B20 scratchpad.
     static constexpr uint8_t DS18B20_TEMPERATURE_LSB_BYTE_INDEX = 0; ///< Index of temperature LSB byte.
     static constexpr uint8_t DS18B20_TEMPERATURE_MSB_BYTE_INDEX = 1; ///< Index of temperature MSB byte.
+    //@} // Scratchpad Layout
 
-    /// --- Temperature Conversion ---
+    /** @name Temperature Conversion */
+    //@{
     static constexpr float DS18B20_TEMPERATURE_RESOLUTION = 0.0625f; ///< Temperature resolution (°C per LSB at 12-bit).
     static constexpr uint32_t DS18B20_CONVERSION_TIME_IN_MILLISECONDS = 750; ///< Max conversion time at 12-bit resolution.
+    //@} // Temperature Conversion
 
     /**
      * @brief Sends a 1-Wire reset pulse and checks for presence.

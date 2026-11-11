@@ -33,46 +33,68 @@ class BmeEnvironmentalSensor : public Sensor {
 protected:
     uint8_t i2cAddress; ///< Configured BME 7-bit I2C address.
 
-    // BME factory calibration coefficients (shared by BME280 and BME680)
-    uint16_t digT1; int16_t digT2; int16_t digT3;
-    uint16_t digP1; int16_t digP2; int16_t digP3; int16_t digP4;
-    int16_t digP5; int16_t digP6; int16_t digP7; int16_t digP8;
-    int16_t digP9;
-    uint8_t digH1; int16_t digH2; uint8_t digH3; int16_t digH4;
-    int16_t digH5; uint8_t digH6;
-    
-    /// Internal temperature for compensation (5 Q8 format).
-    int32_t tFine;
+    /** @name BME Factory Calibration Coefficients */
+    //@{
+    uint16_t digT1; ///< Temperature calibration coefficient T1.
+    int16_t digT2;  ///< Temperature calibration coefficient T2.
+    int16_t digT3;  ///< Temperature calibration coefficient T3.
+    uint16_t digP1; ///< Pressure calibration coefficient P1.
+    int16_t digP2;  ///< Pressure calibration coefficient P2.
+    int16_t digP3;  ///< Pressure calibration coefficient P3.
+    int16_t digP4;  ///< Pressure calibration coefficient P4.
+    int16_t digP5;  ///< Pressure calibration coefficient P5.
+    int16_t digP6;  ///< Pressure calibration coefficient P6.
+    int16_t digP7;  ///< Pressure calibration coefficient P7.
+    int16_t digP8;  ///< Pressure calibration coefficient P8.
+    int16_t digP9;  ///< Pressure calibration coefficient P9.
+    uint8_t digH1;  ///< Humidity calibration coefficient H1.
+    int16_t digH2;  ///< Humidity calibration coefficient H2.
+    uint8_t digH3;  ///< Humidity calibration coefficient H3.
+    int16_t digH4;  ///< Humidity calibration coefficient H4.
+    int16_t digH5;  ///< Humidity calibration coefficient H5.
+    uint8_t digH6;  ///< Humidity calibration coefficient H6.
+    //@} // BME Factory Calibration Coefficients
 
-    /// Cached readings from the most recent successful sample.
-    float cachedTemperatureInCelsius;
-    float cachedHumidityInPercentage;
-    float cachedPressureInHectopascals;
-    
-    /// Last-notified readings for change detection.
-    float lastNotifiedTemperatureInCelsius;
-    float lastNotifiedHumidityInPercentage;
-    float lastNotifiedPressureInHectopascals;
-    
+    int32_t tFine; ///< Internal temperature for compensation (5 Q8 format).
+
+    /** @name Cached Readings */
+    //@{
+    float cachedTemperatureInCelsius;      ///< Cached temperature in degrees Celsius.
+    float cachedHumidityInPercentage;      ///< Cached relative humidity in percentage.
+    float cachedPressureInHectopascals;    ///< Cached atmospheric pressure in hectopascals.
+    //@} // Cached Readings
+
+    /** @name Last-Notified Readings */
+    //@{
+    float lastNotifiedTemperatureInCelsius;      ///< Last-notified temperature for change detection.
+    float lastNotifiedHumidityInPercentage;      ///< Last-notified humidity for change detection.
+    float lastNotifiedPressureInHectopascals;    ///< Last-notified pressure for change detection.
+    //@} // Last-Notified Readings
+
     bool initialized; ///< Whether calibration data was read successfully.
 
-    /// Epsilon thresholds for change detection.
-    static constexpr float TEMPERATURE_CHANGE_EPSILON = 0.1f;
-    static constexpr float HUMIDITY_CHANGE_EPSILON = 0.1f;
-    static constexpr float PRESSURE_CHANGE_EPSILON = 0.1f;
-    
-    /// Initial values for cached fields.
-    static constexpr float INITIAL_CACHED_TEMPERATURE_IN_CELSIUS = 0.0f;
-    static constexpr float INITIAL_CACHED_HUMIDITY_IN_PERCENTAGE = 0.0f;
-    static constexpr float INITIAL_CACHED_PRESSURE_IN_HECTOPASCALS = 0.0f;
-    
-    /// Initial values for last-notified fields (sentinel to ensure first reading emits event).
-    static constexpr float INITIAL_LAST_NOTIFIED_TEMPERATURE_IN_CELSIUS = -1.0f;
-    static constexpr float INITIAL_LAST_NOTIFIED_HUMIDITY_IN_PERCENTAGE = -1.0f;
-    static constexpr float INITIAL_LAST_NOTIFIED_PRESSURE_IN_HECTOPASCALS = -1.0f;
-    
-    /// Event identifier used internally to prevent propagation.
-    static constexpr int PROPAGATION_SUPPRESSION_IDENTIFIER = -1;
+    /** @name Change Detection Epsilon Thresholds */
+    //@{
+    static constexpr float TEMPERATURE_CHANGE_EPSILON = 0.1f; ///< Minimum temperature change to emit event (°C).
+    static constexpr float HUMIDITY_CHANGE_EPSILON = 0.1f;    ///< Minimum humidity change to emit event (%).
+    static constexpr float PRESSURE_CHANGE_EPSILON = 0.1f;    ///< Minimum pressure change to emit event (hPa).
+    //@} // Change Detection Epsilon Thresholds
+
+    /** @name Initial Cached Values */
+    //@{
+    static constexpr float INITIAL_CACHED_TEMPERATURE_IN_CELSIUS = 0.0f; ///< Initial cached temperature.
+    static constexpr float INITIAL_CACHED_HUMIDITY_IN_PERCENTAGE = 0.0f; ///< Initial cached humidity.
+    static constexpr float INITIAL_CACHED_PRESSURE_IN_HECTOPASCALS = 0.0f; ///< Initial cached pressure.
+    //@} // Initial Cached Values
+
+    /** @name Initial Last-Notified Values */
+    //@{
+    static constexpr float INITIAL_LAST_NOTIFIED_TEMPERATURE_IN_CELSIUS = -1.0f; ///< Initial last-notified temperature sentinel.
+    static constexpr float INITIAL_LAST_NOTIFIED_HUMIDITY_IN_PERCENTAGE = -1.0f; ///< Initial last-notified humidity sentinel.
+    static constexpr float INITIAL_LAST_NOTIFIED_PRESSURE_IN_HECTOPASCALS = -1.0f; ///< Initial last-notified pressure sentinel.
+    //@} // Initial Last-Notified Values
+
+    static constexpr int PROPAGATION_SUPPRESSION_IDENTIFIER = -1; ///< Event identifier used internally to prevent propagation.
 
     /// Shared BME I2C register addresses (identical for BME280 and BME680).
     static constexpr uint8_t BME_REGISTER_TEMP_PRESS_X4 = 0xF4;

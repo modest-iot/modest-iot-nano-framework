@@ -17,7 +17,8 @@
 #include <cstdarg>
 #include <cstdio>
 
-/// --- 1. LOG LEVEL CONSTANTS ---
+/** @name Log Level Constants */
+//@{
 #ifndef MODEST_LOG_LEVEL_NONE
 #define MODEST_LOG_LEVEL_NONE    0
 #endif
@@ -37,7 +38,10 @@
 #define MODEST_LOG_LEVEL_VERBOSE 5
 #endif
 
-/// --- 2. ACTIVE LOG LEVEL CONFIGURATION ---
+//@} // Log Level Constants
+
+/** @name Active Log Level Configuration */
+//@{
 #ifndef MODEST_LOG_LEVEL
 #if defined(MODEST_IOT_LOG_LEVEL)
 #define MODEST_LOG_LEVEL MODEST_IOT_LOG_LEVEL
@@ -46,7 +50,10 @@
 #endif
 #endif
 
-/// --- 3. BACKEND ROUTING & SINK DEFINITIONS ---
+//@} // Active Log Level Configuration
+
+/** @name Backend Routing & Sink Definitions */
+//@{
 #if defined(ARDUINO) && defined(ESP32) && !defined(MODEST_LOG_CUSTOM_SINK)
 #include <esp32-hal-log.h>
 #define MODEST_LOG_WRITE_E(tag, fmt, ...) log_e("[%s] " fmt, tag, ##__VA_ARGS__)
@@ -94,7 +101,10 @@ namespace modest_iot {
 #define MODEST_LOG_WRITE_V(tag, fmt, ...) ::modest_iot::writeLog(MODEST_LOG_LEVEL_VERBOSE, tag, fmt, ##__VA_ARGS__)
 #endif
 
-/// --- 4. COMPILE-TIME FILTERED MACROS ---
+//@} // Backend Routing & Sink Definitions
+
+/** @name Compile-Time Filtered Macros */
+//@{
 #if MODEST_LOG_LEVEL >= MODEST_LOG_LEVEL_ERROR
 #define MODEST_LOG_E(tag, fmt, ...) MODEST_LOG_WRITE_E(tag, fmt, ##__VA_ARGS__)
 #else
@@ -125,7 +135,10 @@ namespace modest_iot {
 #define MODEST_LOG_V(tag, fmt, ...) ((void)0)
 #endif
 
-/// --- 5. ERGONOMIC SHORTHAND ALIASES (MIOT_LOG_*) ---
+//@} // Compile-Time Filtered Macros
+
+/** @name Ergonomic Shorthand Aliases (MIOT_LOG_*) */
+//@{
 #if !defined(MODEST_DISABLE_SHORT_LOG_MACROS)
 #define MIOT_LOG_E MODEST_LOG_E
 #define MIOT_LOG_W MODEST_LOG_W
@@ -133,5 +146,7 @@ namespace modest_iot {
 #define MIOT_LOG_D MODEST_LOG_D
 #define MIOT_LOG_V MODEST_LOG_V
 #endif
+
+//@} // Ergonomic Shorthand Aliases (MIOT_LOG_*)
 
 #endif // MODEST_LOG_H
