@@ -84,6 +84,15 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Hd44780Driver: Extracted HD44780 I²C protocol from CharacterLcdDisplay into standalone driver class
 - Ssd1306Driver: Extracted SSD1306 I²C protocol from OledDisplay into standalone driver class
 
+#### Documentation
+- Comprehensive documentation audit aligning all docs (README, vision, improvements, CHANGELOG) with actual codebase capabilities
+- Added BmeEnvironmentalSensor documentation across all documentation files
+- Added Gateway Client Enhancements section documenting BleGatewayClient, HttpGatewayClient, WiFiConnectivityDriver, and BleConnectivityDriver
+- Corrected test suite count from 26 to 27 host test suites
+- Updated Tier 4 status from "Pending" to "Complete" in improvements tracking
+- Removed DHT sensor library from README dependencies (replaced with native implementation)
+- Fixed ADR count from 30 to 31 and source header count from 47 to 46
+
 ### Examples (16 total)
 - ClassicBlinker, ToggableLedDevice, SmartBandMqtt, AirConditioningDevice
 - AirQualityMonitor, DriverAssistantDevice, SmartScaleDevice, PerimeterMonitor
@@ -97,9 +106,9 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - AddressSanitizer and UndefinedBehaviorSanitizer enabled in tests
 
 ### Documentation
-- 30 Architecture Decision Records (ADRs)
+- 31 Architecture Decision Records (ADRs)
 - Doxygen documentation with API navigation tree
-- Class diagram (PlantUML) covering all 47 source headers
+- Class diagram (PlantUML) covering all 46 source headers
 - User stories and improvement tracking
 
 ### Technical Details
