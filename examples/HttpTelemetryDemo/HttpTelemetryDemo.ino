@@ -80,7 +80,7 @@ private:
         Serial.println("[HttpTelemetryDemo] Requesting Bearer token...");
 
         bool tokenReceived = gatewayClient.sendRequest(
-            HttpGatewayClient::HTTP_METHOD_GET, nullptr);
+            HttpGatewayClient::HttpMethod::Get, nullptr);
 
         if (!tokenReceived) {
             Serial.println("[HttpTelemetryDemo] Failed to obtain Bearer token");
@@ -191,7 +191,7 @@ public:
 
         // Configure gateway client for authentication
         gatewayClient.setServiceEndpointUrl(authEndpointUrl);
-        gatewayClient.setHttpMethod(HttpGatewayClient::HTTP_METHOD_GET);
+        gatewayClient.setHttpMethod(HttpGatewayClient::HttpMethod::Get);
 
         // Acquire Bearer token
         if (!acquireBearerToken()) {
@@ -201,7 +201,7 @@ public:
 
         // Switch to telemetry endpoint with POST method
         gatewayClient.setServiceEndpointUrl(telemetryEndpointUrl);
-        gatewayClient.setHttpMethod(HttpGatewayClient::HTTP_METHOD_POST);
+        gatewayClient.setHttpMethod(HttpGatewayClient::HttpMethod::Post);
 
         Serial.println("[HttpTelemetryDemo] HTTP telemetry online with Bearer token authentication.");
         return true;
@@ -237,7 +237,7 @@ void setup() {
     transportDriver = new WiFiConnectivityDriver(WIRELESS_SSID, WIRELESS_PASSWORD);
 
     gatewayClient = new HttpGatewayClient(*transportDriver, AUTH_ENDPOINT_URL,
-                                          HttpGatewayClient::HTTP_METHOD_GET);
+                                           HttpGatewayClient::HttpMethod::Get);
 
     httpTelemetryApplication = new HttpTelemetryDevice(
         CLIMATE_ONE_WIRE_BUS_PIN,
