@@ -57,6 +57,7 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 | `OneWireTemperatureSensor` | DS18B20 1-Wire temperature sensor with native bit-banging protocol. |
 | `PthSensor` | I²C BME280 sensor for temperature, humidity, and pressure with altitude calculation. |
 | `EnvironmentalGasSensor` | I²C BME680 sensor for temperature, humidity, pressure, and gas resistance (VOC detection). |
+| `BmeEnvironmentalSensor` | Abstract base for Bosch BME280/BME680 compensation formulas and calibration data. |
 | `RfidSensor` | SPI RFID card reader with CRC calculation and card communication. |
 | `SoilMoistureSensor` | Analog soil moisture sensor with epsilon-based change detection. |
 | `UltrasonicSensor` | HC-SR04 ultrasonic distance measurement. |
@@ -344,7 +345,6 @@ Then open `docs/build/html/index.html` in your browser.
    - Copy the repository to your Arduino libraries directory (e.g., `~/Arduino/libraries/ModestIoT/` on macOS/Linux or `Documents\Arduino\libraries\ModestIoT\` on Windows).
    - Alternatively, in the Arduino IDE: Sketch > Include Library > Add .ZIP Library.
 3. **Install Dependencies**: The framework requires the following Arduino libraries (install via Library Manager):
-   - `DHT sensor library` (for `DhtSensor`)
    - `ArduinoJson (>=7.0.0)` (for telemetry serialization)
    - `MQTT (>=2.5.3)` (for `MqttGatewayClient`)
 4. **Verify Structure**: The library should be organized as:
@@ -427,7 +427,6 @@ Contributions, improvements, and extensions are welcome under the MIT License. Y
 ## Future Directions
 
 - **Tier 5**: Telemetry packet pool (W18) to eliminate heap allocation for telemetry records.
-- **DHT native implementation**: Replace DHT sensor library with native single-wire protocol (v1.1.0).
 - **Edge Framework Phase 1**: Python-based edge server with MQTT broker, device registry, and telemetry ingestion.
 - **MicroPython Edition**: A planned port to MicroPython in a separate repository.
 
