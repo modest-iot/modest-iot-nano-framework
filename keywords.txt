@@ -117,6 +117,7 @@ setAuthorizationHeader	KEYWORD2
 setHttpMethod	KEYWORD2
 getLastResponseStatusCode	KEYWORD2
 getStatistics	KEYWORD2
+setServiceEndpointUrl	KEYWORD2
 sendRequest	KEYWORD2
 HTTP_METHOD_GET	LITERAL1
 HTTP_METHOD_POST	LITERAL1
