@@ -627,7 +627,30 @@ package "Gateway" #FFF8EE {
 
   class HttpGatewayClient {
     -contentTypeHeader : const char*
-    +HttpGatewayClient(transportDriver : ConnectivityDriver&, targetEndpoint : const char*)
+    -authorizationHeader : const char*
+    -httpMethod : const char*
+    -lastResponseStatusCode : int
+    -sendsSucceededCount : uint32_t
+    -sendsFailedCount : uint32_t
+    -serializationBuffer : char[512]
+    -responseBuffer : char[512]
+    -responseBodyLength : size_t
+    +{static} HTTP_METHOD_GET : const char*
+    +{static} HTTP_METHOD_POST : const char*
+    +{static} HTTP_METHOD_PUT : const char*
+    +{static} HTTP_METHOD_PATCH : const char*
+    +{static} HTTP_METHOD_DELETE : const char*
+    +{static} HTTP_HEADER_CONTENT_TYPE : const char*
+    +{static} HTTP_HEADER_AUTHORIZATION : const char*
+    +HttpGatewayClient(transportDriver : ConnectivityDriver&, targetEndpoint : const char*, method : const char*)
+    +setAuthorizationHeader(header : const char*) : void
+    +setHttpMethod(method : const char*) : void
+    +getLastResponseStatusCode() : int
+    +getResponseBody() : const char*
+    +getResponseBodyLength() : size_t
+    +isConnected() : bool
+    +getStatistics() : GatewayStatistics
+    +sendRequest(method : const char*, payload : const char*) : bool
     +sendTelemetryRecord(abstractTelemetryPayload : const TelemetryPackage&) : bool
   }
 

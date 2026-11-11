@@ -91,7 +91,7 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 |---|---|
 | `GatewayClient` | Abstract base for telemetry gateways with `sendTelemetryRecord()`, `service()`, and `getStatistics()`. |
 | `MqttGatewayClient` | MQTT gateway with keep-alive servicing, reconnection backoff, and bounded serialization buffer. |
-| `HttpGatewayClient` | HTTP POST gateway for REST-based telemetry transmission. |
+| `HttpGatewayClient` | HTTP gateway with authentication, configurable methods (GET/POST/PUT/PATCH/DELETE), statistics tracking, response status code reporting, `sendRequest()` for general HTTP requests, and `getResponseBody()` for response capture. |
 
 ### Logging
 
@@ -244,7 +244,7 @@ Provides keep-alive servicing via `service()`, reconnection backoff, and bounded
 
 ## Examples
 
-The framework ships with 15 example sketches demonstrating various use cases:
+The framework ships with 16 example sketches demonstrating various use cases:
 
 | Example | Description |
 |---|---|
@@ -263,6 +263,7 @@ The framework ships with 15 example sketches demonstrating various use cases:
 | `WeatherStation` | Battery-powered weather station with deep sleep, DHT22, BH1750, and PthSensor. |
 | `CropMonitoringStation` | Multi-sensor agricultural monitoring with tickless scheduling and MQTT telemetry. |
 | `HomeSecurityDevice` | Water leak, door/window, PIR, and buzzer; demonstrates interrupt-driven home security. |
+| `HttpTelemetryDemo` | DHT22 sensor with HTTP POST telemetry, Bearer token authentication, and statistics tracking. |
 
 ## Testing
 
