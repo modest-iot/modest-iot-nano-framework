@@ -92,6 +92,7 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 | `GatewayClient` | Abstract base for telemetry gateways with `sendTelemetryRecord()`, `service()`, and `getStatistics()`. |
 | `MqttGatewayClient` | MQTT gateway with keep-alive servicing, reconnection backoff, and bounded serialization buffer. |
 | `HttpGatewayClient` | HTTP gateway with authentication, configurable methods (GET/POST/PUT/PATCH/DELETE), statistics tracking, response status code reporting, `sendRequest()` for general HTTP requests, and `getResponseBody()` for response capture. |
+| `BleGatewayClient` | BLE NUS gateway client for serialized telemetry payloads with JSON lines framing, fixed-size buffer, and statistics tracking. |
 
 ### Logging
 
@@ -267,7 +268,7 @@ The framework ships with 16 example sketches demonstrating various use cases:
 
 ## Testing
 
-The framework includes 26 host unit test suites that run natively without hardware:
+The framework includes 27 host unit test suites that run natively without hardware:
 
 | Suite | What It Tests |
 |---|---|
@@ -275,6 +276,7 @@ The framework includes 26 host unit test suites that run natively without hardwa
 | `tests/RgbLed/` | PWM output, color mixing, analogWrite mock |
 | `tests/RfidSensor/` | CRC calculation, SPI mock, card communication |
 | `tests/BleConnectivityDriver/` | BLE NUS GATT service, notifications, RX callbacks |
+| `tests/BleGatewayClient/` | BLE NUS telemetry serialization, JSON lines framing, statistics |
 | `tests/ModestLog/` | `MODEST_LOG_*` level filtering, sink redirection, `MIOT_LOG_*` aliases |
 | `tests/MqttGatewayClient/` | MQTT keep-alive, reconnect backoff, client state |
 | `tests/EngineConfig/` | `EngineConfig` defaults, custom values, aggregate init |
