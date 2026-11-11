@@ -623,6 +623,8 @@ package "Gateway" #FFF8EE {
     +service() : void
     +loop() : void
     +isConnected() : bool
+    +getStatistics() : GatewayStatistics
+    +setServiceEndpointUrl(targetEndpoint : const char*) : void
   }
 
   class HttpGatewayClient {
