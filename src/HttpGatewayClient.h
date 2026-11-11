@@ -11,6 +11,7 @@
 
 #include "GatewayClient.h"
 #include "TelemetryPackage.h"
+#include <HTTPClient.h>
 
 /**
  * @brief Gateway adapter that sends `TelemetryPackage` payloads to an HTTP endpoint
@@ -18,13 +19,26 @@
  * @ingroup gateway_module
  */
 class HttpGatewayClient : public GatewayClient {
+public:
+    /**
+     * @brief Strongly-typed HTTP method enumeration for switch-based dispatch.
+     */
+    enum class HttpMethod : uint8_t {
+        Get,    ///< HTTP GET method for retrieving resources.
+        Post,   ///< HTTP POST method for creating resources.
+        Put,    ///< HTTP PUT method for replacing resources.
+        Patch,  ///< HTTP PATCH method for partial updates.
+        Delete  ///< HTTP DELETE method for removing resources.
+    };
+
 private:
     const char* contentTypeHeader; ///< Content-Type header for the HTTP request.
     const char* authorizationHeader; ///< Optional Authorization header (e.g., "Bearer <token>").
-    const char* httpMethod; ///< HTTP method for requests (GET, POST, PUT, PATCH, DELETE).
+    HttpMethod httpMethod; ///< HTTP method for requests (GET, POST, PUT, PATCH, DELETE).
     int lastResponseStatusCode; ///< Last HTTP response status code from the server.
     uint32_t sendsSucceededCount; ///< Successful telemetry transmissions.
     uint32_t sendsFailedCount; ///< Failed telemetry transmissions.
+    HTTPClient httpClientEndpoint; ///< HTTP client instance for sending requests.
 
     static constexpr size_t SERIALIZATION_BUFFER_SIZE = 512; ///< Maximum serialized payload size in bytes.
     char serializationBuffer[SERIALIZATION_BUFFER_SIZE]; ///< Fixed-size buffer for JSON serialization.
@@ -32,22 +46,26 @@ private:
     char responseBuffer[RESPONSE_BUFFER_SIZE]; ///< Fixed-size buffer for HTTP response bodies.
     size_t responseBodyLength; ///< Length of the last response body received.
 
-public:
-    static constexpr auto HTTP_METHOD_GET = "GET"; ///< HTTP GET method for retrieving resources.
-    static constexpr auto HTTP_METHOD_POST = "POST"; ///< HTTP POST method for creating resources.
-    static constexpr auto HTTP_METHOD_PUT = "PUT"; ///< HTTP PUT method for replacing resources.
-    static constexpr auto HTTP_METHOD_PATCH = "PATCH"; ///< HTTP PATCH method for partial updates.
-    static constexpr auto HTTP_METHOD_DELETE = "DELETE"; ///< HTTP DELETE method for removing resources.
     static constexpr auto HTTP_HEADER_CONTENT_TYPE = "Content-Type"; ///< HTTP Content-Type header name.
     static constexpr auto HTTP_HEADER_AUTHORIZATION = "Authorization"; ///< HTTP Authorization header name.
     static constexpr auto DEFAULT_CONTENT_TYPE = "application/json"; ///< Default Content-Type for JSON payloads.
+
+    /**
+     * @brief Executes an HTTP request with the specified method and payload.
+     * @param method HTTP method enum value.
+     * @param payload Optional JSON payload body.
+     * @return True if the server responded with a valid success status code (2xx).
+     */
+    bool executeHttpRequest(HttpMethod method, const char* payload);
+
+public:
     /**
      * @param transportDriver Abstract reference handling physical link status.
      * @param targetEndpoint The RESTful API URL destination.
-     * @param method HTTP method for requests. Default: "POST".
+     * @param method HTTP method for requests. Default: Post.
      */
     HttpGatewayClient(ConnectivityDriver& transportDriver, const char* targetEndpoint,
-                      const char* method = HTTP_METHOD_POST);
+                      HttpMethod method = HttpMethod::Post);
     ~HttpGatewayClient() override = default;
 
     /**
@@ -59,9 +77,9 @@ public:
 
     /**
      * @brief Sets the HTTP method for subsequent requests.
-     * @param method HTTP method string: "GET", "POST", "PUT", "PATCH", or "DELETE".
+     * @param method HTTP method enum value (Get, Post, Put, Patch, Delete).
      */
-    void setHttpMethod(const char* method);
+    void setHttpMethod(HttpMethod method);
 
     /**
      * @brief Returns the last HTTP response status code from the server.
@@ -103,12 +121,12 @@ public:
      * Must be called from the network task context (e.g., processQueuedTelemetryData or
      * maintainNetworkServices) for thread safety.
      *
-     * @param method HTTP method: "GET", "POST", "PUT", "PATCH", or "DELETE".
+     * @param method HTTP method enum value (Get, Post, Put, Patch, Delete).
      * @param payload Optional JSON payload body. Pass nullptr for GET/DELETE requests.
      * @return True if the server responded with a valid success status code (2xx).
      * @runs_on network
      */
-    bool sendRequest(const char* method, const char* payload = nullptr);
+    bool sendRequest(HttpMethod method, const char* payload = nullptr);
 
     /**
      * @brief Polling contract hook: Serializes and ships the payload via HTTP.
