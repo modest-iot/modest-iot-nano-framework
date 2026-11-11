@@ -44,9 +44,10 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 
 #### Connectivity
 - **MqttGatewayClient**: MQTT client using MQTT Things (256dpi/arduino-mqtt), replaced deprecated PubSubClient
-- **HttpGatewayClient**: HTTP telemetry client with authentication, statistics, named constants for HTTP methods (`HTTP_METHOD_*`) and headers (`HTTP_HEADER_CONTENT_TYPE`, `HTTP_HEADER_AUTHORIZATION`), fixed-size buffer, response status code reporting, `sendRequest()` for general HTTP requests, `getResponseBody()` for response body capture, and `setServiceEndpointUrl()` for dynamic endpoint switching
+- **HttpGatewayClient**: HTTP telemetry client with authentication, statistics, enum-based HTTP methods (`HttpMethod::Get/Post/Put/Patch/Delete`) and headers (`HTTP_HEADER_CONTENT_TYPE`, `HTTP_HEADER_AUTHORIZATION`), fixed-size buffer, response status code reporting, `sendRequest()` for general HTTP requests, `getResponseBody()` for response body capture, and `setServiceEndpointUrl()` for dynamic endpoint switching
 - **GatewayClient**: Added `setServiceEndpointUrl()` method to allow switching the target endpoint URL at runtime
 - **BleConnectivityDriver**: BLE NUS connectivity driver with disconnect support; RSSI reporting returns 0 (ESP32 BLE server API does not expose RSSI)
+- **BleGatewayClient**: BLE NUS gateway client for serialized telemetry payloads. JSON lines framing, fixed-size 512-byte buffer, statistics tracking, and service/loop for advertising restart.
 - **WiFiConnectivityDriver**: Wi-Fi connection management with status enumeration, disconnect, IP address reporting, signal strength (RSSI), and connection timeout
 - **Ssd1306Driver**: Native SSD1306 I²C protocol driver for OLED displays
 - **Hd44780Driver**: Native HD44780 I²C protocol driver for LCD displays
@@ -91,14 +92,14 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - HttpTelemetryDemo
 
 ### Testing
-- 26 host test suites covering all sensors, actuators, scheduler, MQTT, and telemetry
+- 27 host test suites covering all sensors, actuators, scheduler, MQTT, BLE, and telemetry
 - CI workflows: host tests, ESP32 compilation, linting
 - AddressSanitizer and UndefinedBehaviorSanitizer enabled in tests
 
 ### Documentation
 - 30 Architecture Decision Records (ADRs)
 - Doxygen documentation with API navigation tree
-- Class diagram (PlantUML) covering all 45 source headers
+- Class diagram (PlantUML) covering all 47 source headers
 - User stories and improvement tracking
 
 ### Technical Details
