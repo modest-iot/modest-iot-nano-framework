@@ -34,7 +34,7 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 
 ### What's Delivered
 
-- **47 source headers** with full Doxygen documentation and `@runs_on` threading tags.
+- **46 source headers** with full Doxygen documentation and `@runs_on` threading tags.
 - **16 example sketches** covering diverse use cases (smart band, air quality, RFID access, smart greenhouse, weather station, crop monitoring, home security, HTTP telemetry, etc.).
 - **27 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
 - **3 CI workflows**: host tests, compile examples, lint.
@@ -46,7 +46,7 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 - **Sensor fault events** (IDs 22/23) with debounced threshold state machine.
 - **Telemetry pipeline** with `unique_ptr` ownership, drop-oldest policy, bounded serialization, envelope metadata.
 - **MQTT keep-alive** with rate-limited reconnection backoff.
-- **30 Architecture Decision Records** documenting all key architectural choices, including DDD adoption (ADR-023).
+- **31 Architecture Decision Records** documenting all key architectural choices, including DDD adoption (ADR-023).
 
 ### Remaining Work: Tier 4 (Capabilities) — **Complete** ✓
 
@@ -97,8 +97,20 @@ Popular IoT components for maximum v1.0.0 adoption:
 | **OledDisplay**          | Actuator | I²C (SSD1306)    | OLED display for portable devices and dashboards                        | **Complete** |
 | **Ssd1306Driver**        | Driver   | I²C (SSD1306)    | SSD1306 protocol driver for OledDisplay                                 | **Complete** |
 | **EnvironmentalGasSensor** | Sensor | I²C (BME680)     | Air quality monitoring with VOC and gas resistance                      | **Complete** |
+| **BmeEnvironmentalSensor** | Sensor | I²C (BME280/BME680) | Abstract base class for Bosch BME280/BME680 compensation formulas   | **Complete** |
 
 New examples: `OneWireTemperatureMonitor` (DS18B20 multi-sensor), `OledWeatherDisplay` (OLED + PthSensor), `AirQualityMonitorV2` (BME680 + MQTT).
+
+### Gateway Client Enhancements — **Complete** ✓
+
+Production-ready features across all three transport options:
+
+| Component                | Enhancement        | Description                                                                |
+|--------------------------|-------------------|----------------------------------------------------------------------------|
+| **BleGatewayClient**     | New Component      | BLE NUS gateway client with JSON lines framing, 512-byte buffer, statistics |
+| **HttpGatewayClient**    | Enhanced           | Authentication, HTTP methods enum, response status/body, `sendRequest()`    |
+| **WiFiConnectivityDriver** | Enhanced         | `getWiFiStatus()`, `disconnect()`, `getLocalIpAddress()`, RSSI, `waitForConnection()` |
+| **BleConnectivityDriver** | Enhanced          | `disconnect()`, `getSignalStrengthInDbm()`, `unique_ptr` for callbacks      |
 
 ### Nano Framework Completion Roadmap
 
@@ -165,7 +177,7 @@ New examples bundle multiple components to demonstrate complete use cases:
 
 **Library Release Impact**:
 
-- **v1.0.0**: 18 sensors + 7 actuators + Tier 1, Tier 2, and Tier 3 components (Relay, Soil Moisture, WaterFlow, PthSensor, Water Leak, Door/Window, OneWireTemperature, OledDisplay, EnvironmentalGas).
+- **v1.0.0**: 18 sensors (including BmeEnvironmentalSensor abstract base) + 7 actuators + Tier 1, Tier 2, and Tier 3 components (Relay, Soil Moisture, WaterFlow, PthSensor, Water Leak, Door/Window, OneWireTemperature, OledDisplay, EnvironmentalGas) + gateway client enhancements (BleGatewayClient, HttpGatewayClient, WiFiConnectivityDriver, BleConnectivityDriver).
 - **v1.1.0**: Tier 2 components (BME280, Water Leak, Door/Window) with new examples.
 - **v1.2.0**: Tier 3 components as needed, based on community feedback.
 
@@ -867,7 +879,7 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 |-----------------------------|-------------------------|----------------------------------|----------------------------|
 | **Consistent patterns**     | Mediator, CQRS, events  | Same patterns at edge scale      | One mental model for both  |
 | **AI-assisted development** | Clean, documented API   | Python/ML ecosystem              | AI generates code for both |
-| **Test infrastructure**     | 26 host test suites, CI | Python pytest, integration tests | Full-stack testing         |
+| **Test infrastructure**     | 27 host test suites, CI | Python pytest, integration tests | Full-stack testing         |
 | **Documentation**           | Doxygen, ADRs, README   | Sphinx, OpenAPI specs            | Unified documentation      |
 
 ### 4.2 For IoT Products
