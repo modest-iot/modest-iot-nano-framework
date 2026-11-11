@@ -9,7 +9,8 @@
 #include <memory>
 #include "ModestIoT.h"
 
-/// --- CONCRETE APPLICATION DATA SCHEMA SPECIFICATION ---
+/** @name Concrete Application Data Schema Specification */
+//@{
 
 class SmartBandTelemetryPackage : public TelemetryPackage {
     private:
@@ -31,8 +32,10 @@ class SmartBandTelemetryPackage : public TelemetryPackage {
         serializationDestination["relativeHumidityPercentage"] = this->relativeHumidityInPercentage;
     }
 };
+//@} // Concrete Application Data Schema Specification
 
-/// --- APPLICATION MEDIATOR IMPLEMENTATION ---
+/** @name Application Mediator Implementation */
+//@{
 
 class SmartBandDevice : public Device {
     private:
@@ -97,8 +100,10 @@ class SmartBandDevice : public Device {
 
     void handle(Command command) override {}
 };
+//@} // Application Mediator Implementation
 
-/// --- TOP-LEVEL DECLARATIVE CANVAS ---
+/** @name Top-Level Declarative Canvas */
+//@{
 
 static const int BIOLOGICAL_PULSE_ANALOG_PIN = 34;
 static const int CLIMATE_ONE_WIRE_BUS_PIN    = 4;
