@@ -12,6 +12,7 @@ EventHandler	KEYWORD1
 CommandHandler	KEYWORD1
 TelemetryPackage	KEYWORD1
 SamplingScheduler	KEYWORD1
+ConfigurationStore	KEYWORD1
 GatewayClient	KEYWORD1
 ConnectivityDriver	KEYWORD1
 
@@ -166,6 +167,28 @@ advance	KEYWORD2
 count	KEYWORD2
 slotAt	KEYWORD2
 baseTickInMilliseconds	KEYWORD2
+
+# ConfigurationStore
+begin	KEYWORD2
+end	KEYWORD2
+isInitialized	KEYWORD2
+getNamespace	KEYWORD2
+isReadOnly	KEYWORD2
+getString	KEYWORD2
+setString	KEYWORD2
+getInt	KEYWORD2
+setInt	KEYWORD2
+getUnsignedLong	KEYWORD2
+setUnsignedLong	KEYWORD2
+getFloat	KEYWORD2
+setFloat	KEYWORD2
+getBool	KEYWORD2
+setBool	KEYWORD2
+setValue	KEYWORD2
+containsKey	KEYWORD2
+removeKey	KEYWORD2
+clearNamespace	KEYWORD2
+keyCount	KEYWORD2
 effectivePeriodInMilliseconds	KEYWORD2
 ticksUntilNextDue	KEYWORD2
 
@@ -424,3 +447,7 @@ DRIVE_TO_ANGLE_COMMAND_IDENTIFIER	LITERAL1
 # Sensor change detection thresholds
 MOISTURE_CHANGE_EPSILON	LITERAL1
 GAS_RESISTANCE_CHANGE_EPSILON	LITERAL1
+
+# ConfigurationStore constants
+MAX_CONFIGURATION_KEY_LENGTH	LITERAL1
+MAX_CONFIGURATION_STRING_VALUE_LENGTH	LITERAL1
