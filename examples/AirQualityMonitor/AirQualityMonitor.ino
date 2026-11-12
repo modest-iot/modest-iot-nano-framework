@@ -11,9 +11,28 @@
 
 #include <Arduino.h>
 #include <memory>
-#include "ModestIoT.h" // Umbrella header for framework components
+#include "ModestIoT.h"
 
-// --- 1. CONCRETE APPLICATION TELEMETRY SCHEMA ---
+/** @brief Serial communication baud rate. */
+static const unsigned long SERIAL_BAUD_RATE = 115200;
+
+/** @brief Delay in the main loop when no work is pending. */
+static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
+
+/** @brief Serial port connection timeout (ms). */
+static const unsigned long SERIAL_TIMEOUT_MS = 5000;
+
+/** @brief Sampler event queue length. */
+static const int ASYNC_ENGINE_QUEUE_DEPTH = 10;
+
+/** @brief Buzzer tone frequency (Hz). */
+static const unsigned long BUZZER_TONE_FREQ = 2000;
+
+/** @brief Buzzer tone duration (ms). */
+static const unsigned long BUZZER_TONE_DURATION_MS = 100;
+
+/** @name Concrete Application Data Schema Specification */
+//@{
 
 /**
  * @brief Telemetry package for Air Quality Monitor data.
@@ -44,8 +63,10 @@ public:
         serializationDestination["sensorMode"] = this->operatingMode;
     }
 };
+//@} // Concrete Application Data Schema Specification
 
-// --- 2. APPLICATION MEDIATOR IMPLEMENTATION ---
+/** @name Application Mediator Implementation */
+//@{
 
 /**
  * @brief Orchestrates the GasSensor, Buzzer, and CharacterLcdDisplay for air quality monitoring.
@@ -177,7 +198,7 @@ public:
         gasSensor.setHandler(this);
 
         // Initialize asynchronous engine
-        initializeAsynchronousEngine(10); // Queue depth of 10
+        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
 
         // Append sensors to the scheduler
         appendSensorToScheduler(&gasSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
@@ -195,7 +216,7 @@ public:
 
             // Control buzzer based on gas detection status
             if (gasSensor.isGasDetected()) {
-                alarmBuzzer.setTone(2000, 100); // 2kHz for 100ms
+                alarmBuzzer.setTone(BUZZER_TONE_FREQ, BUZZER_TONE_DURATION_MS);
                 alarmBuzzer.handle(Buzzer::PLAY_TONE_COMMAND);
             } else {
                 alarmBuzzer.handle(Buzzer::TURN_OFF_COMMAND);
@@ -239,8 +260,10 @@ public:
         gasSensor.setTargetGas(gasType);
     }
 };
+//@} // Application Mediator Implementation
 
-// --- 3. TOP-LEVEL DECLARATIVE CANVAS (Arduino Setup & Loop) ---
+/** @name Top-Level Declarative Canvas */
+//@{
 
 /** @brief Hardware Pin Definitions */
 /// @brief Analog pin for the gas sensor (ADC input).
@@ -281,8 +304,8 @@ static AirQualityMonitorDevice* airMonitorDevice = nullptr;
  * @brief Initializes the device, sensors, connectivity, and MQTT gateway.
  */
 void setup() {
-    Serial.begin(115200);
-    while (!Serial && millis() < 5000) { /* wait for serial port to connect */ }
+    Serial.begin(SERIAL_BAUD_RATE);
+    while (!Serial && millis() < SERIAL_TIMEOUT_MS) { /* wait for serial port to connect */ }
     Serial.println("\n[AirQualityMonitor] Starting up...");
 
     // 1. Initialize Connectivity
@@ -325,7 +348,6 @@ void setup() {
 void loop() {
     // The master loop is completely clean and empty.
     // It yields 100% of its execution cycles natively back to the FreeRTOS kernel scheduler.
-    // A long delay here prevents watchdog timer resets in some FreeRTOS configurations
-    // when the loop is otherwise completely idle.
-    vTaskDelay(pdMS_TO_TICKS(60000));
+    vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_IN_MILLISECONDS));
 }
+//@} // Top-Level Declarative Canvas
