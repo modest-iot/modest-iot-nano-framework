@@ -71,6 +71,8 @@ public:
     static constexpr int TURN_OFF_COMMAND_IDENTIFIER = 251;
     /** @brief Command identifier for playing a buffered tone. */
     static constexpr int PLAY_TONE_COMMAND_IDENTIFIER = 252;
+    /** @brief Command identifier for playing a tone at the payload frequency using buffered duration. */
+    static constexpr int PLAY_FREQUENCY_COMMAND_IDENTIFIER = 253;
 
     /** @brief Prebuilt command instance for turning the buzzer on. */
     static const Command TURN_ON_COMMAND;

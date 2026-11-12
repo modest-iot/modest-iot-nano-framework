@@ -58,7 +58,13 @@ void Buzzer::playBufferedTone() {
 }
 
 /**
- * @brief Executes a command.
+ * @brief Executes a buzzer command.
+ *
+ * @details `TURN_ON_COMMAND` plays a default 1kHz tone continuously.
+ *          `TURN_OFF_COMMAND` stops any sound.
+ *          `PLAY_TONE_COMMAND` plays the buffered frequency and duration.
+ *          `PLAY_FREQUENCY_COMMAND` assigns the payload as the buffered frequency,
+ *          then plays using the buffered duration via `playBufferedTone()`.
  */
 void Buzzer::executeCommand(Command command) {
     if (command == TURN_ON_COMMAND) {
@@ -66,6 +72,9 @@ void Buzzer::executeCommand(Command command) {
     } else if (command == TURN_OFF_COMMAND) {
         turnBuzzerOff();
     } else if (command == PLAY_TONE_COMMAND) {
+        playBufferedTone();
+    } else if (command.identifier == PLAY_FREQUENCY_COMMAND_IDENTIFIER) {
+        bufferedFrequency = command.payload;
         playBufferedTone();
     }
 }
