@@ -19,7 +19,7 @@ All 8 improvement briefs and the roadmap are consolidated in this single documen
 
 ## Pre-Release Readiness Assessment
 
-**Feature completeness**: All Tiers 0–5 are complete (W18 deferred to v1.1.0). The framework is **feature-complete for v1.0.0** with 18 sensors, 7 actuators, 3 gateway clients, and 21 examples.
+**Feature completeness**: All Tiers 0–5 are complete (W18 deferred to v1.1.0). The framework is **feature-complete for v1.0.0** with 18 sensors, 7 actuators, 3 gateway clients, 1 configuration store, and 22 examples.
 
 **Production readiness**: Comprehensive evaluation identified **4 items that should be addressed before Arduino Library submission** and **6 items that can wait for v1.1.0+**. None require architectural changes; all are additive features fitting the existing patterns.
 
@@ -27,9 +27,9 @@ All 8 improvement briefs and the roadmap are consolidated in this single documen
 
 | ID   | Work Item                        | Priority | Complexity | Description                                                                                   |
 |------|----------------------------------|----------|------------|-----------------------------------------------------------------------------------------------|
-| **W20** | Persistent configuration store  | High     | Medium     | `ConfigurationStore` using ESP32 NVS (`Preferences`) with schema validation for credentials, endpoints, and runtime settings. |
+| **W20** | Persistent configuration store  | High     | Medium     | `ConfigurationStore` using ESP32 NVS (`Preferences`) with namespace isolation, type-safe getters/setters, and schema validation. ✅ **Complete** |
 | **W21** | Time synchronization            | High     | Medium     | `TimeSync` component with NTP support over WiFi and RTC fallback for deep-sleep devices. Replaces `millis()` timestamps with absolute time. |
-| **W22** | TLS/SSL examples & documentation | High     | Low        | MQTT over TLS example using `NetworkClientSecure`. Document secure HTTP configuration in README. |
+| **W22** | TLS/SSL examples & documentation | High     | Low        | MQTT over TLS example using `WiFiClientSecure`. Secure Communication section in README documents both MQTT and HTTP TLS. ✅ **Complete** |
 | **W23** | Command payload support         | High     | Low        | Add optional `int32_t` payload to `Command` constructor. Update actuator commands to use payloads where applicable (e.g., servo angle, LED brightness, buzzer frequency). ✅ **Complete** |
 
 ### Post-Release Improvements (v1.1.0+)
@@ -74,9 +74,9 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 | W17 | Deep-sleep cycle and battery example                                                    | Tier 5      | 1 | 4 | 2 | L    | 3     | **Complete** (PowerMode::DeepSleep, enterDeepSleep(), reportWakeReason(), RTC_DATA_ATTR, WeatherStation example, 10 host tests) |
 | W18 | Telemetry pool and writer interface (Phase C)                                           | Tier 5      | 2 | 3 | 1 | L    | 2     | Pending (deferred to v1.1.0)                                                                                                               |
 | W19 | Native servo and LCD drivers                                                            | Tier 5      | 2 | 0 | 1 | M    | 2     | **Complete** (ServoMotor native LEDC, Hd44780Driver + CharacterLcdDisplay native I2C, library.properties updated, 20 host tests) |
-| W20 | Persistent configuration store (ESP32 NVS)                                              | Pre-release | 5 | 1 | 5 | M    | 9     | Pending — `ConfigurationStore` with schema validation for credentials, endpoints, runtime settings     |
+| W20 | Persistent configuration store (ESP32 NVS)                                              | Pre-release | 5 | 1 | 5 | M    | 9     | **Complete** — `ConfigurationStore` with namespace isolation, type-safe getters/setters, schema validation, 66 host tests     |
 | W21 | Time synchronization (NTP + RTC fallback)                                               | Pre-release | 4 | 2 | 4 | M    | 7     | Pending — `TimeSync` component replaces `millis()` timestamps with absolute time                     |
-| W22 | TLS/SSL examples & documentation                                                        | Pre-release | 5 | 3 | 4 | S    | 10    | Pending — MQTT over TLS example, secure HTTP configuration documentation                            |
+| W22 | TLS/SSL examples & documentation                                                        | Pre-release | 5 | 3 | 4 | S    | 10    | **Complete** — `MqttTlsDevice` example with `WiFiClientSecure`, Secure Communication section in README |
 | W23 | Command payload support                                                                 | Pre-release | 3 | 0 | 4 | S    | 7     | **Complete** — `Command(int, int32_t)` constructor, `DRIVE_TO_ANGLE_COMMAND`, `ADJUST_BRIGHTNESS_COMMAND`, `adjustColorSetIntensity()`, `PLAY_FREQUENCY_COMMAND` |
 | W24 | Telemetry buffering with LittleFS persistence                                           | v1.1.0      | 3 | 3 | 2 | L    | 4     | Deferred — `TelemetryBuffer` for offline replay when network unavailable                            |
 | W25 | Power manager & battery monitoring                                                      | v1.1.0      | 2 | 4 | 2 | M    | 5     | Deferred — `PowerManager` with battery voltage sensing and configurable sleep modes                 |
@@ -96,7 +96,7 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 ## Deliberately out of scope
 
 - Replacing ArduinoJson (no viable embedded alternative).
-- TLS/SSL implementation in the framework (use ESP32's built-in `NetworkClientSecure`; provide examples in W22).
+- TLS/SSL implementation in the framework (use ESP32's built-in `WiFiClientSecure`; W22 examples are complete).
 - Targeted (per-instance) commands until a use case appears.
 - Switchable sensor power rails and ADC/DMA sampling.
 - Non-ESP32 targets.
@@ -113,10 +113,11 @@ The following items are explicitly deferred to post-v1.0.0 releases. They are in
 
 ## Claims verified and remaining verification gaps
 
-- **Verified**: Local `arduino-cli compile` cleanly builds all 21 examples across ESP32 targets with `--library .` configured.
+- **Verified**: Local `arduino-cli compile` cleanly builds all 22 examples across ESP32 targets with `--library .` configured.
+- **Verified**: All 30 host test suites pass with 100% success rate, including ConfigurationStore (66 tests).
 - **Verified**: `library.properties` `depends=` syntax formatted for Arduino Library Manager compliance.
 - **Verified**: Bluetooth Classic fails on modern ESP32 variants (S2, S3, C3, C6, H2); resolved via target guards and `BleConnectivityDriver`.
-- **Verified**: Host test harness executes 29 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/relay_actuator`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`, `tests/triggering_scheduler`, `tests/command_marshaling`, `tests/water_flow_sensor`, `tests/soil_moisture_sensor`, `tests/deep_sleep`, `tests/servo_motor`, `tests/character_lcd_display`, `tests/door_window_sensor`, `tests/water_leak_sensor`, `tests/pth_sensor`, `tests/one_wire_temperature_sensor`, `tests/oled_display`, `tests/environmental_gas_sensor`, `tests/dht_sensor`, `tests/ble_gateway_client`, `tests/http_gateway_client`, `tests/buzzer`) under Address and Undefined sanitizers.
+- **Verified**: Host test harness executes 30 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/relay_actuator`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`, `tests/triggering_scheduler`, `tests/command_marshaling`, `tests/water_flow_sensor`, `tests/soil_moisture_sensor`, `tests/deep_sleep`, `tests/servo_motor`, `tests/character_lcd_display`, `tests/door_window_sensor`, `tests/water_leak_sensor`, `tests/pth_sensor`, `tests/one_wire_temperature_sensor`, `tests/oled_display`, `tests/environmental_gas_sensor`, `tests/dht_sensor`, `tests/ble_gateway_client`, `tests/http_gateway_client`, `tests/buzzer`, `tests/configuration_store`) under Address and Undefined sanitizers.
 - **Verified**: Logging facility (`MODEST_LOG_*`) works with host capture sink and `MIOT_LOG_*` aliases.
 - **Verified**: MQTT gateway reconnection and keep-alive verified with host tests.
 - **Remaining**: Performance, latency, memory and power figures (reasoned, to be measured on hardware).
@@ -230,7 +231,7 @@ Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power ev
 - Implemented `tests/run_all.sh` with strict warnings (`-Wall -Wextra -Werror`) and Address/Undefined sanitizers.
 - Added GitHub Actions workflows:
   - `host-tests.yml`: runs all 29 test suites on Ubuntu and macOS.
-  - `compile-examples.yml`: compiles all 21 examples across ESP32 and ESP32-S3 boards.
+  - `compile-examples.yml`: compiles all 22 examples across ESP32 and ESP32-S3 boards.
   - `lint.yml`: validates `library.properties` with Arduino Library Manager compliance.
 - Registered all test targets in `CMakeLists.txt` with CTest integration.
 
@@ -407,7 +408,7 @@ Converted sensors: `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `Digita
 | `EnvironmentalGasSensor`      | 2000         | 500          |
 | `DhtSensor`                   | per model    | per model    |
 
-**Example Migration**: All 21 examples migrated. `StatusIndicator` uses explicit four-argument `EventHandler*` overload. 20 other examples automatically use `Sensor*` overload.
+**Example Migration**: All 22 examples migrated. `StatusIndicator` uses explicit four-argument `EventHandler*` overload. 21 other examples automatically use `Sensor*` overload.
 
 **Handler time budget** (worst-case blocking per handler):
 
@@ -860,19 +861,19 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT today (Tie
 
 | Aspect          | Traditional `loop()`                         | Modest IoT today (Tiers 0–5)                                                  | Modest IoT with all planned features                                  |
 |-----------------|----------------------------------------------|-------------------------------------------------------------------------------|-----------------------------------------------------------------------|
-| First build     | Works with the board package                 | All 21 examples compile in CI; 2 dependencies                                 | Same, plus OTA update capability                                      |
+| First build     | Works with the board package                 | All 22 examples compile in CI; 2 dependencies                                 | Same, plus OTA update capability                                      |
 | Structure       | One growing `loop()` with `millis()` flags   | Sensors emit events, a `Device` mediates, actuators take commands             | Same, with event aggregation for composite patterns                   |
 | Adding a sensor | New globals, new timing variable, new branch | Subclass or reuse, register in the scheduler; per-sensor default periods      | Same, plus battery monitoring for power-aware sensors                 |
 | Sampling rates  | Hand-written per-sensor timers               | Per-slot periods, minimums enforced, staggering handled                       | Same, with tickless scheduling reducing idle wake-ups                 |
 | Timing mistakes | Easy: a blocking call stalls everything      | Handler budgets documented; blocking HX711/ultrasonic removed; interrupt-driven sensors | Same, with power manager for configurable sleep modes           |
 | Debugging       | `Serial.println` scattered                   | `MODEST_LOG_*`, stack high-water marks, sensor fault events, diagnostics      | Same, plus firmware version in telemetry for fleet tracking           |
-| Configuration   | Hardcoded credentials and intervals          | Hardcoded in examples; no persistent storage                                  | `ConfigurationStore` with ESP32 NVS for credentials, endpoints, settings |
+| Configuration   | Hardcoded credentials and intervals          | `ConfigurationStore` with ESP32 NVS, namespace isolation, type-safe access    | Same, with schema validation and read-only mode                          |
 | Time handling   | `millis()` from boot                         | `millis()` timestamps; no synchronization                                     | `TimeSync` with NTP over WiFi and RTC fallback for absolute time      |
 | Networking      | Blocking connect/publish in `loop()`         | Separate network task, reconnect policy, keep-alive, TLS examples             | Same, with TLS/SSL as documented best practice                        |
 | Cloud-to-device | Hand-rolled callback                         | Mediator-routed commands through `Device::enqueueCommand`                     | Same, with `int32_t` payload support for parameterized commands       |
 | Offline data    | Lost when network unavailable                | Drop-oldest queue policy; no persistence                                      | `TelemetryBuffer` with LittleFS persistence for offline replay        |
 | Updates         | Manual reflashing required                   | Manual reflashing required                                                    | OTA updates via `OtaUpdater` component                                |
-| Testing         | Rarely possible off-device                   | 29 host test suites with CI, sanitizers enabled                               | Same, plus integration tests for new components                      |
+| Testing         | Rarely possible off-device                   | 30 host test suites with CI, sanitizers enabled                               | Same, plus integration tests for new components                      |
 
 ### Performance
 

@@ -31,13 +31,13 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 | **Tier 3**: Core Scheduling & Telemetry | W8, W11 | **Complete** ✓ |
 | **Tier 4**: Capabilities                | W12–W15 | **Complete** ✓   |
 | **Tier 5**: Optimization & Power        | W16–W19 | **Complete** (W16 ✓, W17 ✓, W19 ✓, W18 deferred to v1.1.0) |
-| **Pre-Release**: Prerequisites          | W20–W23 | **Partial** — W23 (Command payload) ✓; W20–W22 pending |
+| **Pre-Release**: Prerequisites          | W20–W23 | **Partial** — W20 (Config store) ✓, W22 (TLS/SSL) ✓, W23 (Command payload) ✓; W21 pending |
 
 ### What's Delivered
 
-- **46 source headers** with full Doxygen documentation and `@runs_on` threading tags.
-- **21 example sketches** covering diverse use cases (BLE vitals transmitter, remote LED controller, indoor air quality display, pipe temperature monitor, equipment health monitor, smart band, air quality, RFID access, smart greenhouse, weather station, crop monitoring, home security, HTTP telemetry, etc.).
-- **29 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
+- **47 source headers** with full Doxygen documentation and `@runs_on` threading tags.
+- **22 example sketches** covering diverse use cases (MQTT over TLS device, BLE vitals transmitter, remote LED controller, indoor air quality display, pipe temperature monitor, equipment health monitor, smart band, air quality, RFID access, smart greenhouse, weather station, crop monitoring, home security, HTTP telemetry, etc.).
+- **30 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
 - **3 CI workflows**: host tests, compile examples, lint.
 - **Per-slot `SamplingScheduler`** with phase-aligned re-arming and minimum period enforcement.
 - **`EngineConfig`** for tunable FreeRTOS task stacks, priorities, and core pinning.
@@ -121,9 +121,9 @@ Production-ready features across all three transport options:
 
 | Gap | Impact | Recommendation | Effort |
 |-----|--------|----------------|--------|
-| **No persistent configuration** | Credentials, endpoints, and sampling intervals are hardcoded in examples. Field devices cannot be reconfigured without reflashing. | Add `ConfigurationStore` using ESP32 NVS (`Preferences`) with schema validation. | Medium |
+| **Persistent configuration store** | **Complete** ✓ — `ConfigurationStore` using ESP32 NVS (`Preferences`) with namespace-based isolation, type-safe getters/setters (string, int, unsigned long, float, bool), default fallbacks, read-only mode, and schema validation (containsKey, removeKey, clearNamespace). | — | Medium |
 | **No time synchronization** | Telemetry uses `millis()` (device boot time). Server-side correlation requires manual boot-time mapping. | Add `TimeSync` component with NTP support over WiFi, fallback to RTC for deep-sleep devices. | Medium |
-| **No TLS/SSL examples** | MQTT uses unencrypted TCP (port 1883) in examples. HTTP has no certificate pinning. Production deployments require encrypted communication. | Add MQTT over TLS example using `NetworkClientSecure`. Document secure configuration in README. | Low |
+| **TLS/SSL examples & documentation** | **Complete** ✓ — `MqttTlsDevice` example using `WiFiClientSecure` with `MqttGatewayClient` on port 8883. Secure Communication section in README documents both MQTT and HTTP TLS with certificate options (`setInsecure()`, `setCACert()`, `setCertificate()`). | — | Low |
 | **Command payload support** | **Complete** ✓ — `Command(int, int32_t)` constructor with payload. `DRIVE_TO_ANGLE_COMMAND` (ServoMotor), `ADJUST_BRIGHTNESS_COMMAND` (RgbLed), `PLAY_FREQUENCY_COMMAND` (Buzzer). Static helpers: `validateOrAdjustPhysicalAngle()`, `adjustColorSetIntensity()`. | — | Low |
 
 **Should Not Block v1.0.0** (Addressable in v1.1.0+):
@@ -159,8 +159,8 @@ Production-ready features across all three transport options:
 
 1. **Persistent configuration** — `ConfigurationStore` using ESP32 NVS with schema validation.
 2. **Time synchronization** — `TimeSync` component with NTP support and RTC fallback.
-3. **TLS/SSL examples** — MQTT over TLS example, secure HTTP configuration documentation.
-4. **Command payload support** — Optional `int32_t` payload in `Command` constructor.
+3. **TLS/SSL examples** — **Complete** ✓: `MqttTlsDevice` example and Secure Communication section in README.
+4. **Command payload support** — **Complete** ✓: Optional `int32_t` payload in `Command` constructor.
 
 **Phase 3: Library Release** (Estimated: 1 week)
 
@@ -1069,11 +1069,11 @@ The Modest IoT dual-framework vision provides a complete, local-first IoT stack:
 - **Together** they form a scalable, offline-resilient, AI-ready IoT platform.
 - **DDD-guided design** ensures consistent terminology, clear context boundaries, and appropriate patterns for each framework (see ADR-023).
 
-The Nano Framework is **feature-complete for v1.0.0** (Tiers 0–4 done, Component Expansion Tiers 1–3 done, Tier 5: W16 ✓, W17 ✓, W19 ✓, W18 deferred to v1.1.0). Four pre-release prerequisites remain: persistent configuration, time synchronization, TLS/SSL examples, and command payload support. The Edge Framework is **planned** with a clear DDD-based architecture and development roadmap.
+The Nano Framework is **feature-complete for v1.0.0** (Tiers 0–4 done, Component Expansion Tiers 1–3 done, Tier 5: W16 ✓, W17 ✓, W19 ✓, W18 deferred to v1.1.0). One pre-release prerequisite remains: time synchronization. W20 (Persistent configuration), W22 (TLS/SSL examples), and W23 (command payload support) are complete. The Edge Framework is **planned** with a clear DDD-based architecture and development roadmap.
 
 **Next steps**:
 1. Nano Framework Tiers 0–4 are complete. Component Expansion Tiers 1–3 are complete. Tier 5: W16 ✓ (tickless scheduling), W17 ✓ (deep sleep), W19 ✓ (native drivers).
-2. Complete Phase 2.5 pre-release prerequisites: ConfigurationStore, TimeSync, TLS examples, and Command payload support.
+2. Complete Phase 2.5 pre-release prerequisites: TimeSync (W21). W20 (ConfigurationStore), W22 (TLS/SSL), and W23 (Command payload) are complete.
 3. Submit Nano v1.0.0 to Arduino Library Manager.
 4. Start Edge Framework Phase 1 development.
 5. Integrate Nano and Edge with MQTT protocol and shared telemetry schema.
