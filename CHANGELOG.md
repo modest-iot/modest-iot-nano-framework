@@ -12,6 +12,7 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Two-task architecture: HardwareWorker (sampler) and NetworkWorker (network)
 - Thread-safe communication via FreeRTOS queues and notification bits
 - DiagnosticsSnapshot for runtime monitoring (heap, stack, uptime)
+- **ConfigurationStore**: Persistent key-value configuration using ESP32 NVS (`Preferences`) with namespace-based isolation, type-safe getters/setters (string, int, unsigned long, float, bool), default fallbacks, read-only mode, and schema validation (containsKey, removeKey, clearNamespace)
 
 #### Sensors (18 total)
 - **DhtSensor**: Native DHT11/DHT22 single-wire protocol implementation
@@ -89,7 +90,8 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Ssd1306Driver: Extracted SSD1306 I²C protocol from OledDisplay into standalone driver class
 
 #### Examples
-- Replaced banner-style comments (`// ---`) with Doxygen `@name` groups across all 21 examples for consistency
+- **MqttTlsDevice**: MQTT over TLS example using `WiFiClientSecure` with `MqttGatewayClient`; demonstrates encrypted telemetry with certificate options (`setInsecure()`, `setCACert()`) and memory overhead guidance
+- Replaced banner-style comments (`// ---`) with Doxygen `@name` groups across all 22 examples for consistency
 - Eliminated magic numbers in all examples: added `SERIAL_BAUD_RATE` (115200) and `MAIN_LOOP_DELAY_IN_MILLISECONDS` (60000) named constants
 - Replaced `#define` pin assignments with `static const` variables where appropriate (HomeSecurityDevice, RfidAccessController)
 - Added named constants for sampling intervals, queue depths, debounce times, and thresholds (AirConditioningDevice, AirQualityMonitor, HomeSecurityDevice)
@@ -97,6 +99,8 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - RemoteLedController: Updated MQTT callback to parse JSON payloads `{"command": id, "payload": value}` and demonstrate `ADJUST_BRIGHTNESS_COMMAND`
 
 #### Documentation
+- **ConfigurationStore** documented in CHANGELOG.md Core Framework section with full API description
+- **Secure Communication** section in README.md: documents MQTT over TLS (port 8883) and HTTP over TLS with `WiFiClientSecure`, certificate options table, and memory overhead guidance
 - Comprehensive documentation audit aligning all docs (README, vision, improvements, CHANGELOG) with actual codebase capabilities
 - Added BmeEnvironmentalSensor documentation across all documentation files
 - Added Gateway Client Enhancements section documenting BleGatewayClient, HttpGatewayClient, WiFiConnectivityDriver, and BleConnectivityDriver
@@ -113,9 +117,14 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Fixed ADR count in adrs.md overview from 29 to 30
 - Added new command identifiers to keywords.txt: `DRIVE_TO_ANGLE_COMMAND_IDENTIFIER`, `ADJUST_BRIGHTNESS_COMMAND_IDENTIFIER`, `PLAY_FREQUENCY_COMMAND_IDENTIFIER`
 - Updated README.md: Command description now mentions `int32_t` payload, Identifier Registry expanded with payload-based commands, test suites table added `HttpGatewayClient` and `Buzzer`, Future Directions marked W23 complete
-- Updated vision.md: Pre-Release tier status shows W23 complete, command payload gap row reflects implementation with all new commands and static helpers
+- Updated vision.md: Pre-Release tier status shows W20, W22, W23 complete; source header count updated to 47, test suite count updated to 30
+- Updated improvements.md: W20 marked complete with ConfigurationStore details, comparison table updated, test counts updated to 30
+- Updated keywords.txt: Added ConfigurationStore class and all public methods
+- Updated README.md: Added ConfigurationStore to Components section, updated Future Directions, updated last updated date
+- Updated README.md: Added Secure Communication section with MQTT/HTTP TLS examples, certificate options table, and MqttTlsDevice reference; example count updated to 22; Future Directions marked W22 complete
 
-### Examples (21 total)
+### Examples (22 total)
+- **MqttTlsDevice**: Secure environmental monitor with encrypted MQTT (TLS) using `WiFiClientSecure`
 - **SmartGreenhouseDevice**: Updated servo control from two-step `setTargetAngleBufferInDegrees` + `DRIVE_TO_BUFFERED_ANGLE_COMMAND` to single `DRIVE_TO_ANGLE_COMMAND` with payload angle
 - **HomeSecurityDevice**: Added missing `#include <Arduino.h>` for consistency with other examples
 - StatusIndicator (renamed from ClassicBlinker), ToggableLedDevice, SmartBandMqtt, AirConditioningDevice
@@ -130,22 +139,23 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - **EquipmentHealthMonitor**: Industrial equipment health dashboard with `ModestLog` and `diagnostics()`
 
 ### Testing
-- 29 host test suites covering all sensors, actuators, scheduler, MQTT, BLE, HTTP, and telemetry
+- 30 host test suites covering all sensors, actuators, scheduler, MQTT, BLE, HTTP, and telemetry
 - **HttpGatewayClient test**: HTTP methods (GET/POST/PUT/DELETE), auth headers, response body handling, statistics tracking
 - **Fake HTTPClient.h**: Mock HTTP client for host testing with configurable responses
 - **Command payload tests** (W23): 6 new tests in CommandMarshaling suite for payload construction, equality, CommandEntry carry-through, and negative values
 - **ServoMotor payload tests**: 6 tests for `DRIVE_TO_ANGLE_COMMAND` with payload angle and `validateOrAdjustPhysicalAngle()` static method
 - **RgbLed payload tests**: 5 tests for `ADJUST_BRIGHTNESS_COMMAND` and `adjustColorSetIntensity()` direct method call
 - **Buzzer test**: 10 new tests covering all commands (TURN_ON, TURN_OFF, PLAY_TONE, PLAY_FREQUENCY) with tone/noTone mock
+- **ConfigurationStore test**: 66 tests covering namespace isolation, type-safe getters/setters, default fallbacks, read-only mode, schema validation, and error handling
 - CI workflows: host tests, ESP32 compilation, linting
 - AddressSanitizer and UndefinedBehaviorSanitizer enabled in tests
 
 ### Documentation
 - 30 Architecture Decision Records (ADRs)
 - Doxygen documentation with API navigation tree, key features section, and `@runs_on` threading tags
-- Class diagram (PlantUML) covering all 46 source headers
+- Class diagram (PlantUML) covering all 47 source headers
 - User stories and improvement tracking with pre-release readiness assessment (W20–W29)
-- `keywords.txt` comprehensive rewrite: 419 lines with all 46 source headers, drivers, methods, and nested types
+- `keywords.txt` comprehensive rewrite: 453 lines with all 47 source headers, drivers, methods, and nested types
 
 ### Technical Details
 - ESP32 Arduino core 3.x compatible

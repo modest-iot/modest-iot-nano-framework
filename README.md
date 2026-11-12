@@ -3,7 +3,7 @@
 **Version**: 1.0.0  
 **Author**: Angel Velasquez  
 **Date created**: 2025-03-23  
-**Last updated**: 2026-11-11
+**Last updated**: 2026-11-12
 
 ## Overview
 
@@ -37,6 +37,7 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 | `CommandHandler` | Base interface for command-driven components (`handle(Command)`). |
 | `Device` | Base class combining event and command handling; orchestrates the asynchronous engine, scheduler, and telemetry pipeline. |
 | `EngineConfig` | Configuration struct for FreeRTOS task stack sizes, priorities, core pinning, and queue depth. |
+| `ConfigurationStore` | Persistent key-value configuration using ESP32 NVS with namespace isolation, type-safe access, and schema validation. |
 | `DiagnosticsSnapshot` | 12-field runtime health snapshot (stack, heap, queue, timing). |
 | `SamplingScheduler` | Per-slot countdown scheduler with phase-aligned re-arming and minimum period enforcement. |
 | `TelemetryPackage` | Base class for telemetry payloads with envelope metadata (timestamp, sequence). |
@@ -244,9 +245,45 @@ device.setTelemetryGateway(&mqttGateway);
 
 Provides keep-alive servicing via `service()`, reconnection backoff, and bounded serialization (512-byte buffer). Register with `device.setTelemetryGateway()` so diagnostics can aggregate send statistics.
 
+### Secure Communication
+
+Both `MqttGatewayClient` and `HttpGatewayClient` accept a `Client&` reference, making `WiFiClientSecure` a drop-in replacement for `WiFiClient`. This enables TLS 1.2/1.3 encrypted communication with no framework code changes.
+
+**MQTT over TLS** (port 8883):
+
+```cpp
+#include <WiFiClientSecure.h>
+
+WiFiClientSecure secureClient;
+secureClient.setInsecure(); // For testing; use setCACert() in production
+
+MqttGatewayClient mqttGateway(wifiDriver, secureClient, "broker.example.com", 8883, "device/telemetry", "device-001");
+```
+
+**HTTP over TLS** (HTTPS):
+
+```cpp
+WiFiClientSecure secureClient;
+secureClient.setInsecure(); // For testing; use setCACert() in production
+
+HttpGatewayClient httpGateway(secureClient, "https://api.example.com/device/telemetry");
+```
+
+**Certificate options**:
+
+| Method | Use Case | Security Level |
+|--------|----------|----------------|
+| `setInsecure()` | Testing and development only | None — skips certificate verification |
+| `setCACert(pemCert)` | Production with CA-signed certificates | High — verifies broker/server certificate chain |
+| `setCertificate(pemCert)` | Mutual TLS (client authentication) | Highest — both server and client authenticate |
+
+**Memory overhead**: `WiFiClientSecure` uses approximately 4-6KB more RAM than `WiFiClient` due to TLS state and buffer requirements. This is a trade-off for encrypted communication.
+
+**See also**: [`MqttTlsDevice`](examples/MqttTlsDevice/) example for a complete MQTT over TLS implementation.
+
 ## Examples
 
-The framework ships with 21 example sketches demonstrating various use cases:
+The framework ships with 22 example sketches demonstrating various use cases:
 
 | Example | Description |
 |---|---|
@@ -270,11 +307,12 @@ The framework ships with 21 example sketches demonstrating various use cases:
 | `SmartScaleDevice` | Four HX711 load cells for precision weighing; demonstrates multi-sensor averaging. |
 | `ToggableLedDevice` | Button-controlled LED with MQTT telemetry; demonstrates CQRS command/event separation. |
 | `WaterFlowMonitor` | YF-S201 water flow sensor with hybrid interrupt/periodic scheduling. |
+| `MqttTlsDevice` | Secure environmental monitor with encrypted MQTT (TLS); demonstrates `WiFiClientSecure` as a drop-in replacement for `WiFiClient`. |
 | `WeatherStation` | Battery-powered weather station with deep sleep, DHT22, BH1750, and PthSensor. |
 
 ## Testing
 
-The framework includes 29 host unit test suites that run natively without hardware:
+The framework includes 30 host unit test suites that run natively without hardware:
 
 | Suite | What It Tests |
 |---|---|
@@ -306,6 +344,7 @@ The framework includes 29 host unit test suites that run natively without hardwa
 | `tests/EnvironmentalGasSensor/` | BME680 I²C sensor, gas resistance, compensation formulas |
 | `tests/HttpGatewayClient/` | HTTP methods, auth headers, response body handling, statistics tracking |
 | `tests/Buzzer/` | All commands (TURN_ON, TURN_OFF, PLAY_TONE, PLAY_FREQUENCY) with tone/noTone mock |
+| `tests/ConfigurationStore/` | Namespace isolation, type-safe getters/setters, default fallbacks, read-only mode, schema validation |
 
 Run all tests locally:
 
@@ -432,7 +471,7 @@ Contributions, improvements, and extensions are welcome under the MIT License. Y
 
 ## Future Directions
 
-- **Pre-Release Prerequisites (W20–W22)**: Persistent configuration via ESP32 NVS, NTP time synchronization, and TLS/SSL examples — required before Arduino Library submission. W23 (command payload support) is complete.
+- **Pre-Release Prerequisites (W21)**: NTP time synchronization — required before Arduino Library submission. W20 (Persistent configuration), W22 (TLS/SSL examples), and W23 (command payload support) are complete.
 - **v1.1.0**: Telemetry packet pool (W18), telemetry buffering with LittleFS persistence, power manager with battery monitoring, and firmware version in telemetry.
 - **v1.2.0**: Over-the-air (OTA) updates and event aggregation for composite sensor rules.
 - **Edge Framework Phase 1**: Python-based edge server with MQTT broker, device registry, and telemetry ingestion.
