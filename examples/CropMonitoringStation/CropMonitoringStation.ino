@@ -196,7 +196,7 @@ class CropMonitoringStation : public Device {
         uint8_t timerChannel = DEFAULT_TIMER_CHANNEL)
     : Device(soilSamplingIntervalInMilliseconds, timerChannel),
     soilSensor(soilSensorPin, this),
-    airSensor(dhtSensorPin, DHT22, this),
+    airSensor(dhtSensorPin, DhtSensor::SENSOR_MODEL_DHT22, this),
     lightSensor(0, DigitalLightIntensitySensor::DEFAULT_I2C_ADDRESS,
                 DigitalLightIntensitySensor::DEFAULT_LIGHT_DETECTED_THRESHOLD_IN_LUX, this),
     gatewayClient(client)
