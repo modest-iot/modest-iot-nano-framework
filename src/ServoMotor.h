@@ -50,6 +50,8 @@ public:
     static constexpr int LOCK_TO_MAXIMUM_LIMIT_COMMAND_IDENTIFIER = 151;
     /** @brief Command identifier for driving the servo to the buffered target angle. */
     static constexpr int DRIVE_TO_BUFFERED_ANGLE_COMMAND_IDENTIFIER = 152;
+    /** @brief Command identifier for driving the servo to the payload angle directly. */
+    static constexpr int DRIVE_TO_ANGLE_COMMAND_IDENTIFIER = 153;
 
     /** @brief Prebuilt command instance for locking to the minimum angle. */
     static constexpr auto LOCK_TO_MINIMUM_LIMIT_COMMAND = Command(LOCK_TO_MINIMUM_LIMIT_COMMAND_IDENTIFIER);
@@ -66,6 +68,13 @@ public:
      */
     explicit ServoMotor(int signalGpioPin, int initialAngleInDegrees = MINIMUM_PHYSICAL_ANGLE_IN_DEGREES, CommandHandler* parentHandler = nullptr);
     ~ServoMotor() override;
+
+    /**
+     * @brief Clamps a physical angle to the valid range (0–180°).
+     * @param physicalAngleInDegrees Angle in degrees to validate.
+     * @return Clamped angle within [MINIMUM_PHYSICAL_ANGLE_IN_DEGREES, MAXIMUM_PHYSICAL_ANGLE_IN_DEGREES].
+     */
+    [[nodiscard]] static int validateOrAdjustPhysicalAngle(int physicalAngleInDegrees);
 
     /**
      * @brief Stores a target angle used by `DRIVE_TO_BUFFERED_ANGLE_COMMAND`.

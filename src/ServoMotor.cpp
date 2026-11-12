@@ -13,6 +13,16 @@
 static constexpr int LEDC_PERIPHERAL_RESOLUTION_BITS = 13;
 static constexpr int LEDC_PERIPHERAL_MAX_DUTY = (1 << LEDC_PERIPHERAL_RESOLUTION_BITS) - 1;
 
+int ServoMotor::validateOrAdjustPhysicalAngle(const int physicalAngleInDegrees) {
+    if (physicalAngleInDegrees < MINIMUM_PHYSICAL_ANGLE_IN_DEGREES) {
+        return MINIMUM_PHYSICAL_ANGLE_IN_DEGREES;
+    }
+    if (physicalAngleInDegrees > MAXIMUM_PHYSICAL_ANGLE_IN_DEGREES) {
+        return MAXIMUM_PHYSICAL_ANGLE_IN_DEGREES;
+    }
+    return physicalAngleInDegrees;
+}
+
 ServoMotor::ServoMotor(const int signalGpioPin, const int initialAngleInDegrees, CommandHandler* parentHandler)
     : Actuator(signalGpioPin, parentHandler),
       currentActiveAngleInDegrees(initialAngleInDegrees),
@@ -27,22 +37,11 @@ ServoMotor::~ServoMotor() {
 }
 
 void ServoMotor::setTargetAngleBufferInDegrees(const int targetAngleInDegrees) {
-    if (targetAngleInDegrees < MINIMUM_PHYSICAL_ANGLE_IN_DEGREES) {
-        bufferedTargetAngleInDegrees = MINIMUM_PHYSICAL_ANGLE_IN_DEGREES;
-    } else if (targetAngleInDegrees > MAXIMUM_PHYSICAL_ANGLE_IN_DEGREES) {
-        bufferedTargetAngleInDegrees = MAXIMUM_PHYSICAL_ANGLE_IN_DEGREES;
-    } else {
-        bufferedTargetAngleInDegrees = targetAngleInDegrees;
-    }
+    bufferedTargetAngleInDegrees = validateOrAdjustPhysicalAngle(targetAngleInDegrees);
 }
 
 void ServoMotor::writeAngle(const int angleInDegrees) const {
-    int clampedAngle = angleInDegrees;
-    if (clampedAngle < MINIMUM_PHYSICAL_ANGLE_IN_DEGREES) {
-        clampedAngle = MINIMUM_PHYSICAL_ANGLE_IN_DEGREES;
-    } else if (clampedAngle > MAXIMUM_PHYSICAL_ANGLE_IN_DEGREES) {
-        clampedAngle = MAXIMUM_PHYSICAL_ANGLE_IN_DEGREES;
-    }
+    const int clampedAngle = validateOrAdjustPhysicalAngle(angleInDegrees);
 
     static constexpr int pulseWidthRange = MAXIMUM_PULSE_WIDTH_IN_MICROSECONDS - MINIMUM_PULSE_WIDTH_IN_MICROSECONDS;
     const int duty = (clampedAngle * pulseWidthRange) / MAXIMUM_PHYSICAL_ANGLE_IN_DEGREES;
@@ -62,6 +61,10 @@ void ServoMotor::executeCommand(const Command command) {
     }
     else if (command == DRIVE_TO_BUFFERED_ANGLE_COMMAND) {
         currentActiveAngleInDegrees = bufferedTargetAngleInDegrees;
+        writeAngle(currentActiveAngleInDegrees);
+    }
+    else if (command.identifier == DRIVE_TO_ANGLE_COMMAND_IDENTIFIER) {
+        currentActiveAngleInDegrees = validateOrAdjustPhysicalAngle(command.payload);
         writeAngle(currentActiveAngleInDegrees);
     }
 }
