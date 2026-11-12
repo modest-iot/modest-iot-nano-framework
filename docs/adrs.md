@@ -8,7 +8,7 @@ Each ADR documents **why** a decision was made, not just **what** was decided. T
 
 The Modest IoT Nano Framework is a lightweight, deterministic IoT framework for ESP32-based devices. It provides a Mediator design pattern for sensor-actuator wiring, a per-slot sampling scheduler, a telemetry pipeline with ownership safety, and connectivity drivers for Wi-Fi, BLE, and MQTT. The framework runs on FreeRTOS with two isolated tasks: a sampler task for all sensor/actuator I/O and a network task for asynchronous transmission.
 
-The 29 ADRs below span six categories that shaped the framework's architecture:
+The 30 ADRs below span six categories that shaped the framework's architecture:
 
 | #                                                                                          | Title                                                         | Status   | Category     |
 |--------------------------------------------------------------------------------------------|---------------------------------------------------------------|----------|--------------|
