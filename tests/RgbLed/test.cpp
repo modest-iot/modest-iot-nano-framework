@@ -46,5 +46,38 @@ struct Recorder : CommandHandler {
     anode.setColor(RgbLed::CYAN);
     anode.handle(RgbLed::SET_COLOR_COMMAND);
     assert(fakePwm[4] == 255 && fakePwm[5] == 0 && fakePwm[6] == 0);
+
+    // Test: ADJUST_BRIGHTNESS_COMMAND scales active color by payload/255
+    led.setColor(200, 100, 50);
+    led.handle(RgbLed::SET_COLOR_COMMAND);
+    assert(led.getRedIntensity() == 200 && led.getGreenIntensity() == 100 && led.getBlueIntensity() == 50);
+    led.handle(Command{RgbLed::ADJUST_BRIGHTNESS_COMMAND_IDENTIFIER, 127}); // ~50% brightness
+    assert(led.getRedIntensity() == 99 && led.getGreenIntensity() == 49 && led.getBlueIntensity() == 24);
+
+    // Test: ADJUST_BRIGHTNESS_COMMAND with payload 255 leaves color unchanged
+    led.setColor(255, 255, 255);
+    led.handle(RgbLed::SET_COLOR_COMMAND);
+    led.handle(Command{RgbLed::ADJUST_BRIGHTNESS_COMMAND_IDENTIFIER, 255});
+    assert(led.getRedIntensity() == 255 && led.getGreenIntensity() == 255 && led.getBlueIntensity() == 255);
+
+    // Test: ADJUST_BRIGHTNESS_COMMAND with payload 0 turns off all channels
+    led.setColor(128, 64, 32);
+    led.handle(RgbLed::SET_COLOR_COMMAND);
+    led.handle(Command{RgbLed::ADJUST_BRIGHTNESS_COMMAND_IDENTIFIER, 0});
+    assert(led.getRedIntensity() == 0 && led.getGreenIntensity() == 0 && led.getBlueIntensity() == 0);
+
+    // Test: adjustColorSetIntensity() scales all channels directly
+    led.setColor(200, 100, 50);
+    led.handle(RgbLed::SET_COLOR_COMMAND);
+    assert(led.getRedIntensity() == 200 && led.getGreenIntensity() == 100 && led.getBlueIntensity() == 50);
+    led.adjustColorSetIntensity(64); // ~25% brightness
+    assert(led.getRedIntensity() == 50 && led.getGreenIntensity() == 25 && led.getBlueIntensity() == 12);
+
+    // Test: adjustColorSetIntensity(255) leaves intensities unchanged
+    led.setColor(128, 64, 32);
+    led.handle(RgbLed::SET_COLOR_COMMAND);
+    led.adjustColorSetIntensity(255);
+    assert(led.getRedIntensity() == 128 && led.getGreenIntensity() == 64 && led.getBlueIntensity() == 32);
+
     return 0;
 }
