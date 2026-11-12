@@ -21,9 +21,11 @@ namespace {
 class CommandRecorder : public CommandHandler {
 public:
     std::vector<int> deliveredIdentifiers;
+    std::vector<int32_t> deliveredPayloads;
 
     void handle(Command command) override {
         deliveredIdentifiers.push_back(command.identifier);
+        deliveredPayloads.push_back(command.payload);
     }
 };
 
@@ -147,6 +149,74 @@ public:
         assert(cmd1 == cmd2);
         assert(!(cmd1 == cmd3));
         std::printf("  [PASS] Command equality comparison\n");
+    }
+
+    // =========================================================================
+    // Test 17: Command construction with payload
+    // =========================================================================
+    {
+        Command cmd(42, 12345);
+        assert(cmd.identifier == 42);
+        assert(cmd.payload == 12345);
+        std::printf("  [PASS] Command construction with payload\n");
+    }
+
+    // =========================================================================
+    // Test 18: Command default payload is zero
+    // =========================================================================
+    {
+        Command cmd(99);
+        assert(cmd.identifier == 99);
+        assert(cmd.payload == 0);
+        std::printf("  [PASS] Command default payload is zero\n");
+    }
+
+    // =========================================================================
+    // Test 19: Command equality with payload
+    // =========================================================================
+    {
+        Command cmd1(100, 50);
+        Command cmd2(100, 50);
+        Command cmd3(100, 60);
+        Command cmd4(100);
+        assert(cmd1 == cmd2);
+        assert(!(cmd1 == cmd3));
+        assert(!(cmd1 == cmd4)); // Same identifier, different payload
+        std::printf("  [PASS] Command equality with payload\n");
+    }
+
+    // =========================================================================
+    // Test 20: CommandEntry carries payload through queue
+    // =========================================================================
+    {
+        CommandRecorder recorder;
+        Device::CommandEntry entry(&recorder, Command(42, 789));
+        assert(entry.command.identifier == 42);
+        assert(entry.command.payload == 789);
+        std::printf("  [PASS] CommandEntry carries payload through queue\n");
+    }
+
+    // =========================================================================
+    // Test 21: CommandRecorder captures command payload
+    // =========================================================================
+    {
+        CommandRecorder recorder;
+        recorder.handle(Command(42, 567));
+        assert(recorder.deliveredIdentifiers.size() == 1);
+        assert(recorder.deliveredIdentifiers[0] == 42);
+        assert(recorder.deliveredPayloads.size() == 1);
+        assert(recorder.deliveredPayloads[0] == 567);
+        std::printf("  [PASS] CommandRecorder captures command payload\n");
+    }
+
+    // =========================================================================
+    // Test 22: Command payload with negative values
+    // =========================================================================
+    {
+        Command cmd(10, -100);
+        assert(cmd.identifier == 10);
+        assert(cmd.payload == -100);
+        std::printf("  [PASS] Command payload with negative values\n");
     }
 
     // =========================================================================
