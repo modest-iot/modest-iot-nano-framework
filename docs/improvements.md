@@ -11,7 +11,7 @@ All 8 improvement briefs and the roadmap are consolidated in this single documen
 | Tier                                    | Items                                                  | Goal                                                                                                | Exit criterion                                                                                                       | Status       |
 |-----------------------------------------|--------------------------------------------------------|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|--------------|
 | 0: Make it correct and shippable        | W1, W2, W3, W4                                         | Everything compiles, repo is clean, rules are written down                                          | All examples compile cleanly; clean repo layout                                                                      | **Complete** |
-| 1: Safety net and visibility            | W5                                                     | Regressions caught automatically via host tests & CI                                                | CI green on PRs/pushes; all 27 host test suites pass; examples compile in CI; lint passes                         | **Complete** |
+| 1: Safety net and visibility            | W5                                                     | Regressions caught automatically via host tests & CI                                                | CI green on PRs/pushes; all 28 host test suites pass; examples compile in CI; lint passes                         | **Complete** |
 | 2: Reliability, diagnostics & footprint | W6 (logging/high-water/sensor conversion), W7, W9, W10 | Reconnection robust, tasks tunable, BLE modern, zero-cost logs, sensor fault events with conversion | Soak test reconnects; logs available behind macro; BLE tests pass; diagnostics snapshot works; sensors report faults | **Complete** |
 | 3: Core performance and DX              | W8, then W11                                           | Per-slot intervals, bounded memory use for telemetry                                                | Scheduler host tests pass; all examples use per-sensor intervals; telemetry ownership and queue policy complete      | **Complete** |
 | 4: Capabilities                         | W12, W13, W14, W15, rest of W6                         | Edge-driven sensing, remote commands, fault events                                                  | Bidirectional MQTT verified; interrupt-driven sensors tested                                                         | **Complete** (W12 ✓, W13 ✓, W14 ✓, W15 ✓) |
@@ -19,7 +19,7 @@ All 8 improvement briefs and the roadmap are consolidated in this single documen
 
 ## Pre-Release Readiness Assessment
 
-**Feature completeness**: All Tiers 0–5 are complete (W18 deferred to v1.1.0). The framework is **feature-complete for v1.0.0** with 18 sensors, 7 actuators, 3 gateway clients, and 16 examples.
+**Feature completeness**: All Tiers 0–5 are complete (W18 deferred to v1.1.0). The framework is **feature-complete for v1.0.0** with 18 sensors, 7 actuators, 3 gateway clients, and 21 examples.
 
 **Production readiness**: Comprehensive evaluation identified **4 items that should be addressed before Arduino Library submission** and **6 items that can wait for v1.1.0+**. None require architectural changes; all are additive features fitting the existing patterns.
 
@@ -113,10 +113,10 @@ The following items are explicitly deferred to post-v1.0.0 releases. They are in
 
 ## Claims verified and remaining verification gaps
 
-- **Verified**: Local `arduino-cli compile` cleanly builds all 16 examples across ESP32 targets with `--library .` configured.
+- **Verified**: Local `arduino-cli compile` cleanly builds all 21 examples across ESP32 targets with `--library .` configured.
 - **Verified**: `library.properties` `depends=` syntax formatted for Arduino Library Manager compliance.
 - **Verified**: Bluetooth Classic fails on modern ESP32 variants (S2, S3, C3, C6, H2); resolved via target guards and `BleConnectivityDriver`.
-- **Verified**: Host test harness executes 27 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/relay_actuator`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`, `tests/triggering_scheduler`, `tests/command_marshaling`, `tests/water_flow_sensor`, `tests/soil_moisture_sensor`, `tests/deep_sleep`, `tests/servo_motor`, `tests/character_lcd_display`, `tests/door_window_sensor`, `tests/water_leak_sensor`, `tests/pth_sensor`, `tests/one_wire_temperature_sensor`, `tests/oled_display`, `tests/environmental_gas_sensor`, `tests/dht_sensor`, `tests/ble_gateway_client`) under Address and Undefined sanitizers.
+- **Verified**: Host test harness executes 28 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/relay_actuator`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`, `tests/triggering_scheduler`, `tests/command_marshaling`, `tests/water_flow_sensor`, `tests/soil_moisture_sensor`, `tests/deep_sleep`, `tests/servo_motor`, `tests/character_lcd_display`, `tests/door_window_sensor`, `tests/water_leak_sensor`, `tests/pth_sensor`, `tests/one_wire_temperature_sensor`, `tests/oled_display`, `tests/environmental_gas_sensor`, `tests/dht_sensor`, `tests/ble_gateway_client`, `tests/http_gateway_client`) under Address and Undefined sanitizers.
 - **Verified**: Logging facility (`MODEST_LOG_*`) works with host capture sink and `MIOT_LOG_*` aliases.
 - **Verified**: MQTT gateway reconnection and keep-alive verified with host tests.
 - **Remaining**: Performance, latency, memory and power figures (reasoned, to be measured on hardware).
@@ -229,12 +229,12 @@ Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power ev
 **Test Runner & CI**:
 - Implemented `tests/run_all.sh` with strict warnings (`-Wall -Wextra -Werror`) and Address/Undefined sanitizers.
 - Added GitHub Actions workflows:
-  - `host-tests.yml`: runs all 27 test suites on Ubuntu and macOS.
-  - `compile-examples.yml`: compiles all 16 examples across ESP32 and ESP32-S3 boards.
+  - `host-tests.yml`: runs all 28 test suites on Ubuntu and macOS.
+  - `compile-examples.yml`: compiles all 21 examples across ESP32 and ESP32-S3 boards.
   - `lint.yml`: validates `library.properties` with Arduino Library Manager compliance.
 - Registered all test targets in `CMakeLists.txt` with CTest integration.
 
-**Test Suites (27 total)**:
+**Test Suites (28 total)**:
 
 | #  | Suite                                | What It Tests                                                          |
 |----|--------------------------------------|------------------------------------------------------------------------|
@@ -265,6 +265,7 @@ Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power ev
 | 25 | `tests/EnvironmentalGasSensor/`      | BME680 I²C sensor, gas resistance, compensation formulas              |
 | 26 | `tests/DhtSensor/`                   | DHT single-wire protocol, temperature/humidity, CRC validation        |
 | 27 | `tests/BleGatewayClient/`            | BLE NUS telemetry, JSON lines framing, statistics tracking            |
+| 28 | `tests/HttpGatewayClient/`           | HTTP methods, auth headers, response body, statistics tracking        |
 
 **Source**: `tests/fakes/`, `tests/run_all.sh`, `.github/workflows/`, `CMakeLists.txt`
 
@@ -405,7 +406,7 @@ Converted sensors: `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `Digita
 | `EnvironmentalGasSensor`      | 2000         | 500          |
 | `DhtSensor`                   | per model    | per model    |
 
-**Example Migration**: All 16 examples migrated. `ClassicBlinker` uses explicit four-argument `EventHandler*` overload. 15 other examples automatically use `Sensor*` overload.
+**Example Migration**: All 21 examples migrated. `StatusIndicator` uses explicit four-argument `EventHandler*` overload. 20 other examples automatically use `Sensor*` overload.
 
 **Handler time budget** (worst-case blocking per handler):
 
@@ -858,7 +859,7 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT today (Tie
 
 | Aspect          | Traditional `loop()`                         | Modest IoT today (Tiers 0–5)                                                  | Modest IoT with all planned features                                  |
 |-----------------|----------------------------------------------|-------------------------------------------------------------------------------|-----------------------------------------------------------------------|
-| First build     | Works with the board package                 | All 16 examples compile in CI; 2 dependencies                                 | Same, plus OTA update capability                                      |
+| First build     | Works with the board package                 | All 21 examples compile in CI; 2 dependencies                                 | Same, plus OTA update capability                                      |
 | Structure       | One growing `loop()` with `millis()` flags   | Sensors emit events, a `Device` mediates, actuators take commands             | Same, with event aggregation for composite patterns                   |
 | Adding a sensor | New globals, new timing variable, new branch | Subclass or reuse, register in the scheduler; per-sensor default periods      | Same, plus battery monitoring for power-aware sensors                 |
 | Sampling rates  | Hand-written per-sensor timers               | Per-slot periods, minimums enforced, staggering handled                       | Same, with tickless scheduling reducing idle wake-ups                 |
@@ -870,7 +871,7 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT today (Tie
 | Cloud-to-device | Hand-rolled callback                         | Mediator-routed commands through `Device::enqueueCommand`                     | Same, with `int32_t` payload support for parameterized commands       |
 | Offline data    | Lost when network unavailable                | Drop-oldest queue policy; no persistence                                      | `TelemetryBuffer` with LittleFS persistence for offline replay        |
 | Updates         | Manual reflashing required                   | Manual reflashing required                                                    | OTA updates via `OtaUpdater` component                                |
-| Testing         | Rarely possible off-device                   | 27 host test suites with CI, sanitizers enabled                               | Same, plus integration tests for new components                      |
+| Testing         | Rarely possible off-device                   | 28 host test suites with CI, sanitizers enabled                               | Same, plus integration tests for new components                      |
 
 ### Performance
 
