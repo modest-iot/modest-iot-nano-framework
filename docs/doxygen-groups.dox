@@ -11,10 +11,11 @@
 /**
  * @defgroup core_module Core
  * @ingroup framework_modules
- * @brief Core contracts, orchestration primitives, and shared payload abstractions.
+ * @brief Core contracts, orchestration primitives, persistent configuration, and shared payload abstractions.
  *
  * The core module establishes the foundational event/command-driven architecture
- * and provides the base abstractions for orchestrating IoT devices.
+ * and provides the base abstractions for orchestrating IoT devices, including
+ * `ConfigurationStore` for persistent key-value storage using ESP32 NVS.
  */
 
 /**
