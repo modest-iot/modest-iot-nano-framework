@@ -20,7 +20,8 @@
 #include <Arduino.h>
 #include <ModestIoT.h>
 
-// --- DEFAULT CONFIGURATION MACROS ---
+/** @name Default Configuration Macros */
+//@{
 // Preprocessor macros for constructor defaults, allowing use before class declaration.
 
 /** @brief Default deep sleep interval in milliseconds (5 minutes). */
