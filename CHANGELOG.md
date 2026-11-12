@@ -112,6 +112,8 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Fixed class diagram: marked BmeEnvironmentalSensor as abstract; moved Ssd1306Driver and OledDisplay from Sensors to Actuators package
 - Fixed ADR count in adrs.md overview from 29 to 30
 - Added new command identifiers to keywords.txt: `DRIVE_TO_ANGLE_COMMAND_IDENTIFIER`, `ADJUST_BRIGHTNESS_COMMAND_IDENTIFIER`, `PLAY_FREQUENCY_COMMAND_IDENTIFIER`
+- Updated README.md: Command description now mentions `int32_t` payload, Identifier Registry expanded with payload-based commands, test suites table added `HttpGatewayClient` and `Buzzer`, Future Directions marked W23 complete
+- Updated vision.md: Pre-Release tier status shows W23 complete, command payload gap row reflects implementation with all new commands and static helpers
 
 ### Examples (21 total)
 - StatusIndicator (renamed from ClassicBlinker), ToggableLedDevice, SmartBandMqtt, AirConditioningDevice

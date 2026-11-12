@@ -33,7 +33,7 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 |---|---|
 | `Event` | Lightweight event container with identifier and payload fields. |
 | `EventHandler` | Base interface for event-driven components (`on(Event)`). |
-| `Command` | Lightweight command container with identifier. |
+| `Command` | Lightweight command container with identifier and optional `int32_t` payload for parameterized commands. |
 | `CommandHandler` | Base interface for command-driven components (`handle(Command)`). |
 | `Device` | Base class combining event and command handling; orchestrates the asynchronous engine, scheduler, and telemetry pipeline. |
 | `EngineConfig` | Configuration struct for FreeRTOS task stack sizes, priorities, core pinning, and queue depth. |
@@ -160,11 +160,11 @@ Event and command identifiers are plain integers. The framework reserves ranges 
 | Events | 70–71 | `WaterLeakSensor` leak detected/cleared |
 | Events | 72–73 | `DoorWindowSensor` door opened/closed |
 | Commands | 100–102 | `Led` |
-| Commands | 150–152 | `ServoMotor` |
+| Commands | 150–153 | `ServoMotor` (153: `DRIVE_TO_ANGLE_COMMAND` with payload angle) |
 | Commands | 200–202 | `CharacterLcdDisplay` |
-| Commands | 250–252 | `Buzzer` |
+| Commands | 250–253 | `Buzzer` (253: `PLAY_FREQUENCY_COMMAND` with payload frequency) |
 | Commands | 300–302 | `RelayActuator` |
-| Commands | 304–306 | `RgbLed` |
+| Commands | 304–306 | `RgbLed` (304: `ADJUST_BRIGHTNESS_COMMAND` with payload brightness factor) |
 | Commands | 350–352 | `OledDisplay` |
 | **User range** | **1000+** | **Reserved for application-defined identifiers** |
 
@@ -274,7 +274,7 @@ The framework ships with 21 example sketches demonstrating various use cases:
 
 ## Testing
 
-The framework includes 27 host unit test suites that run natively without hardware:
+The framework includes 29 host unit test suites that run natively without hardware:
 
 | Suite | What It Tests |
 |---|---|
@@ -304,7 +304,8 @@ The framework includes 27 host unit test suites that run natively without hardwa
 | `tests/OneWireTemperatureSensor/` | 1-Wire protocol, DS18B20 temperature, change detection |
 | `tests/OledDisplay/` | SSD1306 I²C protocol, frame buffer, text rendering, drawing |
 | `tests/EnvironmentalGasSensor/` | BME680 I²C sensor, gas resistance, compensation formulas |
-| `tests/DhtSensor/` | DHT single-wire protocol, temperature/humidity, CRC validation |
+| `tests/HttpGatewayClient/` | HTTP methods, auth headers, response body handling, statistics tracking |
+| `tests/Buzzer/` | All commands (TURN_ON, TURN_OFF, PLAY_TONE, PLAY_FREQUENCY) with tone/noTone mock |
 
 Run all tests locally:
 
@@ -431,7 +432,7 @@ Contributions, improvements, and extensions are welcome under the MIT License. Y
 
 ## Future Directions
 
-- **Pre-Release Prerequisites (W20–W23)**: Persistent configuration via ESP32 NVS, NTP time synchronization, TLS/SSL examples, and command payload support — required before Arduino Library submission.
+- **Pre-Release Prerequisites (W20–W22)**: Persistent configuration via ESP32 NVS, NTP time synchronization, and TLS/SSL examples — required before Arduino Library submission. W23 (command payload support) is complete.
 - **v1.1.0**: Telemetry packet pool (W18), telemetry buffering with LittleFS persistence, power manager with battery monitoring, and firmware version in telemetry.
 - **v1.2.0**: Over-the-air (OTA) updates and event aggregation for composite sensor rules.
 - **Edge Framework Phase 1**: Python-based edge server with MQTT broker, device registry, and telemetry ingestion.

@@ -31,13 +31,13 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 | **Tier 3**: Core Scheduling & Telemetry | W8, W11 | **Complete** ✓ |
 | **Tier 4**: Capabilities                | W12–W15 | **Complete** ✓   |
 | **Tier 5**: Optimization & Power        | W16–W19 | **Complete** (W16 ✓, W17 ✓, W19 ✓, W18 deferred to v1.1.0) |
-| **Pre-Release**: Prerequisites          | W20–W23 | **Pending** — ConfigurationStore, TimeSync, TLS examples, Command payload |
+| **Pre-Release**: Prerequisites          | W20–W23 | **Partial** — W23 (Command payload) ✓; W20–W22 pending |
 
 ### What's Delivered
 
 - **46 source headers** with full Doxygen documentation and `@runs_on` threading tags.
 - **21 example sketches** covering diverse use cases (BLE vitals transmitter, remote LED controller, indoor air quality display, pipe temperature monitor, equipment health monitor, smart band, air quality, RFID access, smart greenhouse, weather station, crop monitoring, home security, HTTP telemetry, etc.).
-- **28 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
+- **29 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
 - **3 CI workflows**: host tests, compile examples, lint.
 - **Per-slot `SamplingScheduler`** with phase-aligned re-arming and minimum period enforcement.
 - **`EngineConfig`** for tunable FreeRTOS task stacks, priorities, and core pinning.
@@ -124,7 +124,7 @@ Production-ready features across all three transport options:
 | **No persistent configuration** | Credentials, endpoints, and sampling intervals are hardcoded in examples. Field devices cannot be reconfigured without reflashing. | Add `ConfigurationStore` using ESP32 NVS (`Preferences`) with schema validation. | Medium |
 | **No time synchronization** | Telemetry uses `millis()` (device boot time). Server-side correlation requires manual boot-time mapping. | Add `TimeSync` component with NTP support over WiFi, fallback to RTC for deep-sleep devices. | Medium |
 | **No TLS/SSL examples** | MQTT uses unencrypted TCP (port 1883) in examples. HTTP has no certificate pinning. Production deployments require encrypted communication. | Add MQTT over TLS example using `NetworkClientSecure`. Document secure configuration in README. | Low |
-| **Command payload limitation** | `Command` carries only an identifier. Cannot send parameterized commands (e.g., "set temperature to 25°C"). | Add optional `int32_t` payload to `Command` constructor. Update actuator commands to use payloads where applicable. | Low |
+| **Command payload support** | **Complete** ✓ — `Command(int, int32_t)` constructor with payload. `DRIVE_TO_ANGLE_COMMAND` (ServoMotor), `ADJUST_BRIGHTNESS_COMMAND` (RgbLed), `PLAY_FREQUENCY_COMMAND` (Buzzer). Static helpers: `validateOrAdjustPhysicalAngle()`, `adjustColorSetIntensity()`. | — | Low |
 
 **Should Not Block v1.0.0** (Addressable in v1.1.0+):
 
