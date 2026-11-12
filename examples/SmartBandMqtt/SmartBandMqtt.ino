@@ -118,12 +118,18 @@ static const char* MQTT_PUBLISH_TOPIC        = "nodes/smartband/vitals";
 static const unsigned long TELEMETRY_POLLING_INTERVAL_IN_MILLISECONDS = 1000;
 static const uint8_t HARDWARE_TIMER_CHANNEL_INDEX = 0;
 
+/** @brief Serial communication baud rate. */
+static const unsigned long SERIAL_BAUD_RATE = 115200;
+
+/** @brief Delay in the main loop when no work is pending. */
+static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
+
 static WiFiConnectivityDriver* transportDriver = nullptr;
 static MqttGatewayClient* gatewayClient        = nullptr;
 static SmartBandDevice* smartBandApplication   = nullptr;
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(SERIAL_BAUD_RATE);
 
     transportDriver = new WiFiConnectivityDriver(WIRELESS_SSID, WIRELESS_PASSWORD);
 
@@ -149,5 +155,5 @@ void setup() {
 }
 
 void loop() {
-    vTaskDelay(pdMS_TO_TICKS(60000));
+    vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_IN_MILLISECONDS));
 }
