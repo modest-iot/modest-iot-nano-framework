@@ -29,6 +29,9 @@
 #define TOKEN_PREVIEW_LENGTH 20
 #define TOKEN_VALUE_OFFSET 3
 
+/** @brief Sampler event queue length for HTTP telemetry operation. */
+#define SAMPLER_QUEUE_LENGTH 10
+
 #include <Arduino.h>
 #include <cstring>
 #include <memory>
@@ -144,7 +147,7 @@ public:
                         unsigned long samplingIntervalInMilliseconds,
                         uint8_t timerGroupIndex = 0)
         : Device(samplingIntervalInMilliseconds, timerGroupIndex),
-          climateSensor(climatePin, DHT22, this),
+          climateSensor(climatePin, DhtSensor::SENSOR_MODEL_DHT22, this),
           gatewayClient(client)
     {
         initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
@@ -186,7 +189,7 @@ public:
         }
 
         Serial.printf("[HttpTelemetryDemo] Connected! IP: %s, RSSI: %ld dBm\n",
-                      transport.getLocalIpAddress().c_str(),
+                      transport.getLocalIpAddress().toString().c_str(),
                       transport.getSignalStrengthInDbm());
 
         // Configure gateway client for authentication
@@ -208,7 +211,6 @@ public:
     }
 };
 
-#define SAMPLER_QUEUE_LENGTH 10
 #define SERIAL_BAUD_RATE 115200
 #define MAIN_LOOP_DELAY_IN_MILLISECONDS 60000
 //@} // Application Mediator Implementation
