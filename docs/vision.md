@@ -913,7 +913,7 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 |-----------------------------|-------------------------|----------------------------------|----------------------------|
 | **Consistent patterns**     | Mediator, CQRS, events  | Same patterns at edge scale      | One mental model for both  |
 | **AI-assisted development** | Clean, documented API   | Python/ML ecosystem              | AI generates code for both |
-| **Test infrastructure**     | 28 host test suites, CI | Python pytest, integration tests | Full-stack testing         |
+| **Test infrastructure**     | 29 host test suites, CI | Python pytest, integration tests | Full-stack testing         |
 | **Documentation**           | Doxygen, ADRs, README   | Sphinx, OpenAPI specs            | Unified documentation      |
 
 ### 4.2 For IoT Products
@@ -1031,7 +1031,7 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 | Metric                  | Target                                 |
 |-------------------------|----------------------------------------|
 | **Compilation success** | 100% across ESP32 variants             |
-| **Test coverage**       | 100% pass rate, 28 test suites         |
+| **Test coverage**       | 100% pass rate, 29 test suites         |
 | **Flash footprint**     | <30 KB overhead                        |
 | **RAM footprint**       | <2 KB overhead                         |
 | **Example count**       | 16 diverse examples                    |
