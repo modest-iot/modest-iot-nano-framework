@@ -10,15 +10,36 @@
 #include <Arduino.h>
 #include <ModestIoT.h>
 
-// --- 1. PIN DEFINITIONS & HARDWARE CONSTANTS ---
+/** @brief Serial communication baud rate. */
+static const unsigned long SERIAL_BAUD_RATE = 115200;
+
+/** @brief Delay in the main loop when no work is pending. */
+static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
+
+/** @brief Sampling interval for the DHT sensor (ms). */
+static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS = 2000;
+
+/** @brief Debounce time for buttons (ms). */
+static const unsigned long BUTTON_DEBOUNCE_MS = 150;
+
+/** @brief Sampler event queue length. */
+static const int ASYNC_ENGINE_QUEUE_DEPTH = 8;
+
+/** @brief Default target temperature (°C). */
+static const int DEFAULT_TARGET_TEMPERATURE = 22;
+
+/** @name Pin Definitions */
+//@{
 
 static const int HUMIDITY_AND_TEMPERATURE_SENSOR_PIN    = 4;
 static const int TARGET_TEMPERATURE_UP_BUTTON_PIN       = 12;
 static const int TARGET_TEMPERATURE_DOWN_BUTTON_PIN     = 14;
 static const int STATUS_DISPLAY_ADDRESS                 = 0x27;
 static const int AIR_HANDLER_PIN                        = 13;
+//@} // Pin Definitions
 
-// --- 2. EVENT-DRIVEN APPLICATION MEDIATOR ---
+/** @name Application Mediator Implementation */
+//@{
 
 class AirConditioningDevice : public Device {
     private:
@@ -83,18 +104,18 @@ class AirConditioningDevice : public Device {
      * @param servoPin GPIO PWM output pin driving the vent servo.
      */
     AirConditioningDevice(int dhtPin, int upPin, int downPin, uint8_t lcdAddr, int servoPin)
-        : Device(2000, 0), // Master scheduler triggers hardware conversions every 2000ms
-        humidityAndTemperatureSensor(dhtPin, DhtSensor::SENSOR_MODEL_DHT22), // DHT22 sensor model
-        targetTemperatureUpButton(upPin, 150, this),
-        targetTemperatureDownButton(downPin, 150, this),
+        : Device(SAMPLING_INTERVAL_IN_MILLISECONDS, 0),
+        humidityAndTemperatureSensor(dhtPin, DhtSensor::SENSOR_MODEL_DHT22),
+        targetTemperatureUpButton(upPin, BUTTON_DEBOUNCE_MS, this),
+        targetTemperatureDownButton(downPin, BUTTON_DEBOUNCE_MS, this),
         statusDisplay(lcdAddr, 16, 2, this),
         airHandler(servoPin, 0, this),
         currentTemperature(0.0f),
         currentHumidity(0.0f),
-        targetTemperature(22) // Default baseline target temperature (Celsius)
+        targetTemperature(DEFAULT_TARGET_TEMPERATURE)
     {
-        // 1. Launch FreeRTOS execution background engines (Queue depth of 8)
-        initializeAsynchronousEngine(8);
+        // 1. Launch FreeRTOS execution background engines
+        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
 
         // 2. Register the DHT sensor using the baseline scheduler ticker token
         appendSensorToScheduler(&humidityAndTemperatureSensor,  Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
@@ -144,13 +165,15 @@ class AirConditioningDevice : public Device {
         evaluateAirHandlerOperationState();
     }
 };
+//@} // Application Mediator Implementation
 
-// --- 3. DECLARATIVE RUNTIME CANVAS ---
+/** @name Top-Level Declarative Canvas */
+//@{
 
 static AirConditioningDevice* airConditioningController = nullptr;
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(SERIAL_BAUD_RATE);
 
     // Boot complete application context framework dynamically
     airConditioningController = new AirConditioningDevice(
@@ -166,5 +189,6 @@ void setup() {
 
 void loop() {
     // 100% of execution resources are permanently yielded to background FreeRTOS workers
-    vTaskDelay(pdMS_TO_TICKS(60000));
+    vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_IN_MILLISECONDS));
 }
+//@} // Top-Level Declarative Canvas
