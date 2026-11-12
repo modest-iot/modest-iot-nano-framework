@@ -88,6 +88,14 @@ private:
      */
     void writeColorChannelIntensity(int gpioPin, uint8_t intensity) const;
 
+    /**
+     * @brief Scales a color channel intensity by a brightness factor.
+     * @param currentIntensity Current logical intensity (0-255).
+     * @param factor Brightness factor (0-255); 255 keeps intensity unchanged, 0 darkens the channel.
+     * @return The scaled intensity value.
+     */
+    static uint8_t adjustColorChannelIntensity(uint8_t currentIntensity, uint8_t factor);
+
 protected:
     /**
      * @brief Executes RGB LED commands before they are propagated upstream.
@@ -107,6 +115,8 @@ public:
     static constexpr int TOGGLE_LED_COMMAND_IDENTIFIER = 302;
     /** @brief Command identifier for applying the buffered color. */
     static constexpr int SET_COLOR_COMMAND_IDENTIFIER = 303;
+    /** @brief Command identifier for adjusting brightness (payload 0-255 scales active color). */
+    static constexpr int ADJUST_BRIGHTNESS_COMMAND_IDENTIFIER = 304;
     /** @} */
 
     /** @name Prebuilt commands
@@ -119,6 +129,8 @@ public:
     static constexpr Command TOGGLE_LED_COMMAND{TOGGLE_LED_COMMAND_IDENTIFIER};
     /** @brief Prebuilt command instance for applying the buffered color. */
     static constexpr Command SET_COLOR_COMMAND{SET_COLOR_COMMAND_IDENTIFIER};
+    /** @brief Prebuilt command instance for adjusting brightness (payload 0-255). */
+    static constexpr Command ADJUST_BRIGHTNESS_COMMAND{ADJUST_BRIGHTNESS_COMMAND_IDENTIFIER};
     /** @} */
 
     /** @name Predefined colors
@@ -185,6 +197,15 @@ public:
      * @return Intensity (0-255) applied by the last `SET_COLOR_COMMAND`; unchanged by on/off/toggle.
      */
     [[nodiscard]] uint8_t getBlueIntensity() const;
+
+    /**
+     * @brief Scales all three active color channels by a brightness factor.
+     * @details Calls `adjustColorChannelIntensity()` for each channel and updates the active
+     *          intensities in place. The hardware is not written; call `applyState()` or handle
+     *          a command to apply the change.
+     * @param factor Brightness factor (0-255); 255 keeps intensities unchanged, 0 darkens all channels.
+     */
+    void adjustColorSetIntensity(uint8_t factor);
 };
 
 #endif // RGB_LED_H

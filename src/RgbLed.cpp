@@ -10,6 +10,11 @@
 
 namespace {
     constexpr uint8_t MAXIMUM_INTENSITY = 255;
+
+    uint8_t scaleIntensity(const uint8_t currentIntensity, const uint8_t factor) {
+        const float scale = static_cast<float>(factor) / MAXIMUM_INTENSITY;
+        return static_cast<uint8_t>(currentIntensity * scale);
+    }
 }
 
 
@@ -44,8 +49,13 @@ void RgbLed::applyState() const {
     writeColorChannelIntensity(bluePin, active ? activeBlueIntensity : 0);
 }
 
+uint8_t RgbLed::adjustColorChannelIntensity(const uint8_t currentIntensity, const uint8_t factor) {
+    return scaleIntensity(currentIntensity, factor);
+}
+
 /**
  * @details `SET_COLOR_COMMAND` copies the buffered color to the active color and lights the LED.
+ *          `ADJUST_BRIGHTNESS_COMMAND` scales the active color by `payload / 255.0f` using `adjustColorChannelIntensity()` and rewrites the outputs.
  *          Outputs are rewritten only for recognized commands.
  */
 void RgbLed::executeCommand(Command command) {
@@ -60,6 +70,8 @@ void RgbLed::executeCommand(Command command) {
         activeGreenIntensity = bufferedGreenIntensity;
         activeBlueIntensity = bufferedBlueIntensity;
         active = true;
+    } else if (command.identifier == ADJUST_BRIGHTNESS_COMMAND_IDENTIFIER) {
+        adjustColorSetIntensity(static_cast<uint8_t>(command.payload));
     } else {
         return;
     }
@@ -80,3 +92,9 @@ bool RgbLed::isActive() const { return active; }
 uint8_t RgbLed::getRedIntensity() const { return activeRedIntensity; }
 uint8_t RgbLed::getGreenIntensity() const { return activeGreenIntensity; }
 uint8_t RgbLed::getBlueIntensity() const { return activeBlueIntensity; }
+
+void RgbLed::adjustColorSetIntensity(const uint8_t factor) {
+    activeRedIntensity = adjustColorChannelIntensity(activeRedIntensity, factor);
+    activeGreenIntensity = adjustColorChannelIntensity(activeGreenIntensity, factor);
+    activeBlueIntensity = adjustColorChannelIntensity(activeBlueIntensity, factor);
+}
