@@ -10,7 +10,14 @@
 #include <Arduino.h>
 #include <ModestIoT.h>
 
-// --- 1. EVENT-DRIVEN APPLICATION MEDIATOR ---
+/** @brief Serial communication baud rate. */
+static const unsigned long SERIAL_BAUD_RATE = 115200;
+
+/** @brief Delay in the main loop when no work is pending. */
+static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
+
+/** @name Application Mediator Implementation */
+//@{
 
 class ToggableLedDevice : public Device {
     private:
@@ -56,8 +63,10 @@ class ToggableLedDevice : public Device {
         }
     }
 };
+//@} // Application Mediator Implementation
 
-// --- 2. DECLARATIVE RUNTIME CANVAS ---
+/** @name Top-Level Declarative Canvas */
+//@{
 
 // Clean configuration canvas constants aligned perfectly with member variable naming
 static const int     TOGGLE_BUTTON_PIN  = 26; // Mapped pushbutton GPIO
@@ -67,7 +76,7 @@ static const uint8_t CORE_TIMER_CHANNEL = 0;
 static ToggableLedDevice* applicationNode = nullptr;
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(SERIAL_BAUD_RATE);
 
     // Boot the framework application.
     // Background execution queues, FreeRTOS tasks, and hardware alarm vectors launch automatically!
@@ -78,5 +87,6 @@ void setup() {
 
 void loop() {
     // 100% of execution resources are permanently yielded to background FreeRTOS workers
-    vTaskDelay(pdMS_TO_TICKS(60000));
+    vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_IN_MILLISECONDS));
 }
+//@} // Top-Level Declarative Canvas
