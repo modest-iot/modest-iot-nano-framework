@@ -27,9 +27,12 @@ static const int BUZZER_PIN       = 4;
 static const char* const AUTHORIZED_UID = "DE:AD:BE:EF";
 
 // Timing constants
+/** @brief Serial communication baud rate. */
+static const unsigned long SERIAL_BAUD_RATE = 115200;
+
 static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS = 100;
-static const int ASYNC_ENGINE_QUEUE_DEPTH       = 8;
-static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS   = 60000;
+static const int ASYNC_ENGINE_QUEUE_DEPTH = 8;
+static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
 
 /**
  * @brief Access Control Device managing an RFID reader, feedback LED, and buzzer.
@@ -77,7 +80,7 @@ public:
 static RfidAccessController* controller = nullptr;
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(SERIAL_BAUD_RATE);
     controller = new RfidAccessController(RFID_CS_PIN, RFID_RST_PIN, ACCESS_LED_PIN, BUZZER_PIN);
     Serial.println("[System Boot] RFID Access Controller active.");
 }
