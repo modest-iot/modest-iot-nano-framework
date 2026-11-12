@@ -386,6 +386,14 @@ add_executable(test_HttpGatewayClient
 )
 target_include_directories(test_HttpGatewayClient PRIVATE tests/fakes src)
 
+add_executable(test_Buzzer
+        tests/Buzzer/test.cpp
+        src/Actuator.cpp
+        src/Buzzer.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_Buzzer PRIVATE tests/fakes src)
+
 add_test(NAME DigitalLightIntensitySensorTest COMMAND test_DigitalLightIntensitySensor)
 add_test(NAME RgbLedTest COMMAND test_RgbLed)
 add_test(NAME RelayActuatorTest COMMAND test_RelayActuator)
@@ -414,9 +422,10 @@ add_test(NAME OledDisplayTest COMMAND test_OledDisplay)
 add_test(NAME EnvironmentalGasSensorTest COMMAND test_EnvironmentalGasSensor)
 add_test(NAME BleGatewayClientTest COMMAND test_BleGatewayClient)
 add_test(NAME HttpGatewayClientTest COMMAND test_HttpGatewayClient)
+add_test(NAME BuzzerTest COMMAND test_Buzzer)
 
 add_custom_target(run_tests
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor test_PthSensor test_WaterLeakSensor test_DoorWindowSensor test_OneWireTemperatureSensor test_DhtSensor test_DeepSleep test_ServoMotor test_CharacterLcdDisplay test_OledDisplay test_EnvironmentalGasSensor test_BleGatewayClient test_HttpGatewayClient
+        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor test_PthSensor test_WaterLeakSensor test_DoorWindowSensor test_OneWireTemperatureSensor test_DhtSensor test_DeepSleep test_ServoMotor test_CharacterLcdDisplay test_OledDisplay test_EnvironmentalGasSensor test_BleGatewayClient test_HttpGatewayClient test_Buzzer
         COMMENT "Executing all native host test suites..."
 )
