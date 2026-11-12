@@ -69,7 +69,7 @@ class SmartBandDevice : public Device {
     unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupIndex = 0)
     : Device(samplingIntervalInMilliseconds, timerGroupIndex),
     heartRateSensor(pulsePin, nullptr),
-    ambientClimateSensor(climatePin, DHT22, nullptr),
+    ambientClimateSensor(climatePin, DhtSensor::SENSOR_MODEL_DHT22, nullptr),
     userActionButton(buttonPin, 50, nullptr),
     gatewayClient(client)
     {

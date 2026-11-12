@@ -66,7 +66,7 @@ public:
         unsigned long deepSleepIntervalInMilliseconds = DEFAULT_DEEP_SLEEP_INTERVAL_IN_MILLISECONDS,
         uint8_t timerChannel = DEFAULT_TIMER_CHANNEL)
         : Device(deepSleepIntervalInMilliseconds, timerChannel),
-          dhtSensor(dhtSensorPin, DHT22, this),
+          dhtSensor(dhtSensorPin, DhtSensor::SENSOR_MODEL_DHT22, this),
           pthSensor(0, PthSensor::DEFAULT_I2C_ADDRESS, this),
           lightSensor(0, DigitalLightIntensitySensor::DEFAULT_I2C_ADDRESS,
                       DigitalLightIntensitySensor::DEFAULT_LIGHT_DETECTED_THRESHOLD_IN_LUX, this)

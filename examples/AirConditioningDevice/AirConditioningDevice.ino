@@ -84,7 +84,7 @@ class AirConditioningDevice : public Device {
      */
     AirConditioningDevice(int dhtPin, int upPin, int downPin, uint8_t lcdAddr, int servoPin)
         : Device(2000, 0), // Master scheduler triggers hardware conversions every 2000ms
-        humidityAndTemperatureSensor(dhtPin, 22), // Type 22 explicitly maps to a DHT22 sensor context
+        humidityAndTemperatureSensor(dhtPin, DhtSensor::SENSOR_MODEL_DHT22), // DHT22 sensor model
         targetTemperatureUpButton(upPin, 150, this),
         targetTemperatureDownButton(downPin, 150, this),
         statusDisplay(lcdAddr, 16, 2, this),
