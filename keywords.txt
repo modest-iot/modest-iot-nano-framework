@@ -188,7 +188,6 @@ setValue	KEYWORD2
 containsKey	KEYWORD2
 removeKey	KEYWORD2
 clearNamespace	KEYWORD2
-keyCount	KEYWORD2
 effectivePeriodInMilliseconds	KEYWORD2
 ticksUntilNextDue	KEYWORD2
 
