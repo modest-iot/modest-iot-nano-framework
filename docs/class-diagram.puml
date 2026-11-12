@@ -73,6 +73,28 @@ package "Core" #FAFAFA {
     +uptimeSeconds : uint32_t
   }
 
+  class ConfigurationStore {
+    +begin(namespaceName : const char*, readOnly : bool) : bool
+    +end() : void
+    +isInitialized() const : bool
+    +getNamespace() const : const char*
+    +isReadOnly() const : bool
+    +getString(key : const char*, defaultValue : const char*) const : const char*
+    +setString(key : const char*, value : const char*) : bool
+    +getInt(key : const char*, defaultValue : int) const : int
+    +setInt(key : const char*, value : int) : bool
+    +getUnsignedLong(key : const char*, defaultValue : unsigned long) const : unsigned long
+    +setUnsignedLong(key : const char*, value : unsigned long) : bool
+    +getFloat(key : const char*, defaultValue : float) const : float
+    +setFloat(key : const char*, value : float) : bool
+    +getBool(key : const char*, defaultValue : bool) const : bool
+    +setBool(key : const char*, value : bool) : bool
+    +containsKey(key : const char*) const : bool
+    +removeKey(key : const char*) : bool
+    +clearNamespace() : bool
+    +keyCount() const : size_t
+  }
+
   class Device {
     +{static} MAX_TRIGGERED_SENSORS : uint8_t = 4
     +NotificationBitFlag : enum {TimerTickArrived, TerminationSignal, SensorTrigger, CommandAvailable}
