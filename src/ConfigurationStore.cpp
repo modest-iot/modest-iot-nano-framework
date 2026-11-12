@@ -19,7 +19,7 @@ ConfigurationStore::~ConfigurationStore() {
     end();
 }
 
-bool ConfigurationStore::isValidKey(const char* key) const {
+bool ConfigurationStore::isValidKey(const char* key) {
     if (key == nullptr) {
         return false;
     }
@@ -39,7 +39,7 @@ bool ConfigurationStore::canModify() const {
     return initialized && !readOnly;
 }
 
-bool ConfigurationStore::begin(const char* namespaceName, bool readOnly) {
+bool ConfigurationStore::begin(const char* namespaceName, const bool readOnlyMode) {
     if (namespaceName == nullptr) {
         return false;
     }
@@ -54,12 +54,12 @@ bool ConfigurationStore::begin(const char* namespaceName, bool readOnly) {
         preferences.end();
     }
     
-    bool success = preferences.begin(namespaceName, readOnly);
+    bool success = preferences.begin(namespaceName, readOnlyMode);
     if (success) {
         strncpy(currentNamespace, namespaceName, MAX_CONFIGURATION_KEY_LENGTH);
         currentNamespace[MAX_CONFIGURATION_KEY_LENGTH] = '\0';
         initialized = true;
-        this->readOnly = readOnly;
+        this->readOnly = readOnlyMode;
     } else {
         initialized = false;
         currentNamespace[0] = '\0';
@@ -97,7 +97,7 @@ const char* ConfigurationStore::getString(const char* key, const char* defaultVa
     return lastStringValue.c_str();
 }
 
-bool ConfigurationStore::setString(const char* key, const char* value) {
+bool ConfigurationStore::setString(const char* key, const char* value) const {
     if (!canWrite(key) || value == nullptr) {
         return false;
     }
@@ -108,7 +108,7 @@ bool ConfigurationStore::setString(const char* key, const char* value) {
     return true;
 }
 
-bool ConfigurationStore::setValue(const char* key, const char* value) {
+bool ConfigurationStore::setValue(const char* key, const char* value) const {
     return setString(key, value);
 }
 
@@ -119,7 +119,7 @@ int ConfigurationStore::getInt(const char* key, int defaultValue) const {
     return preferences.getInt(key, defaultValue);
 }
 
-bool ConfigurationStore::setInt(const char* key, int value) {
+bool ConfigurationStore::setInt(const char* key, int value) const {
     if (!canWrite(key)) {
         return false;
     }
@@ -127,7 +127,7 @@ bool ConfigurationStore::setInt(const char* key, int value) {
     return true;
 }
 
-bool ConfigurationStore::setValue(const char* key, int value) {
+bool ConfigurationStore::setValue(const char* key, const int value) const {
     return setInt(key, value);
 }
 
@@ -138,7 +138,7 @@ unsigned long ConfigurationStore::getUnsignedLong(const char* key, unsigned long
     return preferences.getULong(key, defaultValue);
 }
 
-bool ConfigurationStore::setUnsignedLong(const char* key, unsigned long value) {
+bool ConfigurationStore::setUnsignedLong(const char* key, const unsigned long value) const {
     if (!canWrite(key)) {
         return false;
     }
@@ -146,18 +146,18 @@ bool ConfigurationStore::setUnsignedLong(const char* key, unsigned long value) {
     return true;
 }
 
-bool ConfigurationStore::setValue(const char* key, unsigned long value) {
+bool ConfigurationStore::setValue(const char* key, const unsigned long value) const {
     return setUnsignedLong(key, value);
 }
 
-float ConfigurationStore::getFloat(const char* key, float defaultValue) const {
+float ConfigurationStore::getFloat(const char* key, const float defaultValue) const {
     if (!canRead(key)) {
         return defaultValue;
     }
     return preferences.getFloat(key, defaultValue);
 }
 
-bool ConfigurationStore::setFloat(const char* key, float value) {
+bool ConfigurationStore::setFloat(const char* key, const float value) const {
     if (!canWrite(key)) {
         return false;
     }
@@ -165,18 +165,18 @@ bool ConfigurationStore::setFloat(const char* key, float value) {
     return true;
 }
 
-bool ConfigurationStore::setValue(const char* key, float value) {
+bool ConfigurationStore::setValue(const char* key, const float value) const {
     return setFloat(key, value);
 }
 
-bool ConfigurationStore::getBool(const char* key, bool defaultValue) const {
+bool ConfigurationStore::getBool(const char* key, const bool defaultValue) const {
     if (!canRead(key)) {
         return defaultValue;
     }
     return preferences.getBool(key, defaultValue);
 }
 
-bool ConfigurationStore::setBool(const char* key, bool value) {
+bool ConfigurationStore::setBool(const char* key, bool value) const {
     if (!canWrite(key)) {
         return false;
     }
@@ -184,7 +184,7 @@ bool ConfigurationStore::setBool(const char* key, bool value) {
     return true;
 }
 
-bool ConfigurationStore::setValue(const char* key, bool value) {
+bool ConfigurationStore::setValue(const char* key, const bool value) const {
     return setBool(key, value);
 }
 
@@ -195,14 +195,14 @@ bool ConfigurationStore::containsKey(const char* key) const {
     return preferences.isKey(key);
 }
 
-bool ConfigurationStore::removeKey(const char* key) {
+bool ConfigurationStore::removeKey(const char* key) const {
     if (!canWrite(key)) {
         return false;
     }
     return preferences.remove(key);
 }
 
-bool ConfigurationStore::clearNamespace() {
+bool ConfigurationStore::clearNamespace() const {
     if (!canModify()) {
         return false;
     }
@@ -210,9 +210,3 @@ bool ConfigurationStore::clearNamespace() {
     return true;
 }
 
-size_t ConfigurationStore::keyCount() const {
-    if (!initialized) {
-        return 0;
-    }
-    return preferences.keys().size();
-}

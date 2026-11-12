@@ -18,14 +18,14 @@
  * ESP32 NVS key names are limited to 15 bytes. This constant enforces
  * the limit at compile time to prevent silent truncation.
  */
-static const size_t MAX_CONFIGURATION_KEY_LENGTH = 15;
+constexpr size_t MAX_CONFIGURATION_KEY_LENGTH = 15;
 
 /**
  * @brief Maximum length for a string configuration value.
  * 
  * Limits string values to prevent excessive NVS partition usage.
  */
-static const size_t MAX_CONFIGURATION_STRING_VALUE_LENGTH = 256;
+constexpr size_t MAX_CONFIGURATION_STRING_VALUE_LENGTH = 256;
 
 /**
  * @brief Persistent configuration store backed by ESP32 NVS (Non-Volatile Storage).
@@ -59,18 +59,18 @@ static const size_t MAX_CONFIGURATION_STRING_VALUE_LENGTH = 256;
  */
 class ConfigurationStore {
 private:
-    Preferences preferences; ///< Underlying NVS Preferences instance.
+    mutable Preferences preferences; ///< Underlying NVS Preferences instance; mutable so const getters can read.
     char currentNamespace[MAX_CONFIGURATION_KEY_LENGTH + 1]; ///< Currently active namespace.
     bool initialized; ///< Tracks whether begin() was called successfully.
     bool readOnly; ///< Tracks whether the store was opened in read-only mode.
-    mutable std::string lastStringValue; ///< Buffer for getString return value to avoid dangling pointers.
+    mutable String lastStringValue; ///< Buffer for getString return value to avoid dangling pointers from Arduino String.
 
     /**
      * @brief Validates the key length against ESP32 NVS limits.
      * @param key The key to validate.
      * @return `true` if the key length is within bounds, `false` otherwise.
      */
-    [[nodiscard]] bool isValidKey(const char* key) const;
+    [[nodiscard]] static bool isValidKey(const char* key);
 
     /**
      * @brief Checks preconditions for any read operation.
@@ -167,7 +167,7 @@ public:
      * @note Returns `false` if the store is in read-only mode, not initialized,
      * or the key/value exceeds NVS limits.
      */
-    bool setString(const char* key, const char* value);
+    bool setString(const char* key, const char* value) const;
 
     /**
      * @brief Writes a string value using the unified setValue() API.
@@ -176,7 +176,7 @@ public:
      * @return `true` if the value was written successfully, `false` otherwise.
      * @see setString
      */
-    bool setValue(const char* key, const char* value);
+    bool setValue(const char* key, const char* value) const;
     /** @} */
 
     /** @name Integer Operations
@@ -195,7 +195,7 @@ public:
      * @param value The integer value to store.
      * @return `true` if the value was written successfully, `false` otherwise.
      */
-    bool setInt(const char* key, int value);
+    bool setInt(const char* key, int value) const;
 
     /**
      * @brief Writes an integer value using the unified setValue() API.
@@ -204,7 +204,7 @@ public:
      * @return `true` if the value was written successfully, `false` otherwise.
      * @see setInt
      */
-    bool setValue(const char* key, int value);
+    bool setValue(const char* key, int value) const;
 
     /**
      * @brief Reads an unsigned long value from the configuration store.
@@ -220,7 +220,7 @@ public:
      * @param value The unsigned long value to store.
      * @return `true` if the value was written successfully, `false` otherwise.
      */
-    bool setUnsignedLong(const char* key, unsigned long value);
+    bool setUnsignedLong(const char* key, unsigned long value) const;
 
     /**
      * @brief Writes an unsigned long value using the unified setValue() API.
@@ -229,7 +229,7 @@ public:
      * @return `true` if the value was written successfully, `false` otherwise.
      * @see setUnsignedLong
      */
-    bool setValue(const char* key, unsigned long value);
+    bool setValue(const char* key, unsigned long value) const;
     /** @} */
 
     /** @name Float Operations
@@ -248,7 +248,7 @@ public:
      * @param value The float value to store.
      * @return `true` if the value was written successfully, `false` otherwise.
      */
-    bool setFloat(const char* key, float value);
+    bool setFloat(const char* key, float value) const;
 
     /**
      * @brief Writes a float value using the unified setValue() API.
@@ -257,7 +257,7 @@ public:
      * @return `true` if the value was written successfully, `false` otherwise.
      * @see setFloat
      */
-    bool setValue(const char* key, float value);
+    bool setValue(const char* key, float value) const;
     /** @} */
 
     /** @name Boolean Operations
@@ -276,7 +276,7 @@ public:
      * @param value The boolean value to store.
      * @return `true` if the value was written successfully, `false` otherwise.
      */
-    bool setBool(const char* key, bool value);
+    bool setBool(const char* key, bool value) const;
 
     /**
      * @brief Writes a boolean value using the unified setValue() API.
@@ -285,7 +285,7 @@ public:
      * @return `true` if the value was written successfully, `false` otherwise.
      * @see setBool
      */
-    bool setValue(const char* key, bool value);
+    bool setValue(const char* key, bool value) const;
     /** @} */
 
     /** @name Schema Validation
@@ -305,7 +305,7 @@ public:
      * @param key The configuration key to remove.
      * @return `true` if the key was removed, `false` if not found or read-only.
      */
-    bool removeKey(const char* key);
+    bool removeKey(const char* key) const;
 
     /**
      * @brief Removes all keys in the current namespace.
@@ -313,13 +313,8 @@ public:
      * 
      * @warning This operation is irreversible. Use with caution.
      */
-    bool clearNamespace();
+    bool clearNamespace() const;
 
-    /**
-     * @brief Returns the number of keys in the current namespace.
-     * @return The count of keys, or 0 if not initialized.
-     */
-    [[nodiscard]] size_t keyCount() const;
     /** @} */
 };
 
