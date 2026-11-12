@@ -11,6 +11,7 @@
  * for zero-latency event detection.
  */
 
+#include <Arduino.h>
 #include <ModestIoT.h>
 
 /** @brief Serial communication baud rate. */

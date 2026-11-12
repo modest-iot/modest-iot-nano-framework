@@ -116,6 +116,8 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Updated vision.md: Pre-Release tier status shows W23 complete, command payload gap row reflects implementation with all new commands and static helpers
 
 ### Examples (21 total)
+- **SmartGreenhouseDevice**: Updated servo control from two-step `setTargetAngleBufferInDegrees` + `DRIVE_TO_BUFFERED_ANGLE_COMMAND` to single `DRIVE_TO_ANGLE_COMMAND` with payload angle
+- **HomeSecurityDevice**: Added missing `#include <Arduino.h>` for consistency with other examples
 - StatusIndicator (renamed from ClassicBlinker), ToggableLedDevice, SmartBandMqtt, AirConditioningDevice
 - AirQualityMonitor, DriverAssistantDevice, SmartScaleDevice, PerimeterMonitor
 - OutdoorSecurityLightController, RfidAccessController, SmartGreenhouseDevice
