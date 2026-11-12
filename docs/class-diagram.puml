@@ -221,7 +221,7 @@ package "Sensors" #EEF6EE {
     #processEvent(event : Event&) : void
   }
 
-  class BmeEnvironmentalSensor {
+  abstract class BmeEnvironmentalSensor {
     -i2cAddress : uint8_t
     -cachedTemperatureInCelsius : float
     -cachedHumidityInPercentage : float
@@ -279,29 +279,6 @@ package "Sensors" #EEF6EE {
     #readByte() const : uint8_t
     #startTemperatureConversion() const : void
     #readTemperatureFromScratchpad() const : float
-  }
-
-  class Ssd1306Driver {
-    -i2cAddress : uint8_t
-    -displayWidth : uint8_t
-    -displayHeight : uint8_t
-    +Ssd1306Driver(i2cAddress : uint8_t, displayWidth : uint8_t, displayHeight : uint8_t)
-    +initialize() : void
-    +sendCommand(command : uint8_t) : void
-    +sendData(data : const uint8_t*, length : size_t) : void
-    +setContrast(contrast : uint8_t) : void
-    +setInvert(invert : bool) : void
-    +setBacklight(enable : bool) : void
-  }
-
-  class OledDisplay {
-    -driver : Ssd1306Driver
-    -frameBuffer[1024] : uint8_t
-    +OledDisplay(i2cAddress : uint8_t, parentHandler : CommandHandler* = nullptr)
-    +setText(text : const char*, x : uint8_t, y : uint8_t) : void
-    +clear() : void
-    +setBacklight(enable : bool) : void
-    #executeCommand(command : Command) : void
   }
 
   class EnvironmentalGasSensor {
@@ -557,6 +534,29 @@ package "Actuators" #EEF0FF {
     +Buzzer(signalGpioPin : int, parentHandler : CommandHandler* = nullptr)
     +setTone(frequency : int, duration : unsigned long) : void
     +isActive() const : bool
+    #executeCommand(command : Command) : void
+  }
+
+  class Ssd1306Driver {
+    -i2cAddress : uint8_t
+    -displayWidth : uint8_t
+    -displayHeight : uint8_t
+    +Ssd1306Driver(i2cAddress : uint8_t, displayWidth : uint8_t, displayHeight : uint8_t)
+    +initialize() : void
+    +sendCommand(command : uint8_t) : void
+    +sendData(data : const uint8_t*, length : size_t) : void
+    +setContrast(contrast : uint8_t) : void
+    +setInvert(invert : bool) : void
+    +setBacklight(enable : bool) : void
+  }
+
+  class OledDisplay {
+    -driver : Ssd1306Driver
+    -frameBuffer[1024] : uint8_t
+    +OledDisplay(i2cAddress : uint8_t, parentHandler : CommandHandler* = nullptr)
+    +setText(text : const char*, x : uint8_t, y : uint8_t) : void
+    +clear() : void
+    +setBacklight(enable : bool) : void
     #executeCommand(command : Command) : void
   }
 }
