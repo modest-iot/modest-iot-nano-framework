@@ -16,10 +16,16 @@
  * - `MqttGatewayClient` with MQTT subscribe for cloud-to-device commands
  * - `RgbLed` actuator with PWM color control and predefined colors
  * - `setColor()` and `SET_COLOR_COMMAND` for buffered color changes
+ * - `ADJUST_BRIGHTNESS_COMMAND` with payload for parameterized brightness adjustment
+ * - `Command` value object with optional `int32_t payload` member
  * - `Command` handling via `handle(Command)` override
  * - `getStatistics()` for send success/failure tracking via `GatewayStatistics`
  * - Cross-task communication from network task to sampler task
  * - Loop-less, event-driven asynchronous execution via `initializeAsynchronousEngine()`
+ *
+ * @par MQTT Payload format:
+ * Commands are sent as JSON: `{"command": 400, "payload": 128}`
+ * The payload field is optional and defaults to 0 when omitted.
  *
  * @par Command identifiers used by this example:
  * - 400: Set LED to RED color
@@ -27,8 +33,9 @@
  * - 402: Set LED to BLUE color
  * - 403: Set LED to ORANGE color
  * - 404: Set LED to WHITE color
- * - 405: Turn LED ON with last applied color
- * - 406: Turn LED OFF
+ * - 304: Adjust LED brightness (payload 0-255 scales active color)
+ * - 300: Turn LED ON with last applied color
+ * - 301: Turn LED OFF
  *
  * @date 2026-11-12
  * @version 1.0
@@ -174,6 +181,11 @@ public:
                 Serial.println("[RemoteLedController] Cloud command -> LED turned OFF");
                 break;
 
+            case RgbLed::ADJUST_BRIGHTNESS_COMMAND_IDENTIFIER:
+                smartLamp.handle(Command{RgbLed::ADJUST_BRIGHTNESS_COMMAND_IDENTIFIER, command.payload});
+                Serial.printf("[RemoteLedController] Cloud command -> LED brightness adjusted to %ld\n", command.payload);
+                break;
+
             default:
                 Serial.printf("[RemoteLedController] Unknown cloud command: %d\n", command.identifier);
                 break;
@@ -207,18 +219,22 @@ public:
         gatewayClient.setSubscribeTopic(subscribeTopic);
         gatewayClient.setSubscribeCallback(
             [this](const char* payload, size_t length) {
-                // Parse the command identifier from the MQTT payload.
-                // The payload is expected to be a simple integer string (e.g., "400").
+                // Parse JSON payload: {"command": 400, "payload": 128}
+                // The payload field is optional and defaults to 0.
                 (void)length;
-                char buffer[16];
-                size_t copyLen = (length < sizeof(buffer) - 1) ? length : (sizeof(buffer) - 1);
-                memcpy(buffer, payload, copyLen);
-                buffer[copyLen] = '\0';
-                int commandId = atoi(buffer);
-                if (commandId > 0) {
-                    Command cmd{commandId};
-                    enqueueCommand(cmd);
-                    Serial.printf("[RemoteLedController] MQTT subscribe -> enqueued command %d\n", commandId);
+                StaticJsonDocument<64> doc;
+                DeserializationError err = deserializeJson(doc, payload, length);
+                if (err == DeserializationError::Ok) {
+                    int commandId = doc["command"] | 0;
+                    int32_t commandPayload = doc["payload"] | 0;
+                    if (commandId > 0) {
+                        Command cmd{commandId, commandPayload};
+                        enqueueCommand(cmd);
+                        Serial.printf("[RemoteLedController] MQTT subscribe -> enqueued command %d (payload %ld)\n",
+                                      commandId, commandPayload);
+                    }
+                } else {
+                    Serial.printf("[RemoteLedController] Failed to parse MQTT payload: %s\n", err.c_str());
                 }
             }
         );
