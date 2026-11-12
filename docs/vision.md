@@ -36,8 +36,8 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 ### What's Delivered
 
 - **46 source headers** with full Doxygen documentation and `@runs_on` threading tags.
-- **16 example sketches** covering diverse use cases (smart band, air quality, RFID access, smart greenhouse, weather station, crop monitoring, home security, HTTP telemetry, etc.).
-- **27 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
+- **21 example sketches** covering diverse use cases (BLE vitals transmitter, remote LED controller, indoor air quality display, pipe temperature monitor, equipment health monitor, smart band, air quality, RFID access, smart greenhouse, weather station, crop monitoring, home security, HTTP telemetry, etc.).
+- **28 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
 - **3 CI workflows**: host tests, compile examples, lint.
 - **Per-slot `SamplingScheduler`** with phase-aligned re-arming and minimum period enforcement.
 - **`EngineConfig`** for tunable FreeRTOS task stacks, priorities, and core pinning.
@@ -47,7 +47,7 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 - **Sensor fault events** (IDs 22/23) with debounced threshold state machine.
 - **Telemetry pipeline** with `unique_ptr` ownership, drop-oldest policy, bounded serialization, envelope metadata.
 - **MQTT keep-alive** with rate-limited reconnection backoff.
-- **31 Architecture Decision Records** documenting all key architectural choices, including DDD adoption (ADR-023).
+- **30 Architecture Decision Records** documenting all key architectural choices, including DDD adoption (ADR-023).
 
 ### Remaining Work: Tier 4 (Capabilities) — **Complete** ✓
 
@@ -913,7 +913,7 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 |-----------------------------|-------------------------|----------------------------------|----------------------------|
 | **Consistent patterns**     | Mediator, CQRS, events  | Same patterns at edge scale      | One mental model for both  |
 | **AI-assisted development** | Clean, documented API   | Python/ML ecosystem              | AI generates code for both |
-| **Test infrastructure**     | 27 host test suites, CI | Python pytest, integration tests | Full-stack testing         |
+| **Test infrastructure**     | 28 host test suites, CI | Python pytest, integration tests | Full-stack testing         |
 | **Documentation**           | Doxygen, ADRs, README   | Sphinx, OpenAPI specs            | Unified documentation      |
 
 ### 4.2 For IoT Products
@@ -1031,7 +1031,7 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 | Metric                  | Target                                 |
 |-------------------------|----------------------------------------|
 | **Compilation success** | 100% across ESP32 variants             |
-| **Test coverage**       | 100% pass rate, 27 test suites         |
+| **Test coverage**       | 100% pass rate, 28 test suites         |
 | **Flash footprint**     | <30 KB overhead                        |
 | **RAM footprint**       | <2 KB overhead                         |
 | **Example count**       | 16 diverse examples                    |
