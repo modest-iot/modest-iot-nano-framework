@@ -31,6 +31,16 @@
  */
 class BmeEnvironmentalSensor : public Sensor {
 protected:
+    /**
+     * @brief Constructs a Bosch environmental sensor adapter.
+     * @param signalGpioPin Framework source identifier attached to emitted events.
+     * @param i2cAddress Sensor's 7-bit I2C address.
+     * @param parentHandler Optional handler that receives emitted events.
+     * @note Calls Wire.begin() and initializes all calibration coefficients to zero.
+     */
+    explicit BmeEnvironmentalSensor(int signalGpioPin, uint8_t i2cAddress,
+                                    EventHandler* parentHandler = nullptr);
+
     uint8_t i2cAddress; ///< Configured BME 7-bit I2C address.
 
     /** @name BME Factory Calibration Coefficients */
@@ -153,16 +163,6 @@ protected:
     static constexpr float BME_HUMID_COMPENSATION_SCALE_19 = 524288.0f;
     static constexpr float BME_HUMIDITY_MAX_PERCENTAGE = 100.0f;
     static constexpr float BME_HUMIDITY_MIN_PERCENTAGE = 0.0f;
-
-    /**
-     * @brief Constructs a Bosch environmental sensor adapter.
-     * @param signalGpioPin Framework source identifier attached to emitted events.
-     * @param i2cAddress Sensor's 7-bit I2C address.
-     * @param parentHandler Optional handler that receives emitted events.
-     * @note Calls Wire.begin() and initializes all calibration coefficients to zero.
-     */
-    explicit BmeEnvironmentalSensor(int signalGpioPin, uint8_t i2cAddress,
-                                    EventHandler* parentHandler = nullptr);
 
     /**
      * @brief Reads a 16-bit little-endian value from the sensor.
