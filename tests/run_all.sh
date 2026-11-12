@@ -224,6 +224,23 @@ run_test "test_BleGatewayClient" \
     src/BleConnectivityDriver.cpp \
     tests/BleGatewayClient/test.cpp
 
+# 28. HttpGatewayClient Suite
+run_test "test_HttpGatewayClient" \
+    src/HttpGatewayClient.cpp \
+    src/WiFiConnectivityDriver.cpp \
+    tests/HttpGatewayClient/test.cpp
+
+# 29. Buzzer Suite
+run_test "test_Buzzer" \
+    src/Actuator.cpp \
+    src/Buzzer.cpp \
+    tests/Buzzer/test.cpp
+
+# 30. ConfigurationStore Suite
+run_test "test_ConfigurationStore" \
+    src/ConfigurationStore.cpp \
+    tests/ConfigurationStore/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="
