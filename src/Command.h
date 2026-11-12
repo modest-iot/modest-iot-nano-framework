@@ -1,6 +1,8 @@
 #ifndef COMMAND_H
 #define COMMAND_H
 
+#include <stdint.h>
+
 /**
  * @file Command.h
  * @brief Defines the lightweight command value object used by actuators and devices.
@@ -21,18 +23,32 @@ public:
     const int identifier;
 
     /**
-     * @brief Creates a Command with the provided identifier.
-     * @param commandIdentifier Command type discriminator.
+     * @brief Optional payload carrying parameterized data (e.g., angle, brightness, frequency).
+     * @note Defaults to 0 for backward compatibility with identifier-only commands.
      */
-    constexpr explicit Command(const int commandIdentifier) : identifier(commandIdentifier) {}
+    const int32_t payload;
 
     /**
-     * @brief Compares two commands by identifier.
+     * @brief Creates a Command with the provided identifier and no payload.
+     * @param commandIdentifier Command type discriminator.
+     */
+    constexpr explicit Command(const int commandIdentifier) : identifier(commandIdentifier), payload(0) {}
+
+    /**
+     * @brief Creates a Command with the provided identifier and payload.
+     * @param commandIdentifier Command type discriminator.
+     * @param commandPayload Parameterized data (e.g., angle 0–180, brightness 0–255, frequency in Hz).
+     */
+    constexpr Command(const int commandIdentifier, const int32_t commandPayload)
+            : identifier(commandIdentifier), payload(commandPayload) {}
+
+    /**
+     * @brief Compares two commands by identifier and payload.
      * @param other Command to compare against.
-     * @return `true` when both identifiers match, otherwise `false`.
+     * @return `true` when both identifiers and payloads match, otherwise `false`.
      */
     bool operator==(const Command& other) const {
-        return this->identifier == other.identifier;
+        return this->identifier == other.identifier && this->payload == other.payload;
     }
 };
 
