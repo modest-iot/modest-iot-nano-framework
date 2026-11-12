@@ -56,5 +56,31 @@ struct Recorder : CommandHandler {
     ServoMotor servo2(14, 45);
     assert(servo2.getCurrentActiveAngleInDegrees() == 45);
 
+    // Test 10: DRIVE_TO_ANGLE_COMMAND uses payload as angle directly
+    servo.handle(Command{ServoMotor::DRIVE_TO_ANGLE_COMMAND_IDENTIFIER, 45});
+    assert(servo.getCurrentActiveAngleInDegrees() == 45);
+    assert(fakeLedcDuty[13] == 2047);
+
+    // Test 11: DRIVE_TO_ANGLE_COMMAND payload clamping — negative clamps to 0°
+    servo.handle(Command{ServoMotor::DRIVE_TO_ANGLE_COMMAND_IDENTIFIER, -30});
+    assert(servo.getCurrentActiveAngleInDegrees() == 0);
+    assert(fakeLedcDuty[13] == 0);
+
+    // Test 12: DRIVE_TO_ANGLE_COMMAND payload clamping — above 180° clamps to 180°
+    servo.handle(Command{ServoMotor::DRIVE_TO_ANGLE_COMMAND_IDENTIFIER, 270});
+    assert(servo.getCurrentActiveAngleInDegrees() == 180);
+    assert(fakeLedcDuty[13] == 8191);
+
+    // Test 13: validateOrAdjustPhysicalAngle clamps negative to 0°
+    assert(ServoMotor::validateOrAdjustPhysicalAngle(-50) == 0);
+
+    // Test 14: validateOrAdjustPhysicalAngle clamps above 180° to 180°
+    assert(ServoMotor::validateOrAdjustPhysicalAngle(300) == 180);
+
+    // Test 15: validateOrAdjustPhysicalAngle passes through valid angles unchanged
+    assert(ServoMotor::validateOrAdjustPhysicalAngle(0) == 0);
+    assert(ServoMotor::validateOrAdjustPhysicalAngle(90) == 90);
+    assert(ServoMotor::validateOrAdjustPhysicalAngle(180) == 180);
+
     return 0;
 }
