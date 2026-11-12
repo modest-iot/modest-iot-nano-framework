@@ -172,6 +172,23 @@ inline void analogWrite(const std::uint8_t pin, const int val) {
     }
 }
 
+// Mock tone/noTone for buzzer testing
+struct ToneCallRecord { int pin; int frequency; unsigned long duration; };
+extern ToneCallRecord fakeToneCall;
+extern bool fakeToneCalled;
+extern int fakeNoTonePin;
+extern bool fakeNoToneCalled;
+inline void tone(int pin, int frequency, unsigned long duration = 0) {
+    fakeToneCall.pin = pin;
+    fakeToneCall.frequency = frequency;
+    fakeToneCall.duration = duration;
+    fakeToneCalled = true;
+}
+inline void noTone(int pin) {
+    fakeNoTonePin = pin;
+    fakeNoToneCalled = true;
+}
+
 // Mock ESP32 LEDC PWM API for host testing (W19, core 3.x)
 inline int fakeLedcFreq[32] = {};
 inline int fakeLedcResolution[32] = {};
