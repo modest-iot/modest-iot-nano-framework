@@ -321,24 +321,6 @@ void testClearNamespaceReadOnlyFails() {
     store.end();
 }
 
-void testKeyCount() {
-    ConfigurationStore store;
-    store.begin("count_test");
-    
-    ASSERT_EQ(store.keyCount(), static_cast<size_t>(0));
-    
-    store.setString("key1", "value1");
-    store.setString("key2", "value2");
-    // keyCount uses Preferences::keys().size() which returns 0 in mock
-    
-    store.end();
-}
-
-void testKeyCountNotInitialized() {
-    ConfigurationStore store;
-    ASSERT_EQ(store.keyCount(), static_cast<size_t>(0));
-}
-
 void testBeginClosesPreviousNamespace() {
     ConfigurationStore store;
     
@@ -526,8 +508,6 @@ int main() {
     testRemoveKeyReadOnlyFails();
     testClearNamespace();
     testClearNamespaceReadOnlyFails();
-    testKeyCount();
-    testKeyCountNotInitialized();
     testBeginClosesPreviousNamespace();
     testNullValueStringFails();
     testInvalidKeyFails();

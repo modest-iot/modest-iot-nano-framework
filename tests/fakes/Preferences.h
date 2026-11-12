@@ -10,7 +10,6 @@
 
 #include <string>
 #include <map>
-#include <vector>
 #include <cstring>
 
 class Preferences {
@@ -50,17 +49,17 @@ public:
     }
     
     // String operations
-    std::string getString(const char* key, const std::string& defaultValue = "") const {
+    String getString(const char* key, const String& defaultValue = "") const {
         if (!open) return defaultValue;
         auto it = namespaces.find(currentNamespace);
         if (it == namespaces.end()) return defaultValue;
         auto strIt = it->second.strings.find(key);
         if (strIt == it->second.strings.end()) return defaultValue;
-        return strIt->second;
+        return String(strIt->second.c_str());
     }
     
-    bool putString(const char* key, const std::string& value) {
-        if (!open || readOnly) return false;
+    bool putString(const char* key, const char* value) {
+        if (!open || readOnly || value == nullptr) return false;
         namespaces[currentNamespace].strings[key] = value;
         return true;
     }
@@ -156,14 +155,6 @@ public:
     void clear() {
         if (!open || readOnly) return;
         namespaces[currentNamespace] = NamespaceData();
-    }
-    
-    struct KeysView {
-        size_t size() const { return 0; } // Simplified for testing
-    };
-    
-    KeysView keys() const {
-        return KeysView();
     }
 };
 
