@@ -25,7 +25,8 @@
 #include <ArduinoJson.h>
 #include <ModestIoT.h>
 
-// --- DEFAULT CONFIGURATION MACROS ---
+/** @name Default Configuration Macros */
+//@{
 // Preprocessor macros for constructor defaults, allowing use before class declaration.
 
 /** @brief Default soil moisture sampling interval in milliseconds. */
@@ -42,8 +43,10 @@
 
 /** @brief Sampler event queue length for battery operation. */
 #define SAMPLER_QUEUE_LENGTH 5
+//@} // Default Configuration Macros
 
-// --- CONCRETE APPLICATION DATA SCHEMA SPECIFICATION ---
+/** @name Concrete Application Data Schema Specification */
+//@{
 
 /**
  * @brief Telemetry package for the Crop Monitoring Station.
@@ -79,8 +82,10 @@ class CropMonitoringTelemetryPackage : public TelemetryPackage {
         serializationDestination["lightIntensityInLux"]       = this->lightIntensityInLux;
     }
 };
+//@} // Concrete Application Data Schema Specification
 
-// --- 1. EVENT-DRIVEN APPLICATION MEDIATOR ---
+/** @name Application Mediator Implementation */
+//@{
 
 /**
  * @brief Implements a battery-powered crop monitoring station with light sleep support.
@@ -247,8 +252,10 @@ class CropMonitoringStation : public Device {
     }
 
 };
+//@} // Application Mediator Implementation
 
-// --- 2. DECLARATIVE RUNTIME CANVAS ---
+/** @name Top-Level Declarative Canvas */
+//@{
 
 /**
  * @brief GPIO pin for the soil moisture sensor analog input.
@@ -301,7 +308,8 @@ static const unsigned long SERIAL_BAUD_RATE = 115200;
  */
 static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
 
-// --- NETWORK CONFIGURATION ---
+/** @name Network Configuration */
+//@{
 
 /**
  * @brief Wi-Fi network SSID.
