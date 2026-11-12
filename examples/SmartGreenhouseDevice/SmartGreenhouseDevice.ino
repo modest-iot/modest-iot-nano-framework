@@ -101,12 +101,10 @@ public:
                 // Control ventilation based on temperature
                 float temperature = temperatureSensor.getTemperatureInCelsius();
                 if (temperature > TEMPERATURE_HIGH_THRESHOLD) {
-                    ventMotor.setTargetAngleBufferInDegrees(VENT_OPEN_ANGLE);
-                    ventMotor.handle(ServoMotor::DRIVE_TO_BUFFERED_ANGLE_COMMAND);
+                    ventMotor.handle(Command{ServoMotor::DRIVE_TO_ANGLE_COMMAND_IDENTIFIER, VENT_OPEN_ANGLE});
                     logMessage(VENT_ON_MESSAGE);
                 } else {
-                    ventMotor.setTargetAngleBufferInDegrees(VENT_CLOSED_ANGLE);
-                    ventMotor.handle(ServoMotor::DRIVE_TO_BUFFERED_ANGLE_COMMAND);
+                    ventMotor.handle(Command{ServoMotor::DRIVE_TO_ANGLE_COMMAND_IDENTIFIER, VENT_CLOSED_ANGLE});
                     logMessage(VENT_OFF_MESSAGE);
                 }
             }
