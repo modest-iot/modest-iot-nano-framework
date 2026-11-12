@@ -28,7 +28,8 @@ static const int LCD_ROWS                       = 2;
 
 // Timing
 static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS = 100;
-static const int ASYNC_ENGINE_QUEUE_DEPTH       = 32;
+static const int ASYNC_ENGINE_QUEUE_DEPTH = 32;
+static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 1000;
 
 /**
  * @brief Perimeter Monitor Device.
@@ -123,5 +124,5 @@ void setup() {
 }
 
 void loop() {
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_IN_MILLISECONDS));
 }
