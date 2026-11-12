@@ -61,6 +61,10 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Cloud-to-device MQTT subscribe with JSON command parsing
 - Thread-safe command queue for cross-task command delivery
 - CommandHandler pattern for actuator command propagation
+- **Command payload support** (W23): Added optional `int32_t payload` to `Command` value object for parameterized commands (e.g., angle, brightness, frequency)
+- **ServoMotor**: New `DRIVE_TO_ANGLE_COMMAND` (153) drives servo to payload angle directly; `validateOrAdjustPhysicalAngle()` static method centralizes angle clamping (0–180°) used by `executeCommand`, `setTargetAngleBufferInDegrees`, and `writeAngle`
+- **RgbLed**: New `ADJUST_BRIGHTNESS_COMMAND` (304) scales active color by payload/255; `adjustColorSetIntensity()` public method scales all channels via `adjustColorChannelIntensity()` static helper
+- **Buzzer**: New `PLAY_FREQUENCY_COMMAND` (253) assigns payload as buffered frequency, then plays using buffered duration via `playBufferedTone()` — consistent with the assign-then-play pattern
 
 ### Changed
 
@@ -90,12 +94,13 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Replaced `#define` pin assignments with `static const` variables where appropriate (HomeSecurityDevice, RfidAccessController)
 - Added named constants for sampling intervals, queue depths, debounce times, and thresholds (AirConditioningDevice, AirQualityMonitor, HomeSecurityDevice)
 - Moved `#define` constants to proper locations with Doxygen comments (ClimateDataUploader)
+- RemoteLedController: Updated MQTT callback to parse JSON payloads `{"command": id, "payload": value}` and demonstrate `ADJUST_BRIGHTNESS_COMMAND`
 
 #### Documentation
 - Comprehensive documentation audit aligning all docs (README, vision, improvements, CHANGELOG) with actual codebase capabilities
 - Added BmeEnvironmentalSensor documentation across all documentation files
 - Added Gateway Client Enhancements section documenting BleGatewayClient, HttpGatewayClient, WiFiConnectivityDriver, and BleConnectivityDriver
-- Corrected test suite count from 26 to 27, then to 28 host test suites
+- Corrected test suite count from 26 to 27, then to 28, and finally to 29 host test suites
 - Updated Tier 4 status from "Pending" to "Complete" in improvements tracking
 - Removed DHT sensor library from README dependencies (replaced with native implementation)
 - Fixed source header count from 47 to 46
@@ -106,6 +111,7 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Example enhancement plan: renamed ClassicBlinker → StatusIndicator, HttpTelemetryDemo → ClimateDataUploader; added 5 new examples (BleVitalsTransmitter, RemoteLedController, IndoorAirQualityDisplay, PipeTemperatureMonitor, EquipmentHealthMonitor) with grounded real-world purposes and framework aspects illustrated sections
 - Fixed class diagram: marked BmeEnvironmentalSensor as abstract; moved Ssd1306Driver and OledDisplay from Sensors to Actuators package
 - Fixed ADR count in adrs.md overview from 29 to 30
+- Added new command identifiers to keywords.txt: `DRIVE_TO_ANGLE_COMMAND_IDENTIFIER`, `ADJUST_BRIGHTNESS_COMMAND_IDENTIFIER`, `PLAY_FREQUENCY_COMMAND_IDENTIFIER`
 
 ### Examples (21 total)
 - StatusIndicator (renamed from ClassicBlinker), ToggableLedDevice, SmartBandMqtt, AirConditioningDevice
@@ -120,9 +126,13 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - **EquipmentHealthMonitor**: Industrial equipment health dashboard with `ModestLog` and `diagnostics()`
 
 ### Testing
-- 28 host test suites covering all sensors, actuators, scheduler, MQTT, BLE, HTTP, and telemetry
+- 29 host test suites covering all sensors, actuators, scheduler, MQTT, BLE, HTTP, and telemetry
 - **HttpGatewayClient test**: HTTP methods (GET/POST/PUT/DELETE), auth headers, response body handling, statistics tracking
 - **Fake HTTPClient.h**: Mock HTTP client for host testing with configurable responses
+- **Command payload tests** (W23): 6 new tests in CommandMarshaling suite for payload construction, equality, CommandEntry carry-through, and negative values
+- **ServoMotor payload tests**: 6 tests for `DRIVE_TO_ANGLE_COMMAND` with payload angle and `validateOrAdjustPhysicalAngle()` static method
+- **RgbLed payload tests**: 5 tests for `ADJUST_BRIGHTNESS_COMMAND` and `adjustColorSetIntensity()` direct method call
+- **Buzzer test**: 10 new tests covering all commands (TURN_ON, TURN_OFF, PLAY_TONE, PLAY_FREQUENCY) with tone/noTone mock
 - CI workflows: host tests, ESP32 compilation, linting
 - AddressSanitizer and UndefinedBehaviorSanitizer enabled in tests
 
