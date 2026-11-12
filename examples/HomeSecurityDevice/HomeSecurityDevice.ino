@@ -13,11 +13,25 @@
 
 #include <ModestIoT.h>
 
-// GPIO pin assignments
-#define WATER_LEAK_SENSOR_PIN 4
-#define DOOR_WINDOW_SENSOR_PIN 5
-#define PIR_SENSOR_PIN 18
-#define BUZZER_PIN 25
+/** @brief Serial communication baud rate. */
+static const unsigned long SERIAL_BAUD_RATE = 115200;
+
+/** @brief Delay in the main loop when no work is pending. */
+static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
+
+/** @brief Sampler event queue length. */
+static const int ASYNC_ENGINE_QUEUE_DEPTH = 5;
+
+/** @brief Sampling interval for security sensors (ms). */
+static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS = 200;
+
+/** @name GPIO Pin Assignments */
+//@{
+static const int WATER_LEAK_SENSOR_PIN = 4;
+static const int DOOR_WINDOW_SENSOR_PIN = 5;
+static const int PIR_SENSOR_PIN = 18;
+static const int BUZZER_PIN = 25;
+//@} // GPIO Pin Assignments
 
 class HomeSecurityDevice : public Device {
 private:
@@ -28,14 +42,14 @@ private:
 
 public:
     HomeSecurityDevice()
-        : Device(200, 0)
+        : Device(SAMPLING_INTERVAL_IN_MILLISECONDS, 0)
         , waterLeakSensor(WATER_LEAK_SENSOR_PIN, this)
         , doorWindowSensor(DOOR_WINDOW_SENSOR_PIN, this)
         , pirSensor(PIR_SENSOR_PIN, this)
         , buzzer(BUZZER_PIN, this)
     {
-        // Launch internal background task workers with a safe queue boundary depth of 5
-        initializeAsynchronousEngine(5);
+        // Launch internal background task workers
+        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
 
         // Register all sensors with interrupt-driven operation (CHANGE edge)
         appendSensorToTriggeringScheduler(
@@ -80,7 +94,7 @@ protected:
 static HomeSecurityDevice* homeSecurityApp = nullptr;
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(SERIAL_BAUD_RATE);
     Serial.println("[HomeSecurity] Initializing home security system...");
 
     // Boot the framework application
@@ -91,5 +105,5 @@ void setup() {
 
 void loop() {
     // All event handling is interrupt-driven; main loop remains idle.
-    vTaskDelay(pdMS_TO_TICKS(60000));
+    vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_IN_MILLISECONDS));
 }
