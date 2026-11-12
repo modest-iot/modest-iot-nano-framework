@@ -246,26 +246,31 @@ Provides keep-alive servicing via `service()`, reconnection backoff, and bounded
 
 ## Examples
 
-The framework ships with 16 example sketches demonstrating various use cases:
+The framework ships with 21 example sketches demonstrating various use cases:
 
 | Example | Description |
 |---|---|
-| `ClassicBlinker` | Minimal device with timer-based LED blinking; demonstrates `EventHandler*` overload for non-Sensor handlers. |
+| `StatusIndicator` | Minimal status indicator with periodic LED toggle; demonstrates timer-based scheduling and loop-less execution. |
+| `BleVitalsTransmitter` | Wearable fitness band sending heart rate and temperature via BLE NUS; demonstrates `BleGatewayClient` and `BleConnectivityDriver`. |
+| `RemoteLedController` | MQTT-connected RGB smart lamp controlled by cloud commands; demonstrates `enqueueCommand()`, `RgbLed`, and cloud-to-device CQRS flow. |
+| `IndoorAirQualityDisplay` | Desktop BME680 air quality monitor with OLED display; demonstrates `EnvironmentalGasSensor`, `OledDisplay`, and drawing primitives. |
+| `PipeTemperatureMonitor` | DS18B20 pipe freeze alarm with RGB LED and buzzer; demonstrates `OneWireTemperatureSensor` and fault detection. |
+| `EquipmentHealthMonitor` | Industrial equipment health dashboard; demonstrates `ModestLog`, `Device::diagnostics()`, and `EngineConfiguration`. |
 | `SmartBandMqtt` | Wearable device with pulse, DHT temperature/humidity, and button; publishes via MQTT. |
 | `AirConditioningDevice` | HVAC monitor with DHT sensor, buttons, and LCD display; demonstrates I²C actuator on sampler task. |
 | `AirQualityMonitor` | Gas sensor with MQTT telemetry; demonstrates keep-alive and reconnection. |
+| `ClimateDataUploader` | DHT22 sensor with HTTP telemetry, Bearer token acquisition via GET request, response body parsing, and authenticated POST telemetry. |
+| `CropMonitoringStation` | Multi-sensor agricultural monitoring with tickless scheduling and MQTT telemetry. |
 | `DriverAssistantDevice` | GPS and ultrasonic distance monitoring; demonstrates multi-sensor coordination. |
+| `HomeSecurityDevice` | Water leak, door/window, PIR, and buzzer; demonstrates interrupt-driven home security. |
 | `OutdoorSecurityLightController` | Light sensor and PIR with fault detection; demonstrates sensor health events and safe-state fallback. |
 | `PerimeterMonitor` | Four PIR sensors for zone-based motion detection; demonstrates high-frequency polling. |
 | `RfidAccessController` | SPI RFID card reader with access control; demonstrates CRC calculation and card communication. |
+| `SmartGreenhouseDevice` | Soil moisture, DHT, relay pump, and servo vent; demonstrates event-driven irrigation control. |
 | `SmartScaleDevice` | Four HX711 load cells for precision weighing; demonstrates multi-sensor averaging. |
 | `ToggableLedDevice` | Button-controlled LED with MQTT telemetry; demonstrates CQRS command/event separation. |
-| `SmartGreenhouseDevice` | Soil moisture, DHT, relay pump, and servo vent; demonstrates event-driven irrigation control. |
 | `WaterFlowMonitor` | YF-S201 water flow sensor with hybrid interrupt/periodic scheduling. |
 | `WeatherStation` | Battery-powered weather station with deep sleep, DHT22, BH1750, and PthSensor. |
-| `CropMonitoringStation` | Multi-sensor agricultural monitoring with tickless scheduling and MQTT telemetry. |
-| `HomeSecurityDevice` | Water leak, door/window, PIR, and buzzer; demonstrates interrupt-driven home security. |
-| `HttpTelemetryDemo` | DHT22 sensor with HTTP telemetry, Bearer token acquisition via GET request, response body parsing, and authenticated POST telemetry. |
 
 ## Testing
 
