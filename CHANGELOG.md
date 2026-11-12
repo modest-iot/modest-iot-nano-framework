@@ -80,37 +80,54 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - WaterFlowSensor: Hybrid interrupt + periodic scheduling for YF-S201 pulse counting (W13)
 
 #### Refactoring
-- BmeEnvironmentalSensor: Extracted shared Bosch BME280/BME680 compensation formulas into abstract base class, eliminating ~200 lines of duplicated code between PthSensor and EnvironmentalGasSensor
+- BmeEnvironmentalSensor: Extracted shared Bosch BME280/BME680 compensation formulas into abstract base class, eliminating ~200 lines of duplicated code between PthSensor and EnvironmentalGasSensor; moved constructor to protected to enforce abstract class semantics at compile time
 - Hd44780Driver: Extracted HD44780 I²C protocol from CharacterLcdDisplay into standalone driver class
 - Ssd1306Driver: Extracted SSD1306 I²C protocol from OledDisplay into standalone driver class
+
+#### Examples
+- Replaced banner-style comments (`// ---`) with Doxygen `@name` groups across all 21 examples for consistency
+- Eliminated magic numbers in all examples: added `SERIAL_BAUD_RATE` (115200) and `MAIN_LOOP_DELAY_IN_MILLISECONDS` (60000) named constants
+- Replaced `#define` pin assignments with `static const` variables where appropriate (HomeSecurityDevice, RfidAccessController)
+- Added named constants for sampling intervals, queue depths, debounce times, and thresholds (AirConditioningDevice, AirQualityMonitor, HomeSecurityDevice)
+- Moved `#define` constants to proper locations with Doxygen comments (ClimateDataUploader)
 
 #### Documentation
 - Comprehensive documentation audit aligning all docs (README, vision, improvements, CHANGELOG) with actual codebase capabilities
 - Added BmeEnvironmentalSensor documentation across all documentation files
 - Added Gateway Client Enhancements section documenting BleGatewayClient, HttpGatewayClient, WiFiConnectivityDriver, and BleConnectivityDriver
-- Corrected test suite count from 26 to 27 host test suites
+- Corrected test suite count from 26 to 27, then to 28 host test suites
 - Updated Tier 4 status from "Pending" to "Complete" in improvements tracking
 - Removed DHT sensor library from README dependencies (replaced with native implementation)
-- Fixed ADR count from 30 to 31 and source header count from 47 to 46
+- Fixed source header count from 47 to 46
 - Added Pre-Release Readiness Assessment (W20–W29) to vision.md and improvements.md with blocking and deferred items
 - Updated improvements.md comparison table reflecting current capabilities and planned features
 - Complete rewrite of keywords.txt (276 → 419 lines) with all 46 source headers, drivers, methods, and nested types
 - Enhanced Doxygen documentation: mainpage with key features and architecture overview, 5 new subgroup sections, and wildcard build directory exclusion
+- Example enhancement plan: renamed ClassicBlinker → StatusIndicator, HttpTelemetryDemo → ClimateDataUploader; added 5 new examples (BleVitalsTransmitter, RemoteLedController, IndoorAirQualityDisplay, PipeTemperatureMonitor, EquipmentHealthMonitor) with grounded real-world purposes and framework aspects illustrated sections
+- Fixed class diagram: marked BmeEnvironmentalSensor as abstract; moved Ssd1306Driver and OledDisplay from Sensors to Actuators package
+- Fixed ADR count in adrs.md overview from 29 to 30
 
-### Examples (16 total)
-- ClassicBlinker, ToggableLedDevice, SmartBandMqtt, AirConditioningDevice
+### Examples (21 total)
+- StatusIndicator (renamed from ClassicBlinker), ToggableLedDevice, SmartBandMqtt, AirConditioningDevice
 - AirQualityMonitor, DriverAssistantDevice, SmartScaleDevice, PerimeterMonitor
 - OutdoorSecurityLightController, RfidAccessController, SmartGreenhouseDevice
 - WaterFlowMonitor, HomeSecurityDevice, CropMonitoringStation, WeatherStation
-- HttpTelemetryDemo
+- ClimateDataUploader (renamed from HttpTelemetryDemo)
+- **BleVitalsTransmitter**: BLE wearable fitness band with heart rate and temperature via BLE NUS
+- **RemoteLedController**: MQTT-controlled RGB lamp with cloud-to-device commands via `enqueueCommand()`
+- **IndoorAirQualityDisplay**: BME680 air quality monitor with OLED display and VOC bar graph
+- **PipeTemperatureMonitor**: DS18B20 pipe freeze alarm with RGB LED and buzzer
+- **EquipmentHealthMonitor**: Industrial equipment health dashboard with `ModestLog` and `diagnostics()`
 
 ### Testing
-- 27 host test suites covering all sensors, actuators, scheduler, MQTT, BLE, and telemetry
+- 28 host test suites covering all sensors, actuators, scheduler, MQTT, BLE, HTTP, and telemetry
+- **HttpGatewayClient test**: HTTP methods (GET/POST/PUT/DELETE), auth headers, response body handling, statistics tracking
+- **Fake HTTPClient.h**: Mock HTTP client for host testing with configurable responses
 - CI workflows: host tests, ESP32 compilation, linting
 - AddressSanitizer and UndefinedBehaviorSanitizer enabled in tests
 
 ### Documentation
-- 31 Architecture Decision Records (ADRs)
+- 30 Architecture Decision Records (ADRs)
 - Doxygen documentation with API navigation tree, key features section, and `@runs_on` threading tags
 - Class diagram (PlantUML) covering all 46 source headers
 - User stories and improvement tracking with pre-release readiness assessment (W20–W29)
@@ -120,4 +137,5 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - ESP32 Arduino core 3.x compatible
 - FreeRTOS-based task scheduling
 - C++17 standard
-- Zero magic numbers - all constants use full-word suffixes (_IN_HERTZ, _IN_MILLISECONDS, _IN_MICROSECONDS)
+- Zero magic numbers in framework source - all constants use full-word suffixes (_IN_HERTZ, _IN_MILLISECONDS, _IN_MICROSECONDS)
+- Examples follow the same convention: all serial baud rates, loop delays, and timing values are named constants
