@@ -19,7 +19,7 @@
  * smart home load control, greenhouse pump automation, and industrial relay
  * switching. Uses only `digitalWrite()` — no external libraries required.
  * 
- * @runs_on sampler_task
+ * @runs_on{sampler}_task
  */
 class RelayActuator : public Actuator {
 private:

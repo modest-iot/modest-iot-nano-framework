@@ -43,7 +43,7 @@ float OneWireTemperatureSensor::getTemperatureInCelsius() const {
  * responds by pulling the bus LOW for 60-240µs (presence pulse).
  *
  * @return true if a device responded with a presence pulse, false otherwise.
- * @runs_on sampler task
+ * @runs_on{sampler}
  */
 bool OneWireTemperatureSensor::sendResetPulse() const {
     pinMode(pin, OUTPUT);
@@ -64,7 +64,7 @@ bool OneWireTemperatureSensor::sendResetPulse() const {
  * For bit 1: pull LOW for 6µs, then release HIGH.
  *
  * @param bitValue Bit to write (0 or 1).
- * @runs_on sampler task
+ * @runs_on{sampler}
  */
 void OneWireTemperatureSensor::writeBit(const bool bitValue) const {
     pinMode(pin, OUTPUT);
@@ -87,7 +87,7 @@ void OneWireTemperatureSensor::writeBit(const bool bitValue) const {
  * If the slave is writing a 1, the bus is HIGH. If writing 0, the bus is LOW.
  *
  * @return true if the bit is 1, false if the bit is 0.
- * @runs_on sampler task
+ * @runs_on{sampler}
  */
 bool OneWireTemperatureSensor::readBit() const {
     pinMode(pin, OUTPUT);
@@ -103,7 +103,7 @@ bool OneWireTemperatureSensor::readBit() const {
 /**
  * @brief Writes a byte on the 1-Wire bus (LSB first).
  * @param data Byte to write.
- * @runs_on sampler task
+ * @runs_on{sampler}
  */
 void OneWireTemperatureSensor::writeByte(const uint8_t data) const {
     for (uint8_t i = 0; i < 8; i++) {
@@ -114,7 +114,7 @@ void OneWireTemperatureSensor::writeByte(const uint8_t data) const {
 /**
  * @brief Reads a byte from the 1-Wire bus (LSB first).
  * @return The byte read from the bus.
- * @runs_on sampler task
+ * @runs_on{sampler}
  */
 uint8_t OneWireTemperatureSensor::readByte() const {
     uint8_t data = 0;
@@ -132,7 +132,7 @@ uint8_t OneWireTemperatureSensor::readByte() const {
  * Sends SKIP_ROM command (for single-device bus) followed by CONVERT_T command.
  * Then waits for the conversion to complete (up to 750ms at 12-bit resolution).
  *
- * @runs_on sampler task
+ * @runs_on{sampler}
  */
 void OneWireTemperatureSensor::startTemperatureConversion() const {
     (void)sendResetPulse();
@@ -149,7 +149,7 @@ void OneWireTemperatureSensor::startTemperatureConversion() const {
  * converts to Celsius using the 0.0625°C per LSB resolution.
  *
  * @return Temperature in degrees Celsius.
- * @runs_on sampler task
+ * @runs_on{sampler}
  */
 float OneWireTemperatureSensor::readTemperatureFromScratchpad() const {
     (void)sendResetPulse();
@@ -173,8 +173,6 @@ float OneWireTemperatureSensor::readTemperatureFromScratchpad() const {
  * result, and compares with the last-notified value using epsilon-based change
  * detection. Emits DATA_READ_EVENT only if the temperature changed by more than
  * TEMPERATURE_CHANGE_EPSILON (0.1°C).
- *
- * @param event Mutable event request/response payload.
  */
 void OneWireTemperatureSensor::processEvent(Event& event) {
     if (event.identifier == MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER) {

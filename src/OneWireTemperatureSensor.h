@@ -76,48 +76,48 @@ private:
     /**
      * @brief Sends a 1-Wire reset pulse and checks for presence.
      * @return true if a device responded with a presence pulse, false otherwise.
-     * @runs_on sampler task
+     * @runs_on{sampler}
      */
     bool sendResetPulse() const;
 
     /**
      * @brief Writes a single bit on the 1-Wire bus.
      * @param bitValue Bit to write (0 or 1).
-     * @runs_on sampler task
+     * @runs_on{sampler}
      */
     void writeBit(bool bitValue) const;
 
     /**
      * @brief Reads a single bit from the 1-Wire bus.
      * @return true if the bit is 1, false if the bit is 0.
-     * @runs_on sampler task
+     * @runs_on{sampler}
      */
     bool readBit() const;
 
     /**
      * @brief Writes a byte on the 1-Wire bus (LSB first).
      * @param data Byte to write.
-     * @runs_on sampler task
+     * @runs_on{sampler}
      */
     void writeByte(uint8_t data) const;
 
     /**
      * @brief Reads a byte from the 1-Wire bus (LSB first).
      * @return The byte read from the bus.
-     * @runs_on sampler task
+     * @runs_on{sampler}
      */
     uint8_t readByte() const;
 
     /**
      * @brief Starts a temperature conversion and waits for completion.
-     * @runs_on sampler task
+     * @runs_on{sampler}
      */
     void startTemperatureConversion() const;
 
     /**
      * @brief Reads the scratchpad and computes the temperature.
      * @return Temperature in degrees Celsius.
-     * @runs_on sampler task
+     * @runs_on{sampler}
      */
     float readTemperatureFromScratchpad() const;
 

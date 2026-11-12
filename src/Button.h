@@ -32,7 +32,7 @@ protected:
      * Called from the sampler task via processTriggeredSensors() after the GPIO
      * interrupt fires. Reads the current pin state and applies the debounce window.
      * @param event Mutable event request/response payload.
-     * @runs_on sampler
+     * @runs_on{sampler}
      */
     void processEvent(Event& event) override;
 

@@ -33,7 +33,7 @@ protected:
     /**
      * @brief Template-method hook that lets subclasses execute or suppress a command before propagation.
      * @param command Command being processed.
-     * @runs_on sampler
+     * @runs_on{sampler}
      */
     virtual void executeCommand(Command command) = 0;
 public:
@@ -52,7 +52,7 @@ public:
     /**
      * @brief Handles a command by propagating it to the assigned handler.
      * @param command The command to handle.
-     * @runs_on sampler
+     * @runs_on{sampler}
      */
     void handle(Command command) final;
 

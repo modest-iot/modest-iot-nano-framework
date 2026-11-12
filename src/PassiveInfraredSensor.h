@@ -31,7 +31,7 @@ protected:
      * interrupt fires. Compares the current pin state with the last known state
      * and emits either MOTION_DETECTED or MOTION_STOPPED events.
      * @param event Mutable event request/response payload.
-     * @runs_on sampler
+     * @runs_on{sampler}
      */
     void processEvent(Event& event) override;
 

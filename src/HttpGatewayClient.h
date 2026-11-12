@@ -124,7 +124,7 @@ public:
      * @param method HTTP method enum value (Get, Post, Put, Patch, Delete).
      * @param payload Optional JSON payload body. Pass nullptr for GET/DELETE requests.
      * @return True if the server responded with a valid success status code (2xx).
-     * @runs_on network
+     * @runs_on{network}
      */
     bool sendRequest(HttpMethod method, const char* payload = nullptr);
 

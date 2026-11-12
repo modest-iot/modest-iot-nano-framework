@@ -74,7 +74,7 @@ protected:
      * Called from the sampler task during periodic sampling. Reads the pulse count,
      * calculates the delta since the last sample, and converts to liters per minute.
      * @param event Mutable event request/response payload.
-     * @runs_on sampler
+     * @runs_on{sampler}
      */
     void processEvent(Event& event) override;
 

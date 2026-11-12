@@ -41,7 +41,7 @@ protected:
     /**
      * @brief Template-method hook that lets subclasses transform or suppress an event before propagation.
      * @param event Event being processed.
-     * @runs_on sampler
+     * @runs_on{sampler}
      */
     virtual void processEvent(Event& event) = 0;
 
@@ -96,7 +96,7 @@ public:
     /**
      * @brief Handles an event by propagating it to the assigned handler.
      * @param event The event to handle.
-     * @runs_on sampler
+     * @runs_on{sampler}
      */
     void on(Event event) override;
 

@@ -20,7 +20,7 @@
  * Common use cases include smart greenhouse irrigation control and agriculture
  * monitoring. No external libraries required.
  * 
- * @runs_on sampler_task
+ * @runs_on{sampler}_task
  */
 class SoilMoistureSensor : public Sensor {
 private:

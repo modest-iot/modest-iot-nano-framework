@@ -32,7 +32,7 @@ private:
     /**
      * @brief Converts an angle to a duty cycle and writes it to the LEDC peripheral.
      * @param angleInDegrees Angle in degrees (clamped to 0-180).
-     * @runs_on sampler task
+     * @runs_on{sampler}
      */
     void writeAngle(int angleInDegrees) const;
 

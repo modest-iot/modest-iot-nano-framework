@@ -14,8 +14,6 @@ const Command Buzzer::PLAY_TONE_COMMAND = Command(Buzzer::PLAY_TONE_COMMAND_IDEN
 
 /**
  * @brief Constructs a Buzzer actuator.
- * @param signalGpioPin The GPIO pin for the buzzer.
- * @param parentHandler The parent command handler.
  */
 Buzzer::Buzzer(const int signalGpioPin, CommandHandler* const parentHandler)
     : Actuator(signalGpioPin, parentHandler),
@@ -61,7 +59,6 @@ void Buzzer::playBufferedTone() {
 
 /**
  * @brief Executes a command.
- * @param command The command to execute.
  */
 void Buzzer::executeCommand(Command command) {
     if (command == TURN_ON_COMMAND) {
@@ -75,8 +72,6 @@ void Buzzer::executeCommand(Command command) {
 
 /**
  * @brief Sets the tone parameters.
- * @param frequency The frequency in Hz.
- * @param duration The duration in ms.
  */
 void Buzzer::setTone(const int frequency, const unsigned long duration) {
     bufferedFrequency = frequency;

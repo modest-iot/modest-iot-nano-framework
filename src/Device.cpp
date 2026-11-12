@@ -475,6 +475,7 @@ bool Device::appendToBothSchedulers(Sensor *targetSensorInstance,
 
     return samplingOk && triggerHandle != 0;
 }
+/** @} */
 
 /**
  * @name Command Marshaling
@@ -523,6 +524,7 @@ void Device::processPendingCommands() const {
         }
     }
 }
+/** @} */
 
 DiagnosticsSnapshot Device::diagnostics() const {
     DiagnosticsSnapshot snapshot;

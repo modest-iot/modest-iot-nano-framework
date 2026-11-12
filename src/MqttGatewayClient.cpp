@@ -248,3 +248,4 @@ void MqttGatewayClient::mqttMessageCallback(String& topic, String& payload) {
     const Command command(commandId);
     gActiveMqttClient->targetDevice->enqueueCommand(gActiveMqttClient->targetDevice, command);
 }
+/** @} */

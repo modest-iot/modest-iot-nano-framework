@@ -38,7 +38,7 @@ protected:
      * interrupt fires. Compares the current pin state with the last known state
      * and emits either WATER_LEAK_DETECTED or WATER_LEAK_CLEARED events.
      * @param event Mutable event request/response payload.
-     * @runs_on sampler
+     * @runs_on{sampler}
      */
     void processEvent(Event& event) override;
 

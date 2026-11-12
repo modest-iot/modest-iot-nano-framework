@@ -69,14 +69,14 @@ private:
     /**
      * @brief Sends the start signal to initiate DHT communication.
      * @return true if the sensor responded with the expected LOW+HIGH pulse, false otherwise.
-     * @runs_on sampler task
+     * @runs_on{sampler}
      */
     bool sendStartSignal();
 
     /**
      * @brief Reads a single bit from the DHT data line by measuring HIGH pulse width.
      * @return 0 if the HIGH pulse was short (~26-28µs), 1 if long (~70µs).
-     * @runs_on sampler task
+     * @runs_on{sampler}
      */
     uint8_t readBit();
 
@@ -84,7 +84,7 @@ private:
      * @brief Reads all 40 bits from the DHT sensor and stores them in the provided buffer.
      * @param data Buffer of 5 bytes to store the raw DHT data.
      * @return true if all 40 bits were read successfully, false on timeout.
-     * @runs_on sampler task
+     * @runs_on{sampler}
      */
     bool readData(uint8_t* data);
 

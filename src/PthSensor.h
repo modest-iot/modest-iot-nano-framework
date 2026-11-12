@@ -40,7 +40,7 @@ protected:
      * @details Non-measurement events are left unchanged. A measurement request is
      *          suppressed while uninitialized, on read failure, or when no value
      *          has changed beyond the epsilon thresholds.
-     * @runs_on sampler
+     * @runs_on{sampler}
      */
     void processEvent(Event& event) override;
 

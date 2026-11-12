@@ -19,10 +19,6 @@ const Event GasSensor::DIGITAL_GAS_DETECTED_EVENT = Event(GasSensor::DIGITAL_GAS
 
 /**
  * @brief Constructs a GasSensor.
- * @param analogInputGpioPin Analog input GPIO pin.
- * @param digitalInputGpioPin Digital input GPIO pin.
- * @param parentHandler Upstream handler for events.
- * @param initialMode Initial operating mode for the sensor.
  */
 GasSensor::GasSensor(const int analogInputGpioPin, const int digitalInputGpioPin, EventHandler* const parentHandler, const OperatingMode initialMode)
     : Sensor(analogInputGpioPin, parentHandler), // 'pin' from Sensor base class is now analogInputGpioPin
@@ -60,7 +56,6 @@ void GasSensor::startCalibration() {
 
 /**
  * @brief Sets the R0 (resistance in clean air) value.
- * @param cleanAirResistanceInKiloOhm The R0 value in kOhm.
  */
 void GasSensor::setR0(const float cleanAirResistanceInKiloOhm) {
     if (cleanAirResistanceInKiloOhm > 0.0f) {
@@ -77,8 +72,6 @@ void GasSensor::setR0(const float cleanAirResistanceInKiloOhm) {
 
 /**
  * @brief Sets the target gas type.
- * @param gasType The GasType to target.
- * @return true if successful, false otherwise.
  */
 bool GasSensor::setTargetGas(const GasType gasType) {
     if (gasType == GasType::None || gasType >= GasType::MAX_GAS_TYPE_COUNT) {
@@ -92,10 +85,6 @@ bool GasSensor::setTargetGas(const GasType gasType) {
 
 /**
  * @brief Sets custom calibration parameters for a gas type.
- * @param gasType The GasType.
- * @param slope The slope of the curve.
- * @param intercept The intercept of the curve.
- * @return true if successful, false otherwise.
  */
 bool GasSensor::setGasCalibrationParameters(const GasType gasType, const float slope, const float intercept) {
     if (gasType == GasType::None || gasType >= GasType::MAX_GAS_TYPE_COUNT) {
@@ -289,7 +278,6 @@ void GasSensor::handleRawModeLogic(Event& event, const float currentSensorResist
 
 /**
  * @brief Processes incoming events.
- * @param event The event to process.
  */
 void GasSensor::processEvent(Event& event) {
     if (event.identifier != MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER) {

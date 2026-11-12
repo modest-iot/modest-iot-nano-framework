@@ -58,7 +58,7 @@ public:
      *
      * @param abstractTelemetryPayload Polymorphic payload to serialize and transmit.
      * @return True if the payload was successfully queued for GATT notification.
-     * @runs_on network
+     * @runs_on{network}
      */
     bool sendTelemetryRecord(const TelemetryPackage& abstractTelemetryPayload) override;
 

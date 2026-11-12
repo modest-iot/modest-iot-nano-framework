@@ -166,7 +166,7 @@ private:
      * Unlike light sleep, deep sleep shuts down the CPU, Wi-Fi, and most peripherals
      * (~10µA vs ~100mA). The device reboots on wake — only RTC memory survives.
      * This method is a no-op when not on ESP32 or when the timer is null.
-     * @runs_on sampler task
+     * @runs_on{sampler}
      */
     void enterDeepSleep() const;
 
@@ -188,7 +188,7 @@ public:
      * Uses `esp_sleep_get_wakeup_cause()` to determine how the device woke up
      * (timer, GPIO, touchpad, ULP, or reset) and prints the result to Serial.
      * Call early in setup() to diagnose unexpected wake cycles.
-     * @runs_on any task
+     * @runs_on{any}
      */
     static void reportWakeReason();
 
@@ -392,14 +392,14 @@ protected:
     /**
      * @brief Subclass hook for converting queued payloads into network transmissions.
      * @param rawQueueItemPayload Pointer to the queued telemetry payload.
-     * @runs_on network
+     * @runs_on{network}
      */
     virtual void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) const;
 
     /**
      * @brief Subclass hook for background network and gateway upkeep (e.g., MQTT keep-alive).
      * Invoked periodically by the network dispatcher task during idle queue periods.
-     * @runs_on network
+     * @runs_on{network}
      */
     virtual void maintainNetworkServices() const;
 

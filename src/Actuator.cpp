@@ -23,15 +23,12 @@
 
 /**
  * @brief Stores the target GPIO pin and optional command handler for this actuator.
- * @param signalGpioPin GPIO pin associated with the actuator.
- * @param parentHandler Optional parent handler used for command propagation.
  */
 Actuator::Actuator(int signalGpioPin, CommandHandler* parentHandler)
     : pin(signalGpioPin), commandHandler(parentHandler) {}
 
 /**
  * @brief Executes the command locally and then forwards it to the configured handler.
- * @param command Command to handle.
  */
 void Actuator::handle(const Command command) {
     // Execute hardware-specific command handling
@@ -44,7 +41,6 @@ void Actuator::handle(const Command command) {
 
 /**
  * @brief Replaces the current propagation target for this actuator.
- * @param parentHandler Pointer to the new command handler.
  */
 void Actuator::setHandler(CommandHandler* parentHandler) {
     commandHandler = parentHandler;

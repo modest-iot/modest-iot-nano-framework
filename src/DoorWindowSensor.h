@@ -41,7 +41,7 @@ protected:
      * interrupt fires. Compares the current pin state with the last known state
      * and emits either DOOR_OPENED or DOOR_CLOSED events.
      * @param event Mutable event request/response payload.
-     * @runs_on sampler
+     * @runs_on{sampler}
      */
     void processEvent(Event& event) override;
 
