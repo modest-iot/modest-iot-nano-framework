@@ -92,7 +92,15 @@ package "Core" #FAFAFA {
     +containsKey(key : const char*) const : bool
     +removeKey(key : const char*) : bool
     +clearNamespace() : bool
-    +keyCount() const : size_t
+    +setValue(key : const char*, value) : bool
+  }
+
+  class TimeSynchronizationDriver {
+    +{static} initialize(timezone : const char*, defaultNtpServer : const char*, alternativeNtpServer : const char*) : void
+    +{static} getCurrentTimestamp() : uint32_t
+    +{static} isSynchronized() : bool
+    +{static} saveToRtc() : void
+    +{static} restoreFromRtc() : void
   }
 
   class Device {

@@ -15,7 +15,8 @@
  *
  * The core module establishes the foundational event/command-driven architecture
  * and provides the base abstractions for orchestrating IoT devices, including
- * `ConfigurationStore` for persistent key-value storage using ESP32 NVS.
+ * `ConfigurationStore` for persistent key-value storage using ESP32 NVS,
+ * and `TimeSynchronizationDriver` for NTP-based time synchronization.
  */
 
 /**

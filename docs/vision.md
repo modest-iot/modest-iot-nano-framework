@@ -31,13 +31,13 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 | **Tier 3**: Core Scheduling & Telemetry | W8, W11 | **Complete** ✓ |
 | **Tier 4**: Capabilities                | W12–W15 | **Complete** ✓   |
 | **Tier 5**: Optimization & Power        | W16–W19 | **Complete** (W16 ✓, W17 ✓, W19 ✓, W18 deferred to v1.1.0) |
-| **Pre-Release**: Prerequisites          | W20–W23 | **Partial** — W20 (Config store) ✓, W22 (TLS/SSL) ✓, W23 (Command payload) ✓; W21 pending |
+| **Pre-Release**: Prerequisites          | W20–W23 | **Complete** ✓ — W20 (Config store) ✓, W21 (Time sync) ✓, W22 (TLS/SSL) ✓, W23 (Command payload) ✓ |
 
 ### What's Delivered
 
-- **47 source headers** with full Doxygen documentation and `@runs_on` threading tags.
+- **48 source headers** with full Doxygen documentation and `@runs_on` threading tags.
 - **22 example sketches** covering diverse use cases (MQTT over TLS device, BLE vitals transmitter, remote LED controller, indoor air quality display, pipe temperature monitor, equipment health monitor, smart band, air quality, RFID access, smart greenhouse, weather station, crop monitoring, home security, HTTP telemetry, etc.).
-- **30 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
+- **31 host unit test suites** with shared mocks, Address/Undefined sanitizers, and 100% pass rate.
 - **3 CI workflows**: host tests, compile examples, lint.
 - **Per-slot `SamplingScheduler`** with phase-aligned re-arming and minimum period enforcement.
 - **`EngineConfig`** for tunable FreeRTOS task stacks, priorities, and core pinning.
@@ -122,7 +122,7 @@ Production-ready features across all three transport options:
 | Gap | Impact | Recommendation | Effort |
 |-----|--------|----------------|--------|
 | **Persistent configuration store** | **Complete** ✓ — `ConfigurationStore` using ESP32 NVS (`Preferences`) with namespace-based isolation, type-safe getters/setters (string, int, unsigned long, float, bool), default fallbacks, read-only mode, and schema validation (containsKey, removeKey, clearNamespace). | — | Medium |
-| **No time synchronization** | Telemetry uses `millis()` (device boot time). Server-side correlation requires manual boot-time mapping. | Add `TimeSync` component with NTP support over WiFi, fallback to RTC for deep-sleep devices. | Medium |
+| **No time synchronization** | **Complete** ✓ — `TimeSynchronizationDriver` with NTP support over WiFi and RTC fallback for deep-sleep devices. Telemetry timestamps use Unix epoch seconds via `getCurrentTimestamp()`. WeatherStation example demonstrates NTP initialization and RTC save/restore. | — | — |
 | **TLS/SSL examples & documentation** | **Complete** ✓ — `MqttTlsDevice` example using `WiFiClientSecure` with `MqttGatewayClient` on port 8883. Secure Communication section in README documents both MQTT and HTTP TLS with certificate options (`setInsecure()`, `setCACert()`, `setCertificate()`). | — | Low |
 | **Command payload support** | **Complete** ✓ — `Command(int, int32_t)` constructor with payload. `DRIVE_TO_ANGLE_COMMAND` (ServoMotor), `ADJUST_BRIGHTNESS_COMMAND` (RgbLed), `PLAY_FREQUENCY_COMMAND` (Buzzer). Static helpers: `validateOrAdjustPhysicalAngle()`, `adjustColorSetIntensity()`. | — | Low |
 

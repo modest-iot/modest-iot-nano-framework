@@ -28,7 +28,7 @@ All 8 improvement briefs and the roadmap are consolidated in this single documen
 | ID   | Work Item                        | Priority | Complexity | Description                                                                                   |
 |------|----------------------------------|----------|------------|-----------------------------------------------------------------------------------------------|
 | **W20** | Persistent configuration store  | High     | Medium     | `ConfigurationStore` using ESP32 NVS (`Preferences`) with namespace isolation, type-safe getters/setters, and schema validation. ✅ **Complete** |
-| **W21** | Time synchronization            | High     | Medium     | `TimeSync` component with NTP support over WiFi and RTC fallback for deep-sleep devices. Replaces `millis()` timestamps with absolute time. |
+| **W21** | Time synchronization            | High     | Medium     | `TimeSynchronizationDriver` with NTP support over WiFi and RTC fallback for deep-sleep devices. Replaces `millis()` timestamps with Unix epoch seconds. ✅ **Complete** |
 | **W22** | TLS/SSL examples & documentation | High     | Low        | MQTT over TLS example using `WiFiClientSecure`. Secure Communication section in README documents both MQTT and HTTP TLS. ✅ **Complete** |
 | **W23** | Command payload support         | High     | Low        | Add optional `int32_t` payload to `Command` constructor. Update actuator commands to use payloads where applicable (e.g., servo angle, LED brightness, buzzer frequency). ✅ **Complete** |
 
@@ -75,7 +75,7 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 | W18 | Telemetry pool and writer interface (Phase C)                                           | Tier 5      | 2 | 3 | 1 | L    | 2     | Pending (deferred to v1.1.0)                                                                                                               |
 | W19 | Native servo and LCD drivers                                                            | Tier 5      | 2 | 0 | 1 | M    | 2     | **Complete** (ServoMotor native LEDC, Hd44780Driver + CharacterLcdDisplay native I2C, library.properties updated, 20 host tests) |
 | W20 | Persistent configuration store (ESP32 NVS)                                              | Pre-release | 5 | 1 | 5 | M    | 9     | **Complete** — `ConfigurationStore` with namespace isolation, type-safe getters/setters, schema validation, 66 host tests     |
-| W21 | Time synchronization (NTP + RTC fallback)                                               | Pre-release | 4 | 2 | 4 | M    | 7     | Pending — `TimeSync` component replaces `millis()` timestamps with absolute time                     |
+| W21 | Time synchronization (NTP + RTC fallback)                                               | Pre-release | 4 | 2 | 4 | M    | 7     | **Complete** — `TimeSynchronizationDriver` with NTP, RTC fallback, Unix epoch timestamps       |
 | W22 | TLS/SSL examples & documentation                                                        | Pre-release | 5 | 3 | 4 | S    | 10    | **Complete** — `MqttTlsDevice` example with `WiFiClientSecure`, Secure Communication section in README |
 | W23 | Command payload support                                                                 | Pre-release | 3 | 0 | 4 | S    | 7     | **Complete** — `Command(int, int32_t)` constructor, `DRIVE_TO_ANGLE_COMMAND`, `ADJUST_BRIGHTNESS_COMMAND`, `adjustColorSetIntensity()`, `PLAY_FREQUENCY_COMMAND` |
 | W24 | Telemetry buffering with LittleFS persistence                                           | v1.1.0      | 3 | 3 | 2 | L    | 4     | Deferred — `TelemetryBuffer` for offline replay when network unavailable                            |
@@ -114,7 +114,7 @@ The following items are explicitly deferred to post-v1.0.0 releases. They are in
 ## Claims verified and remaining verification gaps
 
 - **Verified**: Local `arduino-cli compile` cleanly builds all 22 examples across ESP32 targets with `--library .` configured.
-- **Verified**: All 30 host test suites pass with 100% success rate, including ConfigurationStore (66 tests).
+- **Verified**: All 31 host test suites pass with 100% success rate, including ConfigurationStore (66 tests) and TimeSynchronizationDriver (8 tests).
 - **Verified**: `library.properties` `depends=` syntax formatted for Arduino Library Manager compliance.
 - **Verified**: Bluetooth Classic fails on modern ESP32 variants (S2, S3, C3, C6, H2); resolved via target guards and `BleConnectivityDriver`.
 - **Verified**: Host test harness executes 30 unit test suites (`tests/digital_light`, `tests/rgb_led`, `tests/relay_actuator`, `tests/rfid_sensor`, `tests/ble_connectivity`, `tests/log`, `tests/mqtt_gateway`, `tests/engine_config`, `tests/diagnostics`, `tests/sensor_fault`, `tests/scheduler`, `tests/telemetry`, `tests/triggering_scheduler`, `tests/command_marshaling`, `tests/water_flow_sensor`, `tests/soil_moisture_sensor`, `tests/deep_sleep`, `tests/servo_motor`, `tests/character_lcd_display`, `tests/door_window_sensor`, `tests/water_leak_sensor`, `tests/pth_sensor`, `tests/one_wire_temperature_sensor`, `tests/oled_display`, `tests/environmental_gas_sensor`, `tests/dht_sensor`, `tests/ble_gateway_client`, `tests/http_gateway_client`, `tests/buzzer`, `tests/configuration_store`) under Address and Undefined sanitizers.
@@ -873,7 +873,7 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT today (Tie
 | Cloud-to-device | Hand-rolled callback                         | Mediator-routed commands through `Device::enqueueCommand`                     | Same, with `int32_t` payload support for parameterized commands       |
 | Offline data    | Lost when network unavailable                | Drop-oldest queue policy; no persistence                                      | `TelemetryBuffer` with LittleFS persistence for offline replay        |
 | Updates         | Manual reflashing required                   | Manual reflashing required                                                    | OTA updates via `OtaUpdater` component                                |
-| Testing         | Rarely possible off-device                   | 30 host test suites with CI, sanitizers enabled                               | Same, plus integration tests for new components                      |
+| Testing         | Rarely possible off-device                   | 31 host test suites with CI, sanitizers enabled                               | Same, plus integration tests for new components                      |
 
 ### Performance
 
