@@ -111,12 +111,12 @@ private:
 
         // Humidity
         snprintf(displayBuffer, sizeof(displayBuffer), "Hum: %.1f%%",
-                 airQualitySensor.getRelativeHumidityInPercentage());
+                 airQualitySensor.getHumidityInPercentage());
         statusDisplay.setText(displayBuffer, 0, 32);
 
         // Pressure
         snprintf(displayBuffer, sizeof(displayBuffer), "Pres: %.1f hPa",
-                 airQualitySensor.getPressureInHpa());
+                 airQualitySensor.getPressureInHectopascals());
         statusDisplay.setText(displayBuffer, 0, 40);
 
         // Gas resistance
@@ -175,8 +175,8 @@ public:
                           "Hum: %.1f%%, Pres: %.1fhPa\n",
                           airQualitySensor.getGasResistanceInKOhms(),
                           airQualitySensor.getTemperatureInCelsius(),
-                          airQualitySensor.getRelativeHumidityInPercentage(),
-                          airQualitySensor.getPressureInHpa());
+                          airQualitySensor.getHumidityInPercentage(),
+                          airQualitySensor.getPressureInHectopascals());
         }
     }
 
