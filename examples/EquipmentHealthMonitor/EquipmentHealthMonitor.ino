@@ -60,6 +60,24 @@ static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
 /** @name Application Mediator Implementation */
 //@{
 
+/** @brief Minimum vibration weight for load cell calibration (grams). */
+static const float VIBRATION_MIN_WEIGHT_IN_GRAMS = 0.0f;
+
+/** @brief Maximum vibration weight for load cell calibration (grams). */
+static const float VIBRATION_MAX_WEIGHT_IN_GRAMS = 1000.0f;
+
+/** @brief Minimum raw ADC value for load cell calibration. */
+static const long VIBRATION_MIN_RAW_VALUE = 0;
+
+/** @brief Maximum raw ADC value for load cell calibration. */
+static const long VIBRATION_MAX_RAW_VALUE = 1000000;
+
+/** @brief Moving average filter depth for the load cell. */
+static const int VIBRATION_FILTER_DEPTH = 5;
+
+/** @brief Vibration warning threshold in grams. */
+static const float VIBRATION_WARNING_THRESHOLD_IN_GRAMS = 5.0f;
+
 /**
  * @brief Industrial equipment health monitoring device.
  *
@@ -112,16 +130,19 @@ public:
      *
      * Uses custom EngineConfiguration with increased stack sizes for industrial monitoring.
      *
-     * @param vibrationPin GPIO pin connected to the load cell amplifier output.
+     * @param vibrationDataPin GPIO pin connected to the HX711 Data (DOUT) line.
+     * @param vibrationClockPin GPIO pin connected to the HX711 Clock (PD_SCK) line.
      * @param tempPin GPIO pin connected to the DHT22 data line.
      * @param samplingIntervalInMilliseconds How often to sample sensors (ms).
      * @param timerGroupIndex Hardware timer group index (0-3).
      */
-    EquipmentHealthMonitor(int vibrationPin, int tempPin,
+    EquipmentHealthMonitor(int vibrationDataPin, int vibrationClockPin, int tempPin,
                            unsigned long samplingIntervalInMilliseconds,
                            uint8_t timerGroupIndex = 0)
         : Device(samplingIntervalInMilliseconds, timerGroupIndex),
-          vibrationSensor(vibrationPin, 0, this),
+          vibrationSensor(vibrationDataPin, vibrationClockPin, VIBRATION_MIN_WEIGHT_IN_GRAMS,
+                          VIBRATION_MAX_WEIGHT_IN_GRAMS, VIBRATION_MIN_RAW_VALUE,
+                          VIBRATION_MAX_RAW_VALUE, VIBRATION_FILTER_DEPTH, this),
           tempSensor(tempPin, DhtSensor::SENSOR_MODEL_DHT22, this),
           sampleCount(0)
     {
@@ -133,7 +154,8 @@ public:
         config.queueLength = SAMPLER_QUEUE_LENGTH;
         initializeAsynchronousEngine(config);
 
-        appendSensorToScheduler(&vibrationSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+        // Hybrid scheduling: interrupt-driven data-ready detection eliminates the 100 ms busy-wait.
+        appendToBothSchedulers(&vibrationSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER, FALLING);
         appendSensorToScheduler(&tempSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
         MIOT_LOG_I(EQUIP_HEALTH_LOG_TAG, "Engine configured: sampler stack %lu bytes, queue length %u",
@@ -152,15 +174,15 @@ public:
         if (event.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER) {
             sampleCount++;
 
-            long vibration = vibrationSensor.getWeightInMilligrams();
+            float vibration = vibrationSensor.getWeightInGrams();
             float temperature = tempSensor.getTemperatureInCelsius();
 
-            MIOT_LOG_I(EQUIP_HEALTH_LOG_TAG, "Sample #%lu -> Vibration: %ld mg, Temp: %.1f°C",
+            MIOT_LOG_I(EQUIP_HEALTH_LOG_TAG, "Sample #%lu -> Vibration: %.2f g, Temp: %.1f°C",
                        sampleCount, vibration, temperature);
 
             // Check for abnormal vibration levels
-            if (vibration > 5000) {
-                MIOT_LOG_W(EQUIP_HEALTH_LOG_TAG, "High vibration detected: %ld mg (sample #%lu)",
+            if (vibration > VIBRATION_WARNING_THRESHOLD_IN_GRAMS) {
+                MIOT_LOG_W(EQUIP_HEALTH_LOG_TAG, "High vibration detected: %.2f g (sample #%lu)",
                            vibration, sampleCount);
             }
 
@@ -183,8 +205,9 @@ public:
     bool start() {
         MIOT_LOG_I(EQUIP_HEALTH_LOG_TAG, "Equipment health monitor starting...");
 
-        if (!vibrationSensor.isInitialized()) {
-            MIOT_LOG_E(EQUIP_HEALTH_LOG_TAG, "Load cell amplifier not responding on pin %d",
+        vibrationSensor.tare();
+        if (vibrationSensor.getWeightInGrams() < 0.0f) {
+            MIOT_LOG_W(EQUIP_HEALTH_LOG_TAG, "Load cell amplifier may need recalibration on pin %d",
                        vibrationSensor.getSignalGpioPin());
         }
 
@@ -199,8 +222,9 @@ public:
 /** @name Top-Level Declarative Canvas */
 //@{
 
-static const int VIBRATION_SENSOR_PIN = 34;  ///< GPIO pin for load cell amplifier output.
-static const int TEMPERATURE_SENSOR_PIN = 4; ///< GPIO pin for DHT22 data line.
+static const int VIBRATION_SENSOR_DATA_PIN   = 34; ///< GPIO pin for HX711 Data (DOUT).
+static const int VIBRATION_SENSOR_CLOCK_PIN  = 32; ///< GPIO pin for HX711 Clock (PD_SCK).
+static const int TEMPERATURE_SENSOR_PIN      = 4;  ///< GPIO pin for DHT22 data line.
 
 static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS = 2000;
 static const uint8_t HARDWARE_TIMER_CHANNEL_INDEX = 0;
@@ -211,7 +235,8 @@ void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
 
     healthMonitor = new EquipmentHealthMonitor(
-        VIBRATION_SENSOR_PIN,
+        VIBRATION_SENSOR_DATA_PIN,
+        VIBRATION_SENSOR_CLOCK_PIN,
         TEMPERATURE_SENSOR_PIN,
         SAMPLING_INTERVAL_IN_MILLISECONDS,
         HARDWARE_TIMER_CHANNEL_INDEX
