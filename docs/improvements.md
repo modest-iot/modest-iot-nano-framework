@@ -231,12 +231,12 @@ Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power ev
 **Test Runner & CI**:
 - Implemented `tests/run_all.sh` with strict warnings (`-Wall -Wextra -Werror`) and Address/Undefined sanitizers.
 - Added GitHub Actions workflows:
-  - `host-tests.yml`: runs all 29 test suites on Ubuntu and macOS.
+  - `host-tests.yml`: runs all 31 test suites on Ubuntu and macOS.
   - `compile-examples.yml`: compiles all 22 examples across ESP32 and ESP32-S3 boards.
   - `lint.yml`: validates `library.properties` with Arduino Library Manager compliance.
 - Registered all test targets in `CMakeLists.txt` with CTest integration.
 
-**Test Suites (29 total)**:
+**Test Suites (31 total)**:
 
 | #  | Suite                                | What It Tests                                                          |
 |----|--------------------------------------|------------------------------------------------------------------------|

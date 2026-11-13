@@ -313,7 +313,7 @@ The framework ships with 22 example sketches demonstrating various use cases:
 
 ## Testing
 
-The framework includes 30 host unit test suites that run natively without hardware:
+The framework includes 31 host unit test suites that run natively without hardware:
 
 | Suite | What It Tests |
 |---|---|
@@ -346,6 +346,7 @@ The framework includes 30 host unit test suites that run natively without hardwa
 | `tests/HttpGatewayClient/` | HTTP methods, auth headers, response body handling, statistics tracking |
 | `tests/Buzzer/` | All commands (TURN_ON, TURN_OFF, PLAY_TONE, PLAY_FREQUENCY) with tone/noTone mock |
 | `tests/ConfigurationStore/` | Namespace isolation, type-safe getters/setters, default fallbacks, read-only mode, schema validation |
+| `tests/TimeSynchronizationDriver/` | NTP initialization, timestamp fallback, sync status, RTC save/restore |
 
 Run all tests locally:
 
@@ -459,14 +460,14 @@ void loop() {
 
 ## License
 
-This project is licensed under the **MIT License**.
+This project is licensed under the **Apache License 2.0**.
 
 - **Allowed**: Use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the framework, with attribution.
 - **Full License**: See [`LICENSE.md`](LICENSE.md) for the complete terms.
 
 ## Contributing
 
-Contributions, improvements, and extensions are welcome under the MIT License. You're welcome to:
+Contributions, improvements, and extensions are welcome under the Apache License 2.0. You're welcome to:
 
 - Use the framework in your projects.
 - Submit feedback, bug reports, or feature suggestions via GitHub.
