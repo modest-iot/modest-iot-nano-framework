@@ -46,7 +46,7 @@ void TimeSynchronizationDriver::initialize(const char* tz, const char* defaultNt
     configTzTime(tz, defaultNtpServer, alternativeNtpServer);
     synchronized = false;
     // NTP sync will complete asynchronously; getLocalTime() will trigger the actual sync
-    struct timeinfo tp;
+    struct tm tp;
     if (getLocalTime(&tp, 5000)) {
         synchronized = true;
     }
