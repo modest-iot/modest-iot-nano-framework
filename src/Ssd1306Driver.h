@@ -8,6 +8,7 @@
  * @date 2026-11-10
  * @version 1.0
  */
+#include <cstddef>
 #include <cstdint>
 #include <Wire.h>
 
