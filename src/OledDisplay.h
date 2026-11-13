@@ -74,6 +74,16 @@ public:
      */
     void setText(const char* text, uint8_t x, uint8_t y);
 
+#if defined(ARDUINO_ARCH_ESP32)
+    /**
+     * @brief Renders a flash-memory string at the specified position.
+     * @param text Flash string (e.g., from the `F()` macro) to render.
+     * @param x X coordinate in pixels (0-127).
+     * @param y Y coordinate in pixels (0-63), aligned to 8-pixel rows.
+     */
+    void setText(const __FlashStringHelper* text, uint8_t x, uint8_t y);
+#endif
+
     /**
      * @brief Clears the frame buffer, filling it with zeros.
      */
