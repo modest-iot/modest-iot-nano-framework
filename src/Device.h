@@ -383,17 +383,6 @@ protected:
                                  int requestedEventIdentifier,
                                  int interruptMode = CHANGE);
 
-    GatewayClient* telemetryGateway = nullptr;
-
-    /**
-     * @brief Sets the telemetry gateway client for diagnostics aggregation.
-     * @param gateway The gateway client to register.
-     *
-     * Registers a gateway so that diagnostics() can query send statistics
-     * (sends succeeded/failed). Call this before initializeAsynchronousEngine().
-     */
-    void setTelemetryGateway(GatewayClient* gateway);
-
     /**
      * @brief Subclass hook for converting queued payloads into network transmissions.
      * @param rawQueueItemPayload Pointer to the queued telemetry payload.
@@ -439,6 +428,17 @@ protected:
      * ~Device() executes, and a running task could access freed memory.
      */
     void stopAsynchronousEngine();
+
+    GatewayClient* telemetryGateway = nullptr;
+
+    /**
+     * @brief Sets the telemetry gateway client for diagnostics aggregation.
+     * @param gateway The gateway client to register.
+     *
+     * Registers a gateway so that diagnostics() can query send statistics
+     * (sends succeeded/failed). Call this before initializeAsynchronousEngine().
+     */
+    void setTelemetryGateway(GatewayClient* gateway);
 
 public:
     /**
