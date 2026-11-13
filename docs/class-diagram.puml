@@ -5,7 +5,7 @@ skinparam classFontStyle bold
 skinparam packageStyle rectangle
 skinparam linetype ortho
 skinparam shadowing false
-title Modest IoT Nano Framework — Class Diagram (v1.0.0)
+title Modest IoT Nano Framework — Class Diagram (v1.0.0, 48 headers)
 
 ' ─────────────────────────────────────────────
 '  CORE
@@ -508,6 +508,7 @@ package "Actuators" #EEF0FF {
     +{static} TURN_OFF_COMMAND_IDENTIFIER : int = 305
     +{static} TOGGLE_LED_COMMAND_IDENTIFIER : int = 306
     +{static} SET_COLOR_COMMAND_IDENTIFIER : int = 307
+    +{static} ADJUST_BRIGHTNESS_COMMAND_IDENTIFIER : int = 308
     +{static} RED : RgbColor
     +{static} GREEN : RgbColor
     +{static} BLUE : RgbColor
@@ -515,6 +516,11 @@ package "Actuators" #EEF0FF {
     +RgbLed(redGpioPin : int, greenGpioPin : int, blueGpioPin : int, isCommonAnode : bool = false, parentHandler : CommandHandler* = nullptr)
     +setColor(redIntensity : uint8_t, greenIntensity : uint8_t, blueIntensity : uint8_t) : void
     +setColor(color : const RgbColor&) : void
+    +getRedIntensity() : uint8_t
+    +getGreenIntensity() : uint8_t
+    +getBlueIntensity() : uint8_t
+    +adjustColorSetIntensity(factor : uint8_t) : void
+    +{static} adjustColorChannelIntensity(intensity : uint8_t, factor : uint8_t) : uint8_t
     +isActive() const : bool
     #executeCommand(command : Command) : void
   }
@@ -551,9 +557,11 @@ package "Actuators" #EEF0FF {
     +{static} LOCK_TO_MINIMUM_LIMIT_COMMAND_IDENTIFIER : int = 150
     +{static} LOCK_TO_MAXIMUM_LIMIT_COMMAND_IDENTIFIER : int = 151
     +{static} DRIVE_TO_BUFFERED_ANGLE_COMMAND_IDENTIFIER : int = 152
+    +{static} DRIVE_TO_ANGLE_COMMAND_IDENTIFIER : int = 153
     +ServoMotor(signalGpioPin : int, initialAngleInDegrees : int = 0, parentHandler : CommandHandler* = nullptr)
     +setTargetAngleBufferInDegrees(targetAngleInDegrees : int) : void
     +getCurrentActiveAngleInDegrees() const : int
+    +{static} validateOrAdjustPhysicalAngle(physicalAngle : int) : int
     #executeCommand(command : Command) : void
   }
 
@@ -564,6 +572,7 @@ package "Actuators" #EEF0FF {
     +{static} TURN_ON_COMMAND_IDENTIFIER : int = 250
     +{static} TURN_OFF_COMMAND_IDENTIFIER : int = 251
     +{static} PLAY_TONE_COMMAND_IDENTIFIER : int = 252
+    +{static} PLAY_FREQUENCY_COMMAND_IDENTIFIER : int = 253
     +Buzzer(signalGpioPin : int, parentHandler : CommandHandler* = nullptr)
     +setTone(frequency : int, duration : unsigned long) : void
     +isActive() const : bool
@@ -616,6 +625,14 @@ package "Connectivity" #EDF3FF {
     +isConnected() : bool
     +canTransmit() : bool
     +getNetworkSocket() : Client&
+    +{static} createSecureSocket(caCert : const char*, insecure : bool) : WiFiClientSecure*
+    +getWiFiStatus() : wl_status_t
+    +disconnect() : void
+    +getLocalIpAddress() : IPAddress
+    +getSignalStrengthInDbm() : int32_t
+    +waitForConnection(timeoutMilliseconds : unsigned long) : bool
+    +setReconnectInterval(intervalMilliseconds : unsigned long) : void
+    +getReconnectInterval() : unsigned long
   }
 
   class BleConnectivityDriver {
@@ -796,6 +813,7 @@ MqttGatewayClient --> Device       : enqueueCommand
 
 WiFiConnectivityDriver ..> WiFiClient : allocates
 WiFiConnectivityDriver ..> Client     : exposes
+WiFiConnectivityDriver ..> WiFiClientSecure : creates
 
 BleConnectivityDriver ..> BLEServer : uses
 BleConnectivityDriver ..> BLECharacteristic : uses
