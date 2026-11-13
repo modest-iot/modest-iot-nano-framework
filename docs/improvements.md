@@ -177,6 +177,7 @@ The following items are explicitly deferred to post-v1.0.0 releases. They are in
 
 **Resolution**:
 - Removed root clutter (`main.cpp`, `Modest-IoT-Nano-Framework.ino`).
+  > **Note**: The `.ino` file name uses hyphens as a file system convention.
 - Updated `.gitignore` rules (`.DS_Store`, `/cmake-build-arduino/`, `/build/`, `*.o`).
 - Aligned `CMakeLists.txt` `SKETCH_DIR` to `examples/ClassicBlinker` with cache variable.
 

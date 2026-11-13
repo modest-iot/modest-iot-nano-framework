@@ -1,7 +1,9 @@
-# Modest IoT Nano-framework (C++ Edition)
+# Modest IoT Nano Framework (C++ Edition)
 
 This API reference documents the public abstractions and built-in components in
 `Modest-IoT-Nano-Framework` (v1.0.0).
+
+> **Note**: The repository and directory names use hyphens (`Modest-IoT-Nano-Framework`) as a file system convention. The display name is "Modest IoT Nano Framework" (with spaces).
 
 ## Architecture Overview
 
