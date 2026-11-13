@@ -6,7 +6,6 @@
  * @brief Umbrella header that exposes the public framework API.
  * @ingroup core_module
  * @copyright (c) 2025-2026 Angel Velasquez
- * @license Apache-2.0
  *
  * Include this header from sketches to import all core primitives,
  * connectivity abstractions, and built-in sensor/actuator implementations.

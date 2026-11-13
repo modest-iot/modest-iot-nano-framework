@@ -3,7 +3,6 @@
  * @brief Implements buffered text rendering and backlight control for I2C Liquid Crystal displays.
  * Composes Hd44780Driver for native HD44780 4-bit mode protocol via Wire with PCF8574 backpack.
  * @copyright (c) 2025-2026 Angel Velasquez
- * @license Apache-2.0
  * @date 2026-06-06
  * @version 1.0
  */

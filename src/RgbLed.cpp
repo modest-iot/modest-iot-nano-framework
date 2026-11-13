@@ -2,7 +2,6 @@
  * @file RgbLed.cpp
  * @brief Implements command-driven RGB LED color and state transitions.
  * @copyright (c) 2025-2026 Angel Velasquez
- * @license Apache-2.0
  * @date 2026-10-31
  * @version 1.0
  */

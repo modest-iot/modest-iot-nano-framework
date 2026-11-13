@@ -2,7 +2,6 @@
  * @file Actuator.cpp
  * @brief Implements the Actuator base class.
  * @copyright (c) 2025-2026 Angel Velasquez
- * @license Apache-2.0
  *
  * Provides core functionality for actuators in the Modest IoT Nano-framework, including command
  * propagation to an assigned handler. Subclasses should configure hardware and define specific

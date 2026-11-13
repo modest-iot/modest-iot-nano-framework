@@ -6,7 +6,6 @@
  * @brief Declares the Actuator base class.
  * @ingroup actuators_module
  * @copyright (c) 2025-2026 Angel Velasquez
- * @license Apache-2.0
  *
  * This abstract base class represents output devices in the Modest IoT Nano-framework, providing
  * a foundation for actuators that respond to commands. It includes command propagation to an

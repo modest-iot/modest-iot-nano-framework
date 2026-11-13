@@ -26,7 +26,7 @@ INHERIT_DOCS           = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_IF_DOC_ERROR      = YES
 WARN_AS_ERROR          = NO
-ALIASES                = "runs_on{1}=\"Runs on: \1\"", "license{1}=\"License: \1\""
+ALIASES                = "runs_on{1}=\"Runs on: \1\""
 
 # Output formats
 GENERATE_HTML          = YES

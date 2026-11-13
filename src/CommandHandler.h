@@ -6,7 +6,6 @@
  * @brief Defines the CommandHandler interface.
  * @ingroup core_module
  * @copyright (c) 2025-2026 Angel Velasquez
- * @license Apache-2.0
  *
  * This file establishes the foundation for command-driven behavior in the Modest IoT Nano-framework.
  * `CommandHandler` is an abstract interface for classes that process `Command` objects,

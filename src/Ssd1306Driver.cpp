@@ -2,7 +2,6 @@
  * @file Ssd1306Driver.cpp
  * @brief Implements the SSD1306 OLED I2C protocol for 128x64 monochrome displays.
  * @copyright (c) 2025-2026 Angel Velasquez
- * @license Apache-2.0
  * @date 2026-11-10
  * @version 1.0
  */

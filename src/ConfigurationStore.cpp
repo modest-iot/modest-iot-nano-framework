@@ -3,7 +3,6 @@
  * @brief Implements persistent key-value configuration storage using ESP32 NVS.
  * @ingroup core_module
  * @copyright (c) 2025-2026 Angel Velasquez
- * @license Apache-2.0
  * @date 2026-11-12
  * @version 1.0
  */

@@ -2,7 +2,6 @@
  * @file PassiveInfraredSensor.cpp
  * @brief Implements PIR sensor motion detection via interrupt-driven operation.
  * @copyright (c) 2025-2026 Angel Velasquez
- * @license Apache-2.0
  */
 
 #include "PassiveInfraredSensor.h"

@@ -6,7 +6,6 @@
  * @brief Declares the BME680-compatible environmental gas sensor adapter.
  * @ingroup sensors_module
  * @copyright (c) 2025-2026 Angel Velasquez
- * @license Apache-2.0
  */
 
 #include "BmeEnvironmentalSensor.h"

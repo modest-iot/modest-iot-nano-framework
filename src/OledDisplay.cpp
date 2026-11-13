@@ -3,7 +3,6 @@
  * @brief Implements frame buffer management, text rendering, and drawing primitives for OLED displays.
  * Composes Ssd1306Driver for native SSD1306 I2C protocol via Wire.
  * @copyright (c) 2025-2026 Angel Velasquez
- * @license Apache-2.0
  * @date 2026-11-10
  * @version 1.0
  */

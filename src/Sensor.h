@@ -6,7 +6,6 @@
  * @brief Declares the Sensor base class.
  * @ingroup sensors_module
  * @copyright (c) 2025-2026 Angel Velasquez
- * @license Apache-2.0
  *
  * This abstract base class represents input devices in the Modest IoT Nano-framework, providing
  * a foundation for sensors that generate events. It includes event propagation to an optional

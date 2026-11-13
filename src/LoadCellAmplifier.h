@@ -6,7 +6,6 @@
  * @brief Declares a LoadCellAmplifier sensor adapter.
  * @ingroup sensors_module
  * @copyright (c) 2025-2026 Angel Velasquez
- * @license Apache-2.0
  * @date 2026-06-16
  * @version 1.0
  */

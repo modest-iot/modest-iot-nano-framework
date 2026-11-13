@@ -2,7 +2,6 @@
  * @file GasSensor.cpp
  * @brief Implements gas level detection and concentration ratio calculation for analog gas sensors.
  * @copyright (c) 2025-2026 Angel Velasquez
- * @license Apache-2.0
  * @date 2026-06-06
  * @version 1.0
  */

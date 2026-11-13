@@ -6,7 +6,6 @@
  * @brief Declares a native SSD1306 OLED I2C driver for 128x64 monochrome displays.
  * @ingroup actuators_module
  * @copyright (c) 2025-2026 Angel Velasquez
- * @license Apache-2.0
  * @date 2026-11-10
  * @version 1.0
  */

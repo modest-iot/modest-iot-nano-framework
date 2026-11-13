@@ -6,7 +6,6 @@
  * @brief Declares an RGB LED actuator with PWM color control and predefined colors.
  * @ingroup actuators_module
  * @copyright (c) 2025-2026 Angel Velasquez
- * @license Apache-2.0
  *
  * Provides `RgbColor`, a lightweight color value type, and `RgbLed`, a command-driven
  * actuator that drives the red, green and blue channels of a common-cathode or
