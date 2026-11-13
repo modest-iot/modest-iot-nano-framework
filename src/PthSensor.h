@@ -5,6 +5,8 @@
  * @file PthSensor.h
  * @brief Declares the BME280-compatible pressure, temperature, and humidity sensor adapter.
  * @ingroup sensors_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  */
 
 #include "BmeEnvironmentalSensor.h"

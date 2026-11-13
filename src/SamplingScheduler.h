@@ -5,6 +5,8 @@
  * @file SamplingScheduler.h
  * @brief Declares a platform-independent per-slot sampling scheduler.
  * @ingroup core_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-11-04
  * @version 1.0
  *

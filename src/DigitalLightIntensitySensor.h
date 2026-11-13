@@ -5,6 +5,8 @@
  * @file DigitalLightIntensitySensor.h
  * @brief Declares the BH1750 digital illuminance sensor adapter.
  * @ingroup sensors_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  */
 
 #include "Sensor.h"

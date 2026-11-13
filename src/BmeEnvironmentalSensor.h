@@ -5,6 +5,8 @@
  * @file BmeEnvironmentalSensor.h
  * @brief Declares the abstract base class for Bosch BME280/BME680 environmental sensors.
  * @ingroup sensors_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  */
 
 #include "Sensor.h"

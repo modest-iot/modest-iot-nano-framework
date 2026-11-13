@@ -1,6 +1,8 @@
 /**
  * @file TimeSynchronizationDriver.h
  * @brief Provides absolute Unix time via NTP with RTC fallback for deep-sleep devices.
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-11-12
  * @version 1.0
  * @ingroup core_module

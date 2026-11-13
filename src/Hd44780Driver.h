@@ -5,6 +5,8 @@
  * @file Hd44780Driver.h
  * @brief Declares a native HD44780 4-bit mode I2C driver using PCF8574 backpack.
  * @ingroup actuators_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-11-09
  * @version 1.0
  */

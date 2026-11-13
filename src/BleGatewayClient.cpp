@@ -2,6 +2,8 @@
  * @file BleGatewayClient.cpp
  * @brief Implements a BLE NUS gateway client for serialized telemetry payloads.
  * @ingroup gateway_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-11-11
  * @version 1.0
  */

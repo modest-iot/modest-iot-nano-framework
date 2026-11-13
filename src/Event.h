@@ -5,6 +5,8 @@
  * @file Event.h
  * @brief Defines the lightweight event value object used by the framework.
  * @ingroup core_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-06-06
  * @version 1.0
  */

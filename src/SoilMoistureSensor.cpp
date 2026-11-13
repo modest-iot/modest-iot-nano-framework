@@ -1,6 +1,8 @@
 /**
  * @file SoilMoistureSensor.cpp
  * @brief Implements analogRead-based soil moisture detection with change detection.
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-11-09
  * @version 1.0
  */

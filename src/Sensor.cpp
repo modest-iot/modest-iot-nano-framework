@@ -1,6 +1,8 @@
 /**
-* @file Sensor.cpp
+ * @file Sensor.cpp
  * @brief Implements the Sensor base class.
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  *
  * Provides core functionality for sensors in the Modest IoT Nano-framework, including event
  * propagation to an assigned handler. Subclasses should configure hardware and define specific
@@ -9,14 +11,6 @@
  * @author Angel Velasquez
  * @date 2026-06-06
  * @version 1.0
- */
-
-/*
- * This file is part of the Modest IoT Nano-framework (C++ Edition).
- * Copyright (c) 2025-2026 Angel Velasquez
- *
- * Licensed under the MIT License.
- * See LICENSE.md in the root of this repository for full terms.
  */
 
 #include "Sensor.h"

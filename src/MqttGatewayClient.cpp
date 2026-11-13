@@ -1,6 +1,8 @@
 /**
  * @file MqttGatewayClient.cpp
  * @brief Implements MQTT broker session handling and telemetry publish operations.
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-06-06
  * @version 1.0
  */

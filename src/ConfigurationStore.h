@@ -5,6 +5,8 @@
  * @file ConfigurationStore.h
  * @brief Declares a persistent key-value configuration store using ESP32 NVS (Preferences).
  * @ingroup core_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-11-12
  * @version 1.0
  */

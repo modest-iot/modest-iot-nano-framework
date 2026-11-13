@@ -5,6 +5,8 @@
  * @file GatewayClient.h
  * @brief Declares a generic telemetry gateway that delegates transport details.
  * @ingroup gateway_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-06-06
  * @version 1.0
  */

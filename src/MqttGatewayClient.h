@@ -5,6 +5,8 @@
  * @file MqttGatewayClient.h
  * @brief Declares an MQTT publisher client for serialized telemetry payloads.
  * @ingroup gateway_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-06-06
  * @version 1.0
  */

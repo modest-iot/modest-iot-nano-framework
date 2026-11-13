@@ -1,3 +1,12 @@
+/**
+ * @file LoadCellAmplifier.cpp
+ * @brief Implements HX711 load cell amplifier communication and weight calculation.
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
+ * @date 2026-06-16
+ * @version 1.0
+ */
+
 #include "LoadCellAmplifier.h"
 #include <Arduino.h>
 #include <cmath>

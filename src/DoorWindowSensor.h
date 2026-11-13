@@ -5,6 +5,8 @@
  * @file DoorWindowSensor.h
  * @brief Declares a door/window open/close detection sensor.
  * @ingroup sensors_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  */
 
 #include "Sensor.h"

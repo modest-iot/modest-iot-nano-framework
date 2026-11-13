@@ -1,6 +1,8 @@
 /**
  * @file Hd44780Driver.cpp
  * @brief Implements the HD44780 4-bit mode I2C protocol using PCF8574 backpack.
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-11-09
  * @version 1.0
  */

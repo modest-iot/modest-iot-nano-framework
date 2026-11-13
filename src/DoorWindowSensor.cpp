@@ -2,6 +2,8 @@
  * @file DoorWindowSensor.cpp
  * @brief Implements the door/window open/close detection sensor.
  * @ingroup sensors_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  *
  * @author Angel Velasquez
  * @date 2026-11-10

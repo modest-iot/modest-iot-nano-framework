@@ -5,6 +5,8 @@
  * @file GasSensor.h
  * @brief Declares a Gas Sensor adapter (e.g., MQ-series) for detecting gas levels.
  * @ingroup sensors_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-06-06
  * @version 1.0
  */

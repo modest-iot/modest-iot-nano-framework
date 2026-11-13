@@ -5,6 +5,8 @@
  * @file ModestLog.h
  * @brief Zero-overhead compile-time logging facility with tag and level filtering.
  * @ingroup core_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  *
  * Provides standardized logging macros (`MODEST_LOG_*`) and ergonomic shorthand
  * aliases (`MIOT_LOG_*`). On Arduino-ESP32, logging maps to native hardware-buffered

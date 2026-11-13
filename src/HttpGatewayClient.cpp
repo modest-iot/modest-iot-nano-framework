@@ -1,6 +1,8 @@
 /**
  * @file HttpGatewayClient.cpp
  * @brief Implements HTTP transport for serialized telemetry packages with authentication support.
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-06-06
  * @version 1.0
  */

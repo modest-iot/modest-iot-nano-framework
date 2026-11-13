@@ -5,6 +5,8 @@
  * @file GeolocationSensor.h
  * @brief Declares a GPS/NMEA geolocation sensor that parses serial NMEA sentences.
  * @ingroup sensors_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-06-06
  * @version 1.0
  */

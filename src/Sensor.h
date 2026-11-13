@@ -5,22 +5,16 @@
  * @file Sensor.h
  * @brief Declares the Sensor base class.
  * @ingroup sensors_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  *
  * This abstract base class represents input devices in the Modest IoT Nano-framework, providing
  * a foundation for sensors that generate events. It includes event propagation to an optional
  * handler, supporting the framework’s event-driven design.
- * 
+ *
  * @author Angel Velasquez
  * @date 2026-06-06
  * @version 1.0
- */
-
-/*
- * This file is part of the Modest IoT Nano-framework (C++ Edition).
- * Copyright (c) 2025-2026 Angel Velasquez
- *
- * Licensed under the MIT License.
- * See LICENSE.md in the root of this repository for full terms.
  */
 
 #include <Arduino.h>

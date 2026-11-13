@@ -1,6 +1,8 @@
 /**
  * @file TimeSynchronizationDriver.cpp
  * @brief Implements NTP-based time synchronization with RTC fallback.
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-11-12
  * @version 1.0
  */

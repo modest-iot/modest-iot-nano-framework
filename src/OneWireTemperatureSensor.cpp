@@ -1,6 +1,8 @@
 /**
  * @file OneWireTemperatureSensor.cpp
  * @brief Implements the 1-Wire temperature sensor with native DS18B20 protocol.
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  *
  * This file contains the 1-Wire bit-banging protocol implementation for DS18B20
  * and compatible digital temperature sensors. All timing values are from the

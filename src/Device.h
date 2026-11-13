@@ -5,6 +5,8 @@
  * @file Device.h
  * @brief Declares the Device base class that orchestrates sensors, commands, and telemetry dispatch.
  * @ingroup core_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-06-06
  * @version 1.0
  */

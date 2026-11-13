@@ -152,6 +152,12 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - CI workflows: host tests, ESP32 compilation, linting
 - AddressSanitizer and UndefinedBehaviorSanitizer enabled in tests
 
+### License
+- **MIT → Apache 2.0**: Replaced MIT License with Apache License 2.0 for explicit trademark protection (prevents "Modest IoT" rebranding), explicit patent grant, mandatory change documentation, and NOTICE file requirement
+- **NOTICE file**: Created `NOTICE` file with author attribution that must be preserved in all distributions
+- **Copyright headers**: Added `@copyright (c) 2025-2026 Angel Velasquez` and `@license Apache-2.0` to all 86 source files (48 headers + 38 implementations)
+- **library.properties**: Added `license=Apache-2.0` field for Arduino Library Manager
+
 ### Documentation
 - 30 Architecture Decision Records (ADRs)
 - Doxygen documentation with API navigation tree, key features section, and `@runs_on` threading tags

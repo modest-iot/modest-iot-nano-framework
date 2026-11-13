@@ -1,3 +1,12 @@
+/**
+ * @file GeolocationSensor.cpp
+ * @brief Implements GPS/NMEA sentence parsing for geolocation data.
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
+ * @date 2026-06-06
+ * @version 1.0
+ */
+
 #include "GeolocationSensor.h"
 
 GeolocationSensor::GeolocationSensor(HardwareSerial& serial, int receiveGpioPin, int transmitGpioPin, long baudRate, EventHandler* parentHandler)

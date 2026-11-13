@@ -5,6 +5,8 @@
  * @file Buzzer.h
  * @brief Declares a Buzzer actuator for sound generation (on/off, tones).
  * @ingroup actuators_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-06-06
  * @version 1.0
  */

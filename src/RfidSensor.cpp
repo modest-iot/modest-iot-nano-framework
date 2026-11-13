@@ -1,14 +1,8 @@
 /**
  * @file RfidSensor.cpp
  * @brief Implements MFRC522 SPI register communication, ISO14443A card polling, and event dispatching.
- */
-
-/*
- * This file is part of the Modest IoT Nano-framework (C++ Edition).
- * Copyright (c) 2025-2026 Angel Velasquez
- *
- * Licensed under the MIT License.
- * See LICENSE.md in the root of this repository for full terms.
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  */
 
 #include "RfidSensor.h"

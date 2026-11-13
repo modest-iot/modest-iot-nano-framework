@@ -5,6 +5,8 @@
  * @file OneWireTemperatureSensor.h
  * @brief Declares a 1-Wire temperature sensor with native DS18B20 protocol.
  * @ingroup sensors_module
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @license Apache-2.0
  * @date 2026-11-10
  * @version 1.0
  */
