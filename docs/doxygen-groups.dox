@@ -277,7 +277,7 @@
  * @ingroup connectivity_module
  * @{
  */
-// Wi-Fi connectivity driver for ESP32 defined here
+// Wi-Fi connectivity driver with TLS socket builder (createSecureSocket) defined here
 // BLE NUS connectivity driver for ESP32 defined here
 /** @} */
 
