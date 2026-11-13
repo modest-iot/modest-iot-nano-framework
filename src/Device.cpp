@@ -679,6 +679,10 @@ void Device::reportWakeReason() {
 #endif
 }
 
+void Device::setTelemetryGateway(GatewayClient* gateway) {
+    telemetryGateway = gateway;
+}
+
 void Device::setPowerMode(const PowerMode mode) {
     powerMode = mode;
 }

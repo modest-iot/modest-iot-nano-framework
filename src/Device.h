@@ -383,11 +383,16 @@ protected:
                                  int requestedEventIdentifier,
                                  int interruptMode = CHANGE);
 
-    /**
-     * @brief Optional gateway reference for diagnostics aggregation.
-     * Derived classes can set this so diagnostics() can query send statistics.
-     */
     GatewayClient* telemetryGateway = nullptr;
+
+    /**
+     * @brief Sets the telemetry gateway client for diagnostics aggregation.
+     * @param gateway The gateway client to register.
+     *
+     * Registers a gateway so that diagnostics() can query send statistics
+     * (sends succeeded/failed). Call this before initializeAsynchronousEngine().
+     */
+    void setTelemetryGateway(GatewayClient* gateway);
 
     /**
      * @brief Subclass hook for converting queued payloads into network transmissions.
