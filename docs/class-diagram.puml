@@ -1,4 +1,4 @@
-@startuml Modest-IoT-Nano-framework
+@startuml Modest-IoT-Nano-Framework
 
 skinparam classAttributeIconSize 0
 skinparam classFontStyle bold
@@ -21,7 +21,9 @@ package "Core" #FAFAFA {
 
   class Command <<struct>> {
     +identifier : const int
+    +payload : const int32_t
     +Command(commandIdentifier : int)
+    +Command(commandIdentifier : int, commandPayload : int32_t)
     +operator==(other : Command) : bool
   }
 
@@ -124,6 +126,7 @@ package "Core" #FAFAFA {
     +enterDeepSleep() const : void
     +{static} reportWakeReason() : void
     +stopAsynchronousEngine() : void
+    +setTelemetryGateway(gateway : GatewayClient*) : void
     #initializeAsynchronousEngine(maximumQueueLength : uint8_t = 10) : void
     #initializeAsynchronousEngine(engineConfiguration : const EngineConfiguration&) : void
     #enqueueTelemetryPayload(telemetryPackagePointerAddress : TelemetryPackage**) : bool

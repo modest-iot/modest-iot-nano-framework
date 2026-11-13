@@ -1,6 +1,6 @@
 # Doxygen configuration for Modest-IoT-Nano-Framework
 
-PROJECT_NAME           = "Modest IoT Nano-framework (C++ Edition)"
+PROJECT_NAME           = "Modest IoT Nano Framework (C++ Edition)"
 PROJECT_BRIEF          = "Lightweight event-driven Arduino framework for resource-constrained IoT devices"
 PROJECT_NUMBER         = 1.0.0
 OUTPUT_DIRECTORY       = docs/build

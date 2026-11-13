@@ -26,7 +26,7 @@ For sketch-level use, include:
 #include <ModestIoT.h>
 ```
 
-This umbrella header imports all 46 source headers: core engine contracts, connectivity
+This umbrella header imports all 48 source headers: core engine contracts, connectivity
 adapters, gateway clients, and 18 built-in sensors plus 7 actuators.
 
 ## Module Navigation
