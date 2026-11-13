@@ -133,7 +133,7 @@ public:
         : Device(samplingIntervalInMilliseconds, timerGroupIndex),
           pipeSensor(dataPin, this),
           statusLed(redPin, greenPin, bluePin, false, this),
-          alarmBuzzer(buzzerPin, false, this),
+          alarmBuzzer(buzzerPin, this),
           alarmActive(false)
     {
         initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
