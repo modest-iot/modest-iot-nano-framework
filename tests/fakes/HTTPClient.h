@@ -1,6 +1,7 @@
 #ifndef FAKE_HTTP_CLIENT_H
 #define FAKE_HTTP_CLIENT_H
 
+#include <time.h>
 #include "Client.h"
 #include <cstdint>
 #include <string>

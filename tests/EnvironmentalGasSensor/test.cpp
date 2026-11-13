@@ -1,3 +1,4 @@
+#include <time.h>
 /**
  * @file test.cpp
  * @brief Host tests for EnvironmentalGasSensor (BME680).
@@ -10,9 +11,9 @@
 #include "Event.h"
 #include "Sensor.h"
 #include <cassert>
+#include <time.h>
 #include <cmath>
 #include <iostream>
-#include <vector>
 #include "../fakes/Arduino.h"
 #include "../fakes/Wire.h"
 
@@ -77,16 +78,16 @@ public:
 
 void testConstructorInitializesState() {
     std::cout << "Test: Constructor initializes state correctly... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = false;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.readBuffer.push_back(0x61); // BME680 chip ID
+    Wire.pushReadBuffer(0x61); // BME680 chip ID
     Wire.useReadBuffer = true;
     
     // Calibration data: 26 bytes (temp/pressure) + 7 bytes (humidity) + 3 bytes (gas)
     for (int i = 0; i < 36; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     
     TestableEnvironmentalGasSensor sensor(4);
@@ -104,11 +105,11 @@ void testConstructorInitializesState() {
 
 void testInitializeFailsOnBadChipId() {
     std::cout << "Test: initialize() fails on bad chip ID... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.readBuffer.push_back(0x00); // bad chip ID
+    Wire.pushReadBuffer(0x00); // bad chip ID
     
     TestableEnvironmentalGasSensor sensor(4);
     
@@ -118,11 +119,11 @@ void testInitializeFailsOnBadChipId() {
 
 void testSamplingIntervals() {
     std::cout << "Test: Sampling intervals are correct... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.readBuffer.push_back(0x00); // bad chip ID
+    Wire.pushReadBuffer(0x00); // bad chip ID
     
     TestableEnvironmentalGasSensor sensor(4);
     
@@ -133,11 +134,11 @@ void testSamplingIntervals() {
 
 void testTemperatureCompensation() {
     std::cout << "Test: Temperature compensation produces valid result... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.readBuffer.push_back(0x00); // bad chip ID
+    Wire.pushReadBuffer(0x00); // bad chip ID
     
     TestableEnvironmentalGasSensor sensor(4);
     
@@ -157,11 +158,11 @@ void testTemperatureCompensation() {
 
 void testPressureCompensation() {
     std::cout << "Test: Pressure compensation produces valid result... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.readBuffer.push_back(0x00); // bad chip ID
+    Wire.pushReadBuffer(0x00); // bad chip ID
     
     TestableEnvironmentalGasSensor sensor(4);
     
@@ -188,11 +189,11 @@ void testPressureCompensation() {
 
 void testHumidityCompensation() {
     std::cout << "Test: Humidity compensation produces valid result... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.readBuffer.push_back(0x00); // bad chip ID
+    Wire.pushReadBuffer(0x00); // bad chip ID
     
     TestableEnvironmentalGasSensor sensor(4);
     
@@ -216,11 +217,11 @@ void testHumidityCompensation() {
 
 void testGasResistanceCompensation() {
     std::cout << "Test: Gas resistance compensation produces valid result... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.readBuffer.push_back(0x00); // bad chip ID
+    Wire.pushReadBuffer(0x00); // bad chip ID
     
     TestableEnvironmentalGasSensor sensor(4);
     
@@ -236,11 +237,11 @@ void testGasResistanceCompensation() {
 
 void testProcessEventSuppressesWhenUninitialized() {
     std::cout << "Test: processEvent() suppresses when uninitialized... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.readBuffer.push_back(0x00); // bad chip ID
+    Wire.pushReadBuffer(0x00); // bad chip ID
     
     TestableEnvironmentalGasSensor sensor(4);
     
@@ -253,11 +254,11 @@ void testProcessEventSuppressesWhenUninitialized() {
 
 void testGettersReturnCachedValues() {
     std::cout << "Test: Getters return cached values correctly... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.readBuffer.push_back(0x00); // bad chip ID
+    Wire.pushReadBuffer(0x00); // bad chip ID
     
     TestableEnvironmentalGasSensor sensor(4);
     
@@ -280,13 +281,13 @@ void testGettersReturnCachedValues() {
 
 void testFirstReadingEmitsDataReadEvent() {
     std::cout << "Test: First reading emits DATA_READ_EVENT... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.readBuffer.push_back(0x61); // BME680 chip ID
+    Wire.pushReadBuffer(0x61); // BME680 chip ID
     for (int i = 0; i < 36; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     
     TestableEnvironmentalGasSensor sensor(4);
@@ -316,11 +317,11 @@ void testFirstReadingEmitsDataReadEvent() {
     sensor.digG3 = -50;
     
     // Set up raw data: 8 bytes (temp/press/hum) + 3 bytes (gas)
-    Wire.readBuffer.clear();
-    Wire.readBuffer.push_back(0x6C); Wire.readBuffer.push_back(0x3C); Wire.readBuffer.push_back(0x00); // temp
-    Wire.readBuffer.push_back(0x6C); Wire.readBuffer.push_back(0x3C); Wire.readBuffer.push_back(0x00); // press
-    Wire.readBuffer.push_back(0x6C); Wire.readBuffer.push_back(0x00); // humidity
-    Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00); // gas
+    Wire.clearReadBuffer();
+    Wire.pushReadBuffer(0x6C); Wire.pushReadBuffer(0x3C); Wire.pushReadBuffer(0x00); // temp
+    Wire.pushReadBuffer(0x6C); Wire.pushReadBuffer(0x3C); Wire.pushReadBuffer(0x00); // press
+    Wire.pushReadBuffer(0x6C); Wire.pushReadBuffer(0x00); // humidity
+    Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00); // gas
     
     Event event(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER, 4);
     sensor.processEvent(event);
@@ -331,13 +332,13 @@ void testFirstReadingEmitsDataReadEvent() {
 
 void testUnchangedValuesSuppressPropagation() {
     std::cout << "Test: Unchanged values suppress propagation... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.readBuffer.push_back(0x61); // BME680 chip ID
+    Wire.pushReadBuffer(0x61); // BME680 chip ID
     for (int i = 0; i < 36; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     
     TestableEnvironmentalGasSensor sensor(4);
@@ -367,21 +368,21 @@ void testUnchangedValuesSuppressPropagation() {
     sensor.digG3 = -50;
     
     // First reading
-    Wire.readBuffer.clear();
-    Wire.readBuffer.push_back(0x6C); Wire.readBuffer.push_back(0x3C); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x6C); Wire.readBuffer.push_back(0x3C); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x6C); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
+    Wire.clearReadBuffer();
+    Wire.pushReadBuffer(0x6C); Wire.pushReadBuffer(0x3C); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x6C); Wire.pushReadBuffer(0x3C); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x6C); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
     
     Event event1(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER, 4);
     sensor.processEvent(event1);
     
     // Second reading with same data
-    Wire.readBuffer.clear();
-    Wire.readBuffer.push_back(0x6C); Wire.readBuffer.push_back(0x3C); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x6C); Wire.readBuffer.push_back(0x3C); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x6C); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
+    Wire.clearReadBuffer();
+    Wire.pushReadBuffer(0x6C); Wire.pushReadBuffer(0x3C); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x6C); Wire.pushReadBuffer(0x3C); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x6C); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
     
     Event event2(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER, 4);
     sensor.processEvent(event2);

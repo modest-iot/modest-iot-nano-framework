@@ -1,3 +1,4 @@
+#include <time.h>
 #include "ModestLog.h"
 #include <cassert>
 // ReSharper disable once CppUnusedIncludeDirective

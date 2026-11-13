@@ -1,3 +1,4 @@
+#include <time.h>
 /**
  * @file CharacterLcdDisplay host test suite.
  * @brief Tests native HD44780 I2C driver implementation (W19).
@@ -6,6 +7,7 @@
 #include "CharacterLcdDisplay.h"
 #include <cassert>
 #include <cstring>
+#include <vector>
 
 class Recorder : public CommandHandler {
 public:

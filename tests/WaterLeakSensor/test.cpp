@@ -1,3 +1,4 @@
+#include <time.h>
 /**
  * @file test.cpp
  * @brief Host tests for WaterLeakSensor (water leak detection sensor).

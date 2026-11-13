@@ -1,6 +1,7 @@
 #ifndef FAKE_MQTT_H
 #define FAKE_MQTT_H
 
+#include <time.h>
 #include "Client.h"
 #include <cstdint>
 #include <string>

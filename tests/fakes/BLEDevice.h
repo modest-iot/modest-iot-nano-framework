@@ -1,6 +1,7 @@
 #ifndef FAKE_BLE_DEVICE_H
 #define FAKE_BLE_DEVICE_H
 
+#include <time.h>
 #include <string>
 #include <vector>
 #include "BLEServer.h"

@@ -1,6 +1,7 @@
 #ifndef FAKE_ARDUINO_H
 #define FAKE_ARDUINO_H
 
+#include <time.h>
 #include <atomic>
 #include <cstdint>
 #include <cstring>

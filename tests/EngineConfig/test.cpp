@@ -1,3 +1,4 @@
+#include <time.h>
 #include "Device.h"
 #include <cassert>
 #include <cstdio>

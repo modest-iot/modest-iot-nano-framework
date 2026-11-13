@@ -1,3 +1,4 @@
+#include <time.h>
 #include "RfidSensor.h"
 #include <Arduino.h>
 #include <SPI.h>

@@ -1,3 +1,4 @@
+#include <time.h>
 #include "MqttGatewayClient.h"
 #include "Device.h"
 #include "WiFiConnectivityDriver.h"

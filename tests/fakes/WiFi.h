@@ -1,6 +1,7 @@
 #ifndef FAKE_WIFI_H
 #define FAKE_WIFI_H
 
+#include <time.h>
 #include "Client.h"
 #include <string>
 

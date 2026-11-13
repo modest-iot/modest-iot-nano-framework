@@ -1,3 +1,4 @@
+#include <time.h>
 /**
  * @file test.cpp
  * @brief Host tests for PthSensor (BME280-compatible environmental sensor).
@@ -8,9 +9,9 @@
 #include "Event.h"
 #include "Sensor.h"
 #include <cassert>
+#include <time.h>
 #include <cmath>
 #include <iostream>
-#include <vector>
 #include "../fakes/Arduino.h"
 #include "../fakes/Wire.h"
 
@@ -62,11 +63,11 @@ public:
 
 void testConstructorInitializesState() {
     std::cout << "Test: Constructor initializes state correctly... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = false;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.readBuffer.push_back(0x60); // chip ID
+    Wire.pushReadBuffer(0x60); // chip ID
     Wire.useReadBuffer = true;
     
     TestablePthSensor sensor(23);
@@ -83,20 +84,20 @@ void testConstructorInitializesState() {
 
 void testInitializeReadsCalibrationData() {
     std::cout << "Test: initialize() reads calibration data... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.commands.clear();
+    Wire.clearCommands();
     
     // Chip ID for constructor's initialize() call
-    Wire.readBuffer.push_back(0x60);
+    Wire.pushReadBuffer(0x60);
     // Calibration data: 26 bytes (temp/pressure) + 7 bytes (humidity)
     for (int i = 0; i < 26; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     for (int i = 0; i < 7; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     
     TestablePthSensor sensor(23);
@@ -107,14 +108,14 @@ void testInitializeReadsCalibrationData() {
 
 void testInitializeFailsOnBadChipId() {
     std::cout << "Test: initialize() fails on bad chip ID... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.readBuffer.push_back(0x00); // bad chip ID
+    Wire.pushReadBuffer(0x00); // bad chip ID
     
     TestablePthSensor sensor(23);
-    Wire.commands.clear();
+    Wire.clearCommands();
     
     bool result = sensor.initialize();
     assert(result == false);
@@ -124,11 +125,11 @@ void testInitializeFailsOnBadChipId() {
 
 void testProcessEventSuppressesWhenUninitialized() {
     std::cout << "Test: processEvent() suppresses when uninitialized... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.readBuffer.push_back(0x00); // bad chip ID
+    Wire.pushReadBuffer(0x00); // bad chip ID
     
     TestablePthSensor sensor(23);
     assert(sensor.isInitialized() == false);
@@ -142,25 +143,25 @@ void testProcessEventSuppressesWhenUninitialized() {
 
 void testFirstReadingEmitsDataReadEvent() {
     std::cout << "Test: First reading emits DATA_READ_EVENT... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.commands.clear();
+    Wire.clearCommands();
     
     // Chip ID for constructor's initialize() call
-    Wire.readBuffer.push_back(0x60);
+    Wire.pushReadBuffer(0x60);
     // Calibration data: 26 bytes (temp/pressure) + 7 bytes (humidity)
     for (int i = 0; i < 26; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     for (int i = 0; i < 7; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     // Raw data: 8 bytes (temp, pressure, humidity)
-    Wire.readBuffer.push_back(0x80); Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x80); Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x80); Wire.readBuffer.push_back(0x00);
+    Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00);
     
     TestablePthSensor sensor(23);
     assert(sensor.isInitialized() == true);
@@ -175,44 +176,44 @@ void testFirstReadingEmitsDataReadEvent() {
 
 void testUnchangedValuesSuppressPropagation() {
     std::cout << "Test: Unchanged values suppress propagation... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.commands.clear();
+    Wire.clearCommands();
     
     // Chip ID for constructor's initialize() call
-    Wire.readBuffer.push_back(0x60);
+    Wire.pushReadBuffer(0x60);
     // Realistic BME280 calibration data
-    Wire.readBuffer.push_back(0x40); Wire.readBuffer.push_back(0x6B);
-    Wire.readBuffer.push_back(0x2B); Wire.readBuffer.push_back(0x67);
-    Wire.readBuffer.push_back(0xF0); Wire.readBuffer.push_back(0xFC);
-    Wire.readBuffer.push_back(0x11); Wire.readBuffer.push_back(0x8E);
-    Wire.readBuffer.push_back(0x52); Wire.readBuffer.push_back(0xD6);
-    Wire.readBuffer.push_back(0x80); Wire.readBuffer.push_back(0x0B);
-    Wire.readBuffer.push_back(0x9B); Wire.readBuffer.push_back(0xBD);
-    Wire.readBuffer.push_back(0xD1); Wire.readBuffer.push_back(0xFF);
-    Wire.readBuffer.push_back(0x0B); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x95); Wire.readBuffer.push_back(0xC6);
-    Wire.readBuffer.push_back(0x09); Wire.readBuffer.push_back(0x08);
-    Wire.readBuffer.push_back(0x78); Wire.readBuffer.push_back(0xEE);
-    Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x2C);
-    Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x13);
-    Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x00);
+    Wire.pushReadBuffer(0x40); Wire.pushReadBuffer(0x6B);
+    Wire.pushReadBuffer(0x2B); Wire.pushReadBuffer(0x67);
+    Wire.pushReadBuffer(0xF0); Wire.pushReadBuffer(0xFC);
+    Wire.pushReadBuffer(0x11); Wire.pushReadBuffer(0x8E);
+    Wire.pushReadBuffer(0x52); Wire.pushReadBuffer(0xD6);
+    Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x0B);
+    Wire.pushReadBuffer(0x9B); Wire.pushReadBuffer(0xBD);
+    Wire.pushReadBuffer(0xD1); Wire.pushReadBuffer(0xFF);
+    Wire.pushReadBuffer(0x0B); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x95); Wire.pushReadBuffer(0xC6);
+    Wire.pushReadBuffer(0x09); Wire.pushReadBuffer(0x08);
+    Wire.pushReadBuffer(0x78); Wire.pushReadBuffer(0xEE);
+    Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x2C);
+    Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x13);
+    Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x00);
     
     // First reading raw data
-    Wire.readBuffer.push_back(0x57); Wire.readBuffer.push_back(0x85); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x6A); Wire.readBuffer.push_back(0x46); Wire.readBuffer.push_back(0x40);
-    Wire.readBuffer.push_back(0x5B); Wire.readBuffer.push_back(0x30);
+    Wire.pushReadBuffer(0x57); Wire.pushReadBuffer(0x85); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x6A); Wire.pushReadBuffer(0x46); Wire.pushReadBuffer(0x40);
+    Wire.pushReadBuffer(0x5B); Wire.pushReadBuffer(0x30);
     
     // Second reading raw data (same values, appended for second processEvent)
-    Wire.readBuffer.push_back(0x57); Wire.readBuffer.push_back(0x85); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x6A); Wire.readBuffer.push_back(0x46); Wire.readBuffer.push_back(0x40);
-    Wire.readBuffer.push_back(0x5B); Wire.readBuffer.push_back(0x30);
+    Wire.pushReadBuffer(0x57); Wire.pushReadBuffer(0x85); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x6A); Wire.pushReadBuffer(0x46); Wire.pushReadBuffer(0x40);
+    Wire.pushReadBuffer(0x5B); Wire.pushReadBuffer(0x30);
     
     TestablePthSensor sensor(23);
     assert(sensor.isInitialized() == true);
@@ -242,25 +243,25 @@ void testUnchangedValuesSuppressPropagation() {
 
 void testValueChangedEmitsDataReadEvent() {
     std::cout << "Test: Value change > epsilon emits DATA_READ_EVENT... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.commands.clear();
+    Wire.clearCommands();
     
     // Chip ID for constructor's initialize() call
-    Wire.readBuffer.push_back(0x60);
+    Wire.pushReadBuffer(0x60);
     // Calibration data: 26 bytes (temp/pressure) + 7 bytes (humidity)
     for (int i = 0; i < 26; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     for (int i = 0; i < 7; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     // First reading
-    Wire.readBuffer.push_back(0x80); Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x80); Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x80); Wire.readBuffer.push_back(0x00);
+    Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00);
     
     TestablePthSensor sensor(23);
     assert(sensor.isInitialized() == true);
@@ -270,10 +271,10 @@ void testValueChangedEmitsDataReadEvent() {
     assert(event1.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER);
     
     // Second reading with different temperature
-    Wire.readBuffer.clear();
-    Wire.readBuffer.push_back(0x90); Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00); // different temp
-    Wire.readBuffer.push_back(0x80); Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x80); Wire.readBuffer.push_back(0x00);
+    Wire.clearReadBuffer();
+    Wire.pushReadBuffer(0x90); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00); // different temp
+    Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00);
     
     Event event2(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
     sensor.processEvent(event2);
@@ -284,25 +285,25 @@ void testValueChangedEmitsDataReadEvent() {
 
 void testGettersReturnCachedValues() {
     std::cout << "Test: Getters return cached values... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.commands.clear();
+    Wire.clearCommands();
     
     // Chip ID for constructor's initialize() call
-    Wire.readBuffer.push_back(0x60);
+    Wire.pushReadBuffer(0x60);
     // Calibration data: 26 bytes (temp/pressure) + 7 bytes (humidity)
     for (int i = 0; i < 26; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     for (int i = 0; i < 7; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     // Raw data
-    Wire.readBuffer.push_back(0x80); Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x80); Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x80); Wire.readBuffer.push_back(0x00);
+    Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00);
     
     TestablePthSensor sensor(23);
     assert(sensor.isInitialized() == true);
@@ -322,20 +323,20 @@ void testGettersReturnCachedValues() {
 
 void testSamplingIntervalDefaults() {
     std::cout << "Test: Sampling interval defaults are correct... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.commands.clear();
+    Wire.clearCommands();
     
     // Chip ID for constructor's initialize() call
-    Wire.readBuffer.push_back(0x60);
+    Wire.pushReadBuffer(0x60);
     // Calibration data: 26 bytes (temp/pressure) + 7 bytes (humidity)
     for (int i = 0; i < 26; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     for (int i = 0; i < 7; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     
     TestablePthSensor sensor(23);
@@ -347,39 +348,39 @@ void testSamplingIntervalDefaults() {
 
 void testAltitudeCalculation() {
     std::cout << "Test: getAltitudeInMeters() computes altitude from pressure... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.commands.clear();
+    Wire.clearCommands();
     
     // Chip ID for constructor's initialize() call
-    Wire.readBuffer.push_back(0x60);
+    Wire.pushReadBuffer(0x60);
     // Realistic BME280 calibration data
-    Wire.readBuffer.push_back(0x40); Wire.readBuffer.push_back(0x6B);
-    Wire.readBuffer.push_back(0x2B); Wire.readBuffer.push_back(0x67);
-    Wire.readBuffer.push_back(0xF0); Wire.readBuffer.push_back(0xFC);
-    Wire.readBuffer.push_back(0x11); Wire.readBuffer.push_back(0x8E);
-    Wire.readBuffer.push_back(0x52); Wire.readBuffer.push_back(0xD6);
-    Wire.readBuffer.push_back(0x80); Wire.readBuffer.push_back(0x0B);
-    Wire.readBuffer.push_back(0x9B); Wire.readBuffer.push_back(0xBD);
-    Wire.readBuffer.push_back(0xD1); Wire.readBuffer.push_back(0xFF);
-    Wire.readBuffer.push_back(0x0B); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x95); Wire.readBuffer.push_back(0xC6);
-    Wire.readBuffer.push_back(0x09); Wire.readBuffer.push_back(0x08);
-    Wire.readBuffer.push_back(0x78); Wire.readBuffer.push_back(0xEE);
-    Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x2C);
-    Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x13);
-    Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x00);
+    Wire.pushReadBuffer(0x40); Wire.pushReadBuffer(0x6B);
+    Wire.pushReadBuffer(0x2B); Wire.pushReadBuffer(0x67);
+    Wire.pushReadBuffer(0xF0); Wire.pushReadBuffer(0xFC);
+    Wire.pushReadBuffer(0x11); Wire.pushReadBuffer(0x8E);
+    Wire.pushReadBuffer(0x52); Wire.pushReadBuffer(0xD6);
+    Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x0B);
+    Wire.pushReadBuffer(0x9B); Wire.pushReadBuffer(0xBD);
+    Wire.pushReadBuffer(0xD1); Wire.pushReadBuffer(0xFF);
+    Wire.pushReadBuffer(0x0B); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x95); Wire.pushReadBuffer(0xC6);
+    Wire.pushReadBuffer(0x09); Wire.pushReadBuffer(0x08);
+    Wire.pushReadBuffer(0x78); Wire.pushReadBuffer(0xEE);
+    Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x2C);
+    Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x13);
+    Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x00);
     
     // Raw data that produces ~1013.25 hPa (sea level pressure)
-    Wire.readBuffer.push_back(0x57); Wire.readBuffer.push_back(0x85); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x6A); Wire.readBuffer.push_back(0x46); Wire.readBuffer.push_back(0x40);
-    Wire.readBuffer.push_back(0x5B); Wire.readBuffer.push_back(0x30);
+    Wire.pushReadBuffer(0x57); Wire.pushReadBuffer(0x85); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x6A); Wire.pushReadBuffer(0x46); Wire.pushReadBuffer(0x40);
+    Wire.pushReadBuffer(0x5B); Wire.pushReadBuffer(0x30);
     
     TestablePthSensor sensor(23);
     assert(sensor.isInitialized() == true);
@@ -397,25 +398,25 @@ void testAltitudeCalculation() {
 
 void testAltitudeWithStandardSeaLevelPressure() {
     std::cout << "Test: getAltitudeInMeters() with standard sea level pressure... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.commands.clear();
+    Wire.clearCommands();
     
     // Chip ID for constructor's initialize() call
-    Wire.readBuffer.push_back(0x60);
+    Wire.pushReadBuffer(0x60);
     // Calibration data: 26 bytes (temp/pressure) + 7 bytes (humidity)
     for (int i = 0; i < 26; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     for (int i = 0; i < 7; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     // Raw data
-    Wire.readBuffer.push_back(0x80); Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x80); Wire.readBuffer.push_back(0x00); Wire.readBuffer.push_back(0x00);
-    Wire.readBuffer.push_back(0x80); Wire.readBuffer.push_back(0x00);
+    Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
+    Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00);
     
     TestablePthSensor sensor(23);
     assert(sensor.isInitialized() == true);
@@ -438,20 +439,20 @@ void testAltitudeWithStandardSeaLevelPressure() {
 
 void testAltitudeWithInvalidSeaLevelPressure() {
     std::cout << "Test: getAltitudeInMeters() returns 0 for invalid sea level pressure... ";
-    Wire.readBuffer.clear();
+    Wire.clearReadBuffer();
     Wire.useReadBuffer = true;
     Wire.raw = 0;
     Wire.byteCount = 1;
-    Wire.commands.clear();
+    Wire.clearCommands();
     
     // Chip ID for constructor's initialize() call
-    Wire.readBuffer.push_back(0x60);
+    Wire.pushReadBuffer(0x60);
     // Calibration data: 26 bytes (temp/pressure) + 7 bytes (humidity)
     for (int i = 0; i < 26; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     for (int i = 0; i < 7; i++) {
-        Wire.readBuffer.push_back(static_cast<uint8_t>(i));
+        Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
     
     TestablePthSensor sensor(23);

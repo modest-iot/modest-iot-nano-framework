@@ -96,6 +96,15 @@ public:
         }
         return !val.empty();
     }
+
+    // Default value operator: doc["key"] | defaultValue
+    template<typename T>
+    [[nodiscard]] T operator|(const T& defaultValue) const {
+        if (val.empty()) {
+            return defaultValue;
+        }
+        return as<T>();
+    }
 };
 
 class JsonDocument {

@@ -1,3 +1,4 @@
+#include <time.h>
 /**
  * @file OledDisplay host test suite.
  * @brief Tests native SSD1306 I2C driver and OledDisplay actuator.
@@ -6,6 +7,7 @@
 #include "OledDisplay.h"
 #include <cassert>
 #include <cstring>
+#include <vector>
 
 class Recorder : public CommandHandler {
 public:

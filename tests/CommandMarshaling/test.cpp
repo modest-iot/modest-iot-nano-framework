@@ -1,3 +1,4 @@
+#include <time.h>
 /**
  * @brief Host unit tests for Device::enqueueCommand and processPendingCommands.
  *

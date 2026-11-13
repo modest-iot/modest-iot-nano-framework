@@ -1,3 +1,4 @@
+#include <time.h>
 #include "TelemetryPackage.h"
 #include <ArduinoJson.h>
 #include <cassert>

@@ -8,6 +8,7 @@
  * Simulates NVS key-value storage with in-memory maps per namespace.
  */
 
+#include <time.h>
 #include <string>
 #include <map>
 #include <cstring>

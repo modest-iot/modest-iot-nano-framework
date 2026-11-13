@@ -1,3 +1,4 @@
+#include <time.h>
 #include <cassert>
 #include <Arduino.h>
 #include "RgbLed.h"

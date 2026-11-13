@@ -1,3 +1,4 @@
+#include <time.h>
 #include "BleConnectivityDriver.h"
 #include <Arduino.h>
 #include <BLEDevice.h>

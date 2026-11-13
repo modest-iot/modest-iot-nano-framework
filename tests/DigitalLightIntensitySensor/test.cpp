@@ -1,15 +1,18 @@
+#include <time.h>
 #include "DigitalLightIntensitySensor.h"
 #include <Arduino.h>
 #include <Wire.h>
 #include <cassert>
+#include <time.h>
 #include <cmath>
-#include <vector>
 
 namespace {
 class Recorder : public EventHandler {
 public:
-    std::vector<Event> events;
-    void on(const Event event) override { events.push_back(event); }
+    static constexpr size_t MAX_EVENTS = 16;
+    int eventIds[MAX_EVENTS];
+    size_t count = 0;
+    void on(const Event event) override { if (count < MAX_EVENTS) eventIds[count++] = event.identifier; }
 };
 } // namespace
 
@@ -26,16 +29,16 @@ public:
     fakeMillis = 180;
     sensor.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
     assert(sensor.hasValidSample());
-    assert(recorder.events.size() == 1);
-    assert(recorder.events.back().identifier == sensor.LIGHT_ABSENT_EVENT_IDENTIFIER);
+    assert(recorder.count == 1);
+    assert(recorder.eventIds[recorder.count - 1] == sensor.LIGHT_ABSENT_EVENT_IDENTIFIER);
     Wire.raw = 120;
     sensor.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
-    assert(recorder.events.back().identifier == sensor.LIGHT_DETECTED_EVENT_IDENTIFIER);
+    assert(recorder.eventIds[recorder.count - 1] == sensor.LIGHT_DETECTED_EVENT_IDENTIFIER);
     assert(std::fabs(sensor.getIlluminanceInLux() - 100.0f) < 0.01f);
     for (int failedRead = 0; failedRead < 2; ++failedRead) {
         Wire.readFailureAt = failedRead;
         sensor.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
-        assert(recorder.events.size() == 2);
+        assert(recorder.count == 2);
         assert(sensor.isLightDetected());
         assert(sensor.hasValidSample());
         assert(std::fabs(sensor.getIlluminanceInLux() - 100.0f) < 0.01f);
@@ -43,7 +46,7 @@ public:
     Wire.readFailureAt = -1;
     Wire.byteCount = 1;
     sensor.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
-    assert(recorder.events.size() == 2);
+    assert(recorder.count == 2);
     assert(sensor.isLightDetected());
     assert(sensor.hasValidSample());
     assert(std::fabs(sensor.getIlluminanceInLux() - 100.0f) < 0.01f);
@@ -54,7 +57,7 @@ public:
         DigitalLightIntensitySensor failed(21, 0x5c, 10.0f, &recorder);
         assert(!failed.isInitialized());
         assert(!failed.hasValidSample());
-        assert(static_cast<int>(Wire.commands.size()) == failedCommand);
+        assert(Wire.commandCount == failedCommand);
         failed.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
         assert(Wire.requests == 0);
         Wire.failureAt = -1;
@@ -67,7 +70,7 @@ public:
         failed.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
         assert(failed.hasValidSample());
         assert(failed.isLightDetected());
-        assert(recorder.events.back().sourceId == 21);
+        assert(recorder.eventIds[recorder.count - 1] == 21);
         assert(failed.initialize());
         assert(!failed.hasValidSample());
     }
