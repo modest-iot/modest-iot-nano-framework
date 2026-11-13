@@ -7,6 +7,10 @@
 
 #include "Device.h"
 #include "ModestLog.h"
+
+#ifdef ARDUINO_ARCH_ESP32
+#include "TimeSynchronizationDriver.h"
+#endif
 #ifdef ARDUINO_ARCH_ESP32
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -147,7 +151,11 @@ bool Device::enqueueTelemetryPayload(TelemetryPackage **telemetryPackagePointerA
 
     // Assign envelope metadata before enqueue attempt so drops are visible as gaps
     TelemetryPackage *packet = *telemetryPackagePointerAddress;
+#if defined(ARDUINO_ARCH_ESP32)
+    packet->setEnvelopeMetadata(TimeSynchronizationDriver::getCurrentTimestamp(), nextSequenceNumber++);
+#else
     packet->setEnvelopeMetadata(static_cast<uint32_t>(millis()), nextSequenceNumber++);
+#endif
 
     if (xQueueSend(telemetryQueueHandle, telemetryPackagePointerAddress, 0) == pdPASS) {
         packetsEnqueuedCount++;
@@ -184,7 +192,11 @@ bool Device::enqueueTelemetryPayload(std::unique_ptr<TelemetryPackage> telemetry
     if (telemetryQueueHandle == nullptr || telemetryPackageStandardUniquePointer == nullptr) return false;
 
     // Assign envelope metadata before enqueue attempt so drops are visible as gaps
+#if defined(ARDUINO_ARCH_ESP32)
+    telemetryPackageStandardUniquePointer->setEnvelopeMetadata(TimeSynchronizationDriver::getCurrentTimestamp(), nextSequenceNumber++);
+#else
     telemetryPackageStandardUniquePointer->setEnvelopeMetadata(static_cast<uint32_t>(millis()), nextSequenceNumber++);
+#endif
 
     TelemetryPackage *rawPackagePointer = telemetryPackageStandardUniquePointer.release();
     if (xQueueSend(telemetryQueueHandle, &rawPackagePointer, 0) == pdPASS) {
