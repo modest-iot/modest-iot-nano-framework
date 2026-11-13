@@ -80,7 +80,7 @@ private:
      */
     void packageAndQueueTelemetrySnapshot() {
         auto packet = std::make_unique<VitalsTelemetryPackage>(
-            heartRateSensor.getHeartRateInBpm(),
+            heartRateSensor.getBeatsPerMinute(),
             skinTempSensor.getTemperatureInCelsius()
         );
         enqueueTelemetryPayload(std::move(packet));
