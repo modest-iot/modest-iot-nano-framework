@@ -429,6 +429,7 @@ protected:
      */
     void stopAsynchronousEngine();
 
+public:
     GatewayClient* telemetryGateway = nullptr;
 
     /**
@@ -440,7 +441,6 @@ protected:
      */
     void setTelemetryGateway(GatewayClient* gateway);
 
-public:
     /**
      * @brief Notification bit flags for the sampler task.
      *
