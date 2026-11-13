@@ -3,7 +3,6 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include <cassert>
-#include <time.h>
 #include <cmath>
 
 namespace {
@@ -11,8 +10,15 @@ class Recorder : public EventHandler {
 public:
     static constexpr size_t MAX_EVENTS = 16;
     int eventIds[MAX_EVENTS];
+    int sourceIds[MAX_EVENTS];
     size_t count = 0;
-    void on(const Event event) override { if (count < MAX_EVENTS) eventIds[count++] = event.identifier; }
+    void on(const Event event) override {
+        if (count < MAX_EVENTS) {
+            eventIds[count] = event.identifier;
+            sourceIds[count] = event.sourceId;
+            count++;
+        }
+    }
 };
 } // namespace
 
@@ -70,7 +76,7 @@ public:
         failed.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
         assert(failed.hasValidSample());
         assert(failed.isLightDetected());
-        assert(recorder.eventIds[recorder.count - 1] == 21);
+        assert(recorder.sourceIds[recorder.count - 1] == 21);
         assert(failed.initialize());
         assert(!failed.hasValidSample());
     }
