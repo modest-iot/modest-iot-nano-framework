@@ -14,8 +14,11 @@ extern "C" unsigned long millis();
 #endif
 
 #if defined(ARDUINO_ARCH_ESP32)
+#pragma clang system_header
 #include <time.h>
+#pragma clang system_header
 #include <sys/time.h>
+#pragma clang system_header
 #include "esp_sleep.h"
 #endif
 
@@ -24,23 +27,22 @@ extern "C" unsigned long millis();
 
 #if defined(ARDUINO_ARCH_ESP32)
 RTC_DATA_ATTR uint32_t TimeSynchronizationDriver::rtcSavedTimestamp = 0;
-bool TimeSynchronizationDriver::synchronized = false;
 #else
 uint32_t TimeSynchronizationDriver::rtcSavedTimestamp = 0;
-bool TimeSynchronizationDriver::synchronized = false;
 #endif
+bool TimeSynchronizationDriver::synchronized = false;
 
 //@}
 
-void TimeSynchronizationDriver::initialize(const char* timezone, const char* defaultNtpServer,
+void TimeSynchronizationDriver::initialize(const char* tz, const char* defaultNtpServer,
                                             const char* alternativeNtpServer) {
-    (void) timezone;
+    (void) tz;
     (void) defaultNtpServer;
     (void) alternativeNtpServer;
 
 #if defined(ARDUINO_ARCH_ESP32)
     // Map framework's intention-revealing parameter names to ESP32's server1/server2
-    configTzTime(timezone, defaultNtpServer, alternativeNtpServer);
+    configTzTime(tz, defaultNtpServer, alternativeNtpServer);
     synchronized = false;
     // NTP sync will complete asynchronously; getLocalTime() will trigger the actual sync
     struct timeinfo tp;
