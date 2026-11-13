@@ -119,6 +119,19 @@ public:
      * @return `true` if connected within the timeout, `false` otherwise.
      */
     bool waitForConnection(unsigned long timeoutMilliseconds);
+
+    /**
+     * @brief Creates and optionally configures a `WiFiClientSecure` for TLS/SSL connections.
+     * @param caCert Optional CA certificate in PEM format for certificate pinning.
+     *               Pass `nullptr` when using `insecure = true` for self-signed demos.
+     * @param insecure If `true`, calls `setInsecure()` to skip certificate validation
+     *                 (for development only; use `caCert` for production).
+     * @return Pointer to a newly allocated `WiFiClientSecure`. The caller owns the
+     *         pointer and is responsible for deletion.
+     * @note For production use, provide a CA certificate via `caCert` rather than
+     *       enabling `insecure` mode. See MqttTlsDevice example for usage.
+     */
+    static WiFiClientSecure* createSecureSocket(const char* caCert = nullptr, const bool insecure = false);
 };
 
 #endif // WIFI_CONNECTIVITY_DRIVER_H

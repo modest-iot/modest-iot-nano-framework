@@ -7,6 +7,7 @@
  */
 
 #include <Arduino.h>
+#include <WiFiClientSecure.h>
 #include "WiFiConnectivityDriver.h"
 #include "ModestLog.h"
 
@@ -99,7 +100,7 @@ int32_t WiFiConnectivityDriver::getSignalStrengthInDbm() const {
     return WiFi.RSSI();
 }
 
-bool WiFiConnectivityDriver::waitForConnection(unsigned long timeoutMilliseconds) {
+bool WiFiConnectivityDriver::waitForConnection(const unsigned long timeoutMilliseconds) {
     if (isConnected()) {
         return true;
     }
@@ -112,4 +113,14 @@ bool WiFiConnectivityDriver::waitForConnection(unsigned long timeoutMilliseconds
         delay(100);
     }
     return isConnected();
+}
+
+WiFiClientSecure* WiFiConnectivityDriver::createSecureSocket(const char* caCert, const bool insecure) {
+    auto* socket = new WiFiClientSecure();
+    if (insecure) {
+        socket->setInsecure();
+    } else if (caCert != nullptr) {
+        socket->setCACert(caCert);
+    }
+    return socket;
 }
