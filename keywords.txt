@@ -138,6 +138,7 @@ getLocalIpAddress	KEYWORD2
 getWiFiStatus	KEYWORD2
 waitForConnection	KEYWORD2
 getNetworkSocket	KEYWORD2
+createSecureSocket	KEYWORD2
 setReconnectInterval	KEYWORD2
 getReconnectInterval	KEYWORD2
 
