@@ -75,6 +75,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         "${ESP32_PLATFORM_BASE}/libraries/Wire/src"
         "${ESP32_PLATFORM_BASE}/libraries/SPI/src"
         "${ESP32_PLATFORM_BASE}/libraries/Network/src"
+        "${ESP32_PLATFORM_BASE}/libraries/NetworkClientSecure/src"
         "${ESP32_PLATFORM_BASE}/libraries/Preferences/src"
         "${ARDUINO_CORE_PATH}"
         ${ESP32_COMPONENT_INCLUDES}
@@ -132,6 +133,7 @@ target_include_directories(clion_indexer INTERFACE
         "${ESP32_PLATFORM_BASE}/variants/esp32da"
         "${ESP32_TOOLS_BASE}/include/newlib/platform_include/"
         "${ESP32_PLATFORM_BASE}/libraries/SPI/src"
+        "${ESP32_PLATFORM_BASE}/libraries/NetworkClientSecure/src"
         "${ESP32_PLATFORM_BASE}/libraries/Preferences/src"
 )
 target_link_libraries(clion_indexer INTERFACE ${PROJECT_NAME})
