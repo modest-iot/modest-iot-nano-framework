@@ -148,7 +148,7 @@ void OledDisplay::setText(const char* text, const uint8_t x, const uint8_t y) {
 #if defined(ARDUINO_ARCH_ESP32)
 void OledDisplay::setText(const __FlashStringHelper* text, const uint8_t x, const uint8_t y) {
     if (text == nullptr) return;
-    const char* flashText = static_cast<const char*>(text);
+    const char* flashText = reinterpret_cast<const char*>(text);
     uint8_t currentX = x;
     while (pgm_read_byte(flashText) != '\0') {
         if (currentX + FONT_WIDTH_IN_PIXELS > DISPLAY_WIDTH_IN_PIXELS) break;
