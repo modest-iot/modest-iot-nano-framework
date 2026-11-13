@@ -49,7 +49,7 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - **GatewayClient**: Added `setServiceEndpointUrl()` method to allow switching the target endpoint URL at runtime
 - **BleConnectivityDriver**: BLE NUS connectivity driver with disconnect support; RSSI reporting returns 0 (ESP32 BLE server API does not expose RSSI)
 - **BleGatewayClient**: BLE NUS gateway client for serialized telemetry payloads. JSON lines framing, fixed-size 512-byte buffer, statistics tracking, and service/loop for advertising restart.
-- **WiFiConnectivityDriver**: Wi-Fi connection management with status enumeration, disconnect, IP address reporting, signal strength (RSSI), and connection timeout
+- **WiFiConnectivityDriver**: Wi-Fi connection management with status enumeration, disconnect, IP address reporting, signal strength (RSSI), connection timeout, and `createSecureSocket()` builder method for TLS/SSL socket creation with optional CA certificate pinning
 - **Ssd1306Driver**: Native SSD1306 I²C protocol driver for OLED displays
 - **Hd44780Driver**: Native HD44780 I²C protocol driver for LCD displays
 
@@ -90,7 +90,7 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Ssd1306Driver: Extracted SSD1306 I²C protocol from OledDisplay into standalone driver class
 
 #### Examples
-- **MqttTlsDevice**: MQTT over TLS example using `WiFiClientSecure` with `MqttGatewayClient`; demonstrates encrypted telemetry with certificate options (`setInsecure()`, `setCACert()`) and memory overhead guidance
+- **MqttTlsDevice**: MQTT over TLS example using `WiFiConnectivityDriver::createSecureSocket()` builder method; demonstrates encrypted telemetry with certificate options and memory overhead guidance
 - Replaced banner-style comments (`// ---`) with Doxygen `@name` groups across all 22 examples for consistency
 - Eliminated magic numbers in all examples: added `SERIAL_BAUD_RATE` (115200) and `MAIN_LOOP_DELAY_IN_MILLISECONDS` (60000) named constants
 - Replaced `#define` pin assignments with `static const` variables where appropriate (HomeSecurityDevice, RfidAccessController)
@@ -122,9 +122,12 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Updated keywords.txt: Added ConfigurationStore class and all public methods
 - Updated README.md: Added ConfigurationStore to Components section, updated Future Directions, updated last updated date
 - Updated README.md: Added Secure Communication section with MQTT/HTTP TLS examples, certificate options table, and MqttTlsDevice reference; example count updated to 22; Future Directions marked W22 complete
+- Updated README.md: Secure Communication section now shows `createSecureSocket()` as the recommended TLS pattern; MqttTlsDevice example updated to use the builder method
+- Updated keywords.txt: Added `createSecureSocket` to connectivity drivers section
+- Updated vision.md: W24 marked complete in Pre-Release tier status
 
 ### Examples (22 total)
-- **MqttTlsDevice**: Secure environmental monitor with encrypted MQTT (TLS) using `WiFiClientSecure`
+- **MqttTlsDevice**: Secure environmental monitor with encrypted MQTT (TLS) using `createSecureSocket()` builder method
 - **SmartGreenhouseDevice**: Updated servo control from two-step `setTargetAngleBufferInDegrees` + `DRIVE_TO_BUFFERED_ANGLE_COMMAND` to single `DRIVE_TO_ANGLE_COMMAND` with payload angle
 - **HomeSecurityDevice**: Added missing `#include <Arduino.h>` for consistency with other examples
 - StatusIndicator (renamed from ClassicBlinker), ToggableLedDevice, SmartBandMqtt, AirConditioningDevice
