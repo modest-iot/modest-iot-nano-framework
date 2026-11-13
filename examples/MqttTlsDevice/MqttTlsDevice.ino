@@ -2,28 +2,27 @@
  * @file MqttTlsDevice.ino
  * @brief Secure environmental monitor that transmits telemetry over encrypted MQTT (TLS).
  *
- * @details This example demonstrates MQTT over TLS using `WiFiClientSecure` as a drop-in
- *          replacement for `WiFiClient` when constructing `MqttGatewayClient`. The device
- *          monitors temperature, humidity, and pressure via a BME280 sensor and publishes
- *          encrypted telemetry to an MQTT broker supporting TLS (e.g., port 8883).
+ * @details This example demonstrates MQTT over TLS using `WiFiConnectivityDriver::createSecureSocket()`
+ *          to create and configure a `WiFiClientSecure` in one call. The device monitors temperature,
+ *          humidity, and pressure via a BME280 sensor and publishes encrypted telemetry to an MQTT
+ *          broker supporting TLS (e.g., port 8883).
  *
  * Modest IoT Nano Framework aspects illustrated:
  * - `MqttGatewayClient` with `WiFiClientSecure` for TLS 1.2/1.3 encrypted MQTT
+ * - `WiFiConnectivityDriver::createSecureSocket()` builder method for TLS socket creation
  * - `PthSensor` (BME280) for environmental telemetry
- * - `WiFiConnectivityDriver` for WiFi AP connection
  * - `TelemetryPackage` serialization and queue-based publishing
  * - `Device` mediator pattern with async engine and per-slot scheduler
  * - Empty `loop()` — all execution is event-driven and async
  *
- * @note For production use, replace `setInsecure()` with `setCACert()` to pin a trusted
- *       certificate authority. Self-signed certificates should only be used for testing.
+ * @note For production use, pass a CA certificate to `createSecureSocket()` rather than
+ *       enabling `insecure` mode. Self-signed certificates should only be used for testing.
  *
  * @date 2026-11-12
  * @version 1.0
  */
 
 #include <Arduino.h>
-#include <WiFiClientSecure.h>
 #include <memory>
 #include "ModestIoT.h"
 
@@ -129,51 +128,41 @@ static const unsigned long SERIAL_BAUD_RATE = 115200;
 /** @brief Delay in the main loop when no work is pending. */
 static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
 
-/**
- * @brief WiFiClientSecure instance for TLS-encrypted MQTT connection.
- *
- * @note This replaces WiFiClient used in plain MQTT examples. WiFiClientSecure
- *       inherits from Client, making it compatible with MqttGatewayClient.
- *       Memory overhead is approximately 4-6KB RAM compared to WiFiClient.
- */
-static WiFiClientSecure secureNetworkClient;
-
 static WiFiConnectivityDriver* transportDriver = nullptr;
+static WiFiClientSecure* secureSocket          = nullptr;
 static MqttGatewayClient* gatewayClient        = nullptr;
 static MqttTlsDevice* tlsApplication           = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
 
+    transportDriver = new WiFiConnectivityDriver(WIRELESS_SSID, WIRELESS_PASSWORD);
+
     /**
-     * @brief Configure TLS security settings.
+     * @brief Create and configure a TLS-encrypted socket using the builder method.
      *
-     * @warning setInsecure() disables certificate verification — use only for testing.
-     *          For production, use secureNetworkClient.setCACert(caCertificate) with
-     *          the PEM-encoded certificate of your broker's certificate authority.
-     *          Example:
+     * @warning `insecure = true` disables certificate verification — use only for testing.
+     *          For production, pass a CA certificate:
      *          @code
      *          static const char caCert[] = R"EOF(
      *          -----BEGIN CERTIFICATE-----
      *          MIID... (base64-encoded certificate) ...
      *          -----END CERTIFICATE-----
      *          )EOF";
-     *          secureNetworkClient.setCACert(caCert);
+     *          secureSocket = transportDriver->createSecureSocket(caCert, false);
      *          @endcode
      */
-    secureNetworkClient.setInsecure();
-
-    transportDriver = new WiFiConnectivityDriver(WIRELESS_SSID, WIRELESS_PASSWORD);
+    secureSocket = transportDriver->createSecureSocket(nullptr, true);
 
     /**
-     * @brief Construct MqttGatewayClient with WiFiClientSecure instead of WiFiClient.
+     * @brief Construct MqttGatewayClient with the TLS-encrypted socket.
      *
      * The broker port is 8883 (MQTT over TLS) instead of 1883 (plain MQTT).
      * All other parameters are identical to plain MQTT configuration.
      */
     gatewayClient = new MqttGatewayClient(
         *transportDriver,
-        secureNetworkClient,
+        *secureSocket,
         MQTT_BROKER_IP,
         MQTT_TLS_PORT,
         MQTT_PUBLISH_TOPIC,
