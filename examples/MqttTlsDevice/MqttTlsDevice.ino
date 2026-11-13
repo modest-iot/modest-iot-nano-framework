@@ -63,7 +63,7 @@ class MqttTlsDevice : public Device {
     void packageAndQueueTelemetrySnapshot() {
         auto packet = std::make_unique<EnvironmentalTelemetryPackage>(
             environmentalSensor.getTemperatureInCelsius(),
-            environmentalSensor.getRelativeHumidityInPercentage(),
+            environmentalSensor.getHumidityInPercentage(),
             environmentalSensor.getPressureInHectopascals()
         );
         enqueueTelemetryPayload(std::move(packet));
@@ -84,11 +84,9 @@ class MqttTlsDevice : public Device {
     MqttTlsDevice(int sensorPin, MqttGatewayClient& client,
                   unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupIndex = 0)
         : Device(samplingIntervalInMilliseconds, timerGroupIndex),
-          environmentalSensor(sensorPin, nullptr),
+          environmentalSensor(sensorPin, PthSensor::DEFAULT_I2C_ADDRESS, this),
           gatewayClient(client)
     {
-        environmentalSensor.setHandler(this);
-
         initializeAsynchronousEngine(10);
 
         appendSensorToScheduler(&environmentalSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
