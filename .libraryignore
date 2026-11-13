@@ -1,0 +1,30 @@
+# Excluded from Arduino Library Manager downloads
+# These files are valuable for GitHub contributors and future development,
+# but not needed by end-users who install via Library Manager.
+
+# Internal planning and roadmap documentation
+docs/improvements.md
+docs/vision.md
+
+# Example enhancement planning (internal use only)
+docs/examples-enhancement-plan.md
+
+# User stories (internal development tracking)
+docs/user-stories.md
+
+# Host test infrastructure (not needed for ESP32 sketches)
+tests/
+CMakeLists.txt
+cmake/
+
+# Build directories
+cmake-build-*/
+
+# IDE and OS artifacts
+.DS_Store
+.idea/
+*.swp
+*.swo
+
+# Junie agent session files
+.junie/
