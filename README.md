@@ -1,4 +1,4 @@
-# ModestIoT Nano-Framework (C++ Edition)
+# Modest IoT Nano-Framework (C++ Edition)
 
 **Version**: 1.0.0  
 **Author**: Angel Velasquez  
@@ -7,7 +7,7 @@
 
 ## Overview
 
-ModestIoT Nano-Framework (C++ Edition) is a lightweight, object-oriented, event-driven, and CQRS-inspired Arduino library for resource-constrained IoT projects on ESP32-based devices. It provides reusable abstractions for events, commands, sensors, actuators, connectivity drivers, gateway clients, and complete devices — all orchestrated by an asynchronous FreeRTOS engine with per-slot sampling intervals, zero-cost logging, and runtime diagnostics.
+Modest IoT Nano-Framework (C++ Edition) is a lightweight, object-oriented, event-driven, and CQRS-inspired Arduino library for resource-constrained IoT projects on ESP32-based devices. It provides reusable abstractions for events, commands, sensors, actuators, connectivity drivers, gateway clients, and complete devices — all orchestrated by an asynchronous FreeRTOS engine with per-slot sampling intervals, zero-cost logging, and runtime diagnostics.
 
 The framework uses a **Mediator pattern** where a `Device` subclass owns and coordinates its sensors and actuators. Sensors emit events that propagate synchronously through the mediator, which issues commands to actuators. Telemetry flows through a queue-based pipeline from the sampler task to the network task, keeping sensor polling and network transmission isolated.
 
@@ -386,7 +386,7 @@ Then open `docs/build/html/index.html` in your browser.
 
 ### Installation
 
-1. **Download**: Clone or download this repository from [avelasquezn/Modest-IoT-Nano-framework-Cpp](https://github.com/avelasquezn/Modest-IoT-Nano-framework-Cpp).
+1. **Download**: Clone or download this repository from [modest-iot/modest-iot-nano-framework](https://github.com/modest-iot/modest-iot-nano-framework).
 2. **Install as Library**:
    - Copy the repository to your Arduino libraries directory (e.g., `~/Arduino/libraries/ModestIoT/` on macOS/Linux or `Documents\Arduino\libraries\ModestIoT\` on Windows).
    - Alternatively, in the Arduino IDE: Sketch > Include Library > Add .ZIP Library.
@@ -484,4 +484,4 @@ For questions, feedback, or support, contact Angel Velasquez via GitHub:
 - **GitHub**: [avelasquezn](https://github.com/avelasquezn)
 
 ---
-ModestIoT Nano-Framework (C++ Edition): A simple, modular foundation for your IoT projects.
+Modest IoT Nano-Framework (C++ Edition): A simple, modular foundation for your IoT projects.

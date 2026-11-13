@@ -85,7 +85,7 @@ Use `MODEST_LOG_*` as the official macro family (`MODEST_LOG_E`, `MODEST_LOG_W`,
 
 ### Consequences
 
-- **Positive**: Zero namespace collision risk, aligns with `ModestIoT.h` branding, follows C/C++ `SCREAMING_SNAKE_CASE` macro convention, complies with Clang-Tidy and MISRA rules.
+- **Positive**: Zero namespace collision risk, aligns with `Modest IoT` branding (`ModestIoT.h` umbrella header), follows C/C++ `SCREAMING_SNAKE_CASE` macro convention, complies with Clang-Tidy and MISRA rules.
 - **Negative**: 2 characters longer than `MIOT_LOG_*` per call site.
 - **Rationale**: For the cost of 2 extra characters, the framework eliminates namespace collisions with Xiaomi IoT and maintains complete brand consistency. The alias provides an opt-in ergonomic path.
 

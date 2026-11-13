@@ -705,7 +705,7 @@ modest/{device_id}/ota            (Edge → Nano, QoS 1)
 - Edge service parses and routes to MQTT/topic system.
 
 **Discovery**:
-- Nano devices advertise with custom manufacturer data: `ModestIoT-{device_id}`.
+- Nano devices advertise with custom manufacturer data: `Modest-IoT-{device_id}`.
 - Edge service scans and auto-connects to known devices.
 
 #### 2.11 HTTP API
