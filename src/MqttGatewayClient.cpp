@@ -241,11 +241,12 @@ void MqttGatewayClient::mqttMessageCallback(String& topic, String& payload) {
     }
 
     const int commandId = doc["commandId"].as<int>();
-    MODEST_LOG_D("MQTT", "Received command %d on topic: %s", commandId, topic.c_str());
+    const int32_t commandPayload = doc["payload"] | 0;
+    MODEST_LOG_D("MQTT", "Received command %d (payload %ld) on topic: %s", commandId, commandPayload, topic.c_str());
 
     // Marshal the command to the sampler task via Device::enqueueCommand()
     // The Device is both the target handler and the marshaler, ensuring cross-task safety
-    const Command command(commandId);
+    const Command command(commandId, commandPayload);
     gActiveMqttClient->targetDevice->enqueueCommand(gActiveMqttClient->targetDevice, command);
 }
 /** @} */
