@@ -44,6 +44,17 @@ static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
 RTC_DATA_ATTR uint32_t rtcBootCount = 0; ///< Boot cycle counter
 RTC_DATA_ATTR uint32_t rtcSequenceCounter = 0; ///< Telemetry sequence counter
 
+/** @name NTP Configuration */
+//@{
+
+/** @brief Timezone identifier for NTP synchronization. */
+static const char* WEATHER_STATION_TIMEZONE = "UTC";
+
+/** @brief Primary NTP server for time synchronization. */
+static const char* WEATHER_STATION_NTP_SERVER = "pool.ntp.org";
+
+//@}
+
 /**
  * @brief Battery-Powered Weather Station Device.
  * Demonstrates ESP32 deep sleep with periodic weather sampling.
@@ -80,6 +91,9 @@ public:
 
         // Report how the device woke up
         Device::reportWakeReason();
+
+        // Restore time from RTC memory after deep sleep wake
+        TimeSynchronizationDriver::restoreFromRtc();
 
         // Announce boot with energy saving status
         char buffer[128];
@@ -131,6 +145,10 @@ static WeatherStation* weatherStationApp = nullptr;
  */
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
+
+    // Initialize NTP time synchronization for absolute timestamps
+    TimeSynchronizationDriver::initialize(WEATHER_STATION_TIMEZONE, WEATHER_STATION_NTP_SERVER);
+
     weatherStationApp = new WeatherStation(DHT_SENSOR_PIN);
 }
 

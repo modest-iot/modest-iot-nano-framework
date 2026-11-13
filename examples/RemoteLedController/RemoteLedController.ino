@@ -24,7 +24,7 @@
  * - Loop-less, event-driven asynchronous execution via `initializeAsynchronousEngine()`
  *
  * @par MQTT Payload format:
- * Commands are sent as JSON: `{"command": 400, "payload": 128}`
+ * Commands are sent as JSON: `{"commandId": 400, "payload": 128}`
  * The payload field is optional and defaults to 0 when omitted.
  *
  * @par Command identifiers used by this example:
@@ -75,16 +75,6 @@ static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
 class RemoteLedController : public Device {
 private:
     RgbLed smartLamp;
-    MqttGatewayClient& gatewayClient;
-
-    /**
-     * @brief Reports MQTT transmission statistics to Serial.
-     */
-    void reportStatistics() {
-        GatewayStatistics stats = gatewayClient.getStatistics();
-        Serial.printf("[RemoteLedController] MQTT stats -> succeeded: %lu, failed: %lu\n",
-                      stats.sendsSucceeded, stats.sendsFailed);
-    }
 
 protected:
     void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) const override {
@@ -93,7 +83,9 @@ protected:
     }
 
     void maintainNetworkServices() const override {
-        gatewayClient.service();
+        if (telemetryGateway != nullptr) {
+            telemetryGateway->service();
+        }
     }
 
 public:
@@ -103,16 +95,14 @@ public:
      * @param redPin PWM GPIO pin for the red channel.
      * @param greenPin PWM GPIO pin for the green channel.
      * @param bluePin PWM GPIO pin for the blue channel.
-     * @param client Reference to the MQTT gateway client.
      * @param samplingIntervalInMilliseconds Base sampling interval (ms).
      * @param timerGroupIndex Hardware timer group index (0-3).
      */
-    RemoteLedController(int redPin, int greenPin, int bluePin, MqttGatewayClient& client,
+    RemoteLedController(int redPin, int greenPin, int bluePin,
                         unsigned long samplingIntervalInMilliseconds,
                         uint8_t timerGroupIndex = 0)
         : Device(samplingIntervalInMilliseconds, timerGroupIndex),
-          smartLamp(redPin, greenPin, bluePin, false, this),
-          gatewayClient(client)
+          smartLamp(redPin, greenPin, bluePin, false, this)
     {
         initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
     }
@@ -193,15 +183,13 @@ public:
     }
 
     /**
-     * @brief Prepares WiFi and MQTT connection, and configures the subscribe topic.
+     * @brief Prepares WiFi connection and sets initial LED state.
      *
      * @param transport The WiFi connectivity driver for network access.
-     * @param subscribeTopic MQTT topic to subscribe for color change commands.
      * @param connectionTimeoutMs Maximum time to wait for WiFi connection.
      * @return True if all initialization steps succeeded.
      */
     bool start(WiFiConnectivityDriver& transport,
-               const char* subscribeTopic,
                unsigned long connectionTimeoutMs)
     {
         // Connect to WiFi with timeout
@@ -214,30 +202,6 @@ public:
         Serial.printf("[RemoteLedController] Connected! IP: %s, RSSI: %ld dBm\n",
                       transport.getLocalIpAddress().toString().c_str(),
                       transport.getSignalStrengthInDbm());
-
-        // Configure MQTT subscribe topic for cloud-to-device commands
-        gatewayClient.setSubscribeTopic(subscribeTopic);
-        gatewayClient.setSubscribeCallback(
-            [this](const char* payload, size_t length) {
-                // Parse JSON payload: {"command": 400, "payload": 128}
-                // The payload field is optional and defaults to 0.
-                (void)length;
-                StaticJsonDocument<64> doc;
-                DeserializationError err = deserializeJson(doc, payload, length);
-                if (err == DeserializationError::Ok) {
-                    int commandId = doc["command"] | 0;
-                    int32_t commandPayload = doc["payload"] | 0;
-                    if (commandId > 0) {
-                        Command cmd{commandId, commandPayload};
-                        enqueueCommand(cmd);
-                        Serial.printf("[RemoteLedController] MQTT subscribe -> enqueued command %d (payload %ld)\n",
-                                      commandId, commandPayload);
-                    }
-                } else {
-                    Serial.printf("[RemoteLedController] Failed to parse MQTT payload: %s\n", err.c_str());
-                }
-            }
-        );
 
         // Set initial color to orange
         smartLamp.setColor(RgbLed::ORANGE);
@@ -260,36 +224,40 @@ static const char* WIRELESS_PASSWORD = "SmartHomePass2026";
 
 static const char* MQTT_BROKER_ADDRESS = "192.168.1.100";
 static const int MQTT_BROKER_PORT = 1883;
-static const char* MQTT_DEVICE_ID = "smart-lamp-01";
+static const char* MQTT_PUBLISH_TOPIC = "home/lamp/01/status";
 static const char* MQTT_SUBSCRIBE_TOPIC = "home/lamp/01/color";
+static const char* MQTT_DEVICE_ID = "smart-lamp-01";
 
 static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS = 1000;
 static const unsigned long CONNECTION_TIMEOUT_IN_MILLISECONDS = 15000;
 static const uint8_t HARDWARE_TIMER_CHANNEL_INDEX = 0;
 
 static WiFiConnectivityDriver* wifiTransport = nullptr;
-static MqttGatewayClient* mqttGateway = nullptr;
 static RemoteLedController* ledController = nullptr;
+static MqttGatewayClient* mqttGateway = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
 
     wifiTransport = new WiFiConnectivityDriver(WIRELESS_SSID, WIRELESS_PASSWORD);
 
-    mqttGateway = new MqttGatewayClient(*wifiTransport, MQTT_BROKER_ADDRESS, MQTT_BROKER_PORT,
-                                         MQTT_DEVICE_ID);
-
     ledController = new RemoteLedController(
         RGB_LED_RED_PIN,
         RGB_LED_GREEN_PIN,
         RGB_LED_BLUE_PIN,
-        *mqttGateway,
         SAMPLING_INTERVAL_IN_MILLISECONDS,
         HARDWARE_TIMER_CHANNEL_INDEX
     );
 
-    if (!ledController->start(*wifiTransport, MQTT_SUBSCRIBE_TOPIC,
-                              CONNECTION_TIMEOUT_IN_MILLISECONDS)) {
+    // Construct MqttGatewayClient with subscribe topic and target device for cloud-to-device commands
+    mqttGateway = new MqttGatewayClient(*wifiTransport, wifiTransport->getNetworkSocket(),
+                                         MQTT_BROKER_ADDRESS, MQTT_BROKER_PORT,
+                                         MQTT_PUBLISH_TOPIC, MQTT_SUBSCRIBE_TOPIC,
+                                         ledController, MQTT_DEVICE_ID);
+
+    ledController->setTelemetryGateway(mqttGateway);
+
+    if (!ledController->start(*wifiTransport, CONNECTION_TIMEOUT_IN_MILLISECONDS)) {
         Serial.println("[RemoteLedController] Device startup failed.");
         return;
     }
