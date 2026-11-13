@@ -38,6 +38,7 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 | `Device` | Base class combining event and command handling; orchestrates the asynchronous engine, scheduler, and telemetry pipeline. |
 | `EngineConfig` | Configuration struct for FreeRTOS task stack sizes, priorities, core pinning, and queue depth. |
 | `ConfigurationStore` | Persistent key-value configuration using ESP32 NVS with namespace isolation, type-safe access, and schema validation. |
+| `TimeSynchronizationDriver` | NTP-based time synchronization with RTC fallback for deep-sleep devices; replaces `millis()` timestamps with Unix epoch seconds. |
 | `DiagnosticsSnapshot` | 12-field runtime health snapshot (stack, heap, queue, timing). |
 | `SamplingScheduler` | Per-slot countdown scheduler with phase-aligned re-arming and minimum period enforcement. |
 | `TelemetryPackage` | Base class for telemetry payloads with envelope metadata (timestamp, sequence). |
@@ -471,7 +472,6 @@ Contributions, improvements, and extensions are welcome under the MIT License. Y
 
 ## Future Directions
 
-- **Pre-Release Prerequisites (W21)**: NTP time synchronization — required before Arduino Library submission. W20 (Persistent configuration), W22 (TLS/SSL examples), and W23 (command payload support) are complete.
 - **v1.1.0**: Telemetry packet pool (W18), telemetry buffering with LittleFS persistence, power manager with battery monitoring, and firmware version in telemetry.
 - **v1.2.0**: Over-the-air (OTA) updates and event aggregation for composite sensor rules.
 - **Edge Framework Phase 1**: Python-based edge server with MQTT broker, device registry, and telemetry ingestion.

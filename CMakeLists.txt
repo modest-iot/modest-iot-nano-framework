@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.15...4.3)
 # 1. Project Configuration & Metadata
 project(Modest-IoT-Nano-Framework VERSION 1.0.0 LANGUAGES C CXX)
 
+# Work around macOS SDK bug where <atomic> triggers <ctime> before <time.h> defines tm
+add_compile_options(-D_LIBCPP_DISABLE_AVAILABILITY)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -403,6 +406,13 @@ add_executable(test_ConfigurationStore
 )
 target_include_directories(test_ConfigurationStore PRIVATE tests/fakes src)
 
+add_executable(test_TimeSynchronizationDriver
+        tests/TimeSynchronizationDriver/test.cpp
+        src/TimeSynchronizationDriver.cpp
+        ${TEST_FAKES}
+)
+target_include_directories(test_TimeSynchronizationDriver PRIVATE tests/fakes src)
+
 add_test(NAME DigitalLightIntensitySensorTest COMMAND test_DigitalLightIntensitySensor)
 add_test(NAME RgbLedTest COMMAND test_RgbLed)
 add_test(NAME RelayActuatorTest COMMAND test_RelayActuator)
@@ -433,9 +443,10 @@ add_test(NAME BleGatewayClientTest COMMAND test_BleGatewayClient)
 add_test(NAME HttpGatewayClientTest COMMAND test_HttpGatewayClient)
 add_test(NAME BuzzerTest COMMAND test_Buzzer)
 add_test(NAME ConfigurationStoreTest COMMAND test_ConfigurationStore)
+add_test(NAME TimeSynchronizationDriverTest COMMAND test_TimeSynchronizationDriver)
 
 add_custom_target(run_tests
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor test_PthSensor test_WaterLeakSensor test_DoorWindowSensor test_OneWireTemperatureSensor test_DhtSensor test_DeepSleep test_ServoMotor test_CharacterLcdDisplay test_OledDisplay test_EnvironmentalGasSensor test_BleGatewayClient test_HttpGatewayClient test_Buzzer test_ConfigurationStore
+        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor test_PthSensor test_WaterLeakSensor test_DoorWindowSensor test_OneWireTemperatureSensor test_DhtSensor test_DeepSleep test_ServoMotor test_CharacterLcdDisplay test_OledDisplay test_EnvironmentalGasSensor test_BleGatewayClient test_HttpGatewayClient test_Buzzer test_ConfigurationStore test_TimeSynchronizationDriver
         COMMENT "Executing all native host test suites..."
 )

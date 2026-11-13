@@ -139,7 +139,9 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - **EquipmentHealthMonitor**: Industrial equipment health dashboard with `ModestLog` and `diagnostics()`
 
 ### Testing
-- 30 host test suites covering all sensors, actuators, scheduler, MQTT, BLE, HTTP, and telemetry
+- 31 host test suites covering all sensors, actuators, scheduler, MQTT, BLE, HTTP, and telemetry
+- **TimeSynchronizationDriver test**: 8 tests covering NTP initialization, timestamp fallback, sync status, RTC save/restore, and full sync cycle simulation
+- **WeatherStation example**: Updated with NTP initialization and RTC time restore for deep-sleep time persistence
 - **HttpGatewayClient test**: HTTP methods (GET/POST/PUT/DELETE), auth headers, response body handling, statistics tracking
 - **Fake HTTPClient.h**: Mock HTTP client for host testing with configurable responses
 - **Command payload tests** (W23): 6 new tests in CommandMarshaling suite for payload construction, equality, CommandEntry carry-through, and negative values
@@ -153,9 +155,9 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 ### Documentation
 - 30 Architecture Decision Records (ADRs)
 - Doxygen documentation with API navigation tree, key features section, and `@runs_on` threading tags
-- Class diagram (PlantUML) covering all 47 source headers
+- Class diagram (PlantUML) covering all 48 source headers
 - User stories and improvement tracking with pre-release readiness assessment (W20–W29)
-- `keywords.txt` comprehensive rewrite: 453 lines with all 47 source headers, drivers, methods, and nested types
+- `keywords.txt` comprehensive rewrite: 461 lines with all 48 source headers, drivers, methods, and nested types
 
 ### Technical Details
 - ESP32 Arduino core 3.x compatible

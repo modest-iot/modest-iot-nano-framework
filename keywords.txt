@@ -13,6 +13,7 @@ CommandHandler	KEYWORD1
 TelemetryPackage	KEYWORD1
 SamplingScheduler	KEYWORD1
 ConfigurationStore	KEYWORD1
+TimeSynchronizationDriver	KEYWORD1
 GatewayClient	KEYWORD1
 ConnectivityDriver	KEYWORD1
 
@@ -450,3 +451,10 @@ GAS_RESISTANCE_CHANGE_EPSILON	LITERAL1
 # ConfigurationStore constants
 MAX_CONFIGURATION_KEY_LENGTH	LITERAL1
 MAX_CONFIGURATION_STRING_VALUE_LENGTH	LITERAL1
+
+# TimeSynchronizationDriver
+initialize	KEYWORD2
+getCurrentTimestamp	KEYWORD2
+isSynchronized	KEYWORD2
+saveToRtc	KEYWORD2
+restoreFromRtc	KEYWORD2
