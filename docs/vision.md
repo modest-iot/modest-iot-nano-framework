@@ -31,7 +31,7 @@ Together, they form a complete IoT stack: Nano handles deterministic sensor poll
 | **Tier 3**: Core Scheduling & Telemetry | W8, W11 | **Complete** ✓ |
 | **Tier 4**: Capabilities                | W12–W15 | **Complete** ✓   |
 | **Tier 5**: Optimization & Power        | W16–W19 | **Complete** (W16 ✓, W17 ✓, W19 ✓, W18 deferred to v1.1.0) |
-| **Pre-Release**: Prerequisites          | W20–W23 | **Complete** ✓ — W20 (Config store) ✓, W21 (Time sync) ✓, W22 (TLS/SSL) ✓, W23 (Command payload) ✓ |
+| **Pre-Release**: Prerequisites          | W20–W24 | **Complete** ✓ — W20 (Config store) ✓, W21 (Time sync) ✓, W22 (TLS/SSL) ✓, W23 (Command payload) ✓, W24 (Secure socket builder) ✓ |
 
 ### What's Delivered
 
@@ -948,7 +948,7 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 | **Q4 2026** | Tier 4 complete ✓      | W12–W15: command marshaling, interrupts, non-blocking sensors, MQTT subscribe |
 | **Q4 2026** | Component Expansion ✓  | RelayActuator, SoilMoistureSensor, WaterFlowSensor with examples              |
 | **Q4 2026** | Tier 5 complete ✓      | W16 ✓: tickless scheduling; W17 ✓: deep sleep with WeatherStation; W19 ✓: native drivers; W18 deferred to v1.1.0 |
-| **Q4 2026** | Pre-release prereqs    | W20–W23: ConfigurationStore, TimeSync, TLS examples, Command payload support  |
+| **Q4 2026** | Pre-release prereqs    | W20–W24: ConfigurationStore, TimeSync, TLS examples, Command payload, Secure socket builder  |
 | **Q1 2027** | Library release        | v1.0.0 tag, Arduino Library Manager submission                                 |
 
 ### Edge Framework Development
@@ -1069,11 +1069,11 @@ The Modest IoT dual-framework vision provides a complete, local-first IoT stack:
 - **Together** they form a scalable, offline-resilient, AI-ready IoT platform.
 - **DDD-guided design** ensures consistent terminology, clear context boundaries, and appropriate patterns for each framework (see ADR-023).
 
-The Nano Framework is **feature-complete for v1.0.0** (Tiers 0–4 done, Component Expansion Tiers 1–3 done, Tier 5: W16 ✓, W17 ✓, W19 ✓, W18 deferred to v1.1.0). One pre-release prerequisite remains: time synchronization. W20 (Persistent configuration), W22 (TLS/SSL examples), and W23 (command payload support) are complete. The Edge Framework is **planned** with a clear DDD-based architecture and development roadmap.
+The Nano Framework is **feature-complete for v1.0.0** (Tiers 0–4 done, Component Expansion Tiers 1–3 done, Tier 5: W16 ✓, W17 ✓, W19 ✓, W18 deferred to v1.1.0). All pre-release prerequisites (W20–W24) are complete. The Edge Framework is **planned** with a clear DDD-based architecture and development roadmap.
 
 **Next steps**:
 1. Nano Framework Tiers 0–4 are complete. Component Expansion Tiers 1–3 are complete. Tier 5: W16 ✓ (tickless scheduling), W17 ✓ (deep sleep), W19 ✓ (native drivers).
-2. Complete Phase 2.5 pre-release prerequisites: TimeSync (W21). W20 (ConfigurationStore), W22 (TLS/SSL), and W23 (Command payload) are complete.
+2. Phase 2.5 pre-release prerequisites (W20–W24) are complete.
 3. Submit Nano v1.0.0 to Arduino Library Manager.
 4. Start Edge Framework Phase 1 development.
 5. Integrate Nano and Edge with MQTT protocol and shared telemetry schema.
