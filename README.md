@@ -250,24 +250,31 @@ Provides keep-alive servicing via `service()`, reconnection backoff, and bounded
 
 Both `MqttGatewayClient` and `HttpGatewayClient` accept a `Client&` reference, making `WiFiClientSecure` a drop-in replacement for `WiFiClient`. This enables TLS 1.2/1.3 encrypted communication with no framework code changes.
 
-**MQTT over TLS** (port 8883):
+**Recommended: Use the `createSecureSocket()` builder method** for concise TLS setup:
 
 ```cpp
-#include <WiFiClientSecure.h>
+// Create and configure a TLS socket in one call
+WiFiClientSecure* secureSocket = wifiDriver->createSecureSocket(nullptr, true); // insecure mode for testing
+// For production:
+// WiFiClientSecure* secureSocket = wifiDriver->createSecureSocket(caCertificate, false);
 
+MqttGatewayClient mqttGateway(*wifiDriver, *secureSocket, "broker.example.com", 8883, "device/telemetry", "device-001");
+```
+
+**Alternative: Manual `WiFiClientSecure` construction** for advanced use cases:
+
+```cpp
 WiFiClientSecure secureClient;
 secureClient.setInsecure(); // For testing; use setCACert() in production
 
 MqttGatewayClient mqttGateway(wifiDriver, secureClient, "broker.example.com", 8883, "device/telemetry", "device-001");
 ```
 
-**HTTP over TLS** (HTTPS):
+**HTTP over TLS** (HTTPS) follows the same pattern:
 
 ```cpp
-WiFiClientSecure secureClient;
-secureClient.setInsecure(); // For testing; use setCACert() in production
-
-HttpGatewayClient httpGateway(secureClient, "https://api.example.com/device/telemetry");
+WiFiClientSecure* secureSocket = wifiDriver->createSecureSocket(nullptr, true);
+HttpGatewayClient httpGateway(*secureSocket, "https://api.example.com/device/telemetry");
 ```
 
 **Certificate options**:
@@ -280,7 +287,7 @@ HttpGatewayClient httpGateway(secureClient, "https://api.example.com/device/tele
 
 **Memory overhead**: `WiFiClientSecure` uses approximately 4-6KB more RAM than `WiFiClient` due to TLS state and buffer requirements. This is a trade-off for encrypted communication.
 
-**See also**: [`MqttTlsDevice`](examples/MqttTlsDevice/) example for a complete MQTT over TLS implementation.
+**See also**: [`MqttTlsDevice`](examples/MqttTlsDevice/) example for a complete MQTT over TLS implementation using `createSecureSocket()`.
 
 ## Examples
 
@@ -308,7 +315,7 @@ The framework ships with 22 example sketches demonstrating various use cases:
 | `SmartScaleDevice` | Four HX711 load cells for precision weighing; demonstrates multi-sensor averaging. |
 | `ToggableLedDevice` | Button-controlled LED with MQTT telemetry; demonstrates CQRS command/event separation. |
 | `WaterFlowMonitor` | YF-S201 water flow sensor with hybrid interrupt/periodic scheduling. |
-| `MqttTlsDevice` | Secure environmental monitor with encrypted MQTT (TLS); demonstrates `WiFiClientSecure` as a drop-in replacement for `WiFiClient`. |
+| `MqttTlsDevice` | Secure environmental monitor with encrypted MQTT (TLS); demonstrates `WiFiConnectivityDriver::createSecureSocket()` builder method for TLS socket creation. |
 | `WeatherStation` | Battery-powered weather station with deep sleep, DHT22, BH1750, and PthSensor. |
 
 ## Testing
