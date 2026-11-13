@@ -29,13 +29,13 @@ class TimeSynchronizationDriver {
 public:
     /**
      * @brief Initializes NTP time synchronization.
-     * @param timezone Timezone identifier (e.g., "UTC", "EST5EDT", "PST8PDT").
+     * @param tz Timezone identifier (e.g., "UTC", "EST5EDT", "PST8PDT").
      * @param defaultNtpServer Primary NTP server address (e.g., "pool.ntp.org").
      * @param alternativeNtpServer Optional fallback NTP server address.
      * @note On ESP32, this calls `configTzTime()` internally. On host builds,
      *       this is a no-op that marks the driver as initialized.
      */
-    static void initialize(const char* timezone, const char* defaultNtpServer,
+    static void initialize(const char* tz, const char* defaultNtpServer,
                            const char* alternativeNtpServer = nullptr);
 
     /**
