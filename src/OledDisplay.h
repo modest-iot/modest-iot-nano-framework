@@ -9,6 +9,7 @@
  * @version 1.0
  */
 
+#include <cstddef>
 #include <cstdint>
 #include "Actuator.h"
 #include "Ssd1306Driver.h"
