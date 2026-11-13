@@ -241,6 +241,11 @@ run_test "test_ConfigurationStore" \
     src/ConfigurationStore.cpp \
     tests/ConfigurationStore/test.cpp
 
+# 31. TimeSynchronizationDriver Suite
+run_test "test_TimeSynchronizationDriver" \
+    src/TimeSynchronizationDriver.cpp \
+    tests/TimeSynchronizationDriver/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="
