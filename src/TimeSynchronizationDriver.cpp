@@ -7,19 +7,20 @@
 
 #include "TimeSynchronizationDriver.h"
 
-#if !defined(ARDUINO_ARCH_ESP32)
-// Host test: declare millis() from the test fake without pulling in Arduino.h
-// (which triggers macOS SDK <atomic>/<time.h> include order bugs)
-extern "C" unsigned long millis();
-#endif
-
 #if defined(ARDUINO_ARCH_ESP32)
+#include <Arduino.h>
 #pragma clang system_header
 #include <time.h>
 #pragma clang system_header
 #include <sys/time.h>
 #pragma clang system_header
 #include "esp_sleep.h"
+#endif
+
+#if !defined(ARDUINO_ARCH_ESP32)
+// Host test: declare millis() from the test fake without pulling in Arduino.h
+// (which triggers macOS SDK <atomic>/<time.h> include order bugs)
+extern "C" unsigned long millis();
 #endif
 
 /** @name Static Member Definitions */
