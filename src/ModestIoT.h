@@ -23,6 +23,7 @@
 #include "Device.h"
 #include "LocationData.h"
 #include "ConfigurationStore.h"
+#include "TimeSynchronizationDriver.h"
 //@} // Core Asynchronous Engine & Signaling Primitives
 
 /** @name Layer-Isolated Network Comprehension */
