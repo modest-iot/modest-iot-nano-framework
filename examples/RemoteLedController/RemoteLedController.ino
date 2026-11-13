@@ -255,7 +255,7 @@ void setup() {
                                          MQTT_PUBLISH_TOPIC, MQTT_SUBSCRIBE_TOPIC,
                                          ledController, MQTT_DEVICE_ID);
 
-    ledController->telemetryGateway = mqttGateway;
+    ledController->setTelemetryGateway(mqttGateway);
 
     if (!ledController->start(*wifiTransport, CONNECTION_TIMEOUT_IN_MILLISECONDS)) {
         Serial.println("[RemoteLedController] Device startup failed.");
