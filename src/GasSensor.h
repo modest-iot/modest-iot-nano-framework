@@ -162,6 +162,7 @@ private:
     /// @note Below 100 ms the heating element cannot stabilize between readings.
     static constexpr uint32_t MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS = 100;
 
+protected:
     /**
      * @brief Loads the default calibration slope and intercept for a given gas type.
      * These are example values and should be overridden by developers for specific sensor models.
@@ -211,7 +212,6 @@ private:
      */
     void handleRawModeLogic(Event& event, float currentSensorResistanceInKiloOhm); // Removed const
 
-protected:
     /**
      * @brief Processes an incoming event, typically a `MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER`.
      * This method orchestrates the sensor's behavior based on its current operating mode.

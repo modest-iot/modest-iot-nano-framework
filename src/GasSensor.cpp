@@ -114,9 +114,6 @@ GasSensor::GasType GasSensor::getTargetGasType() const {
 
 /**
  * @brief Loads default gas calibration parameters.
- * @param gasType The GasType.
- * @param calibrationParameters Reference to store parameters.
- * @return true if successful, false otherwise.
  */
 bool GasSensor::loadDefaultGasCalibrationParameters(const GasType gasType, GasSensor::GasCalibrationParameters& calibrationParameters) { // Removed redundant static, fully qualified GasCalibrationParameters
     // NOTE: These are EXAMPLE calibration values.
@@ -163,8 +160,6 @@ bool GasSensor::loadDefaultGasCalibrationParameters(const GasType gasType, GasSe
 
 /**
  * @brief Calculates sensor resistance in kOhm.
- * @param rawAnalogValue The raw analog reading.
- * @return The resistance in kOhm.
  */
 float GasSensor::calculateSensorResistanceInKiloOhm(const int rawAnalogValue) { // Removed redundant static, added const
     if (const float vOut = static_cast<float>(rawAnalogValue) * (ADC_MAX_VOLTAGE / ADC_MAX_VALUE); vOut > 0.001f) { // Avoid division by zero or near-zero V_out
@@ -184,8 +179,6 @@ void GasSensor::updateDigitalGasDetectedState()  {
 
 /**
  * @brief Handles calibrating mode logic.
- * @param event The event.
- * @param currentSensorResistanceInKiloOhm Current resistance in kOhm.
  */
 void GasSensor::handleCalibratingModeLogic(Event& event, float currentSensorResistanceInKiloOhm) {
     if (currentSensorResistanceInKiloOhm > 0.0f) {
@@ -212,8 +205,6 @@ void GasSensor::handleCalibratingModeLogic(Event& event, float currentSensorResi
 
 /**
  * @brief Handles accurate mode logic.
- * @param event The event.
- * @param currentSensorResistanceInKiloOhm Current resistance in kOhm.
  */
 void GasSensor::handleAccurateModeLogic(Event& event, const float currentSensorResistanceInKiloOhm) {
     float currentRsR0Ratio = -1.0f;
@@ -240,8 +231,6 @@ void GasSensor::handleAccurateModeLogic(Event& event, const float currentSensorR
 
 /**
  * @brief Handles raw mode logic.
- * @param event The event.
- * @param currentSensorResistanceInKiloOhm Current resistance in kOhm.
  */
 void GasSensor::handleRawModeLogic(Event& event, const float currentSensorResistanceInKiloOhm) {
     if (digitalInputPin != -1) {
