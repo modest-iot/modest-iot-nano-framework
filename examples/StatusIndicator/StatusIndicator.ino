@@ -61,12 +61,12 @@ class StatusIndicator : public Device {
      * engine and registers itself to receive automated clock alarm notifications.
      *
      * @param ledPin Target GPIO pin where the physical LED is connected.
-     * @param blinkIntervalMs Ticking frequency rate in milliseconds.
+     * @param blinkIntervalInMilliseconds Ticking frequency rate in milliseconds.
      * @param timerChannel Dedicated hardware 64-bit timer group index (0-3).
      *                     Defaults to 0 if not specified.
      */
-    StatusIndicator(int ledPin, unsigned long blinkIntervalMs, uint8_t timerChannel = 0)
-    : Device(blinkIntervalMs, timerChannel),
+    StatusIndicator(int ledPin, unsigned long blinkIntervalInMilliseconds, uint8_t timerChannel = 0)
+    : Device(blinkIntervalInMilliseconds, timerChannel),
     statusLed(ledPin, false, this) // Pass pin, initial active state (false), and set parent handler
     {
         // 1. Launch internal background task workers
@@ -77,10 +77,10 @@ class StatusIndicator : public Device {
         // Capture and evaluate scheduler capacity bounds gracefully
         // Note: `this` is a Device, not a Sensor, so the EventHandler* overload is used with
         // an explicit period matching the timer tick interval.
-        bool registered = appendSensorToScheduler(this, StatusIndicator::TIMER_EVENT_IDENTIFIER, blinkIntervalMs, 0);
+        bool registered = appendSensorToScheduler(this, StatusIndicator::TIMER_EVENT_IDENTIFIER, blinkIntervalInMilliseconds, 0);
         if (!registered) {
-            Serial.println(F("[ERROR] Blinker registration failed: Scheduler capacity full!"));
-        }
+        Serial.println(F("[ERROR] Blinker registration failed: Scheduler capacity full!"));
+    }
     }
 
     /**
@@ -95,15 +95,15 @@ class StatusIndicator : public Device {
      * @param event The triggered event context payload containing identifier and data.
      */
     void on(Event event) override {
-        // Handle the explicit timing event assigned to this device
-        if (event.identifier == StatusIndicator::TIMER_EVENT_IDENTIFIER) {
+    // Handle the explicit timing event assigned to this device
+    if (event.identifier == StatusIndicator::TIMER_EVENT_IDENTIFIER) {
 
-            // Route the pre-instantiated static toggle command directly to the actuator.
-            // No local state tracking variables or toggles are written here!
-            statusLed.handle(Led::TOGGLE_LED_COMMAND);
-            Serial.println("[StatusIndicator] Timer event caught -> LED toggle dispatched.");
-        }
+        // Route the pre-instantiated static toggle command directly to the actuator.
+        // No local state tracking variables or toggles are written here!
+        statusLed.handle(Led::TOGGLE_LED_COMMAND);
+        Serial.println("[StatusIndicator] Timer event caught -> LED toggle dispatched.");
     }
+}
 };
 //@} // Application Mediator Implementation
 
@@ -120,7 +120,7 @@ static const int SYSTEM_DIAGNOSTIC_LED_PIN = 2;
 /**
  * @brief Defines the blink rate for the LED in milliseconds.
  */
-static const unsigned long BLINK_RATE_MILLISECONDS = 500;
+static const unsigned long BLINK_RATE_IN_MILLISECONDS = 500;
 
 /**
  * @brief Defines the hardware core timer channel to be used.
@@ -148,7 +148,10 @@ void setup() {
 
     // Boot the framework application.
     // Background execution queues, FreeRTOS tasks, and hardware alarm vectors launch automatically!
-    statusIndicatorApplication = new StatusIndicator(SYSTEM_DIAGNOSTIC_LED_PIN, BLINK_RATE_MILLISECONDS, CORE_TIMER_CHANNEL);
+    statusIndicatorApplication = new StatusIndicator(
+    SYSTEM_DIAGNOSTIC_LED_PIN,
+    BLINK_RATE_IN_MILLISECONDS,
+    CORE_TIMER_CHANNEL);
 
     Serial.println("[StatusIndicator] Loop-less, event-driven command routing active.");
 }
