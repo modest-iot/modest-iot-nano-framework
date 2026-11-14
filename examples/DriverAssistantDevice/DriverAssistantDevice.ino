@@ -1,6 +1,20 @@
 /**
  * @file DriverAssistantDevice.ino
- * @brief Driver assistant example using Geolocation, Ultrasonic sensors, and LCD display.
+ * @brief Vehicle driver assistant with GPS navigation and parking distance alerts.
+ *
+ * Combines a GPS module for speed tracking and two ultrasonic sensors (front and rear)
+ * for parking assistance. Displays speed and distance readings on a 16x2 LCD. The GPS
+ * uses a dedicated HardwareSerial port, while ultrasonic sensors use GPIO pins for
+ * trigger/echo timing.
+ *
+ * @par Modest IoT Nano Framework aspects illustrated:
+ * - `Device` base class with async engine for loop-less execution
+ * - `GeolocationSensor` with `HardwareSerial` for GPS NMEA parsing
+ * - `UltrasonicSensor` (two instances) for front/rear distance measurement
+ * - `CharacterLcdDisplay` actuator with `UPDATE_TEXT_COMMAND` for real-time display
+ * - `event.sourceId` disambiguation for multiple sensors of the same type
+ * - `LocationData` value object for GPS coordinate storage
+ * - Cross-task event routing via `on(Event)` handler
  * @date 2026-06-15
  * @version 1.0
  */
@@ -127,6 +141,7 @@ public:
      * @brief Inversion of Control interface contract handler.
      * Intercepts framework events dispatched from background tasks.
      * @param event The triggered event context payload.
+     * @runs_on{sampler}
      */
     void on(Event event) override {
         if (event.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER) {
@@ -142,11 +157,11 @@ public:
     }
 };
 
-static DriverAssistantDevice* driverAssistant = nullptr;
+static DriverAssistantDevice* driverAssistantApplication = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
-    driverAssistant = new DriverAssistantDevice(
+    driverAssistantApplication = new DriverAssistantDevice(
         Serial2,
         GPS_RX_PIN, GPS_TX_PIN,
         FRONT_TRIGGER_PIN, FRONT_ECHO_PIN,
