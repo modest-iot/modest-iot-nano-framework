@@ -26,6 +26,9 @@
 #include <memory>
 #include "ModestIoT.h"
 
+/** @brief Sampler event queue length for MQTT TLS telemetry. */
+static const int MQTT_TLS_SAMPLER_QUEUE_LENGTH = 10;
+
 /** @name Telemetry JSON Keys */
 //@{
 /** @brief JSON key for temperature in Celsius. */
@@ -131,9 +134,6 @@ static const char* MQTT_PUBLISH_TOPIC         = "nodes/environmental/tls-telemet
 
 static const unsigned long TELEMETRY_POLLING_INTERVAL_IN_MILLISECONDS = 30000;
 static const uint8_t HARDWARE_TIMER_CHANNEL_INDEX = 0;
-
-/** @brief Sampler event queue length for MQTT TLS telemetry. */
-static const int MQTT_TLS_SAMPLER_QUEUE_LENGTH = 10;
 
 /** @brief Serial communication baud rate. */
 static const unsigned long SERIAL_BAUD_RATE = 115200;
