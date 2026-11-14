@@ -1,17 +1,22 @@
 /**
  * @file RfidAccessController.ino
- * @brief RFID-based access control device using MFRC522 and Modest IoT.
+ * @brief RFID door access controller with visual and audible feedback.
  *
- * Demonstrates RfidSensor integration within an event-driven Device subclass.
- * Reads ISO/IEC 14443A card UIDs and verifies them against an authorized tag,
- * driving feedback actuators (Buzzer and LED/Servo) accordingly.
+ * Uses an MFRC522 RFID reader to scan ISO/IEC 14443A cards, compares the scanned
+ * UID against an authorized tag list, and provides feedback via a green LED (access
+ * granted) or red LED (access denied) and a buzzer with distinct tones. Demonstrates
+ * SPI-based sensor integration with the framework's event-driven architecture.
  *
- * Default SPI Wiring (ESP32):
- * - SCK:  GPIO 18
- * - MISO: GPIO 19
- * - MOSI: GPIO 23
- * - CS:   GPIO 5 (SDA/SS pin on MFRC522)
- * - RST:  GPIO 22 (RST pin on MFRC522)
+ * @par Modest IoT Nano Framework aspects illustrated:
+ * - `Device` base class with async engine for loop-less execution
+ * - `RfidSensor` with SPI-based MFRC522 for card UID reading
+ * - `Led` actuator with `TURN_ON_COMMAND` and `TURN_OFF_COMMAND` for visual feedback
+ * - `Buzzer` actuator with `PLAY_TONE_COMMAND` for audible feedback
+ * - Event routing via `on(Event)` with `TAG_DETECTED_EVENT_IDENTIFIER`
+ * - Tag removal handling via `TAG_REMOVED_EVENT_IDENTIFIER`
+ * - Direct actuator command dispatch via `handle(Command)`
+ * @date 2026-06-12
+ * @version 1.0
  */
 
 #include <Arduino.h>
@@ -54,6 +59,11 @@ public:
         appendSensorToScheduler(&rfidReader, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
     }
 
+    /**
+     * @brief Handles RFID tag detected and removed events.
+     * @param event The triggered event context payload.
+     * @runs_on{sampler}
+     */
     void on(Event event) override {
         if (event.identifier == RfidSensor::TAG_DETECTED_EVENT_IDENTIFIER) {
             const char* scannedUid = rfidReader.getUid();
@@ -77,11 +87,11 @@ public:
     }
 };
 
-static RfidAccessController* controller = nullptr;
+static RfidAccessController* rfidAccessApplication = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
-    controller = new RfidAccessController(RFID_CS_PIN, RFID_RST_PIN, ACCESS_LED_PIN, BUZZER_PIN);
+    rfidAccessApplication = new RfidAccessController(RFID_CS_PIN, RFID_RST_PIN, ACCESS_LED_PIN, BUZZER_PIN);
     Serial.println("[System Boot] RFID Access Controller active.");
 }
 
