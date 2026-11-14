@@ -1,21 +1,21 @@
 /**
  * @file CropMonitoringStation.ino
- * @brief Demonstrates tickless scheduling and ESP32 light sleep for a battery-powered crop monitoring station.
+ * @brief Battery-powered crop monitoring station with light sleep for energy efficiency.
  *
- * This example shows how to build an agricultural field monitoring station using the Modest-IoT Nano-Framework
- * with `PowerMode::Tickless`. The device enters ESP32 light sleep between sensor samples, waking
- * only when the next sensor reading is due. This dramatically reduces idle power consumption,
- * enabling battery-powered always-on crop monitoring.
+ * Monitors soil moisture, air temperature/humidity, and sunlight intensity in agricultural
+ * fields. Uses ESP32 light sleep between sensor samples to reduce power consumption,
+ * enabling months of battery operation. Three sensors with different sampling intervals
+ * demonstrate the per-slot scheduler's tickless mode.
  *
- * The example uses three sensors with different sampling intervals:
- * - SoilMoistureSensor (every 30s) for soil moisture levels
- * - DhtSensor (every 60s) for air temperature and humidity
- * - DigitalLightIntensitySensor (every 120s) for sunlight intensity
- *
- * In tickless mode, the hardware timer uses one-shot alarms instead of periodic interrupts,
- * and the CPU halts via `esp_light_sleep_start()` between samples. The `ticksUntilNextDue()`
- * method calculates the optimal sleep duration across all registered sensors.
- *
+ * @par Modest IoT Nano Framework aspects illustrated:
+ * - `Device` base class with `PowerMode::Tickless` for ESP32 light sleep
+ * - `SoilMoistureSensor` (analog), `DhtSensor` (digital), `DigitalLightIntensitySensor` (I2C)
+ * - Per-slot scheduler with staggered sampling intervals (30s, 60s, 120s)
+ * - `ticksUntilNextDue()` for optimal sleep duration calculation
+ * - `TelemetryPackage` subclass with custom `serialize()` for JSON schema
+ * - `MqttGatewayClient` for cloud telemetry publishing
+ * - `WiFiConnectivityDriver` for WiFi link management
+ * - `JSON_KEY_*` constants for telemetry serialization
  * @date 2026-11-09
  * @version 1.0
  */
@@ -242,16 +242,9 @@ class CropMonitoringStation : public Device {
     }
 
     /**
-     * @brief Handles incoming events from all registered sensors.
-     *
-     * This method is called by the framework when any sensor emits an event
-     * after a successful reading. It packages the latest readings from all
-     * sensors into a unified telemetry record and queues it for MQTT publishing.
-     *
-     * After this handler returns, the device will enter light sleep until
-     * the next sample is due (in tickless mode).
-     *
-     * @param event The triggered event containing the sensor data.
+     * @brief Handles sensor data-ready events to package and queue telemetry.
+     * @param event The triggered event context payload.
+     * @runs_on{sampler}
      */
     void on(Event event) override {
         // Package and queue a unified telemetry record for MQTT publishing.
