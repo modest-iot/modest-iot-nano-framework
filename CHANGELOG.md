@@ -110,7 +110,7 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Corrected test suite count from 26 to 27, then to 28, and finally to 29 host test suites
 - Updated Tier 4 status from "Pending" to "Complete" in improvements tracking
 - Removed DHT sensor library from README dependencies (replaced with native implementation)
-- Fixed source header count from 47 to 46
+- Fixed source header count from 47 to 48
 - Added Pre-Release Readiness Assessment (W20–W29) to vision.md and improvements.md with blocking and deferred items
 - Updated improvements.md comparison table reflecting current capabilities and planned features
 - Complete rewrite of keywords.txt (276 → 419 lines) with all 46 source headers, drivers, methods, and nested types
@@ -120,8 +120,8 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Fixed ADR count in adrs.md overview from 29 to 30
 - Added new command identifiers to keywords.txt: `DRIVE_TO_ANGLE_COMMAND_IDENTIFIER`, `ADJUST_BRIGHTNESS_COMMAND_IDENTIFIER`, `PLAY_FREQUENCY_COMMAND_IDENTIFIER`
 - Updated README.md: Command description now mentions `int32_t` payload, Identifier Registry expanded with payload-based commands, test suites table added `HttpGatewayClient` and `Buzzer`, Future Directions marked W23 complete
-- Updated vision.md: Pre-Release tier status shows W20, W22, W23 complete; source header count updated to 47, test suite count updated to 30
-- Updated improvements.md: W20 marked complete with ConfigurationStore details, comparison table updated, test counts updated to 30
+- Updated vision.md: Pre-Release tier status shows W20–W24 complete; source header count updated to 48, test suite count updated to 33
+- Updated improvements.md: W20–W24 marked complete, comparison table updated, test counts updated to 33
 - Updated keywords.txt: Added ConfigurationStore class and all public methods
 - Updated README.md: Added ConfigurationStore to Components section, updated Future Directions, updated last updated date
 - Updated README.md: Added Secure Communication section with MQTT/HTTP TLS examples, certificate options table, and MqttTlsDevice reference; example count updated to 22; Future Directions marked W22 complete
@@ -156,7 +156,7 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - **ServoMotor payload tests**: 6 tests for `DRIVE_TO_ANGLE_COMMAND` with payload angle and `validateOrAdjustPhysicalAngle()` static method
 - **RgbLed payload tests**: 5 tests for `ADJUST_BRIGHTNESS_COMMAND` and `adjustColorSetIntensity()` direct method call
 - **Buzzer test**: 10 new tests covering all commands (TURN_ON, TURN_OFF, PLAY_TONE, PLAY_FREQUENCY) with tone/noTone mock
-- **ConfigurationStore test**: 66 tests covering namespace isolation, type-safe getters/setters, default fallbacks, read-only mode, schema validation, and error handling
+- **ConfigurationStore test**: 84 tests covering namespace isolation, type-safe getters/setters, default fallbacks, read-only mode, schema validation, setValue() overloads, and error handling
 - CI workflows: host tests, ESP32 compilation, linting
 - AddressSanitizer and UndefinedBehaviorSanitizer enabled in tests
 
@@ -171,7 +171,7 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Doxygen documentation with API navigation tree, key features section, and `@runs_on` threading tags
 - Class diagram (PlantUML) covering all 48 source headers
 - User stories and improvement tracking with pre-release readiness assessment (W20–W29)
-- `keywords.txt` comprehensive rewrite: 461 lines with all 48 source headers, drivers, methods, and nested types
+- `keywords.txt` comprehensive rewrite: 468 lines with all 48 source headers, drivers, methods, and nested types
 
 ### Technical Details
 - ESP32 Arduino core 3.x compatible
