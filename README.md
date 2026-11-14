@@ -313,7 +313,7 @@ The framework ships with 22 example sketches demonstrating various use cases:
 | `RfidAccessController` | SPI RFID card reader with access control; demonstrates CRC calculation and card communication. |
 | `SmartGreenhouseDevice` | Soil moisture, DHT, relay pump, and servo vent; demonstrates event-driven irrigation control. |
 | `SmartScaleDevice` | Four HX711 load cells for precision weighing; demonstrates multi-sensor averaging. |
-| `ToggableLedDevice` | Button-controlled LED with MQTT telemetry; demonstrates CQRS command/event separation. |
+| `TogglableLedDevice` | Button-controlled LED with MQTT telemetry; demonstrates CQRS command/event separation. |
 | `WaterFlowMonitor` | YF-S201 water flow sensor with hybrid interrupt/periodic scheduling. |
 | `MqttTlsDevice` | Secure environmental monitor with encrypted MQTT (TLS); demonstrates `WiFiConnectivityDriver::createSecureSocket()` builder method for TLS socket creation. |
 | `WeatherStation` | Battery-powered weather station with deep sleep, DHT22, BH1750, and PthSensor. |
