@@ -11,7 +11,7 @@ Modest IoT Nano Framework (C++ Edition) is a lightweight, object-oriented, event
 
 The framework uses a **Mediator pattern** where a `Device` subclass owns and coordinates its sensors and actuators. Sensors emit events that propagate synchronously through the mediator, which issues commands to actuators. Telemetry flows through a queue-based pipeline from the sampler task to the network task, keeping sensor polling and network transmission isolated.
 
-This repository contains the C++ edition of the framework. A MicroPython edition is planned as a separate distribution. For a practical usage example, see [`ToggableLedDevice-Example-Cpp`](https://github.com/avelasquezn/ToggableLedDevice-Example-Cpp).
+This repository contains the C++ edition of the framework. A MicroPython edition is planned as a separate distribution. The [`examples/`](examples/) folder includes 22 grounded real-world devices; start with [`StatusIndicator`](examples/StatusIndicator/) for the simplest usage demonstration.
 
 ## Key Characteristics
 
