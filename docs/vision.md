@@ -157,10 +157,11 @@ Production-ready features across all three transport options:
 
 **Phase 2.5: Pre-Release Prerequisites** (Estimated: 1–2 weeks)
 
-1. **Persistent configuration** — `ConfigurationStore` using ESP32 NVS with schema validation.
-2. **Time synchronization** — `TimeSync` component with NTP support and RTC fallback.
+1. **Persistent configuration** — **Complete** ✓: `ConfigurationStore` using ESP32 NVS with schema validation.
+2. **Time synchronization** — **Complete** ✓: `TimeSynchronizationDriver` with NTP support and RTC fallback.
 3. **TLS/SSL examples** — **Complete** ✓: `MqttTlsDevice` example and Secure Communication section in README.
 4. **Command payload support** — **Complete** ✓: Optional `int32_t` payload in `Command` constructor.
+5. **Secure socket builder** — **Complete** ✓: `createSecureSocket()` builder method on `WiFiConnectivityDriver`.
 
 **Phase 3: Library Release** (Estimated: 1 week)
 
@@ -948,7 +949,7 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 | **Q4 2026** | Tier 4 complete ✓      | W12–W15: command marshaling, interrupts, non-blocking sensors, MQTT subscribe |
 | **Q4 2026** | Component Expansion ✓  | RelayActuator, SoilMoistureSensor, WaterFlowSensor with examples              |
 | **Q4 2026** | Tier 5 complete ✓      | W16 ✓: tickless scheduling; W17 ✓: deep sleep with WeatherStation; W19 ✓: native drivers; W18 deferred to v1.1.0 |
-| **Q4 2026** | Pre-release prereqs    | W20–W24: ConfigurationStore, TimeSync, TLS examples, Command payload, Secure socket builder  |
+| **Q4 2026** | Pre-release prereqs ✓ | W20–W24: ConfigurationStore, TimeSynchronizationDriver, TLS examples, Command payload, Secure socket builder |
 | **Q1 2027** | Library release        | v1.0.0 tag, Arduino Library Manager submission                                 |
 
 ### Edge Framework Development
@@ -1034,7 +1035,7 @@ A shared glossary ensures consistent terminology across both frameworks (see ADR
 | **Test coverage**       | 100% pass rate, 33 test suites         |
 | **Flash footprint**     | <30 KB overhead                        |
 | **RAM footprint**       | <2 KB overhead                         |
-| **Example count**       | 16 diverse examples                    |
+| **Example count**       | 22 diverse examples                    |
 | **CI workflows**        | 3 (host tests, compile examples, lint) |
 
 ### Edge Framework
