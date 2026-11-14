@@ -559,7 +559,7 @@ Give other tasks a safe way to act on the sampler's objects.
 - **Button conversion**: Updated `Button` documentation to indicate interrupt-driven operation via `appendSensorToTriggeringScheduler()` with `FALLING` edge. Debouncing logic in `processEvent()` runs in the sampler task context after the GPIO interrupt fires.
 - **PIR conversion**: Updated `PassiveInfraredSensor` documentation to indicate interrupt-driven operation via `appendSensorToTriggeringScheduler()` with `CHANGE` edge. Both motion detected (RISING) and motion stopped (FALLING) are captured.
 - **WaterFlowSensor (new component)**: Hybrid sensor using `appendToBothSchedulers()`. Interrupt captures every Hall effect pulse (CHANGE edge), periodic sampling computes liters/minute from pulse delta. YF-S201 constant: 7 pulses/ml.
-- **Examples migrated**: `ToggableLedDevice`, `SmartBandMqtt`, `AirConditioningDevice` (Button → interrupt), `PerimeterMonitor`, `OutdoorSecurityLightController` (PIR → interrupt).
+- **Examples migrated**: `TogglableLedDevice`, `SmartBandMqtt`, `AirConditioningDevice` (Button → interrupt), `PerimeterMonitor`, `OutdoorSecurityLightController` (PIR → interrupt).
 - **Host tests**: 16 test cases in `tests/TriggeringScheduler/test.cpp` + 6 new tests in `tests/WaterFlowSensor/test.cpp`. All 22 test suites pass.
 
 **API Design** (following `appendSensorToScheduler` naming pattern):
