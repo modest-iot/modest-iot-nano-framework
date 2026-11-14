@@ -35,10 +35,10 @@
  */
 
 /** @brief Sampler event queue length for air quality display. */
-#define SAMPLER_QUEUE_LENGTH 10
+static const int SAMPLER_QUEUE_LENGTH = 10;
 
 /** @brief Buffer size for formatted display strings. */
-#define DISPLAY_STRING_BUFFER_SIZE 32
+static const size_t DISPLAY_STRING_BUFFER_SIZE = 32;
 
 #include <Arduino.h>
 #include "ModestIoT.h"
@@ -217,19 +217,19 @@ static const uint8_t OLED_DISPLAY_I2C_ADDRESS = 0x3C; ///< I2C address of SSD130
 static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS = 2000;
 static const uint8_t HARDWARE_TIMER_CHANNEL_INDEX = 0;
 
-static IndoorAirQualityDisplay* airQualityDisplay = nullptr;
+static IndoorAirQualityDisplay* airQualityApplication = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
 
-    airQualityDisplay = new IndoorAirQualityDisplay(
+    airQualityApplication = new IndoorAirQualityDisplay(
         BME680_SOURCE_IDENTIFIER,
         OLED_DISPLAY_I2C_ADDRESS,
         SAMPLING_INTERVAL_IN_MILLISECONDS,
         HARDWARE_TIMER_CHANNEL_INDEX
     );
 
-    if (!airQualityDisplay->start()) {
+    if (!airQualityApplication->start()) {
         Serial.println("[IndoorAirQualityDisplay] Device startup failed.");
         return;
     }

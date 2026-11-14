@@ -40,13 +40,13 @@
  */
 
 /** @brief Log tag for this device component. */
-#define EQUIP_HEALTH_LOG_TAG "EquipHealth"
+static const char* EQUIP_HEALTH_LOG_TAG = "EquipHealth";
 
 /** @brief Number of samples between diagnostics reports. */
-#define DIAGNOSTICS_REPORT_INTERVAL_SAMPLES 10
+static const uint32_t DIAGNOSTICS_REPORT_INTERVAL_SAMPLES = 10;
 
 /** @brief Sampler event queue length for equipment health monitoring. */
-#define SAMPLER_QUEUE_LENGTH 16
+static const int SAMPLER_QUEUE_LENGTH = 16;
 
 #include <Arduino.h>
 #include "ModestIoT.h"
@@ -229,12 +229,12 @@ static const int TEMPERATURE_SENSOR_PIN      = 4;  ///< GPIO pin for DHT22 data 
 static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS = 2000;
 static const uint8_t HARDWARE_TIMER_CHANNEL_INDEX = 0;
 
-static EquipmentHealthMonitor* healthMonitor = nullptr;
+static EquipmentHealthMonitor* equipmentHealthApplication = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
 
-    healthMonitor = new EquipmentHealthMonitor(
+    equipmentHealthApplication = new EquipmentHealthMonitor(
         VIBRATION_SENSOR_DATA_PIN,
         VIBRATION_SENSOR_CLOCK_PIN,
         TEMPERATURE_SENSOR_PIN,
@@ -242,7 +242,7 @@ void setup() {
         HARDWARE_TIMER_CHANNEL_INDEX
     );
 
-    if (!healthMonitor->start()) {
+    if (!equipmentHealthApplication->start()) {
         Serial.println("[EquipmentHealthMonitor] Device startup failed.");
         return;
     }

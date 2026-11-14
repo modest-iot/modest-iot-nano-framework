@@ -25,25 +25,37 @@
 #include <ArduinoJson.h>
 #include <ModestIoT.h>
 
-/** @name Default Configuration Macros */
+/** @name Default Configuration Constants */
 //@{
-// Preprocessor macros for constructor defaults, allowing use before class declaration.
+// Static constants for constructor defaults, allowing use before class declaration.
 
 /** @brief Default soil moisture sampling interval in milliseconds. */
-#define DEFAULT_SOIL_SAMPLING_INTERVAL_IN_MILLISECONDS 30000UL
+static const unsigned long DEFAULT_SOIL_SAMPLING_INTERVAL_IN_MILLISECONDS = 30000UL;
 
 /** @brief Default air temperature/humidity sampling interval in milliseconds. */
-#define DEFAULT_AIR_SAMPLING_INTERVAL_IN_MILLISECONDS 60000UL
+static const unsigned long DEFAULT_AIR_SAMPLING_INTERVAL_IN_MILLISECONDS = 60000UL;
 
 /** @brief Default light intensity sampling interval in milliseconds. */
-#define DEFAULT_LIGHT_SAMPLING_INTERVAL_IN_MILLISECONDS 120000UL
+static const unsigned long DEFAULT_LIGHT_SAMPLING_INTERVAL_IN_MILLISECONDS = 120000UL;
 
 /** @brief Default hardware timer channel index. */
-#define DEFAULT_TIMER_CHANNEL 0
+static const uint8_t DEFAULT_TIMER_CHANNEL = 0;
 
 /** @brief Sampler event queue length for battery operation. */
-#define SAMPLER_QUEUE_LENGTH 5
-//@} // Default Configuration Macros
+static const int SAMPLER_QUEUE_LENGTH = 5;
+//@} // Default Configuration Constants
+
+/** @name Telemetry JSON Keys */
+//@{
+/** @brief JSON key for soil moisture percentage. */
+#define JSON_KEY_SOIL_MOISTURE "soilMoisture"
+/** @brief JSON key for air temperature in Celsius. */
+#define JSON_KEY_AIR_TEMPERATURE_IN_CELSIUS "airTemperatureInCelsius"
+/** @brief JSON key for air humidity in percentage. */
+#define JSON_KEY_AIR_HUMIDITY_IN_PERCENTAGE "airHumidityInPercentage"
+/** @brief JSON key for light intensity in Lux. */
+#define JSON_KEY_LIGHT_INTENSITY_IN_LUX "lightIntensityInLux"
+//@} // Telemetry JSON Keys
 
 /** @name Concrete Application Data Schema Specification */
 //@{
@@ -76,10 +88,10 @@ class CropMonitoringTelemetryPackage : public TelemetryPackage {
     ~CropMonitoringTelemetryPackage() override = default;
 
     void serialize(JsonDocument& serializationDestination) const override {
-        serializationDestination["soilMoisture"]              = this->soilMoisture;
-        serializationDestination["airTemperatureInCelsius"]   = this->airTemperatureInCelsius;
-        serializationDestination["airHumidityInPercentage"]   = this->airHumidityInPercentage;
-        serializationDestination["lightIntensityInLux"]       = this->lightIntensityInLux;
+        serializationDestination[JSON_KEY_SOIL_MOISTURE]              = this->soilMoisture;
+        serializationDestination[JSON_KEY_AIR_TEMPERATURE_IN_CELSIUS]   = this->airTemperatureInCelsius;
+        serializationDestination[JSON_KEY_AIR_HUMIDITY_IN_PERCENTAGE]   = this->airHumidityInPercentage;
+        serializationDestination[JSON_KEY_LIGHT_INTENSITY_IN_LUX]       = this->lightIntensityInLux;
     }
 };
 //@} // Concrete Application Data Schema Specification
@@ -354,7 +366,7 @@ static MqttGatewayClient* gatewayClient = nullptr;
 /**
  * @brief Pointer to the CropMonitoringStation application instance.
  */
-static CropMonitoringStation* cropMonitoringStationApp = nullptr;
+static CropMonitoringStation* cropMonitoringApplication = nullptr;
 
 /**
  * @brief Arduino setup function.
@@ -382,7 +394,7 @@ void setup() {
     );
 
     // Boot the framework application with tickless power mode and MQTT telemetry
-    cropMonitoringStationApp = new CropMonitoringStation(
+    cropMonitoringApplication = new CropMonitoringStation(
         SOIL_MOISTURE_SENSOR_PIN,
         DHT_SENSOR_PIN,
         *gatewayClient,

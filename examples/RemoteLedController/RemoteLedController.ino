@@ -51,7 +51,7 @@ static constexpr int SET_COLOR_WHITE_COMMAND_IDENTIFIER = 404;
 //@} // Cloud-to-Device Command Identifiers
 
 /** @brief Sampler event queue length for remote LED control. */
-#define SAMPLER_QUEUE_LENGTH 10
+static const int SAMPLER_QUEUE_LENGTH = 10;
 
 #include <Arduino.h>
 #include "ModestIoT.h"
@@ -232,16 +232,16 @@ static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS = 1000;
 static const unsigned long CONNECTION_TIMEOUT_IN_MILLISECONDS = 15000;
 static const uint8_t HARDWARE_TIMER_CHANNEL_INDEX = 0;
 
-static WiFiConnectivityDriver* wifiTransport = nullptr;
-static RemoteLedController* ledController = nullptr;
-static MqttGatewayClient* mqttGateway = nullptr;
+static WiFiConnectivityDriver* transportDriver = nullptr;
+static RemoteLedController* remoteLedApplication = nullptr;
+static MqttGatewayClient* gatewayClient = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
 
-    wifiTransport = new WiFiConnectivityDriver(WIRELESS_SSID, WIRELESS_PASSWORD);
+    transportDriver = new WiFiConnectivityDriver(WIRELESS_SSID, WIRELESS_PASSWORD);
 
-    ledController = new RemoteLedController(
+    remoteLedApplication = new RemoteLedController(
         RGB_LED_RED_PIN,
         RGB_LED_GREEN_PIN,
         RGB_LED_BLUE_PIN,
@@ -250,14 +250,14 @@ void setup() {
     );
 
     // Construct MqttGatewayClient with subscribe topic and target device for cloud-to-device commands
-    mqttGateway = new MqttGatewayClient(*wifiTransport, wifiTransport->getNetworkSocket(),
+    gatewayClient = new MqttGatewayClient(*transportDriver, transportDriver->getNetworkSocket(),
                                          MQTT_BROKER_ADDRESS, MQTT_BROKER_PORT,
                                          MQTT_PUBLISH_TOPIC, MQTT_SUBSCRIBE_TOPIC,
-                                         ledController, MQTT_DEVICE_ID);
+                                         remoteLedApplication, MQTT_DEVICE_ID);
 
-    ledController->setTelemetryGateway(mqttGateway);
+    remoteLedApplication->setTelemetryGateway(gatewayClient);
 
-    if (!ledController->start(*wifiTransport, CONNECTION_TIMEOUT_IN_MILLISECONDS)) {
+    if (!remoteLedApplication->start(*transportDriver, CONNECTION_TIMEOUT_IN_MILLISECONDS)) {
         Serial.println("[RemoteLedController] Device startup failed.");
         return;
     }

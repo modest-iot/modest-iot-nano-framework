@@ -20,7 +20,7 @@ static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
 static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS = 2000;
 
 /** @brief Debounce time for buttons (ms). */
-static const unsigned long BUTTON_DEBOUNCE_MS = 150;
+static const unsigned long BUTTON_DEBOUNCE_IN_MILLISECONDS = 150;
 
 /** @brief Sampler event queue length. */
 static const int ASYNC_ENGINE_QUEUE_DEPTH = 8;
@@ -106,8 +106,8 @@ class AirConditioningDevice : public Device {
     AirConditioningDevice(int dhtPin, int upPin, int downPin, uint8_t lcdAddr, int servoPin)
         : Device(SAMPLING_INTERVAL_IN_MILLISECONDS, 0),
         humidityAndTemperatureSensor(dhtPin, DhtSensor::SENSOR_MODEL_DHT22),
-        targetTemperatureUpButton(upPin, BUTTON_DEBOUNCE_MS, this),
-        targetTemperatureDownButton(downPin, BUTTON_DEBOUNCE_MS, this),
+        targetTemperatureUpButton(upPin, BUTTON_DEBOUNCE_IN_MILLISECONDS, this),
+        targetTemperatureDownButton(downPin, BUTTON_DEBOUNCE_IN_MILLISECONDS, this),
         statusDisplay(lcdAddr, 16, 2, this),
         airHandler(servoPin, 0, this),
         currentTemperature(0.0f),

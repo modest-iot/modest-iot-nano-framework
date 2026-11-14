@@ -236,13 +236,13 @@ void MqttGatewayClient::mqttMessageCallback(String& topic, String& payload) {
     }
 
     // Extract command identifier from JSON
-    if (!doc["commandId"].is<int>()) {
-        MODEST_LOG_W("MQTT", "Incoming command missing 'commandId' field");
+    if (!doc[JSON_KEY_COMMAND_IDENTIFIER].is<int>()) {
+        MODEST_LOG_W("MQTT", "Incoming command missing command identifier field");
         return;
     }
 
-    const int commandId = doc["commandId"].as<int>();
-    const int32_t commandPayload = doc["payload"] | 0;
+    const int commandId = doc[JSON_KEY_COMMAND_IDENTIFIER].as<int>();
+    const int32_t commandPayload = doc[JSON_KEY_COMMAND_PAYLOAD] | 0;
     MODEST_LOG_D("MQTT", "Received command %d (payload %ld) on topic: %s", commandId, commandPayload, topic.c_str());
 
     // Marshal the command to the sampler task via Device::enqueueCommand()

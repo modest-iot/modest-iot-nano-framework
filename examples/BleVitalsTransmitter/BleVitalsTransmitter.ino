@@ -25,7 +25,7 @@
 #define JSON_KEY_SKIN_TEMPERATURE_IN_CELSIUS "skinTemperatureInCelsius"
 
 /** @brief Sampler event queue length for BLE vitals transmission. */
-#define SAMPLER_QUEUE_LENGTH 10
+static const int SAMPLER_QUEUE_LENGTH = 10;
 
 #include <Arduino.h>
 #include <memory>
@@ -164,25 +164,25 @@ static const char* BLE_DEVICE_NAME = "VitalsBand";
 static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS = 2000;
 static const uint8_t HARDWARE_TIMER_CHANNEL_INDEX = 0;
 
-static BleConnectivityDriver* bleTransport = nullptr;
-static BleGatewayClient* bleGateway = nullptr;
-static BleVitalsTransmitter* vitalsTransmitter = nullptr;
+static BleConnectivityDriver* transportDriver = nullptr;
+static BleGatewayClient* gatewayClient = nullptr;
+static BleVitalsTransmitter* vitalsApplication = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
 
-    bleTransport = new BleConnectivityDriver(BLE_DEVICE_NAME);
-    bleGateway = new BleGatewayClient(*bleTransport, BLE_DEVICE_NAME);
+    transportDriver = new BleConnectivityDriver(BLE_DEVICE_NAME);
+    gatewayClient = new BleGatewayClient(*transportDriver, BLE_DEVICE_NAME);
 
-    vitalsTransmitter = new BleVitalsTransmitter(
+    vitalsApplication = new BleVitalsTransmitter(
         PULSE_SENSOR_PIN,
         SKIN_TEMPERATURE_PIN,
-        *bleGateway,
+        *gatewayClient,
         SAMPLING_INTERVAL_IN_MILLISECONDS,
         HARDWARE_TIMER_CHANNEL_INDEX
     );
 
-    if (!vitalsTransmitter->start()) {
+    if (!vitalsApplication->start()) {
         Serial.println("[BleVitalsTransmitter] Device startup failed.");
         return;
     }

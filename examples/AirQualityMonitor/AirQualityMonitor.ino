@@ -20,7 +20,7 @@ static const unsigned long SERIAL_BAUD_RATE = 115200;
 static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
 
 /** @brief Serial port connection timeout (ms). */
-static const unsigned long SERIAL_TIMEOUT_MS = 5000;
+static const unsigned long SERIAL_TIMEOUT_IN_MILLISECONDS = 5000;
 
 /** @brief Sampler event queue length. */
 static const int ASYNC_ENGINE_QUEUE_DEPTH = 10;
@@ -29,7 +29,17 @@ static const int ASYNC_ENGINE_QUEUE_DEPTH = 10;
 static const unsigned long BUZZER_TONE_FREQ = 2000;
 
 /** @brief Buzzer tone duration (ms). */
-static const unsigned long BUZZER_TONE_DURATION_MS = 100;
+static const unsigned long BUZZER_TONE_DURATION_IN_MILLISECONDS = 100;
+
+/** @name Telemetry JSON Keys */
+//@{
+/** @brief JSON key for gas concentration in PPM. */
+#define JSON_KEY_GAS_PPM "gasPpm"
+/** @brief JSON key for gas detection status. */
+#define JSON_KEY_GAS_DETECTED "gasDetected"
+/** @brief JSON key for sensor operating mode. */
+#define JSON_KEY_SENSOR_MODE "sensorMode"
+//@} // Telemetry JSON Keys
 
 /** @name Concrete Application Data Schema Specification */
 //@{
@@ -58,9 +68,9 @@ public:
      * @param serializationDestination The `JsonDocument` where data will be stored.
      */
     void serialize(JsonDocument& serializationDestination) const override {
-        serializationDestination["gasPpm"] = this->gasConcentrationInPpm;
-        serializationDestination["gasDetected"] = this->gasDetected;
-        serializationDestination["sensorMode"] = this->operatingMode;
+        serializationDestination[JSON_KEY_GAS_PPM] = this->gasConcentrationInPpm;
+        serializationDestination[JSON_KEY_GAS_DETECTED] = this->gasDetected;
+        serializationDestination[JSON_KEY_SENSOR_MODE] = this->operatingMode;
     }
 };
 //@} // Concrete Application Data Schema Specification
@@ -216,7 +226,7 @@ public:
 
             // Control buzzer based on gas detection status
             if (gasSensor.isGasDetected()) {
-                alarmBuzzer.setTone(BUZZER_TONE_FREQ, BUZZER_TONE_DURATION_MS);
+                alarmBuzzer.setTone(BUZZER_TONE_FREQ, BUZZER_TONE_DURATION_IN_MILLISECONDS);
                 alarmBuzzer.handle(Buzzer::PLAY_TONE_COMMAND);
             } else {
                 alarmBuzzer.handle(Buzzer::TURN_OFF_COMMAND);
@@ -296,26 +306,26 @@ static const char* MQTT_PUBLISH_TOPIC = "airquality/monitor/data";
 static const char* MQTT_CLIENT_ID = "AirQualityMonitor01";
 
 // Framework Instance Pointers
-static WiFiConnectivityDriver* wifiDriver = nullptr;
-static MqttGatewayClient* mqttGateway = nullptr;
-static AirQualityMonitorDevice* airMonitorDevice = nullptr;
+static WiFiConnectivityDriver* transportDriver = nullptr;
+static MqttGatewayClient* gatewayClient = nullptr;
+static AirQualityMonitorDevice* airQualityApplication = nullptr;
 
 /**
  * @brief Initializes the device, sensors, connectivity, and MQTT gateway.
  */
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
-    while (!Serial && millis() < SERIAL_TIMEOUT_MS) { /* wait for serial port to connect */ }
+    while (!Serial && millis() < SERIAL_TIMEOUT_IN_MILLISECONDS) { /* wait for serial port to connect */ }
     Serial.println("\n[AirQualityMonitor] Starting up...");
 
     // 1. Initialize Connectivity
-    wifiDriver = new WiFiConnectivityDriver(WIFI_SSID, WIFI_PASSWORD);
-    wifiDriver->connect(); // Start WiFi connection in background
+    transportDriver = new WiFiConnectivityDriver(WIFI_SSID, WIFI_PASSWORD);
+    transportDriver->connect(); // Start WiFi connection in background
 
     // 2. Initialize MQTT Gateway
-    mqttGateway = new MqttGatewayClient(
-        *wifiDriver,
-        wifiDriver->getNetworkSocket(), // Use the exposed WiFiClient
+    gatewayClient = new MqttGatewayClient(
+        *transportDriver,
+        transportDriver->getNetworkSocket(), // Use the exposed WiFiClient
         MQTT_BROKER_IP,
         MQTT_BROKER_PORT,
         MQTT_PUBLISH_TOPIC,
@@ -323,21 +333,21 @@ void setup() {
     );
 
     // 3. Initialize Air Quality Monitor Device
-    airMonitorDevice = new AirQualityMonitorDevice(
+    airQualityApplication = new AirQualityMonitorDevice(
         GAS_ANALOG_PIN,
         GAS_DIGITAL_PIN,
         BUZZER_PIN,
         LCD_I2C_ADDRESS,
         LCD_COLUMNS,
         LCD_ROWS,
-        *mqttGateway,
+        *gatewayClient,
         1000 // Sample every 1 second
     );
 
     // 4. Configure Gas Sensor Calibration and Target Gas
     // IMPORTANT: Ensure the sensor is in clean air during calibration!
-    airMonitorDevice->startGasSensorCalibration();
-    airMonitorDevice->setGasSensorTargetGas(GasSensor::GasType::LPG); // Example: Target LPG for PPM calculation
+    airQualityApplication->startGasSensorCalibration();
+    airQualityApplication->setGasSensorTargetGas(GasSensor::GasType::LPG); // Example: Target LPG for PPM calculation
 
     Serial.println("[AirQualityMonitor] Setup complete. Monitoring started.");
 }

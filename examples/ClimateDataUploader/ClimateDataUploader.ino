@@ -27,13 +27,18 @@
 #define JSON_KEY_TOKEN "token"
 #define JSON_TOKEN_VALUE_PREFIX ": \""
 #define JSON_TOKEN_VALUE_DELIMITER '"'
-#define TOKEN_VALUE_BUFFER_SIZE 128
-#define AUTHORIZATION_HEADER_BUFFER_SIZE 150
-#define TOKEN_PREVIEW_LENGTH 20
-#define TOKEN_VALUE_OFFSET 3
+
+/** @brief Buffer size for token value extraction. */
+static const size_t TOKEN_VALUE_BUFFER_SIZE = 128;
+/** @brief Buffer size for the Authorization header string. */
+static const size_t AUTHORIZATION_HEADER_BUFFER_SIZE = 150;
+/** @brief Number of characters to preview in the token log message. */
+static const size_t TOKEN_PREVIEW_LENGTH = 20;
+/** @brief Offset from the JSON token value prefix to the actual token start. */
+static const size_t TOKEN_VALUE_OFFSET = 3;
 
 /** @brief Sampler event queue length for HTTP telemetry operation. */
-#define SAMPLER_QUEUE_LENGTH 10
+static const int SAMPLER_QUEUE_LENGTH = 10;
 
 #include <Arduino.h>
 #include <cstring>

@@ -26,6 +26,16 @@
 #include <memory>
 #include "ModestIoT.h"
 
+/** @name Telemetry JSON Keys */
+//@{
+/** @brief JSON key for temperature in Celsius. */
+#define JSON_KEY_TEMPERATURE_CELSIUS "temperatureCelsius"
+/** @brief JSON key for humidity in percentage. */
+#define JSON_KEY_HUMIDITY_PERCENTAGE "humidityPercentage"
+/** @brief JSON key for pressure in hectopascals. */
+#define JSON_KEY_PRESSURE_HECTOPASCALS "pressureHectopascals"
+//@} // Telemetry JSON Keys
+
 /** @name Concrete Application Data Schema Specification */
 //@{
 
@@ -44,9 +54,9 @@ class EnvironmentalTelemetryPackage : public TelemetryPackage {
     ~EnvironmentalTelemetryPackage() override = default;
 
     void serialize(JsonDocument& serializationDestination) const override {
-        serializationDestination["temperatureCelsius"]   = this->temperatureInCelsius;
-        serializationDestination["humidityPercentage"]   = this->humidityInPercentage;
-        serializationDestination["pressureHectopascals"] = this->pressureInHectopascals;
+        serializationDestination[JSON_KEY_TEMPERATURE_CELSIUS]   = this->temperatureInCelsius;
+        serializationDestination[JSON_KEY_HUMIDITY_PERCENTAGE]   = this->humidityInPercentage;
+        serializationDestination[JSON_KEY_PRESSURE_HECTOPASCALS] = this->pressureInHectopascals;
     }
 };
 //@} // Concrete Application Data Schema Specification
@@ -86,7 +96,7 @@ class MqttTlsDevice : public Device {
           environmentalSensor(sensorPin, PthSensor::DEFAULT_I2C_ADDRESS, this),
           gatewayClient(client)
     {
-        initializeAsynchronousEngine(10);
+        initializeAsynchronousEngine(MQTT_TLS_SAMPLER_QUEUE_LENGTH);
 
         appendSensorToScheduler(&environmentalSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
     }
@@ -121,6 +131,9 @@ static const char* MQTT_PUBLISH_TOPIC         = "nodes/environmental/tls-telemet
 
 static const unsigned long TELEMETRY_POLLING_INTERVAL_IN_MILLISECONDS = 30000;
 static const uint8_t HARDWARE_TIMER_CHANNEL_INDEX = 0;
+
+/** @brief Sampler event queue length for MQTT TLS telemetry. */
+static const int MQTT_TLS_SAMPLER_QUEUE_LENGTH = 10;
 
 /** @brief Serial communication baud rate. */
 static const unsigned long SERIAL_BAUD_RATE = 115200;

@@ -58,6 +58,11 @@ private:
     static constexpr uint16_t DEFAULT_RECONNECT_INTERVAL_MILLISECONDS = 5000; ///< Default cooldown between broker reconnection attempts.
     static constexpr uint8_t DEFAULT_MQTT_QOS = 0; ///< Default Quality of Service for MQTT subscribe.
 
+    /// @brief JSON key for the command identifier in inbound MQTT command payloads.
+    static constexpr const char* JSON_KEY_COMMAND_IDENTIFIER = "commandId";
+    /// @brief JSON key for the command payload value in inbound MQTT command payloads.
+    static constexpr const char* JSON_KEY_COMMAND_PAYLOAD = "payload";
+
     void ensureBrokerSessionConnection(); ///< Ensures broker session is active with rate-limited backoff.
     void subscribeToTopic(); ///< Subscribes to the inbound command topic after successful connection.
 

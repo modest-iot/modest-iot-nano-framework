@@ -1,6 +1,19 @@
 /**
  * @file SmartBandMqtt.ino
- * @brief SmartBand Embedded Application entry point for the Modest-IoT Nano-Framework.
+ * @brief Wearable fitness band that monitors heart rate and ambient climate, publishing via MQTT.
+ *
+ * Combines a PulseSensor for heart rate, a DHT22 for temperature/humidity, and a Button
+ * for user interaction. All readings are packaged into a TelemetryPackage and published
+ * over MQTT to a cloud broker. Demonstrates the full telemetry pipeline from sensor to cloud.
+ *
+ * @par Modest IoT Nano Framework aspects illustrated:
+ * - `Device` base class with async engine and MQTT gateway integration
+ * - `PulseSensor` (analog), `DhtSensor` (digital), `Button` (interrupt-driven) sensors
+ * - `TelemetryPackage` subclass with custom `serialize()` for JSON schema
+ * - `MqttGatewayClient` for cloud telemetry publishing
+ * - `WiFiConnectivityDriver` for WiFi link management
+ * - Cross-task event routing via `on(Event)` handler
+ * - `@runs_on{sampler}` threading context documentation
  * @date 2026-06-12
  * @version 1.0
  */
@@ -8,6 +21,16 @@
 #include <Arduino.h>
 #include <memory>
 #include "ModestIoT.h"
+
+/** @name Telemetry JSON Keys */
+//@{
+/** @brief JSON key for heart rate in beats per minute. */
+#define JSON_KEY_HEART_BEATS_PER_MINUTE "heartBeatsPerMinute"
+/** @brief JSON key for skin temperature in Celsius. */
+#define JSON_KEY_SKIN_TEMPERATURE_IN_CELSIUS "skinTemperatureInCelsius"
+/** @brief JSON key for relative humidity in percentage. */
+#define JSON_KEY_RELATIVE_HUMIDITY_PERCENTAGE "relativeHumidityPercentage"
+//@} // Telemetry JSON Keys
 
 /** @name Concrete Application Data Schema Specification */
 //@{
@@ -27,9 +50,9 @@ class SmartBandTelemetryPackage : public TelemetryPackage {
     ~SmartBandTelemetryPackage() override = default;
 
     void serialize(JsonDocument& serializationDestination) const override {
-        serializationDestination["heartBeatsPerMinute"]       = this->heartBeatsPerMinute;
-        serializationDestination["skinTemperatureInCelsius"]   = this->skinTemperatureInCelsius;
-        serializationDestination["relativeHumidityPercentage"] = this->relativeHumidityInPercentage;
+        serializationDestination[JSON_KEY_HEART_BEATS_PER_MINUTE]       = this->heartBeatsPerMinute;
+        serializationDestination[JSON_KEY_SKIN_TEMPERATURE_IN_CELSIUS]   = this->skinTemperatureInCelsius;
+        serializationDestination[JSON_KEY_RELATIVE_HUMIDITY_PERCENTAGE] = this->relativeHumidityInPercentage;
     }
 };
 //@} // Concrete Application Data Schema Specification
@@ -89,6 +112,11 @@ class SmartBandDevice : public Device {
 
     ~SmartBandDevice() override = default;
 
+    /**
+     * @brief Handles sensor data-ready and button press events.
+     * @param event The triggered event context payload.
+     * @runs_on{sampler}
+     */
     void on(Event event) override {
         if (event.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER) {
             packageAndQueueTelemetrySnapshot();
@@ -98,6 +126,11 @@ class SmartBandDevice : public Device {
         }
     }
 
+    /**
+     * @brief Handles commands (unused in this example).
+     * @param command The incoming command.
+     * @runs_on{sampler}
+     */
     void handle(Command command) override {}
 };
 //@} // Application Mediator Implementation

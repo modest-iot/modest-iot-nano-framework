@@ -39,12 +39,12 @@ static constexpr float FREEZE_ALARM_THRESHOLD = 2.0f;    ///< Critical level: pi
 
 /** @name Alarm Timing */
 //@{
-static constexpr unsigned long BUZZER_WARNING_DURATION_MS = 200;  ///< Buzzer on duration for warning.
-static constexpr unsigned long BUZZER_WARNING_INTERVAL_MS = 2000; ///< Interval between warning beeps.
+static constexpr unsigned long BUZZER_WARNING_DURATION_IN_MILLISECONDS = 200;  ///< Buzzer on duration for warning.
+static constexpr unsigned long BUZZER_WARNING_INTERVAL_IN_MILLISECONDS = 2000; ///< Interval between warning beeps.
 //@} // Alarm Timing
 
 /** @brief Sampler event queue length for pipe temperature monitoring. */
-#define SAMPLER_QUEUE_LENGTH 10
+static const int SAMPLER_QUEUE_LENGTH = 10;
 
 #include <Arduino.h>
 #include "ModestIoT.h"
@@ -90,7 +90,7 @@ private:
             statusLed.setColor(RgbLed::YELLOW);
             statusLed.handle(RgbLed::SET_COLOR_COMMAND);
             alarmBuzzer.handle(Buzzer::TURN_ON_COMMAND);
-            delay(BUZZER_WARNING_DURATION_MS);
+            delay(BUZZER_WARNING_DURATION_IN_MILLISECONDS);
             alarmBuzzer.handle(Buzzer::TURN_OFF_COMMAND);
             alarmActive = false;
             Serial.println("[PipeTemperatureMonitor] WARNING: Pipe temperature below 4°C");
@@ -205,12 +205,12 @@ static const int BUZZER_PIN = 15;         ///< GPIO pin for the buzzer.
 static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS = 1000;
 static const uint8_t HARDWARE_TIMER_CHANNEL_INDEX = 0;
 
-static PipeTemperatureMonitor* pipeMonitor = nullptr;
+static PipeTemperatureMonitor* pipeTemperatureApplication = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
 
-    pipeMonitor = new PipeTemperatureMonitor(
+    pipeTemperatureApplication = new PipeTemperatureMonitor(
         DS18B20_DATA_PIN,
         RGB_LED_RED_PIN,
         RGB_LED_GREEN_PIN,
@@ -220,7 +220,7 @@ void setup() {
         HARDWARE_TIMER_CHANNEL_INDEX
     );
 
-    if (!pipeMonitor->start()) {
+    if (!pipeTemperatureApplication->start()) {
         Serial.println("[PipeTemperatureMonitor] Device startup failed.");
         return;
     }

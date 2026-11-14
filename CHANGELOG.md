@@ -97,6 +97,8 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - Added named constants for sampling intervals, queue depths, debounce times, and thresholds (AirConditioningDevice, AirQualityMonitor, HomeSecurityDevice)
 - Moved `#define` constants to proper locations with Doxygen comments (ClimateDataUploader)
 - RemoteLedController: Updated MQTT callback to parse JSON payloads `{"command": id, "payload": value}` and demonstrate `ADJUST_BRIGHTNESS_COMMAND`
+- **Naming convention audit**: Standardized all 22 examples — replaced `_MS` suffix with `_IN_MILLISECONDS` (AirConditioningDevice, AirQualityMonitor, PipeTemperatureMonitor), replaced `#define` with `static const` for numeric constants (8 examples), standardized connectivity driver variable to `transportDriver` (7 examples), gateway client variable to `gatewayClient` (7 examples), and device application variable to `{name}Application` (7 examples)
+- **JSON_KEY constants for telemetry**: Added `JSON_KEY_*` constants to all examples with telemetry serialization (AirQualityMonitor, CropMonitoringStation, MqttTlsDevice, SmartBandMqtt) and to `MqttGatewayClient` (`JSON_KEY_COMMAND_IDENTIFIER`, `JSON_KEY_COMMAND_PAYLOAD`) — eliminating magic strings in JSON serialization and parsing
 
 #### Documentation
 - **ConfigurationStore** documented in CHANGELOG.md Core Framework section with full API description

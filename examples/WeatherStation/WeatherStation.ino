@@ -20,18 +20,18 @@
 #include <Arduino.h>
 #include <ModestIoT.h>
 
-/** @name Default Configuration Macros */
+/** @name Default Configuration Constants */
 //@{
-// Preprocessor macros for constructor defaults, allowing use before class declaration.
+// Static constants for constructor defaults, allowing use before class declaration.
 
 /** @brief Default deep sleep interval in milliseconds (5 minutes). */
-#define DEFAULT_DEEP_SLEEP_INTERVAL_IN_MILLISECONDS 300000UL
+static const unsigned long DEFAULT_DEEP_SLEEP_INTERVAL_IN_MILLISECONDS = 300000UL;
 
 /** @brief Default hardware timer channel index. */
-#define DEFAULT_TIMER_CHANNEL 0
+static const uint8_t DEFAULT_TIMER_CHANNEL = 0;
 
 /** @brief Sampler event queue length for battery operation. */
-#define SAMPLER_QUEUE_LENGTH 5
+static const int SAMPLER_QUEUE_LENGTH = 5;
 
 // Pin definitions
 static const int DHT_SENSOR_PIN = 4;
@@ -137,7 +137,7 @@ public:
     }
 };
 
-static WeatherStation* weatherStationApp = nullptr;
+static WeatherStation* weatherStationApplication = nullptr;
 
 /**
  * @brief Application entry point.
@@ -149,7 +149,7 @@ void setup() {
     // Initialize NTP time synchronization for absolute timestamps
     TimeSynchronizationDriver::initialize(WEATHER_STATION_TIMEZONE, WEATHER_STATION_NTP_SERVER);
 
-    weatherStationApp = new WeatherStation(DHT_SENSOR_PIN);
+    weatherStationApplication = new WeatherStation(DHT_SENSOR_PIN);
 }
 
 /**
