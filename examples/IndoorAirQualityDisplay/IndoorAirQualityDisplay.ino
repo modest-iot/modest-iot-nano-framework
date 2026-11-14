@@ -34,14 +34,15 @@
  * @version 1.0
  */
 
+#include <Arduino.h>
+#include <cstddef>
+#include "ModestIoT.h"
+
 /** @brief Sampler event queue length for air quality display. */
 static const int SAMPLER_QUEUE_LENGTH = 10;
 
 /** @brief Buffer size for formatted display strings. */
 static const size_t DISPLAY_STRING_BUFFER_SIZE = 32;
-
-#include <Arduino.h>
-#include "ModestIoT.h"
 
 /** @brief Serial communication baud rate. */
 static const unsigned long SERIAL_BAUD_RATE = 115200;
