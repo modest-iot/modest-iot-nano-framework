@@ -166,12 +166,14 @@ add_custom_target(arduino_upload
 enable_testing()
 
 file(GLOB TEST_FAKES "tests/fakes/*.h")
+file(GLOB TEST_FAKES_SRC "tests/fakes/*.cpp")
 
 add_executable(test_DigitalLightIntensitySensor
         tests/DigitalLightIntensitySensor/test.cpp
         src/Sensor.cpp
         src/DigitalLightIntensitySensor.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_DigitalLightIntensitySensor PRIVATE tests/fakes src)
 
@@ -180,6 +182,7 @@ add_executable(test_RgbLed
         src/Actuator.cpp
         src/RgbLed.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_RgbLed PRIVATE tests/fakes src)
 
@@ -188,6 +191,7 @@ add_executable(test_RelayActuator
         src/Actuator.cpp
         src/RelayActuator.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_RelayActuator PRIVATE tests/fakes src)
 
@@ -196,6 +200,7 @@ add_executable(test_RfidSensor
         src/Sensor.cpp
         src/RfidSensor.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_RfidSensor PRIVATE tests/fakes src)
 
@@ -203,6 +208,7 @@ add_executable(test_BleConnectivityDriver
         tests/BleConnectivityDriver/test.cpp
         src/BleConnectivityDriver.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_compile_definitions(test_BleConnectivityDriver PRIVATE TEST_MOCK_BLE)
 target_include_directories(test_BleConnectivityDriver PRIVATE tests/fakes src)
@@ -210,6 +216,7 @@ target_include_directories(test_BleConnectivityDriver PRIVATE tests/fakes src)
 add_executable(test_ModestLog
         tests/ModestLog/test.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_ModestLog PRIVATE tests/fakes src)
 
@@ -221,18 +228,21 @@ add_executable(test_MqttGatewayClient
         src/SamplingScheduler.cpp
         src/Sensor.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_MqttGatewayClient PRIVATE tests/fakes src)
 
 add_executable(test_EngineConfig
         tests/EngineConfig/test.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_EngineConfig PRIVATE tests/fakes src)
 
 add_executable(test_DiagnosticsSnapshot
         tests/DiagnosticsSnapshot/test.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_compile_definitions(test_DiagnosticsSnapshot PRIVATE TEST_MOCK_DEVICE)
 target_include_directories(test_DiagnosticsSnapshot PRIVATE tests/fakes src)
@@ -241,6 +251,7 @@ add_executable(test_SensorFault
         tests/SensorFault/test.cpp
         src/Sensor.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_SensorFault PRIVATE tests/fakes src)
 
@@ -248,12 +259,14 @@ add_executable(test_SamplingScheduler
         tests/SamplingScheduler/test.cpp
         src/SamplingScheduler.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_SamplingScheduler PRIVATE tests/fakes src)
 
 add_executable(test_TelemetryPackage
         tests/TelemetryPackage/test.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_TelemetryPackage PRIVATE tests/fakes src)
 
@@ -263,6 +276,7 @@ add_executable(test_TriggeringScheduler
         src/Device.cpp
         src/SamplingScheduler.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_TriggeringScheduler PRIVATE tests/fakes src)
 
@@ -272,6 +286,7 @@ add_executable(test_CommandMarshaling
         src/SamplingScheduler.cpp
         src/Sensor.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_CommandMarshaling PRIVATE tests/fakes src)
 
@@ -280,6 +295,7 @@ add_executable(test_WaterFlowSensor
         src/Sensor.cpp
         src/WaterFlowSensor.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_WaterFlowSensor PRIVATE tests/fakes src)
 
@@ -288,6 +304,7 @@ add_executable(test_SoilMoistureSensor
         src/Sensor.cpp
         src/SoilMoistureSensor.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_SoilMoistureSensor PRIVATE tests/fakes src)
 
@@ -297,6 +314,7 @@ add_executable(test_PthSensor
         src/BmeEnvironmentalSensor.cpp
         src/PthSensor.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_PthSensor PRIVATE tests/fakes src)
 
@@ -305,6 +323,7 @@ add_executable(test_WaterLeakSensor
         src/Sensor.cpp
         src/WaterLeakSensor.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_WaterLeakSensor PRIVATE tests/fakes src)
 
@@ -313,6 +332,7 @@ add_executable(test_DoorWindowSensor
         src/Sensor.cpp
         src/DoorWindowSensor.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_DoorWindowSensor PRIVATE tests/fakes src)
 
@@ -321,6 +341,7 @@ add_executable(test_OneWireTemperatureSensor
         src/Sensor.cpp
         src/OneWireTemperatureSensor.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_OneWireTemperatureSensor PRIVATE tests/fakes src)
 
@@ -329,6 +350,7 @@ add_executable(test_DhtSensor
         src/Sensor.cpp
         src/DhtSensor.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_DhtSensor PRIVATE tests/fakes src)
 
@@ -338,6 +360,7 @@ add_executable(test_DeepSleep
         src/SamplingScheduler.cpp
         src/Sensor.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_DeepSleep PRIVATE tests/fakes src)
 
@@ -346,6 +369,7 @@ add_executable(test_ServoMotor
         src/Actuator.cpp
         src/ServoMotor.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_ServoMotor PRIVATE tests/fakes src)
 
@@ -355,6 +379,7 @@ add_executable(test_CharacterLcdDisplay
         src/CharacterLcdDisplay.cpp
         src/Hd44780Driver.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_CharacterLcdDisplay PRIVATE tests/fakes src)
 
@@ -364,6 +389,7 @@ add_executable(test_OledDisplay
         src/OledDisplay.cpp
         src/Ssd1306Driver.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_OledDisplay PRIVATE tests/fakes src)
 
@@ -373,6 +399,7 @@ add_executable(test_EnvironmentalGasSensor
         src/BmeEnvironmentalSensor.cpp
         src/EnvironmentalGasSensor.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_EnvironmentalGasSensor PRIVATE tests/fakes src)
 
@@ -381,6 +408,7 @@ add_executable(test_BleGatewayClient
         src/BleGatewayClient.cpp
         src/BleConnectivityDriver.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_compile_definitions(test_BleGatewayClient PRIVATE TEST_MOCK_BLE)
 target_include_directories(test_BleGatewayClient PRIVATE tests/fakes src)
@@ -390,6 +418,7 @@ add_executable(test_HttpGatewayClient
         src/HttpGatewayClient.cpp
         src/WiFiConnectivityDriver.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_HttpGatewayClient PRIVATE tests/fakes src)
 
@@ -398,6 +427,7 @@ add_executable(test_Buzzer
         src/Buzzer.cpp
         src/Actuator.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_Buzzer PRIVATE tests/fakes src)
 
@@ -405,6 +435,7 @@ add_executable(test_ConfigurationStore
         tests/ConfigurationStore/test.cpp
         src/ConfigurationStore.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_ConfigurationStore PRIVATE tests/fakes src)
 
@@ -412,8 +443,27 @@ add_executable(test_TimeSynchronizationDriver
         tests/TimeSynchronizationDriver/test.cpp
         src/TimeSynchronizationDriver.cpp
         ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
 )
 target_include_directories(test_TimeSynchronizationDriver PRIVATE tests/fakes src)
+
+add_executable(test_GasSensor
+        tests/GasSensor/test.cpp
+        src/Sensor.cpp
+        src/GasSensor.cpp
+        ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
+)
+target_include_directories(test_GasSensor PRIVATE tests/fakes src)
+
+add_executable(test_Button
+        tests/Button/test.cpp
+        src/Sensor.cpp
+        src/Button.cpp
+        ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
+)
+target_include_directories(test_Button PRIVATE tests/fakes src)
 
 add_test(NAME DigitalLightIntensitySensorTest COMMAND test_DigitalLightIntensitySensor)
 add_test(NAME RgbLedTest COMMAND test_RgbLed)
@@ -446,9 +496,11 @@ add_test(NAME HttpGatewayClientTest COMMAND test_HttpGatewayClient)
 add_test(NAME BuzzerTest COMMAND test_Buzzer)
 add_test(NAME ConfigurationStoreTest COMMAND test_ConfigurationStore)
 add_test(NAME TimeSynchronizationDriverTest COMMAND test_TimeSynchronizationDriver)
+add_test(NAME GasSensorTest COMMAND test_GasSensor)
+add_test(NAME ButtonTest COMMAND test_Button)
 
 add_custom_target(run_tests
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor test_PthSensor test_WaterLeakSensor test_DoorWindowSensor test_OneWireTemperatureSensor test_DhtSensor test_DeepSleep test_ServoMotor test_CharacterLcdDisplay test_OledDisplay test_EnvironmentalGasSensor test_BleGatewayClient test_HttpGatewayClient test_Buzzer test_ConfigurationStore test_TimeSynchronizationDriver
+        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfig test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor test_PthSensor test_WaterLeakSensor test_DoorWindowSensor test_OneWireTemperatureSensor test_DhtSensor test_DeepSleep test_ServoMotor test_CharacterLcdDisplay test_OledDisplay test_EnvironmentalGasSensor test_BleGatewayClient test_HttpGatewayClient test_Buzzer test_ConfigurationStore test_TimeSynchronizationDriver test_GasSensor test_Button
         COMMENT "Executing all native host test suites..."
 )
