@@ -180,7 +180,7 @@ The following items are explicitly deferred to post-v1.0.0 releases. They are in
 - Removed root clutter (`main.cpp`, `Modest-IoT-Nano-Framework.ino`).
   > **Note**: The `.ino` file name uses hyphens as a file system convention.
 - Updated `.gitignore` rules (`.DS_Store`, `/cmake-build-arduino/`, `/build/`, `*.o`).
-- Aligned `CMakeLists.txt` `SKETCH_DIR` to `examples/ClassicBlinker` with cache variable.
+- Aligned `CMakeLists.txt` `SKETCH_DIR` to `examples/StatusIndicator` with cache variable.
 
 **Source**: `.gitignore`, `CMakeLists.txt`
 
@@ -797,9 +797,9 @@ Enhanced the GatewayClient family with production-ready features for all three t
 
 **HttpGatewayClient**: Enhanced from a basic HTTP POST stub to a production-ready HTTP telemetry client. Added statistics tracking, authentication support (`setAuthorizationHeader()`), configurable HTTP methods via `enum class HttpMethod` (GET/POST/PUT/PATCH/DELETE), response status code reporting (`getLastResponseStatusCode()`), response body capture (`getResponseBody()` with 512-byte fixed buffer), `sendRequest()` for general HTTP requests independent of TelemetryPackage, `isConnected()` override, and `getStatistics()` override. Refactored with `executeHttpRequest()` to eliminate duplication.
 
-**HttpTelemetryDemo example**: Demonstrates Bearer token authentication flow, Wi-Fi connection verification, and HTTP POST telemetry with a DHT22 sensor.
+**ClimateDataUploader example**: Demonstrates Bearer token authentication flow, Wi-Fi connection verification, and HTTP POST telemetry with a DHT22 sensor.
 
-**Source**: `src/HttpGatewayClient.h`, `src/HttpGatewayClient.cpp`, `examples/HttpTelemetryDemo/HttpTelemetryDemo.ino`
+**Source**: `src/HttpGatewayClient.h`, `src/HttpGatewayClient.cpp`, `examples/ClimateDataUploader/ClimateDataUploader.ino`
 
 ### WiFiConnectivityDriver Enhancements
 
