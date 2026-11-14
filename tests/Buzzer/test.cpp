@@ -4,11 +4,7 @@
 #include <Arduino.h>
 #include "Buzzer.h"
 
-// Define the extern tone/noTone mock variables (single definition for all TUs)
-ToneCallRecord fakeToneCall = {0, 0, 0};
-bool fakeToneCalled = false;
-int fakeNoTonePin = -1;
-bool fakeNoToneCalled = false;
+// Tone/noTone mock variables are now defined in tests/fakes/ArduinoFake.cpp
 
 namespace {
 struct Recorder : CommandHandler {
