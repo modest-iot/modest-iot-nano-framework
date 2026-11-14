@@ -1,6 +1,20 @@
 /**
  * @file SmartScaleDevice.ino
- * @brief Smart Scale example using 4 LoadCellAmplifiers and LCD display.
+ * @brief Precision digital weighing scale with four-corner load cell measurement.
+ *
+ * Uses four HX711 load cell amplifiers (one at each corner) to measure weight up to
+ * 200 kg total. Displays real-time weight on a 16x2 LCD. The hybrid scheduling pattern
+ * (interrupt-driven data-ready detection + periodic sampling) eliminates the 100ms busy-wait
+ * typical of HX711 polling.
+ *
+ * @par Modest IoT Nano Framework aspects illustrated:
+ * - `Device` base class with async engine for loop-less execution
+ * - `LoadCellAmplifier` (four instances) with HX711 protocol
+ * - `appendToBothSchedulers()` for hybrid interrupt + periodic scheduling
+ * - `CharacterLcdDisplay` actuator with `UPDATE_TEXT_COMMAND` for weight display
+ * - Sensor calibration via `tare()` for zero-weight baseline
+ * - Multi-sensor data aggregation in `on(Event)` handler
+ * - Direct actuator command dispatch via `handle(Command)`
  * @date 2026-06-17
  * @version 1.0
  */
@@ -133,9 +147,9 @@ public:
     }
 
     /**
-     * @brief Inversion of Control interface contract handler.
-     * Intercepts framework events (e.g., sensor data ready) to calculate the total scale weight.
+     * @brief Handles sensor data-ready events to calculate and display total weight.
      * @param event The triggered event context payload.
+     * @runs_on{sampler}
      */
     void on(Event event) override {
         if (!isCalibrated) {
@@ -152,11 +166,11 @@ public:
     }
 };
 
-static SmartScaleDevice* smartScale = nullptr;
+static SmartScaleDevice* smartScaleApplication = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
-    smartScale = new SmartScaleDevice(
+    smartScaleApplication = new SmartScaleDevice(
         FRONT_LEFT_LOAD_CELL_DATA_PIN, FRONT_LEFT_LOAD_CELL_CLOCK_PIN,
         FRONT_RIGHT_LOAD_CELL_DATA_PIN, FRONT_RIGHT_LOAD_CELL_CLOCK_PIN,
         REAR_LEFT_LOAD_CELL_DATA_PIN, REAR_LEFT_LOAD_CELL_CLOCK_PIN,
