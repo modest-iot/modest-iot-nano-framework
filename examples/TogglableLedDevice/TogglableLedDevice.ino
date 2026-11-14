@@ -1,8 +1,18 @@
 /**
- * @file ToggableLedDevice.ino
- * @brief Modern replacement example inspired by the legacy Wokwi prototype.
- * Demonstrates a loop-less, event-driven hardware button press triggering an LED toggle
- * using framework Event handlers and class-encapsulated Actuator Commands.
+ * @file TogglableLedDevice.ino
+ * @brief Interactive pushbutton that toggles an LED on each press.
+ *
+ * A practical device for demonstrating interrupt-driven sensor operation: a physical
+ * button press triggers a GPIO interrupt, the framework debounces the signal, and
+ * dispatches a toggle command to an LED actuator — all without polling in `loop()`.
+ *
+ * @par Modest IoT Nano Framework aspects illustrated:
+ * - `Device` base class with `initializeAsynchronousEngine()` for loop-less execution
+ * - `Button` sensor with interrupt-driven operation via `appendSensorToTriggeringScheduler()`
+ * - `Led` actuator with prebuilt `TOGGLE_LED_COMMAND`
+ * - Event routing via `on(Event)` handler with `BUTTON_PRESSED_EVENT_IDENTIFIER`
+ * - Direct actuator command dispatch via `handle(Command)`
+ * - Debounce timing configured per-button instance
  * @date 2026-06-12
  * @version 1.0
  */
@@ -19,7 +29,7 @@ static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
 /** @name Application Mediator Implementation */
 //@{
 
-class ToggableLedDevice : public Device {
+class TogglableLedDevice : public Device {
     private:
     Button toggleLedButton; // Purpose-driven semantic member name
     Led statusLed;          // Purpose-driven semantic member name
@@ -30,7 +40,7 @@ class ToggableLedDevice : public Device {
      * @param ledPin GPIO target connected to the physical status LED.
      * @param timerChannel Dedicated hardware 64-bit timer group index (0-3).
      */
-    ToggableLedDevice(int buttonPin, int ledPin, uint8_t timerChannel = 0)
+    TogglableLedDevice(int buttonPin, int ledPin, uint8_t timerChannel = 0)
     : Device(50, timerChannel), // Setup polling intervals at a safe 50ms task tick
     toggleLedButton(buttonPin, 200, this), // Pass pin, 200ms debounce window, and parent context
     statusLed(ledPin, false, this)              // Pass pin, false initial active state, and parent context
@@ -50,6 +60,7 @@ class ToggableLedDevice : public Device {
      * @brief Inversion of Control interface contract handler.
      * Intercepts framework events dispatched from the background worker tasks.
      * @param event The triggered event context payload.
+     * @runs_on{sampler}
      */
     void on(Event event) override {
             // Intercept and evaluate the specific pre-defined button event token
@@ -59,7 +70,7 @@ class ToggableLedDevice : public Device {
             // The mediator maintains no local state tracking variables or toggles!
             statusLed.handle(Led::TOGGLE_LED_COMMAND);
 
-            Serial.println("[ToggableLedDevice] Toggle LED Button press event caught -> LED toggle dispatched.");
+            Serial.println("[TogglableLedDevice] Toggle LED Button press event caught -> LED toggle dispatched.");
         }
     }
 };
@@ -73,14 +84,14 @@ static const int     TOGGLE_BUTTON_PIN  = 26; // Mapped pushbutton GPIO
 static const int     STATUS_LED_PIN     = 27;  // Onboard ESP32 diagnostic blue LED
 static const uint8_t CORE_TIMER_CHANNEL = 0;
 
-static ToggableLedDevice* applicationNode = nullptr;
+static TogglableLedDevice* togglableLedApplication = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
 
     // Boot the framework application.
     // Background execution queues, FreeRTOS tasks, and hardware alarm vectors launch automatically!
-    applicationNode = new ToggableLedDevice(TOGGLE_BUTTON_PIN, STATUS_LED_PIN, CORE_TIMER_CHANNEL);
+    togglableLedApplication = new TogglableLedDevice(TOGGLE_BUTTON_PIN, STATUS_LED_PIN, CORE_TIMER_CHANNEL);
 
     Serial.println("[System Boot] Loop-less interactive toggle node active.");
 }
