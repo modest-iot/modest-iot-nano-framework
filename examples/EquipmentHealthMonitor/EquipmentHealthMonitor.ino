@@ -39,6 +39,10 @@
  * @version 1.0
  */
 
+#include <Arduino.h>
+#include <cstdint>
+#include "ModestIoT.h"
+
 /** @brief Log tag for this device component. */
 static const char* EQUIP_HEALTH_LOG_TAG = "EquipHealth";
 
@@ -47,9 +51,6 @@ static const uint32_t DIAGNOSTICS_REPORT_INTERVAL_SAMPLES = 10;
 
 /** @brief Sampler event queue length for equipment health monitoring. */
 static const int SAMPLER_QUEUE_LENGTH = 16;
-
-#include <Arduino.h>
-#include "ModestIoT.h"
 
 /** @brief Serial communication baud rate. */
 static const unsigned long SERIAL_BAUD_RATE = 115200;
