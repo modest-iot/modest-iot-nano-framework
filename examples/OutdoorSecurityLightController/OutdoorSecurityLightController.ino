@@ -1,18 +1,23 @@
 /**
  * @file OutdoorSecurityLightController.ino
- * @brief Outdoor security light that turns on only when it is dark and motion is detected.
+ * @brief Outdoor security light that activates only when dark and motion is detected.
  *
- * Combines a GY-302 / BH1750 DigitalLightIntensitySensor, a PassiveInfraredSensor and a Led.
- * The device mediator keeps the two latest conditions (darkness and motion) and drives the
- * light from their combination, so the light is on only while both are true.
+ * Combines a BH1750 light sensor and a PIR motion sensor to control an outdoor LED.
+ * The light turns on only when both conditions are met: darkness (below 10 lux) AND
+ * motion detected. Sensor fault detection ensures the light turns off as a safe default
+ * if either sensor fails.
  *
- * Sensor fault detection is enabled: after 3 consecutive read failures a sensor emits a fault
- * event and the light turns off as a safe default. When the sensor recovers, normal operation
- * resumes.
- *
- * Wiring (ESP32): BH1750 SDA -> GPIO 21, SCL -> GPIO 22, ADDR floating or low (0x23).
- * Mount the light sensor so the controlled light does not illuminate it; otherwise turning
- * the light on can be read as daylight and switch it off again.
+ * @par Modest IoT Nano Framework aspects illustrated:
+ * - `Device` base class with async engine for loop-less execution
+ * - `DigitalLightIntensitySensor` (I2C) for ambient light monitoring
+ * - `PassiveInfraredSensor` with interrupt-driven operation via `appendSensorToTriggeringScheduler()`
+ * - `Led` actuator with `TURN_ON_COMMAND` and `TURN_OFF_COMMAND`
+ * - Sensor fault detection via `setFaultThreshold()` and `SENSOR_FAULT_EVENT_IDENTIFIER`
+ * - Sensor recovery handling via `SENSOR_RECOVERED_EVENT_IDENTIFIER`
+ * - `event.sourceId` disambiguation for fault/recovery events
+ * - State machine logic: light on only when dark AND motion present
+ * @date 2026-06-12
+ * @version 1.0
  */
 
 #include <Arduino.h>
@@ -89,6 +94,11 @@ public:
                                           CHANGE);
     }
 
+    /**
+     * @brief Handles light, motion, fault, and recovery events to control the security light.
+     * @param event The triggered event context payload.
+     * @runs_on{sampler}
+     */
     void on(Event event) override {
         switch (event.identifier) {
             case DigitalLightIntensitySensor::LIGHT_ABSENT_EVENT_IDENTIFIER:
@@ -126,10 +136,10 @@ public:
     }
 };
 
-static OutdoorSecurityLightController* controller = nullptr;
+static OutdoorSecurityLightController* outdoorSecurityApplication = nullptr;
 
 void setup() {
-    controller = new OutdoorSecurityLightController();
+    outdoorSecurityApplication = new OutdoorSecurityLightController();
 }
 
 void loop() {
