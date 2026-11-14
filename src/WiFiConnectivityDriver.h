@@ -11,7 +11,9 @@
  */
 
 #include <WiFi.h>
+#if defined(ARDUINO_ARCH_ESP32)
 #include <WiFiClientSecure.h>
+#endif // ARDUINO_ARCH_ESP32
 #include "ConnectivityDriver.h"
 
 // Forward declarations notify the compiler of types without forcing
