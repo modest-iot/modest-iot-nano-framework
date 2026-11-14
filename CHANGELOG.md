@@ -142,8 +142,10 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - **EquipmentHealthMonitor**: Industrial equipment health dashboard with `ModestLog` and `diagnostics()`
 
 ### Testing
-- 31 host test suites covering all sensors, actuators, scheduler, MQTT, BLE, HTTP, and telemetry
+- 33 host test suites covering all sensors, actuators, scheduler, MQTT, BLE, HTTP, and telemetry
 - **TimeSynchronizationDriver test**: 8 tests covering NTP initialization, timestamp fallback, sync status, RTC save/restore, and full sync cycle simulation
+- **GasSensor test**: 32 tests covering constructor, static methods, calibration, all operating modes, PPM estimation, and event handling
+- **Button test**: 14 tests covering debounce logic, press detection, timing, and event emission
 - **WeatherStation example**: Updated with NTP initialization and RTC time restore for deep-sleep time persistence
 - **HttpGatewayClient test**: HTTP methods (GET/POST/PUT/DELETE), auth headers, response body handling, statistics tracking
 - **Fake HTTPClient.h**: Mock HTTP client for host testing with configurable responses
