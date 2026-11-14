@@ -1,10 +1,20 @@
 /**
  * @file AirQualityMonitor.ino
- * @brief Demonstrates a basic air quality monitor using GasSensor, Buzzer, and CharacterLcdDisplay.
+ * @brief Desktop air quality monitor with gas detection, LCD display, and audible alarm.
  *
- * This example showcases the integration of multiple sensor and actuator types within the
- * Modest-IoT Nano-Framework. It monitors gas levels, performs calibration, displays
- * status and PPM values on an LCD, and triggers a buzzer upon gas detection.
+ * Uses an MQ-2 gas sensor to detect combustible gases (LPG, propane, methane), displays
+ * real-time PPM readings and sensor mode on a 16x2 LCD, and sounds a buzzer when gas
+ * is detected. The sensor auto-calibrates on startup, then switches to accurate mode
+ * for continuous monitoring.
+ *
+ * @par Modest IoT Nano Framework aspects illustrated:
+ * - `Device` base class with async engine for loop-less execution
+ * - `GasSensor` with calibration flow (`CalibratingMode` → `AccurateMode`)
+ * - `Buzzer` actuator with `PLAY_TONE_COMMAND` for audible alerts
+ * - `CharacterLcdDisplay` actuator with `UPDATE_TEXT_COMMAND` for real-time display
+ * - Event routing via `on(Event)` with `DATA_READ_EVENT_IDENTIFIER` and `DIGITAL_GAS_DETECTED_EVENT`
+ * - Sensor operating mode tracking via `getOperatingMode()`
+ * - Direct actuator command dispatch via `handle(Command)`
  * @date 2026-06-12
  * @version 1.0
  */
@@ -215,8 +225,9 @@ public:
     }
 
     /**
-     * @brief Handles incoming events from sensors.
+     * @brief Handles sensor data-ready and gas detection events.
      * @param event The triggered event context payload.
+     * @runs_on{sampler}
      */
     void on(Event event) override {
         if (event.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER ||
