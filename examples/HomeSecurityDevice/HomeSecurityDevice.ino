@@ -1,14 +1,20 @@
 /**
  * @file HomeSecurityDevice.ino
- * @brief Demonstrates a home security monitoring station.
+ * @brief Home security monitoring system with water leak, door, and motion detection.
  *
- * Bundles WaterLeakSensor, DoorWindowSensor, PassiveInfraredSensor, and Buzzer
- * to create a complete home security device. Water leak sensors detect flooding,
- * door/window sensors monitor perimeter access, PIR sensors detect motion, and
- * the buzzer provides audible alerts.
+ * Combines a water leak sensor, door/window sensor, and PIR motion sensor to monitor
+ * a home's perimeter and interior. All sensors use interrupt-driven operation for
+ * zero-latency detection, and a buzzer provides audible alerts on any security event.
  *
- * All sensors use interrupt-driven operation via appendSensorToTriggeringScheduler()
- * for zero-latency event detection.
+ * @par Modest IoT Nano Framework aspects illustrated:
+ * - `Device` base class with async engine for loop-less execution
+ * - `WaterLeakSensor`, `DoorWindowSensor`, `PassiveInfraredSensor` — all interrupt-driven
+ * - `Buzzer` actuator with `PLAY_TONE_COMMAND` for audible alerts
+ * - `appendSensorToTriggeringScheduler()` with `CHANGE` edge for all sensors
+ * - Event routing via `on(Event)` with `switch` on multiple event identifiers
+ * - Direct actuator command dispatch via `handle(Command)`
+ * @date 2026-06-12
+ * @version 1.0
  */
 
 #include <Arduino.h>
@@ -61,6 +67,11 @@ public:
             &pirSensor, PassiveInfraredSensor::MOTION_DETECTED_EVENT_IDENTIFIER, CHANGE);
     }
 
+    /**
+     * @brief Handles security sensor events and triggers buzzer alerts.
+     * @param event The triggered event context payload.
+     * @runs_on{sampler}
+     */
 protected:
     void on(Event event) override {
         switch (event.identifier) {
@@ -92,14 +103,14 @@ protected:
 };
 
 // Application instance
-static HomeSecurityDevice* homeSecurityApp = nullptr;
+static HomeSecurityDevice* homeSecurityApplication = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
     Serial.println("[HomeSecurity] Initializing home security system...");
 
     // Boot the framework application
-    homeSecurityApp = new HomeSecurityDevice();
+    homeSecurityApplication = new HomeSecurityDevice();
 
     Serial.println("[HomeSecurity] System armed. Monitoring...");
 }
