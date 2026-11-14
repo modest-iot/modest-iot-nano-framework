@@ -36,12 +36,12 @@ All 8 improvement briefs and the roadmap are consolidated in this single documen
 
 | ID   | Work Item                        | Target    | Complexity | Description                                                                                   |
 |------|----------------------------------|-----------|------------|-----------------------------------------------------------------------------------------------|
-| **W24** | Telemetry buffering with persistence | v1.1.0 | High | `TelemetryBuffer` with LittleFS persistence for offline replay when network is unavailable. |
-| **W25** | Power manager & battery monitoring | v1.1.0 | Medium | `PowerManager` with battery voltage sensing, configurable sleep modes beyond tickless/deep-sleep. |
-| **W26** | Firmware version in telemetry    | v1.1.0 | Low        | Add optional `schemaVersion` and `firmwareVersion` fields to telemetry envelope metadata. |
-| **W27** | OTA update support               | v1.2.0   | High       | `OtaUpdater` component with WiFi transport. Edge Framework Phase 3 handles OTA orchestration. |
-| **W28** | Event aggregation & rules        | v1.2.0   | High       | `EventAggregator` or `RuleEngine` for composite event patterns (e.g., "motion AND door opened"). |
-| **W29** | Multi-device coordination        | v1.3.0   | High       | ESP-NOW or MQTT-based device-to-device messaging for relay nodes and distributed sensing. |
+| **W25** | Telemetry buffering with persistence | v1.1.0 | High | `TelemetryBuffer` with LittleFS persistence for offline replay when network is unavailable. |
+| **W26** | Power manager & battery monitoring | v1.1.0 | Medium | `PowerManager` with battery voltage sensing, configurable sleep modes beyond tickless/deep-sleep. |
+| **W27** | Firmware version in telemetry    | v1.1.0 | Low        | Add optional `schemaVersion` and `firmwareVersion` fields to telemetry envelope metadata. |
+| **W28** | OTA update support               | v1.2.0   | High       | `OtaUpdater` component with WiFi transport. Edge Framework Phase 3 handles OTA orchestration. |
+| **W29** | Event aggregation & rules        | v1.2.0   | High       | `EventAggregator` or `RuleEngine` for composite event patterns (e.g., "motion AND door opened"). |
+| **W30** | Multi-device coordination        | v1.3.0   | High       | ESP-NOW or MQTT-based device-to-device messaging for relay nodes and distributed sensing. |
 
 ## Work Item Registry
 
@@ -64,7 +64,7 @@ Prioritization method: each work item is scored 0 to 5 on three benefits, and si
 | W7  | Connectivity reconnect policy, `mqttClient.loop()` every cycle, link events             | Tier 2      | 5 | 2 | 4 | M    | 8     | **Completed**                                                                                                                               |
 | W8  | Per-slot sampling intervals, pure scheduler, elapsed-tick accounting, example migration | Tier 3      | 4 | 5 | 5 | M    | 9     | **Completed**                                                                                                                               |
 | W9  | `EngineConfig` and `stopAsynchronousEngine()`                                           | Tier 2      | 4 | 2 | 3 | S    | 11    | **Completed**                                                                                                                               |
-| W10 | Optional Bluetooth, BLE driver addition, optional MQTT footprint                        | Tier 2      | 3 | 2 | 4 | S    | 11    | **Partially Complete** (BLE NUS added, BT Classic isolated)                                                                                 |
+| W10 | Optional Bluetooth, BLE driver addition, optional MQTT footprint                        | Tier 2      | 3 | 2 | 4 | S    | 11    | **Complete** (BleConnectivityDriver, BleGatewayClient, BT Classic removed, 2 dependencies only)                                            |
 | W11 | Telemetry ownership and queue policy (Phases A and B)                                   | Tier 3      | 4 | 3 | 4 | M    | 8     | **Partially Complete** (Phase A done, `unique_ptr` overload, drop-oldest, bounded buffer, envelope metadata, golden tests, T14 name hiding) |
 | W12 | `Device::enqueueCommand` command marshaling                                                      | Tier 4      | 3 | 0 | 4 | M    | 6     | **Complete** (`enqueueCommand`, `processPendingCommands`, `CommandEntry`, `CommandAvailable` bit, host tests) |
 | W13 | Interrupt triggers for Button, PIR, and WaterFlowSensor                                 | Tier 4      | 3 | 4 | 3 | M    | 6     | **Complete** (Button/PIR interrupt-driven, WaterFlowSensor hybrid, examples migrated, host tests) |
@@ -275,6 +275,39 @@ Reserved blocks: sensor-health 22-23, connectivity link events 900-909, power ev
 | 32 | `tests/GasSensor/`                   | Analog gas detection, calibration modes, Rs/R0 ratio, PPM estimation  |
 | 33 | `tests/Button/`                      | Debounce logic, press detection, timing, event emission               |
 
+**Component Test Coverage**:
+
+| Category | Total Headers | Dedicated Test | Indirect Coverage | No Test Coverage |
+|----------|--------------|---------------|-------------------|-----------------|
+| Core | 13 | 7 | 6 (base classes, umbrella) | 0 |
+| Sensors | 18 | 12 | 1 (BmeEnvironmentalSensor) | **5** |
+| Actuators | 7 | 6 | 0 | **1** |
+| Connectivity | 3 | 1 | 2 (base class, WiFi via gateways) | 0 |
+| Gateway Clients | 4 | 3 | 1 (base class) | 0 |
+| Drivers | 2 | 0 | 2 (via display tests) | 0 |
+| **Total** | **48** | **29** | **12** | **6** |
+
+**Components with No Dedicated Test Coverage**:
+
+| Header | Complexity | Risk | Recommendation |
+|--------|-----------|------|----------------|
+| **PassiveInfraredSensor.h** | Low (digital input) | Low | Optional — simple GPIO |
+| **UltrasonicSensor.h** | Medium (timing, distance calc) | Low | Optional — timing hard to mock |
+| **GeolocationSensor.h** | Medium (NMEA parsing) | Low | Optional — UART parsing |
+| **LoadCellAmplifier.h** | Medium (HX711 protocol) | Low | Optional — custom protocol |
+| **PulseSensor.h** | Low (analog read) | Low | Optional — simple ADC |
+| **Led.h** | Low (digital write) | Low | Optional — simplest actuator |
+
+**Previously Added Tests**:
+- **GasSensor** (32 tests, W23): Calibration modes, Rs/R0 ratio, PPM estimation, digital gas detection.
+- **Button** (14 tests, W23): Debounce logic, press detection, timing, event emission.
+
+**Notes**:
+- `LocationData.h` is a plain data struct — no test needed.
+- Base classes (`Sensor`, `Actuator`, `ConnectivityDriver`, `GatewayClient`) are tested via their subclasses.
+- `ModestIoT.h` is an umbrella header — no test needed.
+- The 6 untested components are simple GPIO/ADC wrappers well-demonstrated in examples.
+
 **Source**: `tests/fakes/`, `tests/run_all.sh`, `.github/workflows/`, `CMakeLists.txt`
 
 ---
@@ -360,7 +393,7 @@ Converted sensors: `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `Digita
 
 ---
 
-### W10: BLE driver (Partially Complete)
+### W10: BLE driver (Complete)
 
 **BleConnectivityDriver**:
 - Implemented Nordic UART Service (NUS) GATT profile with 128-bit UUIDs.
@@ -368,10 +401,19 @@ Converted sensors: `DhtSensor`, `LoadCellAmplifier`, `UltrasonicSensor`, `Digita
 - Automatic advertising lifecycle recovery on disconnect.
 - Host unit tests covering connection state, transmission, and RX events.
 
+**BleGatewayClient**:
+- JSON lines framing over BLE NUS with 512-byte transmit buffer.
+- Connection monitoring with automatic reconnection on disconnect.
+- Gateway statistics tracking (packets sent, bytes transmitted, errors).
+- Host unit tests covering transmission, connection state, and statistics.
+
 **BluetoothConnectivityDriver**:
 - Fully removed. The legacy driver was initially isolated behind preprocessor guards and marked `[[deprecated]]`, then deleted as Arduino-ESP32 Core 4.0.0 drops `BluetoothSerial` support and modern ESP32 variants (S3, C3, C6, H2) lack Bluetooth Classic hardware.
 
-**Source**: `src/BleConnectivityDriver.h`, `src/BleConnectivityDriver.cpp`, `tests/BleConnectivityDriver/test.cpp`
+**Optional MQTT footprint**:
+- Achieved: only 2 dependencies (ArduinoJson ≥7.0.0, MQTT ≥2.5.3). All other external dependencies removed via native implementations (ESP32Servo → native LEDC, LiquidCrystal_I2C → Hd44780Driver, PubSubClient → MqttGatewayClient, DHT → DhtSensor native, HX711 → LoadCellAmplifier native).
+
+**Source**: `src/BleConnectivityDriver.h`, `src/BleConnectivityDriver.cpp`, `src/BleGatewayClient.h`, `src/BleGatewayClient.cpp`, `tests/BleConnectivityDriver/test.cpp`, `tests/BleGatewayClient/test.cpp`
 
 ---
 
@@ -873,10 +915,10 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT today (Tie
 | Sampling rates  | Hand-written per-sensor timers               | Per-slot periods, minimums enforced, staggering handled                       | Same, with tickless scheduling reducing idle wake-ups                 |
 | Timing mistakes | Easy: a blocking call stalls everything      | Handler budgets documented; blocking HX711/ultrasonic removed; interrupt-driven sensors | Same, with power manager for configurable sleep modes           |
 | Debugging       | `Serial.println` scattered                   | `MODEST_LOG_*`, stack high-water marks, sensor fault events, diagnostics      | Same, plus firmware version in telemetry for fleet tracking           |
-| Configuration   | Hardcoded credentials and intervals          | `ConfigurationStore` with ESP32 NVS, namespace isolation, type-safe access    | Same, with schema validation and read-only mode                          |
-| Time handling   | `millis()` from boot                         | `millis()` timestamps; no synchronization                                     | `TimeSync` with NTP over WiFi and RTC fallback for absolute time      |
-| Networking      | Blocking connect/publish in `loop()`         | Separate network task, reconnect policy, keep-alive, TLS examples             | Same, with TLS/SSL as documented best practice                        |
-| Cloud-to-device | Hand-rolled callback                         | Mediator-routed commands through `Device::enqueueCommand`                     | Same, with `int32_t` payload support for parameterized commands       |
+| Configuration   | Hardcoded credentials and intervals          | `ConfigurationStore` with ESP32 NVS, namespace isolation, type-safe access, read-only mode    | Same, with persistent settings across reboots                          |
+| Time handling   | `millis()` from boot                         | `TimeSynchronizationDriver` with NTP over WiFi and RTC fallback for absolute time             | Same, with synchronized timestamps across devices                      |
+| Networking      | Blocking connect/publish in `loop()`         | Separate network task, reconnect policy, keep-alive, TLS examples, `createSecureSocket()`     | Same, with TLS/SSL as documented best practice                        |
+| Cloud-to-device | Hand-rolled callback                         | `Device::enqueueCommand` with `int32_t` payload for parameterized commands                   | Same, with event aggregation for composite patterns                   |
 | Offline data    | Lost when network unavailable                | Drop-oldest queue policy; no persistence                                      | `TelemetryBuffer` with LittleFS persistence for offline replay        |
 | Updates         | Manual reflashing required                   | Manual reflashing required                                                    | OTA updates via `OtaUpdater` component                                |
 | Testing         | Rarely possible off-device                   | 33 host test suites with CI, sanitizers enabled                               | Same, plus integration tests for new components                      |
@@ -893,8 +935,8 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT today (Tie
 | Heap behaviour             | Usually static                    | `unique_ptr` ownership, drop-oldest policy                | Same; pool if measurement justifies it; LittleFS for persistence   |
 | CPU when idle              | Spins in `loop()`                 | Sleeps between ticks; tickless and deep sleep supported   | Optimized sleep modes via `PowerManager`; battery-aware scheduling |
 | Energy                     | High unless hand-tuned            | Deep sleep: ~10µA; light sleep via tickless mode          | Battery monitoring enables adaptive sleep strategies               |
-| Time synchronization      | None; boot-relative only          | `millis()` timestamps; manual boot-time mapping needed    | NTP-synchronized absolute time; RTC fallback for deep-sleep devices |
-| Secure communication      | Manual TLS setup if needed        | TLS examples provided; `NetworkClientSecure` documented   | TLS/SSL as standard practice; certificate pinning documented       |
+| Time synchronization      | None; boot-relative only          | NTP-synchronized absolute time via `TimeSynchronizationDriver`; RTC fallback for deep-sleep devices | Same, with synchronized timestamps across devices |
+| Secure communication      | Manual TLS setup if needed        | TLS examples provided; `createSecureSocket()` builder; `WiFiClientSecure` documented   | TLS/SSL as standard practice; certificate pinning documented       |
 
 ### Resource consumption
 
@@ -902,19 +944,19 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT today (Tie
 |--------------------------|----------------------|---------------------------------------------------------------------------------------------|----------------------------------------------------------------|
 | Task stacks              | `loop()` task only   | 4096 B sampler + 8192 B network, configurable via `EngineConfig`                            | Same defaults; PowerManager adds minimal stack for sleep handling |
 | Queue and packets        | None                 | Queue of pointers + one heap packet per reading; bounded by queue policy                    | Same; TelemetryBuffer adds LittleFS storage for offline replay |
-| Flash                    | Smallest             | Framework, Wi-Fi, BLE driver; only 2 dependencies (ArduinoJson, MQTT)                      | Moderate increase: ConfigurationStore, TimeSync, OtaUpdater, TelemetryBuffer |
-| Static RAM               | Small                | Slot table, per-object state; trigger table (4 slots)                                      | Same; ConfigurationStore adds NVS-backed settings cache        |
+| Flash                    | Smallest             | Framework, Wi-Fi, BLE driver; only 2 dependencies (ArduinoJson, MQTT)                      | Moderate increase: OtaUpdater, TelemetryBuffer                 |
+| Static RAM               | Small                | Slot table, per-object state; trigger table (4 slots); ConfigurationStore NVS cache        | Same; TelemetryBuffer adds LittleFS buffer                     |
 | Heap fragmentation       | Low                  | Lower with explicit ownership; `unique_ptr` transfer                                       | Same; pool in Tier 5 if measured; LittleFS reduces heap pressure |
 | Third-party dependencies | As needed            | Only those used (ArduinoJson, MQTT) — ESP32Servo, LiquidCrystal_I2C, PubSubClient, DHT, Adafruit, and HX711 removed | Same; no new external dependencies for planned features      |
 | Logging overhead         | User-controlled      | Zero when compiled out; UART cost when on                                                  | Same                                                           |
-| Persistent storage       | Manual SPIFFS/LittleFS | None; credentials and settings hardcoded                                                  | ConfigurationStore uses ESP32 NVS; TelemetryBuffer uses LittleFS |
+| Persistent storage       | Manual SPIFFS/LittleFS | ConfigurationStore uses ESP32 NVS with namespace isolation                               | Same, plus TelemetryBuffer uses LittleFS for offline replay |
 | Security overhead        | None by default      | TLS examples provided; no framework-level TLS enforcement                                  | TLS examples and documentation; `NetworkClientSecure` usage guided |
 
 ---
 
 ## How to validate the comparison
 
-Run the same three reference applications on the same ESP32 board, once per variant (plain `loop()`, current Modest IoT, post-Tier-4 Modest IoT):
+Run the same three reference applications on the same ESP32 board, once per variant (plain `loop()`, current Modest IoT, Modest IoT with all planned features):
 
 1. **Multi-sensor monitor:** DHT, BH1750 and a button, with a display and Wi-Fi/MQTT telemetry.
 2. **Blocking-sensor stress:** the monitor plus an HX711 and an ultrasonic sensor.
