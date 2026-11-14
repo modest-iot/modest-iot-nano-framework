@@ -320,7 +320,7 @@ The framework ships with 22 example sketches demonstrating various use cases:
 
 ## Testing
 
-The framework includes 31 host unit test suites that run natively without hardware:
+The framework includes 33 host unit test suites that run natively without hardware:
 
 | Suite | What It Tests |
 |---|---|
@@ -354,6 +354,8 @@ The framework includes 31 host unit test suites that run natively without hardwa
 | `tests/Buzzer/` | All commands (TURN_ON, TURN_OFF, PLAY_TONE, PLAY_FREQUENCY) with tone/noTone mock |
 | `tests/ConfigurationStore/` | Namespace isolation, type-safe getters/setters, default fallbacks, read-only mode, schema validation |
 | `tests/TimeSynchronizationDriver/` | NTP initialization, timestamp fallback, sync status, RTC save/restore |
+| `tests/GasSensor/` | Analog gas detection, calibration modes, Rs/R0 ratio, PPM estimation, gas types |
+| `tests/Button/` | Debounce logic, press detection, timing, event emission |
 
 Run all tests locally:
 
