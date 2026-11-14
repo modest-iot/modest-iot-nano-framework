@@ -1,20 +1,23 @@
 /**
  * @file WeatherStation.ino
- * @brief Battery-powered weather station demonstrating ESP32 deep sleep cycles.
+ * @brief Battery-powered outdoor weather station with deep sleep for months of operation.
+ *
+ * Monitors air temperature, humidity, atmospheric pressure, and light intensity.
+ * Uses ESP32 deep sleep to reduce power consumption from ~100mA active to ~10µA sleeping,
+ * enabling months of operation on a coin cell battery. NTP time synchronization provides
+ * absolute Unix timestamps for server-side data correlation.
+ *
+ * @par Modest IoT Nano Framework aspects illustrated:
+ * - `Device` base class with `PowerMode::DeepSleep` for ESP32 deep sleep
+ * - `DhtSensor` (digital) for temperature/humidity
+ * - `PthSensor` (I2C BME280) for atmospheric pressure
+ * - `DigitalLightIntensitySensor` (I2C) for ambient light
+ * - `TimeSynchronizationDriver` with NTP and RTC save/restore for deep sleep persistence
+ * - `RTC_DATA_ATTR` for variables that survive deep sleep reboot
+ * - `reportWakeReason()` for boot cycle tracking
+ * - Cross-task event routing via `on(Event)` handler
  * @date 2026-11-10
  * @version 1.0
- *
- * This example shows how to use PowerMode::DeepSleep for battery-powered
- * outdoor weather monitoring. The device wakes from deep sleep, reads air
- * temperature, humidity, pressure, and light intensity, reports the readings
- * via Serial, and returns to deep sleep.
- *
- * **Energy Saving**: Deep sleep reduces power consumption from ~100mA (active)
- * to ~10µA (sleeping), a 10,000x reduction. With 5-minute sleep intervals,
- * the device spends >99.9% of its time asleep, enabling months of operation
- * on a single coin cell battery. Unlike light sleep (~100mA with Wi-Fi),
- * deep sleep shuts down the CPU, Wi-Fi, and most peripherals.
- * The device reboots on each wake — only RTC memory survives.
  */
 
 #include <Arduino.h>
@@ -116,11 +119,11 @@ public:
     }
 
     /**
-     * @brief Inversion of Control interface contract handler.
-     * Intercepts sensor data-ready events to log weather readings.
+     * @brief Handles sensor data-ready events to log weather readings.
      * After this handler returns, the device enters deep sleep (~10µA) until
      * the next sampling interval, achieving >99.9% duty cycle energy savings.
      * @param event The triggered event context payload.
+     * @runs_on{sampler}
      */
     void on(Event event) override {
         if (event.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER) {
