@@ -26,7 +26,6 @@ void test_getCurrentTimestamp_returns_millis_fallback_before_init() {
     assert(TimeSynchronizationDriver::isSynchronized() == false);
 
     uint32_t timestamp = TimeSynchronizationDriver::getCurrentTimestamp();
-    assert(timestamp >= 0);  // millis() / 1000 returns seconds since boot
     printf("  Fallback timestamp: %u seconds since boot\n", timestamp);
 }
 
@@ -88,7 +87,6 @@ void test_full_sync_cycle_simulation() {
     // Step 1: Initial state — unsynchronized, fallback timestamp
     assert(TimeSynchronizationDriver::isSynchronized() == false);
     uint32_t fallbackTimestamp = TimeSynchronizationDriver::getCurrentTimestamp();
-    assert(fallbackTimestamp >= 0);
 
     // Step 2: Initialize NTP (host test — no real sync)
     TimeSynchronizationDriver::initialize("UTC", "pool.ntp.org");
