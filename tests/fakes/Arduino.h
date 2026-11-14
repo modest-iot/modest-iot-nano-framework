@@ -91,10 +91,10 @@ public:
 // Mock GPIO interrupt APIs
 using InterruptHandler = void(*)();
 using InterruptHandlerArg = void(*)(void*);
-inline InterruptHandler fakeInterruptHandlers[64] = {};
-inline InterruptHandlerArg fakeInterruptHandlersArg[64] = {};
-inline void* fakeInterruptArgs[64] = {};
-inline int fakeInterruptModes[64] = {};
+extern InterruptHandler fakeInterruptHandlers[64];
+extern InterruptHandlerArg fakeInterruptHandlersArg[64];
+extern void* fakeInterruptArgs[64];
+extern int fakeInterruptModes[64];
 inline int digitalPinToInterrupt(const std::uint8_t pin) { return pin; }
 inline void attachInterrupt(int pin, InterruptHandler fn, int mode) {
     if (pin >= 0 && pin < 64) {
@@ -119,15 +119,15 @@ inline void detachInterrupt(int pin) {
 }
 
 // Mock timing and clock simulation
-inline unsigned long fakeMillis = 0;
-inline unsigned long fakeMicros = 0;
+extern unsigned long fakeMillis;
+extern unsigned long fakeMicros;
 inline unsigned long millis() { return fakeMillis; }
 inline unsigned long micros() { return fakeMicros; }
 inline void delay(const unsigned long ms) { fakeMillis += ms; }
 inline void delayMicroseconds(const unsigned int us) { fakeMicros += us; }
 
 // Mock ESP32 high-resolution timer (nanoseconds since boot)
-inline int64_t fakeTimerNanoseconds = 0;
+extern int64_t fakeTimerNanoseconds;
 inline int64_t esp_timer_get_time() { return fakeTimerNanoseconds / 1000; } // Returns microseconds
 
 // Mock pulseIn (for backward compatibility)
@@ -137,10 +137,11 @@ inline unsigned long pulseIn(int pin, int state, unsigned long timeout = 0) {
 }
 
 // Mock GPIO pins and digital I/O
-inline int fakeDigitalWrite[64] = {};
-inline int fakeDigitalReadValue = HIGH;
-inline struct { std::uint8_t pin; std::uint8_t mode; } fakePinModeCalls[64] = {};
-inline int fakePinModeCallCount = 0;
+struct PinModeCallRecord { std::uint8_t pin; std::uint8_t mode; };
+extern int fakeDigitalWrite[64];
+extern int fakeDigitalReadValue;
+extern PinModeCallRecord fakePinModeCalls[64];
+extern int fakePinModeCallCount;
 inline void pinMode(const std::uint8_t pin, const std::uint8_t mode) {
     if (fakePinModeCallCount < 64) {
         fakePinModeCalls[fakePinModeCallCount].pin = pin;
@@ -157,7 +158,7 @@ inline int digitalRead(const std::uint8_t pin) { (void)pin; return fakeDigitalRe
 inline void yield() {}
 
 // Mock analog input
-inline int fakeAnalogRead[64] = {};
+extern int fakeAnalogRead[64];
 inline int analogRead(const std::uint8_t pin) {
     if (pin < std::size(fakeAnalogRead)) {
         return fakeAnalogRead[pin];
@@ -166,7 +167,7 @@ inline int analogRead(const std::uint8_t pin) {
 }
 
 // Mock PWM analog output
-inline int fakePwm[64] = {};
+extern int fakePwm[64];
 inline void analogWrite(const std::uint8_t pin, const int val) {
     if (pin < std::size(fakePwm)) {
         fakePwm[pin] = val;
@@ -191,10 +192,10 @@ inline void noTone(int pin) {
 }
 
 // Mock ESP32 LEDC PWM API for host testing (W19, core 3.x)
-inline int fakeLedcFreq[32] = {};
-inline int fakeLedcResolution[32] = {};
-inline int fakeLedcPin[32] = {};
-inline int fakeLedcDuty[32] = {};
+extern int fakeLedcFreq[32];
+extern int fakeLedcResolution[32];
+extern int fakeLedcPin[32];
+extern int fakeLedcDuty[32];
 inline bool ledcAttach(uint8_t pin, uint32_t freq, uint8_t resolution) {
     fakeLedcFreq[pin] = freq;
     fakeLedcResolution[pin] = resolution;
@@ -219,7 +220,7 @@ enum esp_sleep_wakeup_cause_t {
     ESP_SLEEP_WAKEUP_ULP,
     ESP_SLEEP_WAKEUP_OTHER
 };
-inline esp_sleep_wakeup_cause_t fakeWakeupCause = ESP_SLEEP_WAKEUP_OTHER;
+extern esp_sleep_wakeup_cause_t fakeWakeupCause;
 inline void esp_deep_sleep_start() {}
 inline void esp_sleep_enable_timer_wakeup(uint64_t time_in_us) { (void)time_in_us; }
 inline esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause() { return fakeWakeupCause; }
