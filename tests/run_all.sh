@@ -62,18 +62,21 @@ run_test() {
 
 # 1. Digital Light Sensor Suite
 run_test "test_DigitalLightIntensitySensor" \
+    tests/fakes/ArduinoFake.cpp \
     src/Sensor.cpp \
     src/DigitalLightIntensitySensor.cpp \
     tests/DigitalLightIntensitySensor/test.cpp
 
 # 2. RGB LED Actuator Suite
 run_test "test_RgbLed" \
+    tests/fakes/ArduinoFake.cpp \
     src/Actuator.cpp \
     src/RgbLed.cpp \
     tests/RgbLed/test.cpp
 
 # 3. RFID Sensor Suite
 run_test "test_RfidSensor" \
+    tests/fakes/ArduinoFake.cpp \
     src/Sensor.cpp \
     src/RfidSensor.cpp \
     tests/RfidSensor/test.cpp
@@ -81,6 +84,7 @@ run_test "test_RfidSensor" \
 # 4. BLE Connectivity Driver Suite
 run_test "test_BleConnectivityDriver" \
     -DTEST_MOCK_BLE \
+    tests/fakes/ArduinoFake.cpp \
     src/BleConnectivityDriver.cpp \
     tests/BleConnectivityDriver/test.cpp
 
@@ -90,6 +94,7 @@ run_test "test_ModestLog" \
 
 # 6. MQTT Gateway and WiFi Reconnection Suite
 run_test "test_MqttGatewayClient" \
+    tests/fakes/ArduinoFake.cpp \
     src/MqttGatewayClient.cpp \
     src/WiFiConnectivityDriver.cpp \
     src/Device.cpp \
@@ -99,29 +104,35 @@ run_test "test_MqttGatewayClient" \
 
 # 7. EngineConfig and Device Configuration Suite
 run_test "test_EngineConfig" \
+    tests/fakes/ArduinoFake.cpp \
     tests/EngineConfig/test.cpp
 
 # 8. Diagnostics Snapshot and Shared Counters Suite
 run_test "test_DiagnosticsSnapshot" \
     -DTEST_MOCK_DEVICE \
+    tests/fakes/ArduinoFake.cpp \
     tests/DiagnosticsSnapshot/test.cpp
 
 # 9. Sensor Fault and Recovery Events Suite
 run_test "test_SensorFault" \
+    tests/fakes/ArduinoFake.cpp \
     src/Sensor.cpp \
     tests/SensorFault/test.cpp
 
 # 10. SamplingScheduler Suite
 run_test "test_SamplingScheduler" \
+    tests/fakes/ArduinoFake.cpp \
     src/SamplingScheduler.cpp \
     tests/SamplingScheduler/test.cpp
 
 # 11. Telemetry Serialization Golden Tests Suite
 run_test "test_TelemetryPackage" \
+    tests/fakes/ArduinoFake.cpp \
     tests/TelemetryPackage/test.cpp
 
 # 12. Triggering Scheduler Suite
 run_test "test_TriggeringScheduler" \
+    tests/fakes/ArduinoFake.cpp \
     src/Sensor.cpp \
     src/Device.cpp \
     src/SamplingScheduler.cpp \
@@ -129,6 +140,7 @@ run_test "test_TriggeringScheduler" \
 
 # 13. Command Marshaling Suite
 run_test "test_CommandMarshaling" \
+    tests/fakes/ArduinoFake.cpp \
     src/Device.cpp \
     src/SamplingScheduler.cpp \
     src/Sensor.cpp \
@@ -136,24 +148,28 @@ run_test "test_CommandMarshaling" \
 
 # 14. WaterFlowSensor Suite
 run_test "test_WaterFlowSensor" \
+    tests/fakes/ArduinoFake.cpp \
     src/Sensor.cpp \
     src/WaterFlowSensor.cpp \
     tests/WaterFlowSensor/test.cpp
 
 # 15. SoilMoistureSensor Suite
 run_test "test_SoilMoistureSensor" \
+    tests/fakes/ArduinoFake.cpp \
     src/Sensor.cpp \
     src/SoilMoistureSensor.cpp \
     tests/SoilMoistureSensor/test.cpp
 
 # 16. RelayActuator Suite
 run_test "test_RelayActuator" \
+    tests/fakes/ArduinoFake.cpp \
     src/Actuator.cpp \
     src/RelayActuator.cpp \
     tests/RelayActuator/test.cpp
 
 # 17. DeepSleep Suite
 run_test "test_DeepSleep" \
+    tests/fakes/ArduinoFake.cpp \
     src/Device.cpp \
     src/SamplingScheduler.cpp \
     src/Sensor.cpp \
@@ -161,12 +177,14 @@ run_test "test_DeepSleep" \
 
 # 18. ServoMotor Suite
 run_test "test_ServoMotor" \
+    tests/fakes/ArduinoFake.cpp \
     src/Actuator.cpp \
     src/ServoMotor.cpp \
     tests/ServoMotor/test.cpp
 
 # 19. CharacterLcdDisplay Suite
 run_test "test_CharacterLcdDisplay" \
+    tests/fakes/ArduinoFake.cpp \
     src/Actuator.cpp \
     src/CharacterLcdDisplay.cpp \
     src/Hd44780Driver.cpp \
@@ -174,6 +192,7 @@ run_test "test_CharacterLcdDisplay" \
 
 # 20. OledDisplay Suite
 run_test "test_OledDisplay" \
+    tests/fakes/ArduinoFake.cpp \
     src/Actuator.cpp \
     src/OledDisplay.cpp \
     src/Ssd1306Driver.cpp \
@@ -181,6 +200,7 @@ run_test "test_OledDisplay" \
 
 # 21. PthSensor Suite
 run_test "test_PthSensor" \
+    tests/fakes/ArduinoFake.cpp \
     src/Sensor.cpp \
     src/BmeEnvironmentalSensor.cpp \
     src/PthSensor.cpp \
@@ -188,30 +208,35 @@ run_test "test_PthSensor" \
 
 # 22. WaterLeakSensor Suite
 run_test "test_WaterLeakSensor" \
+    tests/fakes/ArduinoFake.cpp \
     src/Sensor.cpp \
     src/WaterLeakSensor.cpp \
     tests/WaterLeakSensor/test.cpp
 
 # 23. DoorWindowSensor Suite
 run_test "test_DoorWindowSensor" \
+    tests/fakes/ArduinoFake.cpp \
     src/Sensor.cpp \
     src/DoorWindowSensor.cpp \
     tests/DoorWindowSensor/test.cpp
 
 # 24. OneWireTemperatureSensor Suite
 run_test "test_OneWireTemperatureSensor" \
+    tests/fakes/ArduinoFake.cpp \
     src/Sensor.cpp \
     src/OneWireTemperatureSensor.cpp \
     tests/OneWireTemperatureSensor/test.cpp
 
 # 25. DhtSensor Suite
 run_test "test_DhtSensor" \
+    tests/fakes/ArduinoFake.cpp \
     src/Sensor.cpp \
     src/DhtSensor.cpp \
     tests/DhtSensor/test.cpp
 
 # 26. EnvironmentalGasSensor Suite
 run_test "test_EnvironmentalGasSensor" \
+    tests/fakes/ArduinoFake.cpp \
     src/Sensor.cpp \
     src/BmeEnvironmentalSensor.cpp \
     src/EnvironmentalGasSensor.cpp \
@@ -220,40 +245,47 @@ run_test "test_EnvironmentalGasSensor" \
 # 27. BleGatewayClient Suite
 run_test "test_BleGatewayClient" \
     -DTEST_MOCK_BLE \
+    tests/fakes/ArduinoFake.cpp \
     src/BleGatewayClient.cpp \
     src/BleConnectivityDriver.cpp \
     tests/BleGatewayClient/test.cpp
 
 # 28. HttpGatewayClient Suite
 run_test "test_HttpGatewayClient" \
+    tests/fakes/ArduinoFake.cpp \
     src/HttpGatewayClient.cpp \
     src/WiFiConnectivityDriver.cpp \
     tests/HttpGatewayClient/test.cpp
 
 # 29. Buzzer Suite
 run_test "test_Buzzer" \
+    tests/fakes/ArduinoFake.cpp \
     src/Actuator.cpp \
     src/Buzzer.cpp \
     tests/Buzzer/test.cpp
 
 # 30. ConfigurationStore Suite
 run_test "test_ConfigurationStore" \
+    tests/fakes/ArduinoFake.cpp \
     src/ConfigurationStore.cpp \
     tests/ConfigurationStore/test.cpp
 
 # 31. TimeSynchronizationDriver Suite
 run_test "test_TimeSynchronizationDriver" \
+    tests/fakes/ArduinoFake.cpp \
     src/TimeSynchronizationDriver.cpp \
     tests/TimeSynchronizationDriver/test.cpp
 
 # 32. GasSensor Suite
 run_test "test_GasSensor" \
+    tests/fakes/ArduinoFake.cpp \
     src/Sensor.cpp \
     src/GasSensor.cpp \
     tests/GasSensor/test.cpp
 
 # 33. Button Suite
 run_test "test_Button" \
+    tests/fakes/ArduinoFake.cpp \
     src/Sensor.cpp \
     src/Button.cpp \
     tests/Button/test.cpp
