@@ -1,6 +1,19 @@
 /**
  * @file PerimeterMonitor.ino
- * @brief Perimeter Monitor example using 4 PassiveInfraredSensors, 4 Leds and LCD.
+ * @brief Property perimeter intrusion monitor with four-zone motion detection.
+ *
+ * Places PIR motion sensors at four corners (N, E, S, W) of a property perimeter,
+ * with an LED indicator at each zone and a 16x2 LCD showing the overall status.
+ * All PIR sensors use interrupt-driven operation for zero-latency motion detection.
+ *
+ * @par Modest IoT Nano Framework aspects illustrated:
+ * - `Device` base class with async engine for loop-less execution
+ * - `PassiveInfraredSensor` (four instances) with interrupt-driven operation
+ * - `Led` actuator (four instances) with `TURN_ON_COMMAND` and `TURN_OFF_COMMAND`
+ * - `CharacterLcdDisplay` actuator with `UPDATE_TEXT_COMMAND` for status display
+ * - `event.sourceId` disambiguation for four sensors of the same type
+ * - `appendSensorToTriggeringScheduler()` with `CHANGE` edge for all PIR sensors
+ * - Cross-task event routing via `on(Event)` handler
  * @date 2026-06-20
  * @version 1.1
  */
@@ -99,6 +112,11 @@ public:
         statusDisplay.handle(CharacterLcdDisplay::UPDATE_TEXT_COMMAND);
     }
 
+    /**
+     * @brief Handles motion detected/stopped events from four PIR zones.
+     * @param event The triggered event context payload.
+     * @runs_on{sampler}
+     */
     void on(Event event) override {
         // Handle Motion Events
         if (event.identifier == PassiveInfraredSensor::MOTION_DETECTED_EVENT_IDENTIFIER) {
@@ -117,10 +135,10 @@ public:
     }
 };
 
-static PerimeterMonitor* monitor = nullptr;
+static PerimeterMonitor* perimeterMonitorApplication = nullptr;
 
 void setup() {
-    monitor = new PerimeterMonitor();
+    perimeterMonitorApplication = new PerimeterMonitor();
 }
 
 void loop() {
