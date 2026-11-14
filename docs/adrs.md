@@ -67,7 +67,7 @@ The 30 ADRs below span six categories that shaped the framework's architecture:
 
 ---
 
-/** @anchor adr-001-framework-naming-convention--modest_log_-macros-with-miot_log_-aliases */
+<a id="adr-001-framework-naming-convention--modest_log_-macros-with-miot_log_-aliases"></a>
 ## ADR-001: Framework Naming Convention — `MODEST_LOG_*` Macros with `MIOT_LOG_*` Aliases
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -97,7 +97,7 @@ Use `MODEST_LOG_*` as the official macro family (`MODEST_LOG_E`, `MODEST_LOG_W`,
 
 ---
 
-/** @anchor adr-002-ble-connectivity-via-nordic-uart-service-nus */
+<a id="adr-002-ble-connectivity-via-nordic-uart-service-nus"></a>
 ## ADR-002: BLE Connectivity via Nordic UART Service (NUS)
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -130,7 +130,7 @@ Implement `BleConnectivityDriver` using the Nordic UART Service (NUS) GATT profi
 
 ---
 
-/** @anchor adr-003-hybrid-approach-for-sensor-sampling-intervals */
+<a id="adr-003-hybrid-approach-for-sensor-sampling-intervals"></a>
 ## ADR-003: Hybrid Approach for Sensor Sampling Intervals
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -163,7 +163,7 @@ Implement the Hybrid approach: add two `protected` attributes (`samplingInterval
 
 ---
 
-/** @anchor adr-004-unique_ptr-ownership-for-telemetry-enqueue */
+<a id="adr-004-unique_ptr-ownership-for-telemetry-enqueue"></a>
 ## ADR-004: `unique_ptr` Ownership for Telemetry Enqueue
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -196,7 +196,7 @@ Add `bool enqueueTelemetryPayload(std::unique_ptr<TelemetryPackage>)` as the rec
 
 ---
 
-/** @anchor adr-005-drop-oldest-queue-policy */
+<a id="adr-005-drop-oldest-queue-policy"></a>
 ## ADR-005: Drop-Oldest Queue Policy
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -227,7 +227,7 @@ Implement drop-oldest: when the queue is full, receive and delete the oldest pac
 
 ---
 
-/** @anchor adr-006-bounded-serialization-buffer-in-mqttgatewayclient */
+<a id="adr-006-bounded-serialization-buffer-in-mqttgatewayclient"></a>
 ## ADR-006: Bounded Serialization Buffer in MqttGatewayClient
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -257,7 +257,7 @@ Replace `serializeAsString()` with a fixed 512-byte `serializationBuffer` member
 
 ---
 
-/** @anchor adr-007-envelope-metadata-in-telemetry-packages */
+<a id="adr-007-envelope-metadata-in-telemetry-packages"></a>
 ## ADR-007: Envelope Metadata in Telemetry Packages
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -288,7 +288,7 @@ Add `captureTimestamp` and `sequenceNumber` protected fields to `TelemetryPackag
 
 ---
 
-/** @anchor adr-008-serialize-overload-rename-to-prevent-name-hiding */
+<a id="adr-008-serialize-overload-rename-to-prevent-name-hiding"></a>
 ## ADR-008: `serialize` Overload Rename to Prevent Name Hiding
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -319,7 +319,7 @@ Rename the convenience overloads to `toDocument()` and `toJsonString()` so they 
 
 ---
 
-/** @anchor adr-009-sensor-fault-events-with-debounced-threshold-state-machine */
+<a id="adr-009-sensor-fault-events-with-debounced-threshold-state-machine"></a>
 ## ADR-009: Sensor Fault Events with Debounced Threshold State Machine
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -352,7 +352,7 @@ Implement the debounced threshold state machine in the `Sensor` base class with 
 
 ---
 
-/** @anchor adr-010-engineconfig-for-tunable-freertos-task-parameters */
+<a id="adr-010-engineconfig-for-tunable-freertos-task-parameters"></a>
 ## ADR-010: EngineConfig for Tunable FreeRTOS Task Parameters
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -383,7 +383,7 @@ Add `EngineConfig` struct with `samplerStackBytes`, `networkStackBytes`, `sample
 
 ---
 
-/** @anchor adr-011-per-slot-samplingscheduler-with-countdown-based-dispatch */
+<a id="adr-011-per-slot-samplingscheduler-with-countdown-based-dispatch"></a>
 ## ADR-011: Per-Slot SamplingScheduler with Countdown-Based Dispatch
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -415,7 +415,7 @@ Implement `SamplingScheduler` with per-slot periods, staggered initial phases, e
 
 ---
 
-/** @anchor adr-012-arduinojson-retained-for-telemetry-serialization */
+<a id="adr-012-arduinojson-retained-for-telemetry-serialization"></a>
 ## ADR-012: ArduinoJson Retained for Telemetry Serialization
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -446,7 +446,7 @@ Retain ArduinoJson (pinned to `>=7.0.0` in `library.properties`) for now. Defer 
 
 ---
 
-/** @anchor adr-013-screaming_snake_case-for-all-preprocessor-macros */
+<a id="adr-013-screaming_snake_case-for-all-preprocessor-macros"></a>
 ## ADR-013: SCREAMING_SNAKE_CASE for All Preprocessor Macros
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -476,7 +476,7 @@ Enforce `SCREAMING_SNAKE_CASE` for all preprocessor macros. Use CamelCase/Pascal
 
 ---
 
-/** @anchor adr-014-threading-model--single-context-sampler-with-isolated-network-task */
+<a id="adr-014-threading-model--single-context-sampler-with-isolated-network-task"></a>
 ## ADR-014: Threading Model — Single-Context Sampler with Isolated Network Task
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -516,7 +516,7 @@ Five threading rules were established:
 
 ---
 
-/** @anchor adr-015-identifier-registry-with-reserved-ranges */
+<a id="adr-015-identifier-registry-with-reserved-ranges"></a>
 ## ADR-015: Identifier Registry with Reserved Ranges
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -553,7 +553,7 @@ The registry is documented in the README and in `docs/improvements.md`.
 
 ---
 
-/** @anchor adr-016-dependency-hygiene-principles */
+<a id="adr-016-dependency-hygiene-principles"></a>
 ## ADR-016: Dependency Hygiene Principles
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -587,7 +587,7 @@ Apply the five principles to all dependency decisions. Delete `LoadCellControlle
 
 ---
 
-/** @anchor adr-017-shared-mock-harness-for-host-unit-tests */
+<a id="adr-017-shared-mock-harness-for-host-unit-tests"></a>
 ## ADR-017: Shared Mock Harness for Host Unit Tests
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -619,7 +619,7 @@ Consolidate all mocks into a centralized `tests/fakes/` directory with shared he
 
 ---
 
-/** @anchor adr-018-diagnosticssnapshot--on-demand-stack-and-heap-metrics */
+<a id="adr-018-diagnosticssnapshot--on-demand-stack-and-heap-metrics"></a>
 ## ADR-018: DiagnosticsSnapshot — On-Demand Stack and Heap Metrics
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -654,7 +654,7 @@ Stack high-water marks are queried via `uxTaskGetStackHighWaterMark()` and conve
 
 ---
 
-/** @anchor adr-019-mqtt-reconnect-policy--rate-limited-backoff-with-continuous-keep-alive */
+<a id="adr-019-mqtt-reconnect-policy--rate-limited-backoff-with-continuous-keep-alive"></a>
 ## ADR-019: MQTT Reconnect Policy — Rate-Limited Backoff with Continuous Keep-Alive
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -690,7 +690,7 @@ Implement non-blocking reconnection with configurable backoff (`reconnectInterva
 
 ---
 
-/** @anchor adr-020-stopasynchronousengine--cooperative-shutdown-via-notification-bits */
+<a id="adr-020-stopasynchronousengine--cooperative-shutdown-via-notification-bits"></a>
 ## ADR-020: stopAsynchronousEngine — Cooperative Shutdown via Notification Bits
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -721,7 +721,7 @@ Implement `stopAsynchronousEngine()` with cooperative termination: set notificat
 
 ---
 
-/** @anchor adr-021-golden-host-tests-for-telemetry-json-serialization */
+<a id="adr-021-golden-host-tests-for-telemetry-json-serialization"></a>
 ## ADR-021: Golden Host Tests for Telemetry JSON Serialization
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -752,7 +752,7 @@ Create `tests/telemetry/test.cpp` with 10 golden test cases covering `SmartBandT
 
 ---
 
-/** @anchor adr-022-notification-redesign-for-interrupt-driven-sensors-n1 */
+<a id="adr-022-notification-redesign-for-interrupt-driven-sensors-n1"></a>
 ## ADR-022: Notification Redesign for Interrupt-Driven Sensors (N1)
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -784,7 +784,7 @@ ISR rules: mark handlers `IRAM_ATTR`, keep them tiny, no heap/Serial/logging, us
 
 ---
 
-/** @anchor adr-024-command-marshaling-for-cross-task-safety-w12 */
+<a id="adr-024-command-marshaling-for-cross-task-safety-w12"></a>
 ## ADR-024: Command Marshaling for Cross-Task Safety (W12)
 
 **Status**: Accepted | **Date**: 2026-11-09 | **Supersedes**: N/A
@@ -814,7 +814,7 @@ Implement `Device::enqueueCommand(CommandHandler* targetHandler, Command command
 
 ---
 
-/** @anchor adr-025-non-blocking-sensor-protocols-w14 */
+<a id="adr-025-non-blocking-sensor-protocols-w14"></a>
 ## ADR-025: Non-Blocking Sensor Protocols (W14)
 
 **Status**: Accepted | **Date**: 2026-11-09 | **Supersedes**: N/A
@@ -849,7 +849,7 @@ Convert both sensors to interrupt-driven operation:
 
 ---
 
-/** @anchor adr-026-cloud-to-device-mqtt-subscribe-w15 */
+<a id="adr-026-cloud-to-device-mqtt-subscribe-w15"></a>
 ## ADR-026: Cloud-to-Device MQTT Subscribe (W15)
 
 **Status**: Accepted | **Date**: 2026-11-09 | **Supersedes**: N/A
@@ -879,7 +879,7 @@ Two alternatives were evaluated:
 
 ---
 
-/** @anchor adr-027-tickless-scheduling-and-light-sleep-w16 */
+<a id="adr-027-tickless-scheduling-and-light-sleep-w16"></a>
 ## ADR-027: Tickless Scheduling and Light Sleep (W16)
 
 **Status**: Accepted | **Date**: 2026-11-09 | **Supersedes**: N/A
@@ -910,7 +910,7 @@ Add `PowerMode` enum (`Periodic`, `Tickless`) to Device. In tickless mode, the t
 
 ---
 
-/** @anchor adr-028-deep-sleep-cycle-and-battery-example-w17 */
+<a id="adr-028-deep-sleep-cycle-and-battery-example-w17"></a>
 ## ADR-028: Deep-Sleep Cycle and Battery Example (W17)
 
 **Status**: Accepted | **Date**: 2026-11-09 | **Supersedes**: N/A
@@ -948,7 +948,7 @@ The `WeatherStation` example demonstrates deep sleep with DHT22 and BH1750 senso
 
 ---
 
-/** @anchor adr-023-domain-driven-design-adoption-and-bounded-contexts */
+<a id="adr-023-domain-driven-design-adoption-and-bounded-contexts"></a>
 ## ADR-023: Domain-Driven Design Adoption and Bounded Contexts
 
 **Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
@@ -1030,7 +1030,7 @@ A shared glossary ensures consistent terminology across both frameworks:
 
 ---
 
-/** @anchor adr-029-native-servo-and-lcd-drivers-w19 */
+<a id="adr-029-native-servo-and-lcd-drivers-w19"></a>
 ## ADR-029: Native Servo and LCD Drivers (W19)
 
 **Status**: Accepted | **Date**: 2026-11-09 | **Supersedes**: N/A
@@ -1082,7 +1082,7 @@ If 8-bit mode support is ever needed, it would be a separate driver class (e.g.,
 
 ---
 
-/** @anchor adr-030-bosch-environmental-sensor-base-class */
+<a id="adr-030-bosch-environmental-sensor-base-class"></a>
 ## ADR-030: Bosch Environmental Sensor Base Class
 
 **Status**: Accepted | **Date**: 2026-11-10 | **Supersedes**: N/A
