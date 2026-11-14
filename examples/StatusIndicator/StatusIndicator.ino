@@ -79,8 +79,8 @@ class StatusIndicator : public Device {
         // an explicit period matching the timer tick interval.
         bool registered = appendSensorToScheduler(this, StatusIndicator::TIMER_EVENT_IDENTIFIER, blinkIntervalInMilliseconds, 0);
         if (!registered) {
-        Serial.println(F("[ERROR] Blinker registration failed: Scheduler capacity full!"));
-    }
+            Serial.println(F("[ERROR] Blinker registration failed: Scheduler capacity full!"));
+        }
     }
 
     /**
@@ -95,15 +95,15 @@ class StatusIndicator : public Device {
      * @param event The triggered event context payload containing identifier and data.
      */
     void on(Event event) override {
-    // Handle the explicit timing event assigned to this device
-    if (event.identifier == StatusIndicator::TIMER_EVENT_IDENTIFIER) {
+        // Handle the explicit timing event assigned to this device
+        if (event.identifier == StatusIndicator::TIMER_EVENT_IDENTIFIER) {
 
-        // Route the pre-instantiated static toggle command directly to the actuator.
-        // No local state tracking variables or toggles are written here!
-        statusLed.handle(Led::TOGGLE_LED_COMMAND);
-        Serial.println("[StatusIndicator] Timer event caught -> LED toggle dispatched.");
+            // Route the pre-instantiated static toggle command directly to the actuator.
+            // No local state tracking variables or toggles are written here!
+            statusLed.handle(Led::TOGGLE_LED_COMMAND);
+            Serial.println("[StatusIndicator] Timer event caught -> LED toggle dispatched.");
+        }
     }
-}
 };
 //@} // Application Mediator Implementation
 
