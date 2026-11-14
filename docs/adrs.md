@@ -608,7 +608,7 @@ Consolidate all mocks into a centralized `tests/fakes/` directory with shared he
 
 - **Positive**: Single source of truth for mocks. Changes to a mock (e.g., adding a new API) benefit all test suites. Eliminates duplicate code.
 - **Negative**: All tests share the same mock interface; test-specific mocks require conditional compilation.
-- **Rationale**: With 31 test suites, the shared harness eliminates ~31× duplicate mock code and ensures consistent behavior across all tests.
+- **Rationale**: With 33 test suites, the shared harness eliminates ~33× duplicate mock code and ensures consistent behavior across all tests.
 
 ### References
 
