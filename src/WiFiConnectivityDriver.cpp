@@ -7,7 +7,9 @@
  */
 
 #include <Arduino.h>
+#if defined(ARDUINO_ARCH_ESP32)
 #include <WiFiClientSecure.h>
+#endif // ARDUINO_ARCH_ESP32
 #include "WiFiConnectivityDriver.h"
 #include "ModestLog.h"
 
@@ -115,6 +117,7 @@ bool WiFiConnectivityDriver::waitForConnection(const unsigned long timeoutMillis
     return isConnected();
 }
 
+#if defined(ARDUINO_ARCH_ESP32)
 WiFiClientSecure* WiFiConnectivityDriver::createSecureSocket(const char* caCert, const bool insecure) {
     auto* socket = new WiFiClientSecure();
     if (insecure) {
@@ -124,3 +127,4 @@ WiFiClientSecure* WiFiConnectivityDriver::createSecureSocket(const char* caCert,
     }
     return socket;
 }
+#endif // ARDUINO_ARCH_ESP32

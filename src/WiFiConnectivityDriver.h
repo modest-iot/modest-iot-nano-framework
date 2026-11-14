@@ -120,6 +120,7 @@ public:
      */
     bool waitForConnection(unsigned long timeoutMilliseconds);
 
+#if defined(ARDUINO_ARCH_ESP32)
     /**
      * @brief Creates and optionally configures a `WiFiClientSecure` for TLS/SSL connections.
      * @param caCert Optional CA certificate in PEM format for certificate pinning.
@@ -132,6 +133,7 @@ public:
      *       enabling `insecure` mode. See MqttTlsDevice example for usage.
      */
     static WiFiClientSecure* createSecureSocket(const char* caCert = nullptr, const bool insecure = false);
+#endif // ARDUINO_ARCH_ESP32
 };
 
 #endif // WIFI_CONNECTIVITY_DRIVER_H
