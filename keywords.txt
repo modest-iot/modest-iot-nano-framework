@@ -106,6 +106,9 @@ maintainNetworkServices	KEYWORD2
 
 # Device diagnostics
 diagnostics	KEYWORD2
+setTelemetryGateway	KEYWORD2
+onSensorTrigger	KEYWORD2
+onSensorTriggerWrapper	KEYWORD2
 
 # Sensor base
 processEvent	KEYWORD2
@@ -151,9 +154,11 @@ setReceivedDataCallback	KEYWORD2
 # Gateway clients
 sendTelemetryRecord	KEYWORD2
 service	KEYWORD2
+loop	KEYWORD2
 getStatistics	KEYWORD2
 setServiceEndpointUrl	KEYWORD2
 getClientState	KEYWORD2
+getSubscribeTopic	KEYWORD2
 
 # HTTP specific
 setAuthorizationHeader	KEYWORD2
@@ -169,6 +174,8 @@ advance	KEYWORD2
 count	KEYWORD2
 slotAt	KEYWORD2
 baseTickInMilliseconds	KEYWORD2
+effectivePeriodInMilliseconds	KEYWORD2
+ticksUntilNextDue	KEYWORD2
 
 # ConfigurationStore
 begin	KEYWORD2
@@ -190,8 +197,6 @@ setValue	KEYWORD2
 containsKey	KEYWORD2
 removeKey	KEYWORD2
 clearNamespace	KEYWORD2
-effectivePeriodInMilliseconds	KEYWORD2
-ticksUntilNextDue	KEYWORD2
 
 # TelemetryPackage
 serialize	KEYWORD2
@@ -454,8 +459,10 @@ MAX_CONFIGURATION_KEY_LENGTH	LITERAL1
 MAX_CONFIGURATION_STRING_VALUE_LENGTH	LITERAL1
 
 # TimeSynchronizationDriver
-initialize	KEYWORD2
 getCurrentTimestamp	KEYWORD2
 isSynchronized	KEYWORD2
 saveToRtc	KEYWORD2
 restoreFromRtc	KEYWORD2
+
+# SamplingScheduler constants
+MAXIMUM_SLOTS	LITERAL1
