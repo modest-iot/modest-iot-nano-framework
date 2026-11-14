@@ -1,8 +1,21 @@
 /**
  * @file AirConditioningDevice.ino
- * @brief Complex example demonstrating multi-input, multi-output coordination.
- * Uses a DHT sensor, two adjustment buttons, a 16x2 I2C LCD, and a Servo Motor
- * to build an event-driven temperature control loop under Modest-IoT.
+ * @brief Room air conditioning controller with temperature display and vent control.
+ *
+ * Monitors room temperature and humidity via DHT22, displays readings on a 16x2 LCD,
+ * and controls a servo-driven air vent based on user-set target temperature. Two buttons
+ * adjust the target temperature up or down. The vent opens when the room exceeds the
+ * target and closes when it drops below.
+ *
+ * @par Modest IoT Nano Framework aspects illustrated:
+ * - `Device` base class with async engine for loop-less execution
+ * - `DhtSensor` for temperature/humidity monitoring
+ * - `Button` sensors with interrupt-driven operation via `appendSensorToTriggeringScheduler()`
+ * - `CharacterLcdDisplay` actuator with `UPDATE_TEXT_COMMAND` for real-time display
+ * - `ServoMotor` actuator with `LOCK_TO_MAXIMUM_LIMIT_COMMAND` and `LOCK_TO_MINIMUM_LIMIT_COMMAND`
+ * - Event routing via `on(Event)` with `DATA_READ_EVENT_IDENTIFIER` and `BUTTON_PRESSED_EVENT_IDENTIFIER`
+ * - `event.sourceId` disambiguation for multiple buttons
+ * - Direct actuator command dispatch via `handle(Command)`
  * @date 2026-06-12
  * @version 1.0
  */
@@ -137,6 +150,7 @@ class AirConditioningDevice : public Device {
      * @brief Inversion of Control interface contract handler.
      * Intercepts framework events dispatched from background tasks.
      * @param event The triggered event context payload.
+     * @runs_on{sampler}
      */
     void on(Event event) override {
 
