@@ -1,6 +1,18 @@
 /**
  * @file WaterFlowMonitor.ino
- * @brief Water flow monitor example using YF-S201 sensor with hybrid scheduling.
+ * @brief Water consumption monitor with real-time flow rate measurement.
+ *
+ * Uses a YF-S201 Hall effect flow sensor to measure water flow rate in liters per
+ * minute. The hybrid scheduling pattern (interrupt-driven pulse counting + periodic
+ * rate computation) ensures accurate measurement without missing pulses.
+ *
+ * @par Modest IoT Nano Framework aspects illustrated:
+ * - `Device` base class with async engine for loop-less execution
+ * - `WaterFlowSensor` with Hall effect pulse counting
+ * - `appendToBothSchedulers()` for hybrid interrupt + periodic scheduling
+ * - Interrupt-driven pulse capture via `CHANGE` edge for accuracy
+ * - Periodic flow rate computation via `getFlowRateInLitersPerMinute()`
+ * - Cross-task event routing via `on(Event)` handler
  * @date 2026-11-09
  * @version 1.0
  */
@@ -54,9 +66,9 @@ public:
     }
 
     /**
-     * @brief Inversion of Control interface contract handler.
-     * Intercepts sensor data-ready events to log the flow rate.
+     * @brief Handles sensor data-ready events to log the flow rate.
      * @param event The triggered event context payload.
+     * @runs_on{sampler}
      */
     void on(Event event) override {
         if (event.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER) {
@@ -65,11 +77,11 @@ public:
     }
 };
 
-static WaterFlowMonitor* monitor = nullptr;
+static WaterFlowMonitor* waterFlowApplication = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
-    monitor = new WaterFlowMonitor(WATER_FLOW_SIGNAL_PIN);
+    waterFlowApplication = new WaterFlowMonitor(WATER_FLOW_SIGNAL_PIN);
     Serial.println(SYSTEM_BOOT_MESSAGE);
 }
 
