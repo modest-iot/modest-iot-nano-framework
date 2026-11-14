@@ -246,6 +246,18 @@ run_test "test_TimeSynchronizationDriver" \
     src/TimeSynchronizationDriver.cpp \
     tests/TimeSynchronizationDriver/test.cpp
 
+# 32. GasSensor Suite
+run_test "test_GasSensor" \
+    src/Sensor.cpp \
+    src/GasSensor.cpp \
+    tests/GasSensor/test.cpp
+
+# 33. Button Suite
+run_test "test_Button" \
+    src/Sensor.cpp \
+    src/Button.cpp \
+    tests/Button/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="
