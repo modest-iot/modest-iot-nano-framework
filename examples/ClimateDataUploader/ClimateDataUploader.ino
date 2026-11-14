@@ -22,12 +22,27 @@
  * @version 1.0
  */
 
-#define JSON_KEY_TEMPERATURE_IN_CELSIUS "temperatureInCelsius"
-#define JSON_KEY_HUMIDITY_IN_PERCENTAGE "humidityInPercentage"
-#define JSON_KEY_TOKEN "token"
-#define JSON_TOKEN_VALUE_PREFIX ": \""
-#define JSON_TOKEN_VALUE_DELIMITER '"'
+#include <Arduino.h>
+#include <cstring>
+#include <memory>
+#include "ModestIoT.h"
 
+/** @name Telemetry JSON Keys */
+//@{
+/** @brief JSON key for temperature in Celsius. */
+#define JSON_KEY_TEMPERATURE_IN_CELSIUS "temperatureInCelsius"
+/** @brief JSON key for humidity in percentage. */
+#define JSON_KEY_HUMIDITY_IN_PERCENTAGE "humidityInPercentage"
+/** @brief JSON key for the authentication token in the response body. */
+#define JSON_KEY_TOKEN "token"
+/** @brief Prefix string before the token value in the JSON response. */
+#define JSON_TOKEN_VALUE_PREFIX ": \""
+/** @brief Delimiter character that ends the token value in the JSON response. */
+#define JSON_TOKEN_VALUE_DELIMITER '"'
+//@} // Telemetry JSON Keys
+
+/** @name Token Extraction Configuration */
+//@{
 /** @brief Buffer size for token value extraction. */
 static const size_t TOKEN_VALUE_BUFFER_SIZE = 128;
 /** @brief Buffer size for the Authorization header string. */
@@ -36,14 +51,10 @@ static const size_t AUTHORIZATION_HEADER_BUFFER_SIZE = 150;
 static const size_t TOKEN_PREVIEW_LENGTH = 20;
 /** @brief Offset from the JSON token value prefix to the actual token start. */
 static const size_t TOKEN_VALUE_OFFSET = 3;
+//@} // Token Extraction Configuration
 
 /** @brief Sampler event queue length for HTTP telemetry operation. */
 static const int SAMPLER_QUEUE_LENGTH = 10;
-
-#include <Arduino.h>
-#include <cstring>
-#include <memory>
-#include "ModestIoT.h"
 
 /** @brief Serial communication baud rate. */
 static const unsigned long SERIAL_BAUD_RATE = 115200;
@@ -171,6 +182,11 @@ public:
 
     ~ClimateDataUploader() override = default;
 
+    /**
+     * @brief Handles sensor data-ready events to package and queue telemetry.
+     * @param event The triggered event context payload.
+     * @runs_on{sampler}
+     */
     void on(Event event) override {
         if (event.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER) {
             packageAndQueueTelemetrySnapshot();
