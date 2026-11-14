@@ -11,6 +11,7 @@
  */
 
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include "ConnectivityDriver.h"
 
 // Forward declarations notify the compiler of types without forcing
