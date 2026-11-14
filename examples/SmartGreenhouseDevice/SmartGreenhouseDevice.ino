@@ -1,12 +1,23 @@
 /**
  * @file SmartGreenhouseDevice.ino
- * @brief Smart greenhouse example using SoilMoisture, DHT, Relay, and ServoMotor.
+ * @brief Automated greenhouse climate controller with irrigation and ventilation.
+ *
+ * Monitors soil moisture and ambient temperature to automatically control a water pump
+ * (via relay) and a ventilation fan (via servo motor). When soil is dry, the pump activates.
+ * When temperature exceeds 30°C, the vent opens. Demonstrates command payload usage with
+ * `DRIVE_TO_ANGLE_COMMAND` for servo angle control.
+ *
+ * @par Modest IoT Nano Framework aspects illustrated:
+ * - `Device` base class with async engine for loop-less execution
+ * - `SoilMoistureSensor` (analog) for soil moisture monitoring
+ * - `DhtSensor` (digital) for temperature/humidity monitoring
+ * - `RelayActuator` with `RELAY_ON_COMMAND` and `RELAY_OFF_COMMAND` for water pump
+ * - `ServoMotor` with `DRIVE_TO_ANGLE_COMMAND` (payload-based angle) for vent control
+ * - `event.sourceId` disambiguation for soil vs. temperature sensors
+ * - Threshold-based automation logic in `on(Event)` handler
+ * - Direct actuator command dispatch via `handle(Command)`
  * @date 2026-11-09
  * @version 1.0
- *
- * Demonstrates event-driven greenhouse automation:
- * - SoilMoistureSensor triggers RelayActuator (water pump) when soil is dry.
- * - DhtSensor triggers ServoMotor (vent) when temperature is high.
  */
 
 #include <Arduino.h>
@@ -81,9 +92,9 @@ public:
     }
 
     /**
-     * @brief Inversion of Control interface contract handler.
-     * Intercepts sensor data-ready events to control actuators.
+     * @brief Handles sensor data-ready events to control irrigation and ventilation.
      * @param event The triggered event context payload.
+     * @runs_on{sampler}
      */
     void on(Event event) override {
         if (event.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER) {
@@ -112,11 +123,11 @@ public:
     }
 };
 
-static SmartGreenhouseDevice* greenhouse = nullptr;
+static SmartGreenhouseDevice* smartGreenhouseApplication = nullptr;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
-    greenhouse = new SmartGreenhouseDevice();
+    smartGreenhouseApplication = new SmartGreenhouseDevice();
     Serial.println(SYSTEM_BOOT_MESSAGE);
 }
 
