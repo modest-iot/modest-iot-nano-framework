@@ -5,17 +5,11 @@
 # Internal planning and roadmap documentation
 docs/improvements.md
 docs/vision.md
-
-# Example enhancement planning (internal use only)
-docs/examples-enhancement-plan.md
-
-# User stories (internal development tracking)
 docs/user-stories.md
 
 # Host test infrastructure (not needed for ESP32 sketches)
 tests/
 CMakeLists.txt
-cmake/
 
 # Build directories
 cmake-build-*/
