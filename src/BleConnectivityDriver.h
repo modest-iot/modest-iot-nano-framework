@@ -18,13 +18,9 @@
 
 #if defined(TEST_MOCK_BLE)
 #include "BLE.h"
+#else
+#include <BLE.h>
 #endif
-
-// Forward declarations avoid leaking heavy BLE headers into application code.
-// In ESP32 4.0.0+, these are lightweight shared handles (value types) from the unified BLE.h API.
-class BLEServer;
-class BLEService;
-class BLECharacteristic;
 
 /**
  * @brief Bluetooth Low Energy (BLE) connectivity adapter implementing the Nordic UART Service (NUS).
@@ -53,10 +49,10 @@ private:
     bool advertisingActive; ///< Whether BLE advertising is currently active.
     bool initialized; ///< Whether the BLE stack and GATT server are initialized.
 
-    BLEServer* bleServer; ///< BLE GATT server instance.
-    BLEService* bleService; ///< NUS service instance.
-    BLECharacteristic* txCharacteristic; ///< TX characteristic for outbound notifications.
-    BLECharacteristic* rxCharacteristic; ///< RX characteristic for inbound writes.
+    BLEServer bleServer; ///< BLE GATT server instance (value type wrapping shared_ptr).
+    BLEService bleService; ///< NUS service instance (value type wrapping shared_ptr).
+    BLECharacteristic txCharacteristic; ///< TX characteristic for outbound notifications.
+    BLECharacteristic rxCharacteristic; ///< RX characteristic for inbound writes.
 
     DataReceivedCallback onDataReceivedHandler; ///< Callback for inbound RX data.
 
