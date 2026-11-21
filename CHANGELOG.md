@@ -4,6 +4,15 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 
 ## [Unreleased]
 
+### Changed
+
+#### GitHub Actions Node.js 24 Migration
+- **.github/workflows/compile-examples.yml**: Updated `actions/checkout@v4` → `@v5` and `arduino/setup-arduino-cli@v1` → `@v2` to natively support Node.js 24, eliminating the deprecation warning.
+- **.github/workflows/host-tests.yml**: Updated `actions/checkout@v4` → `@v5` (both jobs) and `actions/upload-artifact@v4` → `@v4.6.0` for Node.js 24 compatibility.
+- **.github/workflows/lint.yml**: Updated `actions/checkout@v4` → `@v5` and `arduino/arduino-lint-action@v1` → `@v3` for Node.js 24 compatibility. Removed the `ACTIONS_RUNNER_NODE_VERSION: 24` environment variable as v3 natively supports Node.js 24.
+- **.github/workflows/release.yml**: Updated `actions/checkout@v4` → `@v5` (both jobs), `actions/upload-artifact@v4` → `@v4.6.0`, and `actions/download-artifact@v4` → `@v4.3.0` for Node.js 24 compatibility. `softprops/action-gh-release@v2` remains unchanged as no Node.js 24 version is available yet (see [issue #654](https://github.com/softprops/action-gh-release/issues/654)).
+- **.github/workflows/dependency-status.yml**: Updated `actions/checkout@v4` → `@v5` for Node.js 24 compatibility.
+
 ## [1.2.1] - 2026-11-21
 
 ### Fixed
