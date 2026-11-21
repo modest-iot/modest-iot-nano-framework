@@ -11,6 +11,16 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - **docs/quick-start.md**: Updated version references from 1.1.2 to 1.2.0 in three locations: Arduino Library Manager version text, VS Code PlatformIO `lib_deps` + download message, and CLion PlatformIO `lib_deps`.
 - **CHANGELOG.md**: Updated Code Coverage Reporting section coverage number from 89.6% to 91.5% line coverage.
 
+### Changed
+
+#### ESP32 4.0.0 BLE API Migration
+- **src/BleConnectivityDriver.h/cpp**: Migrated from ESP32 3.x BLE API (`BLEDevice.h`/`BLEServer.h`) to ESP32 4.0.0 unified `BLE.h`. All BLE API calls updated: `BLE::begin()` instead of `BLEDevice::init()`, `BLE::createServer()` returns reference instead of pointer, lambda callbacks instead of callback classes, `BLEProperty::Notify` enum instead of `BLECharacteristic::PROPERTY_NOTIFY`, and `chr.getValue(&length)` replaces `chr.getData()`/`chr.getLength()`. ESP32 4.0.0 is now the minimum supported version for BLE functionality.
+- **tests/fakes/BLE.h**: Consolidated all BLE mock types (BLEProperty, BLEPermission, BLEConnInfo, BTStatus, BLECharacteristic, BLEService, BLEServer, BLEAdvertising, BLE namespace) into a single file mirroring the production `BLE.h` structure. Renamed from `BLEDevice.h` to `BLE.h` to match the original header name.
+- **tests/BleConnectivityDriver/test.cpp** and **tests/BleGatewayClient/test.cpp**: Updated all BLE API usage to match ESP32 4.0.0 value-based API.
+- **README.md**: Added ESP32 4.0.0 requirement note to the BLE section.
+- **docs/quick-start.md**: Added ESP32 4.0.0 requirement to the hardware prerequisites.
+- **.github/workflows/compile-examples.yml**: Initialized arduino-cli config with ESPressif board package index URL (`https://espressif.github.io/arduino-esp32/package_esp32_index.json`) using `arduino-cli config init --additional-urls` before installing ESP32 core 4.0.0. The default Arduino index does not include ESP32 4.0.0; the ESPressif-specific index is required. Pinned ESP32 Arduino core to version 4.0.0 (`arduino-cli core install esp32:esp32@4.0.0`) to ensure CI compiles all examples against the required BLE API version. Added `--build-property build.partitions=huge_app --build-property upload.maximum_size=3145728` to the compile command (singular `--build-property`, one per property) to use the "Huge APP" partition scheme (3 MB app / 1 MB SPIFFS), as ESP32 4.0.0 changed the default partition scheme from "no_ota" (2 MB app) to "default" (1.2 MB app / 1.5 MB SPIFFS), which caused examples to exceed the Flash limit.
+
 ## [1.2.0] - 2026-11-20
 
 ### Fixed
