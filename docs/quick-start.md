@@ -73,6 +73,7 @@ Run the framework on a physical ESP32 board with real sensors, actuators, and ne
 
 - **ESP32 board** (any variant: ESP32-WROOM, ESP32-S3, ESP32-C3, etc.)
 - **USB cable** (USB-A to Micro-USB or USB-C, depending on your board)
+- **ESP32 Arduino core 4.0.0 or later** (required for BLE API compatibility)
 - **One of the following toolchains**:
   - Arduino IDE 2.x with ESP32 board package installed, **or**
   - Visual Studio Code with PlatformIO extension installed, **or**
