@@ -27,8 +27,8 @@ jobs:
       - name: Update arduino-cli index
         run: arduino-cli core update-index
 
-      - name: Install ESP32 core
-        run: arduino-cli core install esp32:esp32
+      - name: Install ESP32 core 4.0.0+
+        run: arduino-cli core install esp32:esp32@4.0.0
 
       - name: Install library dependencies
         run: |

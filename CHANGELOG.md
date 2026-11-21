@@ -19,6 +19,7 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - **tests/BleConnectivityDriver/test.cpp** and **tests/BleGatewayClient/test.cpp**: Updated all BLE API usage to match ESP32 4.0.0 value-based API.
 - **README.md**: Added ESP32 4.0.0 requirement note to the BLE section.
 - **docs/quick-start.md**: Added ESP32 4.0.0 requirement to the hardware prerequisites.
+- **.github/workflows/compile-examples.yml**: Pinned ESP32 Arduino core to version 4.0.0 (`arduino-cli core install esp32:esp32@4.0.0`) to ensure CI compiles all examples against the required BLE API version. Previously installed the latest 3.x by default, which caused compilation failures with the new `BLE.h` unified header.
 
 ## [1.2.0] - 2026-11-20
 
