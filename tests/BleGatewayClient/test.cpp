@@ -11,7 +11,7 @@
 #include "BleConnectivityDriver.h"
 #include "TelemetryPackage.h"
 #include <Arduino.h>
-#include <BLEDevice.h>
+#include <BLE.h>
 #include "JsonTelemetryWriter.h"
 #include <cassert>
 #include <cstring>
@@ -34,7 +34,7 @@ protected:
 
 [[nodiscard]] int main() {
     // 1. Constructor initializes statistics to zero
-    BLEDevice::reset();
+    BLE_reset();
     {
         BleConnectivityDriver driver("TestBleDevice");
         BleGatewayClient gatewayClient(driver);
@@ -46,7 +46,7 @@ protected:
     }
 
     // 2. sendTelemetryRecord fails when BLE peer is not connected
-    BLEDevice::reset();
+    BLE_reset();
     {
         BleConnectivityDriver driver("TestBleDevice");
         driver.connect();
@@ -61,15 +61,15 @@ protected:
     }
 
     // 3. sendTelemetryRecord succeeds when BLE peer is connected
-    BLEDevice::reset();
+    BLE_reset();
     {
         BleConnectivityDriver driver("TestBleDevice");
         driver.connect();
         BleGatewayClient gatewayClient(driver);
 
         // Simulate central peer connection
-        BLEServer* server = BLEDevice::getServer();
-        server->callbacks->onConnect(server);
+        // service accessed via shared BLEService::characteristics
+        (*BLEServer::onConnectCallback)(BLE.serverInstance, BLEConnInfo("test-conn"));
         assert(gatewayClient.isConnected());
 
         TestTelemetryPayload payload;
@@ -80,24 +80,24 @@ protected:
         assert(stats.sendsFailed == 0);
 
         // Verify the TX characteristic received the JSON payload with newline
-        BLEService* service = server->services[0];
-        BLECharacteristic* txChar = service->characteristics[0];
-        std::string value = txChar->getValue();
+        // service accessed via shared BLEService::characteristics
+        // txChar accessed via shared BLECharacteristic::value
+        std::string value = *BLECharacteristic::value;
         assert(value.find("\"temperature\"") != std::string::npos);
         assert(value.find("\"humidity\"") != std::string::npos);
         assert(value.back() == '\n'); // JSON lines framing
-        assert(txChar->notifyCount == 1);
+        assert(*BLECharacteristic::notifyCount == 1);
     }
 
     // 4. Multiple telemetry records increment statistics correctly
-    BLEDevice::reset();
+    BLE_reset();
     {
         BleConnectivityDriver driver("TestBleDevice");
         driver.connect();
         BleGatewayClient gatewayClient(driver);
 
-        BLEServer* server = BLEDevice::getServer();
-        server->callbacks->onConnect(server);
+        // service accessed via shared BLEService::characteristics
+        (*BLEServer::onConnectCallback)(BLE.serverInstance, BLEConnInfo("test-conn"));
 
         TestTelemetryPayload payload;
         assert(gatewayClient.sendTelemetryRecord(payload));
@@ -110,17 +110,17 @@ protected:
     }
 
     // 5. service() restarts advertising when peer disconnected and not advertising
-    BLEDevice::reset();
+    BLE_reset();
     {
         BleConnectivityDriver driver("TestBleDevice");
         driver.connect();
         BleGatewayClient gatewayClient(driver);
 
-        BLEServer* server = BLEDevice::getServer();
-        server->callbacks->onConnect(server);
+        // service accessed via shared BLEService::characteristics
+        (*BLEServer::onConnectCallback)(BLE.serverInstance, BLEConnInfo("test-conn"));
 
         // Simulate disconnection
-        server->callbacks->onDisconnect(server);
+        (*BLEServer::onDisconnectCallback)(BLE.serverInstance, BLEConnInfo("test-conn"), 0x01);
         assert(driver.isAdvertising()); // Auto-restart by BleConnectivityDriver
 
         // Stop advertising manually to test service() behavior
@@ -133,15 +133,15 @@ protected:
     }
 
     // 6. loop() delegates to service()
-    BLEDevice::reset();
+    BLE_reset();
     {
         BleConnectivityDriver driver("TestBleDevice");
         driver.connect();
         BleGatewayClient gatewayClient(driver);
 
-        BLEServer* server = BLEDevice::getServer();
-        server->callbacks->onConnect(server);
-        server->callbacks->onDisconnect(server);
+        // service accessed via shared BLEService::characteristics
+        (*BLEServer::onConnectCallback)(BLE.serverInstance, BLEConnInfo("test-conn"));
+        (*BLEServer::onDisconnectCallback)(BLE.serverInstance, BLEConnInfo("test-conn"), 0x01);
 
         driver.stopAdvertising();
         gatewayClient.loop();
@@ -149,7 +149,7 @@ protected:
     }
 
     // 7. isConnected() reflects BLE driver connection state
-    BLEDevice::reset();
+    BLE_reset();
     {
         BleConnectivityDriver driver("TestBleDevice");
         driver.connect();
@@ -157,16 +157,16 @@ protected:
 
         assert(!gatewayClient.isConnected());
 
-        BLEServer* server = BLEDevice::getServer();
-        server->callbacks->onConnect(server);
+        // service accessed via shared BLEService::characteristics
+        (*BLEServer::onConnectCallback)(BLE.serverInstance, BLEConnInfo("test-conn"));
         assert(gatewayClient.isConnected());
 
-        server->callbacks->onDisconnect(server);
+        (*BLEServer::onDisconnectCallback)(BLE.serverInstance, BLEConnInfo("test-conn"), 0x01);
         assert(!gatewayClient.isConnected());
     }
 
     // 8. getStatistics() returns accurate counters after mixed success/failure
-    BLEDevice::reset();
+    BLE_reset();
     {
         BleConnectivityDriver driver("TestBleDevice");
         driver.connect();
@@ -178,15 +178,15 @@ protected:
         assert(!gatewayClient.sendTelemetryRecord(payload));
 
         // Connect peer
-        BLEServer* server = BLEDevice::getServer();
-        server->callbacks->onConnect(server);
+        // service accessed via shared BLEService::characteristics
+        (*BLEServer::onConnectCallback)(BLE.serverInstance, BLEConnInfo("test-conn"));
 
         // Next two sends succeed
         assert(gatewayClient.sendTelemetryRecord(payload));
         assert(gatewayClient.sendTelemetryRecord(payload));
 
         // Disconnect peer
-        server->callbacks->onDisconnect(server);
+        (*BLEServer::onDisconnectCallback)(BLE.serverInstance, BLEConnInfo("test-conn"), 0x01);
 
         // Next send fails (not connected)
         assert(!gatewayClient.sendTelemetryRecord(payload));

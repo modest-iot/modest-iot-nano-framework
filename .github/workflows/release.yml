@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Doxygen and Graphviz
         run: |
@@ -32,7 +32,7 @@ jobs:
           cp assets/branding/logo.png docs/build/html/assets/branding/
 
       - name: Upload Doxygen HTML
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.0
         with:
           name: doxygen-html
           path: docs/build/html/
@@ -47,7 +47,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Extract changelog
         id: changelog
@@ -77,7 +77,7 @@ jobs:
             docs/
 
       - name: Download Doxygen HTML
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.3.0
         with:
           name: doxygen-html
           path: doxygen-html/
@@ -86,7 +86,7 @@ jobs:
         run: cd doxygen-html && zip -r ../doxygen-html.zip .
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body_path: release_body.md
           files: |

@@ -4,8 +4,8 @@
 
 | Version | Supported          |
 |---------|------------------|
-| 1.2.0   | :white_check_mark: |
-| < 1.2.0 | :x:               |
+| 1.2.1   | :white_check_mark: |
+| < 1.2.1 | :x:               |
 
 ## Reporting a Vulnerability
 
@@ -60,7 +60,7 @@ When using the Modest IoT Nano Framework in production, follow these security be
 - **Enable TLS/SSL**: Use `WiFiConnectivityDriver::createSecureSocket()` for HTTPS connections instead of plain HTTP.
 - **Validate certificates**: Ensure your ESP32 firmware validates server certificates for TLS connections.
 - **Secure credentials**: Store sensitive data (API tokens, passwords) in `ConfigurationStore` using separate NVS namespaces.
-- **Keep dependencies updated**: Regularly update ArduinoJson and MQTT library dependencies to their latest versions.
+- **Keep dependencies updated**: Regularly update the MQTT library dependency to its latest version. The framework monitors dependencies automatically via Dependabot (GitHub Actions) and weekly version checks (MQTT, ESP32 core) with shields.io status badges.
 
 ## Acknowledgments
 

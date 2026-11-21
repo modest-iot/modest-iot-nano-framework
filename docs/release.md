@@ -8,6 +8,7 @@ This document describes the complete release process for the Modest IoT Nano Fra
 - [Release Workflow](#release-workflow)
 - [Git Flow Helper Plugin Process](#git-flow-helper-plugin-process)
 - [Automated Release Workflow](#automated-release-workflow)
+- [Documentation Alignment](#documentation-alignment)
 - [Pre-Release Checklist](#pre-release-checklist)
 - [Version Bump](#version-bump)
 - [Registry Publishing](#registry-publishing)
@@ -68,6 +69,7 @@ The Git Flow Helper Plugin in CLion provides the following release commands:
 2. **Prepare the Release**
    - Update version numbers (see [Version Bump](#version-bump))
    - Update `CHANGELOG.md` — move `[Unreleased]` section to the new version
+   - Review documentation alignment (see [Documentation Alignment](#documentation-alignment))
    - Verify all tests pass: `bash tests/run_all.sh`
    - Verify Doxygen generates: `doxygen docs/Doxyfile`
    - Commit all changes
@@ -148,6 +150,42 @@ The release workflow creates two artifacts:
 | **doxygen-html.zip** | Complete HTML API reference with Doxygen Awesome theme | Permanent (GitHub Release asset) |
 | **coverage-report** | gcov/lcov HTML coverage report | 14 days (workflow artifact) |
 
+## Documentation Alignment
+
+Before finalizing the release, review all documentation for effects of the changes being released. A version bump alone is not enough — decisions made during the release (e.g., API migration, dependency removal, new features) may affect other documentation files.
+
+### What to Review
+
+| Document | Review for |
+|----------|-----------|
+| **docs/adrs.md** | Stale references to removed dependencies or old APIs; mark superseded ADRs if decisions were reversed |
+| **docs/class-diagram.puml** | API changes (new/removed methods, member type changes, new classes) |
+| **CONTRIBUTING.md** | Dependency changes, version management updates, bug report template |
+| **docs/quick-start.md** | Minimum version requirements, hardware prerequisites, BLE simulation limits |
+| **docs/dependencies.md** | Added/removed dependencies, monitoring changes |
+| **docs/evolution.md** | New W-items or resolutions that should be documented |
+| **docs/improvements.md** | Comparison tables, current-state accuracy |
+| **docs/user-stories.md** | Implementation status updates, method name changes |
+| **docs/troubleshooting.md** | New error patterns, platform-specific issues |
+| **docs/coverage.md** | Coverage number changes, new exclusions |
+| **docs/benchmarks.md** | Version, date, platform; new metrics or comparison data |
+
+### Common Triggers
+
+- **API migration** (e.g., ESP32 4.0.0 BLE): Check class diagram, ADRs, quick-start, CONTRIBUTING.md
+- **Dependency removal** (e.g., ArduinoJson): Check ADRs, CONTRIBUTING.md, SECURITY.md, dependencies.md
+- **New feature** (e.g., EventAggregator): Check class diagram, user stories, evolution.md, improvements.md
+- **CI changes** (e.g., Node.js 24): Check benchmarks.md, dependencies.md
+- **Coverage changes**: Check coverage.md, benchmarks.md
+
+### Review Process
+
+1. Identify the changes in the release branch
+2. For each change, determine which documentation files reference the affected code
+3. Update the documentation to reflect the current state
+4. Mark historical ADRs as superseded if decisions were reversed
+5. Ensure all version references are consistent
+
 ## Pre-Release Checklist
 
 Before starting the release process, verify:
@@ -163,6 +201,8 @@ Before starting the release process, verify:
 - [ ] `README.md` `**Last updated**` date is updated
 - [ ] `SECURITY.md` Supported Versions table is updated
 - [ ] `docs/doxygen-mainpage.md` version reference is updated
+- [ ] `docs/benchmarks.md` version, date, and platform are updated
+- [ ] Documentation alignment review is complete (see [Documentation Alignment](#documentation-alignment))
 - [ ] No blocking issues or open pull requests
 - [ ] Dependency status badges are current (check README badges)
 
@@ -184,19 +224,22 @@ The version is managed in four core files, with three additional documentation f
 
 | File | Field | Example |
 |------|-------|---------|
-| `library.properties` | `version=1.2.0` | Arduino Library Manager |
-| `library.json` | `"version": "1.2.0"` | PlatformIO Registry |
-| `docs/Doxyfile` | `PROJECT_NUMBER = 1.2.0` | Doxygen API reference |
-| `CMakeLists.txt` | `VERSION 1.2.0` | CMake host test builds |
+| `library.properties` | `version=1.2.1` | Arduino Library Manager |
+| `library.json` | `"version": "1.2.1"` | PlatformIO Registry |
+| `docs/Doxyfile` | `PROJECT_NUMBER = 1.2.1` | Doxygen API reference |
+| `CMakeLists.txt` | `VERSION 1.2.1` | CMake host test builds |
 
 **Documentation version references:**
 
 | File | Field | Example |
 |------|-------|---------|
-| `README.md` | `**Version**: 1.2.0` | Front matter version |
-| `README.md` | `**Last updated**: 2026-11-20` | Front matter date |
+| `README.md` | `**Version**: 1.2.1` | Front matter version |
+| `README.md` | `**Last updated**: 2026-11-21` | Front matter date |
 | `SECURITY.md` | Supported Versions table | Current version row |
-| `docs/doxygen-mainpage.md` | `(v1.2.0)` in first paragraph | API reference version |
+| `docs/doxygen-mainpage.md` | `(v1.2.1)` in first paragraph | API reference version |
+| `docs/benchmarks.md` | `**Version**: 1.2.1` | Benchmark table version |
+| `docs/benchmarks.md` | `**Date**: 2026-11-21` | Benchmark table date |
+| `docs/benchmarks.md` | `**Platform**: ESP32 (Arduino core 4.0.0)` | Benchmark table platform |
 
 ### Version Bump Rules
 
@@ -211,8 +254,8 @@ Follow [Semantic Versioning 2.0.0](https://semver.org/):
 After updating the version files, commit:
 
 ```bash
-git add library.properties library.json docs/Doxyfile CMakeLists.txt README.md SECURITY.md docs/doxygen-mainpage.md
-git commit -m "chore(release): bump version to 1.2.0"
+git add library.properties library.json docs/Doxyfile CMakeLists.txt README.md SECURITY.md docs/doxygen-mainpage.md docs/benchmarks.md
+git commit -m "chore(release): bump version to 1.2.1"
 ```
 
 ## Registry Publishing
@@ -282,7 +325,7 @@ After the release is complete:
 2. **Verify Arduino Library Manager**: Check that the new version appears in the Library Manager within ~1 hour.
 3. **Verify PlatformIO Registry**: Check that the new version is available at [registry.platformio.org](https://registry.platformio.org/libraries/modest-iot/Modest-IoT-Nano-Framework).
 4. **Update CHANGELOG.md**: Add a new `[Unreleased]` section at the top for future changes.
-5. **Bump develop version**: Update `library.properties`, `library.json`, `docs/Doxyfile`, `CMakeLists.txt`, `README.md`, `SECURITY.md`, and `docs/doxygen-mainpage.md` to the next development version (e.g., `1.3.0-dev`).
+5. **Bump develop version**: Update `library.properties`, `library.json`, `docs/Doxyfile`, `CMakeLists.txt`, `README.md`, `SECURITY.md`, `docs/doxygen-mainpage.md`, and `docs/benchmarks.md` to the next development version (e.g., `1.3.0-dev`).
 6. **Announce the release**: Update any relevant communication channels (GitHub Discussions, social media, etc.).
 
 ### Post-Release Version Bump on develop
@@ -291,8 +334,8 @@ After the release, update `develop` to the next development version:
 
 ```bash
 git checkout develop
-# Update version to 1.3.0-dev in library.properties, library.json, docs/Doxyfile, CMakeLists.txt, README.md, SECURITY.md, and docs/doxygen-mainpage.md
-git add library.properties library.json docs/Doxyfile CMakeLists.txt README.md SECURITY.md docs/doxygen-mainpage.md
+# Update version to 1.3.0-dev in library.properties, library.json, docs/Doxyfile, CMakeLists.txt, README.md, SECURITY.md, docs/doxygen-mainpage.md, and docs/benchmarks.md
+git add library.properties library.json docs/Doxyfile CMakeLists.txt README.md SECURITY.md docs/doxygen-mainpage.md docs/benchmarks.md
 git commit -m "chore: bump develop version to 1.3.0-dev"
 git push origin develop
 ```

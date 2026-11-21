@@ -1,11 +1,11 @@
 # Modest IoT Nano Framework — Benchmark Table
 
-**Version**: 1.2.0  
-**Date**: 2026-11-20  
-**Platform**: ESP32 (Arduino core 3.3.12)  
-**Methodology**: Source code analysis, static configuration values, and framework claims from positioning.md. Hardware-measured values are marked with estimates based on the framework's architectural design.
+**Version**: 1.2.1  
+**Date**: 2026-11-21  
+**Platform**: ESP32 (Arduino core 4.0.0)  
+**Methodology**: Source code analysis, static configuration values, framework claims from positioning.md, and CI-measured sketch sizes from the compile-examples workflow. Hardware-measured values are marked with estimates based on the framework's architectural design.
 
-> **Note**: This benchmark table provides a structured comparison of the Modest IoT Nano Framework against traditional Arduino `loop()` development and the framework's own evolution from v1.1.2 to v1.2.0. Values are derived from source code constants, configuration defaults, and documented claims. For hardware-validated measurements, see the validation methodology at the end of this document.
+> **Note**: This benchmark table provides a structured comparison of the Modest IoT Nano Framework against traditional Arduino `loop()` development and the framework's own evolution from v1.1.2 to v1.2.1. Values are derived from source code constants, configuration defaults, documented claims, and actual CI compilation output. For hardware-validated measurements, see the validation methodology at the end of this document.
 
 ---
 
@@ -13,25 +13,26 @@
 
 ### Flash Memory
 
-| Metric | Traditional `loop()` | Modest IoT v1.1.2 | Modest IoT v1.2.0 | Notes |
-|--------|---------------------|-------------------|-------------------|-------|
-| **Framework code** | ~0 KB (no framework) | ~250 KB | ~220-230 KB | v1.2.0 saves ~20-30 KB by removing ArduinoJson |
-| **ArduinoJson dependency** | N/A | ~30-40 KB | **0 KB** | Removed in v1.2.0 (W46) |
-| **External dependencies** | Board package only | MQTT + ArduinoJson | **MQTT only** | Only 1 external dependency |
-| **Minimal firmware binary** | ~350-400 KB | ~680 KB | ~650-660 KB | Includes Arduino core + Wi-Fi + BLE |
-| **ESP-IDF variant (planned)** | N/A | N/A | ~180 KB | **~73% Flash reduction** vs Arduino variant |
+| Metric | Traditional `loop()` | Modest IoT v1.1.2 | Modest IoT v1.2.0 | Modest IoT v1.2.1 | Notes |
+|--------|---------------------|-------------------|-------------------|-------------------|-------|
+| **Framework code** | ~0 KB (no framework) | ~250 KB | ~220-230 KB | ~220-230 KB | v1.2.0 saved ~20-30 KB by removing ArduinoJson |
+| **ArduinoJson dependency** | N/A | ~30-40 KB | **0 KB** | **0 KB** | Removed in v1.2.0 (W46) |
+| **External dependencies** | Board package only | MQTT + ArduinoJson | **MQTT only** | **MQTT only** | Only 1 external dependency |
+| **ESP32 Arduino core** | 3.x | 3.x | 3.x | **4.0.0** | ESP32 4.0.0 required for BLE (ESP-IDF v6.1.1) |
+| **Minimal firmware binary** | ~350-400 KB | ~680 KB | ~650-660 KB | ~650-660 KB | Includes Arduino core + Wi-Fi + BLE |
+| **ESP-IDF variant (planned)** | N/A | N/A | ~180 KB | ~180 KB | **~73% Flash reduction** vs Arduino variant |
 
-**Key finding**: v1.2.0 eliminates ArduinoJson (~30-40 KB savings), making it the **leanest architecturally disciplined Arduino library**. The planned ESP-IDF variant reduces Flash by ~73% (~500 KB savings).
+**Key finding**: v1.2.0 eliminated ArduinoJson (~30-40 KB savings), making it the **leanest architecturally disciplined Arduino library**. v1.2.1 migrates to ESP32 4.0.0 (ESP-IDF v6.1.1) with no Flash increase. The planned ESP-IDF variant reduces Flash by ~73% (~500 KB savings).
 
 ### Static RAM
 
-| Metric | Traditional `loop()` | Modest IoT v1.1.2 | Modest IoT v1.2.0 | Notes |
-|--------|---------------------|-------------------|-------------------|-------|
-| **Framework static data** | ~0 KB | ~45-55 KB | ~40-50 KB | Reduced by ArduinoJson removal |
-| **Telemetry buffer** | N/A | 512 bytes | 512 bytes | Fixed-size stack buffer (JsonTelemetryWriter) |
-| **MQTT serialization** | N/A | 512 bytes | 512 bytes | Fixed-size buffer (MqttGatewayClient) |
-| **MQTT subscribe buffer** | N/A | 256 bytes | 256 bytes | Fixed-size buffer for inbound commands |
-| **Free heap after Wi-Fi** | ~280 KB | ~230 KB | ~230-240 KB | ESP-IDF variant: ~270 KB (**~40 KB more**) |
+| Metric | Traditional `loop()` | Modest IoT v1.1.2 | Modest IoT v1.2.0 | Modest IoT v1.2.1 | Notes |
+|--------|---------------------|-------------------|-------------------|-------------------|-------|
+| **Framework static data** | ~0 KB | ~45-55 KB | ~40-50 KB | ~40-50 KB | Reduced by ArduinoJson removal |
+| **Telemetry buffer** | N/A | 512 bytes | 512 bytes | 512 bytes | Fixed-size stack buffer (JsonTelemetryWriter) |
+| **MQTT serialization** | N/A | 512 bytes | 512 bytes | 512 bytes | Fixed-size buffer (MqttGatewayClient) |
+| **MQTT subscribe buffer** | N/A | 256 bytes | 256 bytes | 256 bytes | Fixed-size buffer for inbound commands |
+| **Free heap after Wi-Fi** | ~280 KB | ~230 KB | ~230-240 KB | ~230-240 KB | ESP-IDF variant: ~270 KB (**~40 KB more**) |
 
 **Key finding**: Framework uses ~40-60 KB RAM total. Zero heap allocation in serialization path — all buffers are stack-allocated or static.
 
@@ -51,33 +52,33 @@
 
 ### Event Processing Latency
 
-| Metric | Traditional `loop()` | Modest IoT v1.1.2 | Modest IoT v1.2.0 | Notes |
-|--------|---------------------|-------------------|-------------------|-------|
-| **Sensor-to-event** | Variable (loop-dependent) | ~10-100 μs | ~10-100 μs | Synchronous event propagation |
-| **Event-to-command** | Variable (loop-dependent) | ~5-50 μs | ~5-50 μs | Direct function call via mediator |
-| **Button edge-to-action** | ~1-10 ms (polling) | ~100-500 μs | ~100-500 μs | GPIO interrupt → ISR → event |
-| **PIR edge-to-action** | ~1-10 ms (polling) | ~100-500 μs | ~100-500 μs | GPIO interrupt → ISR → event |
-| **Worst-case handler** | Unbounded | Tracked by `worstCaseWakeMicros` | Tracked by `worstCaseWakeMicros` | Diagnostics field |
+| Metric | Traditional `loop()` | Modest IoT v1.1.2 | Modest IoT v1.2.0 | Modest IoT v1.2.1 | Notes |
+|--------|---------------------|-------------------|-------------------|-------------------|-------|
+| **Sensor-to-event** | Variable (loop-dependent) | ~10-100 μs | ~10-100 μs | ~10-100 μs | Synchronous event propagation |
+| **Event-to-command** | Variable (loop-dependent) | ~5-50 μs | ~5-50 μs | ~5-50 μs | Direct function call via mediator |
+| **Button edge-to-action** | ~1-10 ms (polling) | ~100-500 μs | ~100-500 μs | ~100-500 μs | GPIO interrupt → ISR → event |
+| **PIR edge-to-action** | ~1-10 ms (polling) | ~100-500 μs | ~100-500 μs | ~100-500 μs | GPIO interrupt → ISR → event |
+| **Worst-case handler** | Unbounded | Tracked by `worstCaseWakeMicros` | Tracked by `worstCaseWakeMicros` | Tracked by `worstCaseWakeMicros` | Diagnostics field |
 
 **Key finding**: Modest IoT uses synchronous event propagation within the sampler task, so event-to-command latency is a direct function call (~5-50 μs). GPIO interrupts use IRAM ISR handlers for minimal latency.
 
 ### Telemetry Pipeline Latency
 
-| Metric | Traditional `loop()` | Modest IoT v1.1.2 | Modest IoT v1.2.0 | Notes |
-|--------|---------------------|-------------------|-------------------|-------|
-| **Serialization time** | Variable | ~50-200 μs | ~50-200 μs | snprintf-based, 512-byte buffer |
-| **Queue handoff** | N/A | ~10-50 μs | ~10-50 μs | FreeRTOS queue send |
-| **Network dispatch** | Blocking | Non-blocking | Non-blocking | Separate network task |
-| **High-priority bypass** | N/A | N/A | **~10-50 μs** | W32: 4-slot priority queue checked first |
+| Metric | Traditional `loop()` | Modest IoT v1.1.2 | Modest IoT v1.2.0 | Modest IoT v1.2.1 | Notes |
+|--------|---------------------|-------------------|-------------------|-------------------|-------|
+| **Serialization time** | Variable | ~50-200 μs | ~50-200 μs | ~50-200 μs | snprintf-based, 512-byte buffer |
+| **Queue handoff** | N/A | ~10-50 μs | ~10-50 μs | ~10-50 μs | FreeRTOS queue send |
+| **Network dispatch** | Blocking | Non-blocking | Non-blocking | Non-blocking | Separate network task |
+| **High-priority bypass** | N/A | N/A | **~10-50 μs** | **~10-50 μs** | W32: 4-slot priority queue checked first |
 
 **Key finding**: W32 (High-Priority Lane) ensures critical alerts bypass routine telemetry with a separate 4-slot queue checked first by the network task.
 
 ### Boot Time
 
-| Metric | Traditional `loop()` | Modest IoT v1.1.2 | Modest IoT v1.2.0 | Notes |
-|--------|---------------------|-------------------|-------------------|-------|
-| **Boot to `setup()`** | ~200 ms | ~320 ms | ~320 ms | ESP-IDF variant: **~180 ms** (140 ms faster) |
-| **Engine start overhead** | N/A | ~50-100 ms | ~50-100 ms | Task creation, queue init, scheduler setup |
+| Metric | Traditional `loop()` | Modest IoT v1.1.2 | Modest IoT v1.2.0 | Modest IoT v1.2.1 | Notes |
+|--------|---------------------|-------------------|-------------------|-------------------|-------|
+| **Boot to `setup()`** | ~200 ms | ~320 ms | ~320 ms | ~320 ms | ESP-IDF variant: **~180 ms** (140 ms faster) |
+| **Engine start overhead** | N/A | ~50-100 ms | ~50-100 ms | ~50-100 ms | Task creation, queue init, scheduler setup |
 
 **Key finding**: Framework adds ~120 ms boot overhead vs bare Arduino. ESP-IDF variant reduces total boot to ~180 ms.
 
@@ -254,7 +255,7 @@
 
 ### Example Code Comparison
 
-| Application | Traditional `loop()` | Modest IoT v1.2.0 | Notes |
+| Application | Traditional `loop()` | Modest IoT v1.2.1 | Notes |
 |-------------|---------------------|-------------------|-------|
 | **StatusIndicator** | ~30 lines | ~40 lines | Simplest example, LED + timer |
 | **HomeSecurityDevice** | ~80-100 lines | ~60-80 lines | Motion + door sensor, buzzer |
@@ -270,7 +271,7 @@ The benchmark table above combines **source code analysis** (exact values from c
 
 ### Reference Applications
 
-Run the same three reference applications on the same ESP32 board, once per variant (plain `loop()`, Modest IoT v1.1.2, Modest IoT v1.2.0):
+Run the same three reference applications on the same ESP32 board, once per variant (plain `loop()`, Modest IoT v1.1.2, Modest IoT v1.2.0, Modest IoT v1.2.1):
 
 1. **Multi-sensor monitor**: DHT, BH1750, and a button, with a display and Wi-Fi/MQTT telemetry.
 2. **Blocking-sensor stress**: The monitor plus an HX711 and an ultrasonic sensor.
@@ -295,8 +296,9 @@ Run the same three reference applications on the same ESP32 board, once per vari
 The framework's CI pipeline already validates:
 
 - **Host tests**: 49 test suites pass with Address and Undefined sanitizers on Ubuntu and macOS.
-- **Example compilation**: All 26 examples compile on ESP32 and ESP32-S3 targets.
+- **Example compilation**: All 26 examples compile on ESP32 and ESP32-S3 targets using ESP32 Arduino core 4.0.0+ with the `huge_app` partition scheme (3 MB Flash).
 - **Lint**: Arduino Library Manager compliance via `arduino-lint`.
+- **Coverage**: gcov/lcov integration with 91.5% line coverage on testable code.
 
 ---
 
@@ -316,17 +318,20 @@ The framework's CI pipeline already validates:
 | **49 test suites** | `tests/` directory count (excluding fakes/) | ✓ Verified |
 | **26 examples** | `examples/` directory count | ✓ Verified |
 | **56 headers** | `src/*.h` file count | ✓ Verified |
+| **91.5% code coverage** | gcov/lcov on testable code | ✓ Verified |
+| **ESP32 4.0.0+ support** | CI compiles all 26 examples on ESP32 4.0.0 | ✓ Verified |
 
 ### Competitive Positioning
 
-The Modest IoT Nano Framework v1.2.0 is the **leanest architecturally disciplined Arduino library** with:
+The Modest IoT Nano Framework v1.2.1 is the **leanest architecturally disciplined Arduino library** with:
 
 - **Zero external dependencies** beyond MQTT (ArduinoJson removed).
 - **Zero heap allocation** in the critical path (all stack/static buffers).
 - **Comprehensive diagnostics** with 17 fields in `DiagnosticsSnapshot`.
 - **Production-grade architecture** via Arduino Library Manager installation.
-- **49 host test suites** with CI and sanitizers.
+- **49 host test suites** with CI, sanitizers, and 91.5% code coverage.
 - **26 grounded examples** covering diverse use cases.
+- **ESP32 4.0.0+ support** with unified BLE API (ESP-IDF v6.1.1).
 
 ---
 
