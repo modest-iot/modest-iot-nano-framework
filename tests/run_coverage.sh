@@ -516,11 +516,20 @@ WRAPPER
     chmod +x "${GCOV_WRAPPER}"
 fi
 
+# Capture only project source files. GCC standard library headers (e.g.,
+# /opt/homebrew/Cellar/gcc/.../include/c++/16/bits/) are compiled with
+# coverage flags and produce .gcno files, but we exclude them so they
+# don't appear in the report. The --exclude patterns match common system
+# include paths across macOS (Homebrew), Ubuntu, and other Linux distros.
 lcov --capture \
     --directory "${COVERAGE_DIR}" \
     --output-file "${INFO_FILE}" \
     --gcov-tool "${GCOV_WRAPPER}" \
     --ignore-errors inconsistent,mismatch \
+    --exclude '/opt/homebrew/*' \
+    --exclude '/usr/include/*' \
+    --exclude '/usr/local/*' \
+    --exclude '/Applications/Xcode*/*' \
     2>/dev/null || true
 
 # Check if coverage.info was created and has data
