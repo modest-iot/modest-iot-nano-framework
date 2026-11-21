@@ -86,9 +86,7 @@ jobs:
         run: cd doxygen-html && zip -r ../doxygen-html.zip .
 
       - name: Create GitHub Release
-        # softprops/action-gh-release@v3 still targets Node.js 20. No v4 with Node.js 24 yet.
-        # See: https://github.com/softprops/action-gh-release/issues/654
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           body_path: release_body.md
           files: |
