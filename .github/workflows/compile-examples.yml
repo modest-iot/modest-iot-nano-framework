@@ -25,7 +25,7 @@ jobs:
         uses: arduino/setup-arduino-cli@v1
 
       - name: Add ESP32 board package index
-        run: arduino-cli config add additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+        run: arduino-cli config set additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
 
       - name: Update arduino-cli index
         run: arduino-cli core update-index
