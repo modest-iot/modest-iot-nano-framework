@@ -163,6 +163,7 @@ Before starting the release process, verify:
 - [ ] `README.md` `**Last updated**` date is updated
 - [ ] `SECURITY.md` Supported Versions table is updated
 - [ ] `docs/doxygen-mainpage.md` version reference is updated
+- [ ] `docs/benchmarks.md` version, date, and platform are updated
 - [ ] No blocking issues or open pull requests
 - [ ] Dependency status badges are current (check README badges)
 
@@ -197,6 +198,9 @@ The version is managed in four core files, with three additional documentation f
 | `README.md` | `**Last updated**: 2026-11-21` | Front matter date |
 | `SECURITY.md` | Supported Versions table | Current version row |
 | `docs/doxygen-mainpage.md` | `(v1.2.1)` in first paragraph | API reference version |
+| `docs/benchmarks.md` | `**Version**: 1.2.1` | Benchmark table version |
+| `docs/benchmarks.md` | `**Date**: 2026-11-21` | Benchmark table date |
+| `docs/benchmarks.md` | `**Platform**: ESP32 (Arduino core 4.0.0)` | Benchmark table platform |
 
 ### Version Bump Rules
 
@@ -211,7 +215,7 @@ Follow [Semantic Versioning 2.0.0](https://semver.org/):
 After updating the version files, commit:
 
 ```bash
-git add library.properties library.json docs/Doxyfile CMakeLists.txt README.md SECURITY.md docs/doxygen-mainpage.md
+git add library.properties library.json docs/Doxyfile CMakeLists.txt README.md SECURITY.md docs/doxygen-mainpage.md docs/benchmarks.md
 git commit -m "chore(release): bump version to 1.2.1"
 ```
 
@@ -282,7 +286,7 @@ After the release is complete:
 2. **Verify Arduino Library Manager**: Check that the new version appears in the Library Manager within ~1 hour.
 3. **Verify PlatformIO Registry**: Check that the new version is available at [registry.platformio.org](https://registry.platformio.org/libraries/modest-iot/Modest-IoT-Nano-Framework).
 4. **Update CHANGELOG.md**: Add a new `[Unreleased]` section at the top for future changes.
-5. **Bump develop version**: Update `library.properties`, `library.json`, `docs/Doxyfile`, `CMakeLists.txt`, `README.md`, `SECURITY.md`, and `docs/doxygen-mainpage.md` to the next development version (e.g., `1.3.0-dev`).
+5. **Bump develop version**: Update `library.properties`, `library.json`, `docs/Doxyfile`, `CMakeLists.txt`, `README.md`, `SECURITY.md`, `docs/doxygen-mainpage.md`, and `docs/benchmarks.md` to the next development version (e.g., `1.3.0-dev`).
 6. **Announce the release**: Update any relevant communication channels (GitHub Discussions, social media, etc.).
 
 ### Post-Release Version Bump on develop
@@ -291,8 +295,8 @@ After the release, update `develop` to the next development version:
 
 ```bash
 git checkout develop
-# Update version to 1.3.0-dev in library.properties, library.json, docs/Doxyfile, CMakeLists.txt, README.md, SECURITY.md, and docs/doxygen-mainpage.md
-git add library.properties library.json docs/Doxyfile CMakeLists.txt README.md SECURITY.md docs/doxygen-mainpage.md
+# Update version to 1.3.0-dev in library.properties, library.json, docs/Doxyfile, CMakeLists.txt, README.md, SECURITY.md, docs/doxygen-mainpage.md, and docs/benchmarks.md
+git add library.properties library.json docs/Doxyfile CMakeLists.txt README.md SECURITY.md docs/doxygen-mainpage.md docs/benchmarks.md
 git commit -m "chore: bump develop version to 1.3.0-dev"
 git push origin develop
 ```

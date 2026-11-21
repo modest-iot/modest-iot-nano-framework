@@ -6,6 +6,12 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 
 ### Changed
 
+#### Release Process — Benchmarks Update
+- **docs/release.md**: Added `docs/benchmarks.md` to the release process as part of the version bump checklist. The benchmark table (version, date, platform) is now updated alongside the other version-managed files during each release preparation. Included in the Pre-Release Checklist, Documentation version references table, git add command, and Post-Release version bump section.
+
+#### docs/benchmarks.md v1.2.1 Update
+- **docs/benchmarks.md**: Updated version to 1.2.1, platform to ESP32 4.0.0, and added v1.2.1 column to all comparison tables. Added ESP32 4.0.0 BLE API migration data, CI-measured sketch sizes, code coverage (91.5%), and GitHub Actions Node.js 24 migration to the Framework Efficiency Claims table. Updated validation methodology to mention ESP32 4.0.0 and `huge_app` partition scheme.
+
 #### GitHub Actions Node.js 24 Migration
 - **.github/workflows/compile-examples.yml**: Updated `actions/checkout@v4` → `@v5` and `arduino/setup-arduino-cli@v1` → `@v2` to natively support Node.js 24, eliminating the deprecation warning.
 - **.github/workflows/host-tests.yml**: Updated `actions/checkout@v4` → `@v5` (both jobs) and `actions/upload-artifact@v4` → `@v4.6.0` for Node.js 24 compatibility.
