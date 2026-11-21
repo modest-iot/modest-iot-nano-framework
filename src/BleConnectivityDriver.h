@@ -13,17 +13,18 @@
 #include "ConnectivityDriver.h"
 #include <cstddef>
 #include <cstdint>
-#include <memory>
 
 #if defined(CONFIG_BT_ENABLED) || defined(ARDUINO_ARCH_ESP32) || defined(TEST_MOCK_BLE)
 
-// Forward declarations avoid leaking heavy BLE headers into application code
+#if defined(TEST_MOCK_BLE)
+#include "BLE.h"
+#endif
+
+// Forward declarations avoid leaking heavy BLE headers into application code.
+// In ESP32 4.0.0+, these are lightweight shared handles (value types) from the unified BLE.h API.
 class BLEServer;
 class BLEService;
 class BLECharacteristic;
-class BLEServerCallbacks;
-class BLECharacteristicCallbacks;
-class BLEAdvertising;
 
 /**
  * @brief Bluetooth Low Energy (BLE) connectivity adapter implementing the Nordic UART Service (NUS).
@@ -58,9 +59,6 @@ private:
     BLECharacteristic* rxCharacteristic; ///< RX characteristic for inbound writes.
 
     DataReceivedCallback onDataReceivedHandler; ///< Callback for inbound RX data.
-
-    std::unique_ptr<BLEServerCallbacks> serverCallbacksHandler; ///< Server connection/disconnection callbacks.
-    std::unique_ptr<BLECharacteristicCallbacks> rxCallbacksHandler; ///< RX characteristic write callbacks.
 
 public:
     /**
