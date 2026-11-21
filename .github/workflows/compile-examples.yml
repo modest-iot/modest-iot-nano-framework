@@ -43,6 +43,6 @@ jobs:
             ino_file=$(find "$sketch" -name "*.ino" -maxdepth 1 | head -1)
             if [ -n "$ino_file" ]; then
               echo "Compiling: $ino_file"
-              arduino-cli compile --fqbn esp32:esp32:${{ matrix.board }} --library "${{ github.workspace }}" --build-properties build.partitions=huge_app,upload.maximum_size=3145728 "$ino_file"
+              arduino-cli compile --fqbn esp32:esp32:${{ matrix.board }} --library "${{ github.workspace }}" --build-property build.partitions=huge_app --build-property upload.maximum_size=3145728 "$ino_file"
             fi
           done
