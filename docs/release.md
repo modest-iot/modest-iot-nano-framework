@@ -184,19 +184,19 @@ The version is managed in four core files, with three additional documentation f
 
 | File | Field | Example |
 |------|-------|---------|
-| `library.properties` | `version=1.2.0` | Arduino Library Manager |
-| `library.json` | `"version": "1.2.0"` | PlatformIO Registry |
-| `docs/Doxyfile` | `PROJECT_NUMBER = 1.2.0` | Doxygen API reference |
-| `CMakeLists.txt` | `VERSION 1.2.0` | CMake host test builds |
+| `library.properties` | `version=1.2.1` | Arduino Library Manager |
+| `library.json` | `"version": "1.2.1"` | PlatformIO Registry |
+| `docs/Doxyfile` | `PROJECT_NUMBER = 1.2.1` | Doxygen API reference |
+| `CMakeLists.txt` | `VERSION 1.2.1` | CMake host test builds |
 
 **Documentation version references:**
 
 | File | Field | Example |
 |------|-------|---------|
-| `README.md` | `**Version**: 1.2.0` | Front matter version |
-| `README.md` | `**Last updated**: 2026-11-20` | Front matter date |
+| `README.md` | `**Version**: 1.2.1` | Front matter version |
+| `README.md` | `**Last updated**: 2026-11-21` | Front matter date |
 | `SECURITY.md` | Supported Versions table | Current version row |
-| `docs/doxygen-mainpage.md` | `(v1.2.0)` in first paragraph | API reference version |
+| `docs/doxygen-mainpage.md` | `(v1.2.1)` in first paragraph | API reference version |
 
 ### Version Bump Rules
 
@@ -212,7 +212,7 @@ After updating the version files, commit:
 
 ```bash
 git add library.properties library.json docs/Doxyfile CMakeLists.txt README.md SECURITY.md docs/doxygen-mainpage.md
-git commit -m "chore(release): bump version to 1.2.0"
+git commit -m "chore(release): bump version to 1.2.1"
 ```
 
 ## Registry Publishing

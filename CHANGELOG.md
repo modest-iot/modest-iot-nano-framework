@@ -4,6 +4,8 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-11-21
+
 ### Fixed
 
 - **tests/run_coverage.sh**: Added `--exclude` patterns to `lcov --capture` to filter out GCC standard library headers (Homebrew GCC, Xcode SDK, Linux system headers) from the coverage report. Previously, system headers compiled with coverage flags appeared in the HTML report, inflating the coverage numbers with irrelevant data.
