@@ -32,7 +32,7 @@ jobs:
           cp assets/branding/logo.png docs/build/html/assets/branding/
 
       - name: Upload Doxygen HTML
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: doxygen-html
           path: docs/build/html/
