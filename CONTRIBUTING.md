@@ -23,7 +23,7 @@ This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.
 
 1. **Fork** the repository on GitHub
 2. **Clone** your fork locally
-3. **Install dependencies**: ArduinoJson ≥7.0.0, MQTT ≥2.5.3
+3. **Install dependencies**: MQTT ≥2.5.3 (the only external Arduino dependency; ArduinoJson was removed in v1.2.0)
 4. **Run tests**: `bash tests/run_all.sh` to verify your environment
 5. **Create a branch** for your changes (see [Git Flow Branching Strategy](#git-flow-branching-strategy))
 
@@ -223,8 +223,9 @@ The version is managed in four core files, with three additional documentation f
 6. **`README.md`**: `**Last updated**: 2026-11-21` — front matter date
 7. **`SECURITY.md`**: Supported Versions table — current version row
 8. **`docs/doxygen-mainpage.md`**: `(v1.2.1)` — API reference version
+9. **`docs/benchmarks.md`**: `**Version**: 1.2.1`, `**Date**`, `**Platform**` — benchmark table header
 
-All eight must be updated together when creating a release. Git tags (`v1.2.1`) are created automatically by the Git Flow Helper Plugin during the Release Finish step.
+All nine must be updated together when creating a release. Git tags (`v1.2.1`) are created automatically by the Git Flow Helper Plugin during the Release Finish step.
 
 **Note**: Other documentation files (e.g., `docs/improvements.md`, `docs/user-stories.md`, `docs/evolution.md`, `docs/quick-start.md`) contain historical version references that should not be updated during a release.
 
@@ -235,7 +236,7 @@ All eight must be updated together when creating a release. Git tags (`v1.2.1`) 
 Use the GitHub Issues page to report bugs. Include:
 
 - **ESP32 board model** (e.g., ESP32 DevKit, ESP32-S3)
-- **Arduino core version** (e.g., 3.3.12)
+- **ESP32 Arduino core version** (e.g., 4.0.0; 4.0.0+ required for BLE support)
 - **Steps to reproduce** the issue
 - **Expected behavior**
 - **Actual behavior**
