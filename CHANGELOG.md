@@ -11,6 +11,15 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - **docs/quick-start.md**: Updated version references from 1.1.2 to 1.2.0 in three locations: Arduino Library Manager version text, VS Code PlatformIO `lib_deps` + download message, and CLion PlatformIO `lib_deps`.
 - **CHANGELOG.md**: Updated Code Coverage Reporting section coverage number from 89.6% to 91.5% line coverage.
 
+### Changed
+
+#### ESP32 4.0.0 BLE API Migration
+- **src/BleConnectivityDriver.h/cpp**: Migrated from ESP32 3.x BLE API (`BLEDevice.h`/`BLEServer.h`) to ESP32 4.0.0 unified `BLE.h`. All BLE API calls updated: `BLE::begin()` instead of `BLEDevice::init()`, `BLE::createServer()` returns reference instead of pointer, lambda callbacks instead of callback classes, `BLEProperty::Notify` enum instead of `BLECharacteristic::PROPERTY_NOTIFY`, and `chr.getValue(&length)` replaces `chr.getData()`/`chr.getLength()`. ESP32 4.0.0 is now the minimum supported version for BLE functionality.
+- **tests/fakes/BLE.h**: Consolidated all BLE mock types (BLEProperty, BLEPermission, BLEConnInfo, BTStatus, BLECharacteristic, BLEService, BLEServer, BLEAdvertising, BLE namespace) into a single file mirroring the production `BLE.h` structure. Renamed from `BLEDevice.h` to `BLE.h` to match the original header name.
+- **tests/BleConnectivityDriver/test.cpp** and **tests/BleGatewayClient/test.cpp**: Updated all BLE API usage to match ESP32 4.0.0 value-based API.
+- **README.md**: Added ESP32 4.0.0 requirement note to the BLE section.
+- **docs/quick-start.md**: Added ESP32 4.0.0 requirement to the hardware prerequisites.
+
 ## [1.2.0] - 2026-11-20
 
 ### Fixed
