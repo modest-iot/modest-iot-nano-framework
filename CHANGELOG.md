@@ -6,6 +6,9 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 
 ### Changed
 
+#### Release Process — Documentation Alignment Step
+- **docs/release.md**: Added "Documentation Alignment" section to the release protocol. Before finalizing a release, review all documentation for effects of the changes being released (e.g., ADR supersession, class diagram updates, CONTRIBUTING.md changes). Includes a review table of 11 documentation files, common triggers (API migration, dependency removal, new feature, CI changes, coverage changes), and a 5-step review process. Added to the Pre-Release Checklist and Step-by-Step guide.
+
 #### Release Process — Benchmarks Update
 - **docs/release.md**: Added `docs/benchmarks.md` to the release process as part of the version bump checklist. The benchmark table (version, date, platform) is now updated alongside the other version-managed files during each release preparation. Included in the Pre-Release Checklist, Documentation version references table, git add command, and Post-Release version bump section.
 
