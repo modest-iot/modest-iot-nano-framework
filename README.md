@@ -347,7 +347,7 @@ BleConnectivityDriver bleDriver("MyDevice");
 bleDriver.connect();
 ```
 
-Uses the Nordic UART Service (NUS) GATT profile. Compatible with all ESP32 variants (ESP32, S3, C3, C6, H2). Supports GATT notifications for transmission and write callbacks for reception.
+Uses the Nordic UART Service (NUS) GATT profile. Compatible with all ESP32 variants (ESP32, S3, C3, C6, H2). Supports GATT notifications for transmission and write callbacks for reception. Requires **ESP32 Arduino core 4.0.0 or later** for BLE API compatibility.
 
 ### MQTT
 
