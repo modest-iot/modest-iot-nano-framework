@@ -15,6 +15,9 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 #### Class Diagram — ESP32 4.0.0 BLE API Update
 - **docs/class-diagram.puml**: Updated `BleConnectivityDriver` class to reflect ESP32 4.0.0 BLE API changes: member types changed from pointers to values (`BLEServer*` → `BLEServer`, `BLECharacteristic*` → `BLECharacteristic`), added missing members (`bleService`, `initialized`, `onDataReceivedHandler`), and added new methods (`handlePeerConnected`, `handlePeerDisconnected`, `disconnect`, `getSignalStrengthInDbm`, `handleDataReceived`). Title updated to v1.2.1.
 
+#### ADRs — Supersession Notes
+- **docs/adrs.md**: Marked ADR-012 (ArduinoJson Retained) and ADR-021 (Golden Host Tests) as Superseded, as both were reversed by W46 (ArduinoJson removal). Added supersession notes explaining the replacement decisions. Updated ADR-016 (Dependency Hygiene) and ADR-017 (Shared Mock Harness) with Notes sections documenting the evolution (ArduinoJson removed, BLE mocks consolidated into BLE.h). Updated table of contents statuses and category summary.
+
 #### GitHub Actions Node.js 24 Migration
 - **.github/workflows/compile-examples.yml**: Updated `actions/checkout@v4` → `@v5` and `arduino/setup-arduino-cli@v1` → `@v2` to natively support Node.js 24, eliminating the deprecation warning.
 - **.github/workflows/host-tests.yml**: Updated `actions/checkout@v4` → `@v5` (both jobs) and `actions/upload-artifact@v4` → `@v4.6.0` for Node.js 24 compatibility.
