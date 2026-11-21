@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.15...4.3)
 
 # 1. Project Configuration & Metadata
-project(Modest-IoT-Nano-Framework VERSION 1.2.0 LANGUAGES C CXX)
+project(Modest-IoT-Nano-Framework VERSION 1.2.1 LANGUAGES C CXX)
 
 # Work around macOS SDK bug where <atomic> triggers <ctime> before <time.h> defines tm
 add_compile_options(-D_LIBCPP_DISABLE_AVAILABILITY)

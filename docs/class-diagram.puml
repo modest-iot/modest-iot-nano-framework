@@ -5,7 +5,7 @@ skinparam classFontStyle bold
 skinparam packageStyle rectangle
 skinparam linetype ortho
 skinparam shadowing false
-title Modest IoT Nano Framework — Class Diagram (v1.2.0, 56 headers, W41 + W33 + W31)
+title Modest IoT Nano Framework — Class Diagram (v1.2.1, 56 headers, ESP32 4.0.0 BLE API)
 
 ' ─────────────────────────────────────────────
 '  CORE
@@ -761,9 +761,12 @@ package "Connectivity" #EDF3FF {
     -localDeviceName : const char*
     -deviceConnected : volatile bool
     -advertisingActive : bool
-    -bleServer : BLEServer*
-    -txCharacteristic : BLECharacteristic*
-    -rxCharacteristic : BLECharacteristic*
+    -initialized : bool
+    -bleServer : BLEServer
+    -bleService : BLEService
+    -txCharacteristic : BLECharacteristic
+    -rxCharacteristic : BLECharacteristic
+    -onDataReceivedHandler : DataReceivedCallback
     +{static} NUS_SERVICE_UUID : const char*
     +{static} NUS_RX_CHARACTERISTIC_UUID : const char*
     +{static} NUS_TX_CHARACTERISTIC_UUID : const char*
@@ -779,6 +782,11 @@ package "Connectivity" #EDF3FF {
     +stopAdvertising() : void
     +startAdvertising() : void
     +setReceivedDataCallback(callback : DataReceivedCallback) : void
+    +handlePeerConnected() : void
+    +handlePeerDisconnected() : void
+    +disconnect() : void
+    +getSignalStrengthInDbm() const : int32_t
+    +handleDataReceived(data : const uint8_t*, length : size_t) : void
   }
 }
 

@@ -17,10 +17,10 @@
 [![MQTT](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/modest-iot/modest-iot-nano-framework/develop/.badges/mqtt.json)](https://github.com/256dpi/arduino-mqtt)
 [![ESP32](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/modest-iot/modest-iot-nano-framework/develop/.badges/esp32.json)](https://github.com/espressif/arduino-esp32)
 
-**Version**: 1.2.0  
+**Version**: 1.2.1  
 **Author**: Angel Velasquez  
 **Date created**: 2025-03-23  
-**Last updated**: 2026-11-20
+**Last updated**: 2026-11-21
 
 > **Git Flow**: This project uses Git Flow. `main` holds release versions (tagged `v1.0.0`, etc.), `develop` is the integration branch, and feature branches (e.g., `feature/W27-firmware-version`) merge into `develop`.
 

@@ -4,6 +4,35 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 
 ## [Unreleased]
 
+### Changed
+
+#### Release Process — Documentation Alignment Step
+- **docs/release.md**: Added "Documentation Alignment" section to the release protocol. Before finalizing a release, review all documentation for effects of the changes being released (e.g., ADR supersession, class diagram updates, CONTRIBUTING.md changes). Includes a review table of 11 documentation files, common triggers (API migration, dependency removal, new feature, CI changes, coverage changes), and a 5-step review process. Added to the Pre-Release Checklist and Step-by-Step guide.
+
+#### Release Process — Benchmarks Update
+- **docs/release.md**: Added `docs/benchmarks.md` to the release process as part of the version bump checklist. The benchmark table (version, date, platform) is now updated alongside the other version-managed files during each release preparation. Included in the Pre-Release Checklist, Documentation version references table, git add command, and Post-Release version bump section.
+
+#### docs/benchmarks.md v1.2.1 Update
+- **docs/benchmarks.md**: Updated version to 1.2.1, platform to ESP32 4.0.0, and added v1.2.1 column to all comparison tables. Added ESP32 4.0.0 BLE API migration data, CI-measured sketch sizes, code coverage (91.5%), and GitHub Actions Node.js 24 migration to the Framework Efficiency Claims table. Updated validation methodology to mention ESP32 4.0.0 and `huge_app` partition scheme.
+
+#### Class Diagram — ESP32 4.0.0 BLE API Update
+- **docs/class-diagram.puml**: Updated `BleConnectivityDriver` class to reflect ESP32 4.0.0 BLE API changes: member types changed from pointers to values (`BLEServer*` → `BLEServer`, `BLECharacteristic*` → `BLECharacteristic`), added missing members (`bleService`, `initialized`, `onDataReceivedHandler`), and added new methods (`handlePeerConnected`, `handlePeerDisconnected`, `disconnect`, `getSignalStrengthInDbm`, `handleDataReceived`). Title updated to v1.2.1.
+
+#### CONTRIBUTING.md — Dependencies and Version Management Update
+- **CONTRIBUTING.md**: Removed stale ArduinoJson dependency reference ("ArduinoJson ≥7.0.0, MQTT ≥2.5.3" → "MQTT ≥2.5.3 (the only external Arduino dependency; ArduinoJson was removed in v1.2.0)"). Added `docs/benchmarks.md` to Version Management section (9 version-managed files total). Updated Bug Reports section to note ESP32 Arduino core 4.0.0+ requirement for BLE support.
+
+#### ADRs — Supersession Notes
+- **docs/adrs.md**: Marked ADR-012 (ArduinoJson Retained) and ADR-021 (Golden Host Tests) as Superseded, as both were reversed by W46 (ArduinoJson removal). Added supersession notes explaining the replacement decisions. Updated ADR-016 (Dependency Hygiene) and ADR-017 (Shared Mock Harness) with Notes sections documenting the evolution (ArduinoJson removed, BLE mocks consolidated into BLE.h). Updated table of contents statuses and category summary.
+
+#### GitHub Actions Node.js 24 Migration
+- **.github/workflows/compile-examples.yml**: Updated `actions/checkout@v4` → `@v5` and `arduino/setup-arduino-cli@v1` → `@v2` to natively support Node.js 24, eliminating the deprecation warning.
+- **.github/workflows/host-tests.yml**: Updated `actions/checkout@v4` → `@v5` (both jobs) and `actions/upload-artifact@v4` → `@v4.6.0` for Node.js 24 compatibility.
+- **.github/workflows/lint.yml**: Updated `actions/checkout@v4` → `@v5` and `arduino/arduino-lint-action@v1` → `@v3` for Node.js 24 compatibility. Removed the `ACTIONS_RUNNER_NODE_VERSION: 24` environment variable as v3 natively supports Node.js 24.
+- **.github/workflows/release.yml**: Updated `actions/checkout@v4` → `@v5` (both jobs), `actions/upload-artifact@v4` → `@v4.6.0`, `actions/download-artifact@v4` → `@v4.3.0`, and `softprops/action-gh-release@v2` → `@v3` for Node.js 24 compatibility.
+- **.github/workflows/dependency-status.yml**: Updated `actions/checkout@v4` → `@v5` for Node.js 24 compatibility.
+
+## [1.2.1] - 2026-11-21
+
 ### Fixed
 
 - **tests/run_coverage.sh**: Added `--exclude` patterns to `lcov --capture` to filter out GCC standard library headers (Homebrew GCC, Xcode SDK, Linux system headers) from the coverage report. Previously, system headers compiled with coverage flags appeared in the HTML report, inflating the coverage numbers with irrelevant data.

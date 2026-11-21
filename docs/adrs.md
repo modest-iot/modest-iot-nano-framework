@@ -8,7 +8,7 @@ Each ADR documents **why** a decision was made, not just **what** was decided. T
 
 The Modest IoT Nano Framework is a lightweight, deterministic IoT framework for ESP32-based devices. It provides a Mediator design pattern for sensor-actuator wiring, a per-slot sampling scheduler, a telemetry pipeline with ownership safety, and connectivity drivers for Wi-Fi, BLE, and MQTT. The framework runs on FreeRTOS with two isolated tasks: a sampler task for all sensor/actuator I/O and a network task for asynchronous transmission.
 
-The 30 ADRs below span six categories that shaped the framework's architecture:
+The 30 ADRs below span six categories that shaped the framework's architecture. Two are superseded by later decisions.
 
 | #                                                                                          | Title                                                         | Status   | Category     |
 |--------------------------------------------------------------------------------------------|---------------------------------------------------------------|----------|--------------|
@@ -23,7 +23,7 @@ The 30 ADRs below span six categories that shaped the framework's architecture:
 | [ADR-009](#adr-009-sensor-fault-events-with-debounced-threshold-state-machine)             | Sensor Fault Events — Debounced Threshold State Machine       | Accepted | Diagnostics  |
 | [ADR-010](#adr-010-engineconfig-for-tunable-freertos-task-parameters)                      | `EngineConfiguration` — Configurable Task Stacks and Priorities      | Accepted | Threading    |
 | [ADR-011](#adr-011-per-slot-samplingscheduler-with-countdown-based-dispatch)               | `SamplingScheduler` — Per-Slot Countdown Scheduling           | Accepted | Scheduling   |
-| [ADR-012](#adr-012-arduinojson-retained-for-telemetry-serialization)                       | Retain ArduinoJson for Telemetry Serialization                | Accepted | Dependencies |
+| [ADR-012](#adr-012-arduinojson-retained-for-telemetry-serialization)                       | Retain ArduinoJson for Telemetry Serialization                | Superseded | Dependencies |
 | [ADR-013](#adr-013-screaming_snake_case-for-all-preprocessor-macros)                       | `SCREAMING_SNAKE_CASE` Macro Convention                       | Accepted | Naming       |
 | [ADR-014](#adr-014-threading-model--single-context-sampler-with-isolated-network-task)     | Threading Model — Single-Context Sampler                      | Accepted | Threading    |
 | [ADR-015](#adr-015-identifier-registry-with-reserved-ranges)                               | Identifier Registry with Reserved Ranges                      | Accepted | API Design   |
@@ -32,7 +32,7 @@ The 30 ADRs below span six categories that shaped the framework's architecture:
 | [ADR-018](#adr-018-diagnosticssnapshot--on-demand-stack-and-heap-metrics)                  | `DiagnosticsSnapshot` — On-Demand Stack and Heap Metrics      | Accepted | Diagnostics  |
 | [ADR-019](#adr-019-mqtt-reconnect-policy--rate-limited-backoff-with-continuous-keep-alive) | MQTT Reconnect Policy — Rate-Limited Backoff                  | Accepted | Connectivity |
 | [ADR-020](#adr-020-stopasynchronousengine--cooperative-shutdown-via-notification-bits)     | `stopAsynchronousEngine` — Cooperative Shutdown               | Accepted | Threading    |
-| [ADR-021](#adr-021-golden-host-tests-for-telemetry-json-serialization)                     | Golden Host Tests for Telemetry JSON Serialization            | Accepted | Testing      |
+| [ADR-021](#adr-021-golden-host-tests-for-telemetry-json-serialization)                     | Golden Host Tests for Telemetry JSON Serialization            | Superseded | Testing      |
 | [ADR-022](#adr-022-notification-redesign-for-interrupt-driven-sensors-n1)                  | Notification Redesign for Interrupt-Driven Sensors (N1)       | Accepted | Threading    |
 | [ADR-023](#adr-023-domain-driven-design-adoption-and-bounded-contexts)                     | Domain-Driven Design Adoption and Bounded Contexts            | Accepted | Architecture |
 | [ADR-024](#adr-024-command-marshaling-for-cross-task-safety-w12)                           | Command Marshaling for Cross-Task Safety (W12)                | Accepted | Threading    |
@@ -47,7 +47,7 @@ The 30 ADRs below span six categories that shaped the framework's architecture:
 
 - **Accepted** — The decision has been implemented and is in effect.
 - **Proposed** — The decision is documented but not yet implemented; it is a prerequisite for future work.
-- **Superseded** — The decision has been replaced by a newer ADR (none yet).
+- **Superseded** — The decision has been replaced by a newer ADR (ADR-012, ADR-021).
 
 ### Category Summary
 
@@ -60,8 +60,8 @@ The 30 ADRs below span six categories that shaped the framework's architecture:
 | **Diagnostics**  | 2     | Sensor fault events with debounced threshold; on-demand `DiagnosticsSnapshot`                        |
 | **Threading**    | 5     | Single-context sampler model; `EngineConfiguration`; cooperative shutdown; notification redesign; command marshaling |
 | **API Design**   | 2     | `serialize` overload rename; identifier registry with reserved ranges                                |
-| **Dependencies** | 3     | Retain ArduinoJson; five hygiene principles for dependency decisions; native servo and LCD drivers |
-| **Testing**      | 2     | Shared mock harness; golden host tests for JSON serialization                                        |
+| **Dependencies** | 3     | ArduinoJson removed (W46); five hygiene principles for dependency decisions; native servo and LCD drivers |
+| **Testing**      | 2     | Shared mock harness (BLE.h consolidated); golden host tests migrated to native JSON (W46)            |
 | **Architecture** | 1     | DDD adoption, bounded contexts, ubiquitous language, embedded-friendly subset                        |
 | **Power**        | 3     | Tickless scheduling with light sleep; deep sleep with RTC memory; native drivers for battery operation |
 
@@ -418,7 +418,7 @@ Implement `SamplingScheduler` with per-slot periods, staggered initial phases, e
 <a id="adr-012-arduinojson-retained-for-telemetry-serialization"></a>
 ## ADR-012: ArduinoJson Retained for Telemetry Serialization
 
-**Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
+**Status**: Superseded | **Date**: 2026-11-06 | **Supersedes**: N/A
 
 ### Context
 
@@ -437,6 +437,10 @@ Retain ArduinoJson (pinned to `>=7.0.0` in `library.properties`) for now. Defer 
 - **Positive**: Type safety via `operator[]`, automatic string escaping, supports nested objects and arrays if needed, enables deserialization for MQTT subscribe commands.
 - **Negative**: ~30-40 KB Flash footprint, `JsonDocument` heap allocation per serialization.
 - **Rationale**: The framework's usage is lightweight (3 features out of many), and the dependency is properly pinned and cleaned up. The `TelemetryWriter` abstraction can decouple serialization later if needed.
+
+### Supersession
+
+**Superseded in v1.2.0 (W46)**: ArduinoJson was removed and replaced with `TelemetryWriter`/`JsonTelemetryWriter` — a native snprintf-based JSON writer with zero heap allocation. The `TelemetryWriter` abstraction decouples serialization format from telemetry packages, enabling future CBOR/MessagePack support. See [ADR-028](#adr-028-telemetrywriter-abstraction-and-arduinojson-removal-w46).
 
 ### References
 
@@ -579,6 +583,10 @@ Apply the five principles to all dependency decisions. Delete `LoadCellControlle
 - **Negative**: Native HX711 implementation in `LoadCellAmplifier` requires maintenance.
 - **Rationale**: The principles balance developer experience with framework autonomy. Simple protocols (HX711) are replaced; complex ones (DHT, MQTT, JSON) are retained.
 
+### Notes
+
+The five principles remain in effect. The ArduinoJson dependency was later removed in v1.2.0 (W46), reducing external Arduino dependencies from 2 to 1 (MQTT only). The principles themselves were not reversed — the removal followed principle 1 (remove unused) and principle 5 (reduce Library Manager friction).
+
 ### References
 
 - `library.properties`
@@ -609,6 +617,10 @@ Consolidate all mocks into a centralized `tests/fakes/` directory with shared he
 - **Positive**: Single source of truth for mocks. Changes to a mock (e.g., adding a new API) benefit all test suites. Eliminates duplicate code.
 - **Negative**: All tests share the same mock interface; test-specific mocks require conditional compilation.
 - **Rationale**: With 49 test suites, the shared harness eliminates ~49× duplicate mock code and ensures consistent behavior across all tests.
+
+### Notes
+
+The centralized `tests/fakes/` approach remains in effect. The mock file list has evolved: `BLEDevice.h`, `BLEServer.h`, and `BLEUtils.h` were consolidated into a single `BLE.h` mock (ESP32 4.0.0 BLE API migration). `ArduinoJson.h` was removed (W46). Current mock headers: `Arduino.h`, `Wire.h`, `SPI.h`, `BLE.h`, `MQTT.h`, `WiFi.h`, `Client.h`.
 
 ### References
 
@@ -724,7 +736,7 @@ Implement `stopAsynchronousEngine()` with cooperative termination: set notificat
 <a id="adr-021-golden-host-tests-for-telemetry-json-serialization"></a>
 ## ADR-021: Golden Host Tests for Telemetry JSON Serialization
 
-**Status**: Accepted | **Date**: 2026-11-06 | **Supersedes**: N/A
+**Status**: Superseded | **Date**: 2026-11-06 | **Supersedes**: N/A
 
 ### Context
 
@@ -744,10 +756,13 @@ Create `tests/telemetry/test.cpp` with 10 golden test cases covering `SmartBandT
 - **Negative**: ArduinoJson mock uses `std::map` which sorts keys alphabetically, so golden strings reflect alphabetical order.
 - **Rationale**: Golden tests provide the highest assurance that the telemetry pipeline produces correct output. They are proportional in complexity to the value they provide.
 
+### Supersession
+
+**Superseded in v1.2.0 (W46)**: Golden tests were migrated from ArduinoJson mocks to native `TelemetryWriter`/`JsonTelemetryWriter`. The test file was renamed to `tests/TelemetryPackage/test.cpp` and expanded to 15+ golden tests covering all TelemetryPackage subclasses, including `DiagnosticsTelemetryPackage`. The `tests/fakes/ArduinoJson.h` mock was removed. The golden test approach remains valid; only the serialization backend changed.
+
 ### References
 
 - `tests/TelemetryPackage/test.cpp`
-- `tests/fakes/ArduinoJson.h`
 - `docs/improvements.md` (W11, T13)
 
 ---
