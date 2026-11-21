@@ -18,7 +18,7 @@ void testDataReceivedCallback(const char* data, const size_t length) {
 
 [[nodiscard]] int main() {
     // 1. Initial State verification with default device name
-    BLE::reset();
+    BLE_reset();
     lastReceivedPayload.clear();
     lastReceivedLen = 0;
 
@@ -35,7 +35,7 @@ void testDataReceivedCallback(const char* data, const size_t length) {
     }
 
     // 2. Custom device name and connect() initialization sequence
-    BLE::reset();
+    BLE_reset();
     BleConnectivityDriver driver("Custom-ESP32-Node");
     assert(std::strcmp(driver.getDeviceName(), "Custom-ESP32-Node") == 0);
 
@@ -43,24 +43,23 @@ void testDataReceivedCallback(const char* data, const size_t length) {
 
     // Call connect() to initialize BLE stack and start advertising
     driver.connect();
-    assert(BLE::getInitName() == "Custom-ESP32-Node");
+    assert(BLE.getInitName() == "Custom-ESP32-Node");
     assert(driver.isAdvertising());
-    assert(BLE::advertisingInstance.running);
-    assert(!BLE::advertisingInstance.serviceUuids.empty());
-    assert(BLE::advertisingInstance.serviceUuids[0] == BleConnectivityDriver::NUS_SERVICE_UUID);
+    assert(*BLEAdvertising::running);
+    assert(!BLEAdvertising::serviceUuids->empty());
+    assert((*BLEAdvertising::serviceUuids)[0] == BleConnectivityDriver::NUS_SERVICE_UUID);
     assert(!driver.isConnected());
     assert(!driver.canTransmit());
 
-    // Access server via BLE namespace
-    BLEServer& server = BLE::serverInstance;
-    assert(!server.services.empty());
-    BLEService& service = server.services[0];
+    // Access server services via shared static vector
+    assert(!BLEServer::services->empty());
+    BLEService& service = (*BLEServer::services)[0];
     assert(service.uuid == BleConnectivityDriver::NUS_SERVICE_UUID);
-    assert(service.started);
-    assert(service.characteristics.size() == 2);
+    assert(*BLEService::started);
+    assert(BLEService::characteristics->size() == 2);
 
-    BLECharacteristic& txChar = service.characteristics[0];
-    BLECharacteristic& rxChar = service.characteristics[1];
+    BLECharacteristic& txChar = (*BLEService::characteristics)[0];
+    BLECharacteristic& rxChar = (*BLEService::characteristics)[1];
     assert(txChar.uuid == BleConnectivityDriver::NUS_TX_CHARACTERISTIC_UUID);
     assert((txChar.properties & static_cast<uint32_t>(BLEProperty::Notify)) != 0);
 
@@ -68,21 +67,21 @@ void testDataReceivedCallback(const char* data, const size_t length) {
     assert((rxChar.properties & static_cast<uint32_t>(BLEProperty::Write)) != 0);
 
     // 3. Simulate Central Peer Connection
-    assert(server.onConnectCallback);
-    server.onConnectCallback(server, BLEConnInfo("test-conn"));
+    assert(*BLEServer::onConnectCallback);
+    (*BLEServer::onConnectCallback)(BLE.serverInstance, BLEConnInfo("test-conn"));
     assert(driver.isConnected());
     assert(driver.canTransmit());
     assert(!driver.isAdvertising());
 
     // 4. Test outbound transmission over TX characteristic
     assert(driver.transmit("any_target", "Hello BLE World!"));
-    assert(txChar.getStringValue() == "Hello BLE World!");
-    assert(txChar.notifyCount == 1);
+    assert(*BLECharacteristic::value == "Hello BLE World!");
+    assert(*BLECharacteristic::notifyCount == 1);
 
     constexpr uint8_t rawBytes[] = {0x01, 0x02, 0xAA, 0xBB};
     assert(driver.transmitBytes(rawBytes, sizeof(rawBytes)));
-    assert(txChar.getStringValue().size() == 4);
-    assert(txChar.notifyCount == 2);
+    assert(BLECharacteristic::value->size() == 4);
+    assert(*BLECharacteristic::notifyCount == 2);
 
     // Transmit null or 0 length should fail gracefully
     assert(!driver.transmit("any_target", nullptr));
@@ -90,20 +89,20 @@ void testDataReceivedCallback(const char* data, const size_t length) {
     assert(!driver.transmitBytes(rawBytes, 0));
 
     // 5. Test inbound data reception via RX characteristic
-    assert(rxChar.onWriteCallback);
+    assert(*BLECharacteristic::onWriteCallback);
     rxChar.setValue("Command: TURN_ON");
-    rxChar.onWriteCallback(rxChar, BLEConnInfo("test-conn"));
+    (*BLECharacteristic::onWriteCallback)(rxChar, BLEConnInfo("test-conn"));
     assert(lastReceivedPayload == "Command: TURN_ON");
     assert(lastReceivedLen == 16);
 
     // 6. Simulate Central Peer Disconnection
-    assert(server.onDisconnectCallback);
-    server.onDisconnectCallback(server, BLEConnInfo("test-conn"), 0x01);
+    assert(*BLEServer::onDisconnectCallback);
+    (*BLEServer::onDisconnectCallback)(BLE.serverInstance, BLEConnInfo("test-conn"), 0x01);
     assert(!driver.isConnected());
     assert(!driver.canTransmit());
     // Disconnection should automatically restart advertising
     assert(driver.isAdvertising());
-    assert(BLE::advertisingInstance.running);
+    assert(*BLEAdvertising::running);
 
     // Outbound transmit after disconnection must fail safely
     assert(!driver.transmit("any_target", "Data after disconnect"));
@@ -111,11 +110,11 @@ void testDataReceivedCallback(const char* data, const size_t length) {
     // 7. Test manual advertising control
     driver.stopAdvertising();
     assert(!driver.isAdvertising());
-    assert(!BLE::advertisingInstance.running);
+    assert(!*BLEAdvertising::running);
 
     driver.startAdvertising();
     assert(driver.isAdvertising());
-    assert(BLE::advertisingInstance.running);
+    assert(*BLEAdvertising::running);
 
     // 8. Test re-connect idempotency
     driver.connect();
