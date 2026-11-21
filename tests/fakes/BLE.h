@@ -72,10 +72,11 @@ class BLECharacteristic {
 public:
     std::string uuid;
     uint32_t properties;
-    std::string value;
-    size_t notifyCount = 0;
+    // Use shared pointers so copies share the same state
+    static inline std::shared_ptr<std::string> value = std::make_shared<std::string>();
+    static inline std::shared_ptr<size_t> notifyCount = std::make_shared<size_t>(0);
 
-    std::function<void(BLECharacteristic &, const BLEConnInfo &)> onWriteCallback;
+    static inline std::shared_ptr<std::function<void(BLECharacteristic &, const BLEConnInfo &)>> onWriteCallback = std::make_shared<std::function<void(BLECharacteristic &, const BLEConnInfo &)>>();
 
     BLECharacteristic() = default;
     BLECharacteristic(std::string chUuid, const uint32_t props)
@@ -84,42 +85,42 @@ public:
     ~BLECharacteristic() = default;
 
     void onWrite(std::function<void(BLECharacteristic &, const BLEConnInfo &)> callback) {
-        onWriteCallback = std::move(callback);
+        *onWriteCallback = std::move(callback);
     }
 
     void setValue(const uint8_t* data, const size_t size) {
-        value = std::string(reinterpret_cast<const char*>(data), size);
+        *value = std::string(reinterpret_cast<const char*>(data), size);
     }
 
     void setValue(uint8_t* data, const size_t size) {
-        value = std::string(reinterpret_cast<char*>(data), size);
+        *value = std::string(reinterpret_cast<char*>(data), size);
     }
 
     void setValue(const std::string& val) {
-        value = val;
+        *value = val;
     }
 
     [[nodiscard]] std::string getStringValue() const {
-        return value;
+        return *value;
     }
 
     const uint8_t* getValue(size_t* length = nullptr) const {
         if (length != nullptr) {
-            *length = value.size();
+            *length = value->size();
         }
-        return reinterpret_cast<const uint8_t*>(value.data());
+        return reinterpret_cast<const uint8_t*>(value->data());
     }
 
     const uint8_t* getData() const {
-        return reinterpret_cast<const uint8_t*>(value.data());
+        return reinterpret_cast<const uint8_t*>(value->data());
     }
 
     [[nodiscard]] size_t getLength() const {
-        return value.size();
+        return value->size();
     }
 
     void notify() {
-        notifyCount++;
+        (*notifyCount)++;
     }
 };
 
@@ -129,22 +130,23 @@ public:
 class BLEService {
 public:
     std::string uuid;
-    std::vector<BLECharacteristic> characteristics;
-    bool started = false;
+    // Use shared pointer so copies share the same characteristics
+    static inline std::shared_ptr<std::vector<BLECharacteristic>> characteristics = std::make_shared<std::vector<BLECharacteristic>>();
+    static inline std::shared_ptr<bool> started = std::make_shared<bool>(false);
 
     BLEService() = default;
     explicit BLEService(std::string serviceUuid) : uuid(std::move(serviceUuid)) {}
 
-    BLECharacteristic& createCharacteristic(const std::string& chUuid, BLEProperty props, BLEPermission /*permissions*/) {
-        if (characteristics.capacity() == characteristics.size()) {
-            characteristics.reserve(characteristics.capacity() + 2);
+    BLECharacteristic createCharacteristic(const std::string& chUuid, BLEProperty props, BLEPermission /*permissions*/) {
+        if (characteristics->capacity() == characteristics->size()) {
+            characteristics->reserve(characteristics->capacity() + 2);
         }
-        characteristics.emplace_back(chUuid, static_cast<uint32_t>(props));
-        return characteristics.back();
+        characteristics->emplace_back(chUuid, static_cast<uint32_t>(props));
+        return characteristics->back();
     }
 
     void start() {
-        started = true;
+        *started = true;
     }
 };
 
@@ -153,31 +155,31 @@ public:
 // ---------------------------------------------------------------------------
 class BLEServer {
 public:
-    std::vector<BLEService> services;
-
-    std::function<void(BLEServer &, const BLEConnInfo &)> onConnectCallback;
-    std::function<void(BLEServer &, const BLEConnInfo &, uint8_t)> onDisconnectCallback;
+    // Use shared pointers so copies share the same state
+    static inline std::shared_ptr<std::vector<BLEService>> services = std::make_shared<std::vector<BLEService>>();
+    static inline std::shared_ptr<std::function<void(BLEServer &, const BLEConnInfo &)>> onConnectCallback = std::make_shared<std::function<void(BLEServer &, const BLEConnInfo &)>>();
+    static inline std::shared_ptr<std::function<void(BLEServer &, const BLEConnInfo &, uint8_t)>> onDisconnectCallback = std::make_shared<std::function<void(BLEServer &, const BLEConnInfo &, uint8_t)>>();
 
     BLEServer() = default;
 
     void onConnect(std::function<void(BLEServer &, const BLEConnInfo &)> callback) {
-        onConnectCallback = std::move(callback);
+        *onConnectCallback = std::move(callback);
     }
 
     void onDisconnect(std::function<void(BLEServer &, const BLEConnInfo &, uint8_t)> callback) {
-        onDisconnectCallback = std::move(callback);
+        *onDisconnectCallback = std::move(callback);
     }
 
-    BLEService& createService(const std::string& serviceUuid) {
-        if (services.capacity() == services.size()) {
-            services.reserve(services.capacity() + 2);
+    BLEService createService(const std::string& serviceUuid) {
+        if (services->capacity() == services->size()) {
+            services->reserve(services->capacity() + 2);
         }
-        services.emplace_back(std::move(serviceUuid));
-        return services.back();
+        services->emplace_back(std::move(serviceUuid));
+        return services->back();
     }
 
     void start() {
-        for (auto& svc : services) {
+        for (auto& svc : *services) {
             svc.start();
         }
     }
@@ -188,69 +190,81 @@ public:
 // ---------------------------------------------------------------------------
 class BLEAdvertising {
 public:
-    std::vector<std::string> serviceUuids;
-    bool scanResponse = false;
-    bool running = false;
+    // Use shared pointers so copies share the same state
+    static inline std::shared_ptr<std::vector<std::string>> serviceUuids = std::make_shared<std::vector<std::string>>();
+    static inline std::shared_ptr<bool> scanResponse = std::make_shared<bool>(false);
+    static inline std::shared_ptr<bool> running = std::make_shared<bool>(false);
 
     void addServiceUUID(const std::string& uuid) {
-        serviceUuids.push_back(uuid);
+        serviceUuids->push_back(uuid);
     }
 
     void setScanResponse(const bool set) {
-        scanResponse = set;
+        *scanResponse = set;
     }
 
     void start() {
-        running = true;
+        *running = true;
     }
 
     void stop() {
-        running = false;
+        *running = false;
+    }
+
+    [[nodiscard]] bool isRunning() const {
+        return *running;
     }
 };
 
 // ---------------------------------------------------------------------------
-// BLE namespace (ESP32 4.0.0+)
+// BLEClass (ESP32 4.0.0+) - mirrors the global BLE singleton object
 // ---------------------------------------------------------------------------
-namespace BLE {
-    inline std::string deviceName;
-    inline BLEServer serverInstance;
-    inline BLEAdvertising advertisingInstance;
+class BLEClass {
+public:
+    std::string deviceName;
+    BLEServer serverInstance;
+    BLEAdvertising advertisingInstance;
 
-    inline BTStatus begin(const std::string& name) {
+    BTStatus begin(const std::string& name) {
         deviceName = name;
         return BTStatus(true);
     }
 
-    inline BTStatus end(bool release = false) {
+    BTStatus end(bool release = false) {
         (void)release;
         deviceName.clear();
         return BTStatus(true);
     }
 
-    inline BLEServer& createServer() {
+    BLEServer createServer() {
         return serverInstance;
     }
 
-    inline BLEAdvertising& getAdvertising() {
+    BLEAdvertising& getAdvertising() {
         return advertisingInstance;
     }
 
-    inline BTStatus startAdvertising() {
-        advertisingInstance.start();
-        return BTStatus(true);
-    }
-
-    // Test utility - resets all singleton state between tests
-    inline void reset() {
-        serverInstance = BLEServer();
-        advertisingInstance = BLEAdvertising();
-        deviceName.clear();
-    }
-
-    inline const std::string& getInitName() {
+    const std::string& getInitName() const {
         return deviceName;
     }
-} // namespace BLE
+};
+
+// Global BLE singleton object (ESP32 4.0.0+)
+inline BLEClass BLE;
+
+// Test utility - resets all singleton state between tests
+inline void BLE_reset() {
+    BLE.serverInstance = BLEServer();
+    BLE.advertisingInstance = BLEAdvertising();
+    BLE.deviceName.clear();
+    *BLEAdvertising::running = false;
+    *BLEAdvertising::serviceUuids = std::vector<std::string>();
+    *BLEAdvertising::scanResponse = false;
+    *BLEServer::services = std::vector<BLEService>();
+    *BLEService::characteristics = std::vector<BLECharacteristic>();
+    *BLEService::started = false;
+    *BLECharacteristic::value = std::string();
+    *BLECharacteristic::notifyCount = 0;
+}
 
 #endif // FAKE_BLE_DEVICE_H
