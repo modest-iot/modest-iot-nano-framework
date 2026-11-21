@@ -161,10 +161,10 @@ The coverage script ensures these exclusions are visible in the final HTML repor
 ### Current Coverage Numbers
 
 | Scope | Line Coverage | Functions |
-|-------|---------------|-----------|
-| **Testable code (filtered)** | **89.6%** | **86.1%** |
+|-------|---------------|-----------|  
+| **Testable code (filtered)** | **91.5%** | **84.4%** |
 
-The filtered coverage (89.6%) is the most meaningful metric, as it excludes test code, standard library headers, and the 7 platform-specific files listed above. The genhtml report reflects only this filtered set — the excluded files do not appear in the HTML report.
+The filtered coverage (91.5%) is the most meaningful metric, as it excludes test code, GCC standard library headers, and the 7 platform-specific files listed above. The `lcov --capture` step uses `--exclude` patterns to filter out system include paths (Homebrew GCC, Xcode SDK, Linux system headers) so only project source files appear in the report. The genhtml HTML report reflects only this filtered set — the excluded files do not appear.
 
 ## Adding Coverage to New Tests
 
