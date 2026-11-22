@@ -422,6 +422,10 @@ run_test "test_EventAggregator" \
     src/TimeSynchronizationDriver.cpp \
     tests/EventAggregator/test.cpp
 
+# 49. ChangeFilter Suite
+run_test "test_ChangeFilter" \
+    tests/ChangeFilter/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="
