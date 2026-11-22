@@ -5,7 +5,7 @@ skinparam classFontStyle bold
 skinparam packageStyle rectangle
 skinparam linetype ortho
 skinparam shadowing false
-title Modest IoT Nano Framework — Class Diagram (v1.2.1, 56 headers, ESP32 4.0.0 BLE API)
+title Modest IoT Nano Framework — Class Diagram (v1.2.1, 57 headers, ESP32 4.0.0 BLE API)
 
 ' ─────────────────────────────────────────────
 '  CORE
@@ -108,6 +108,14 @@ package "Core" #FAFAFA {
   EventHandler <|.. EventAggregator : implements
   EventAggregator ..> Event : captures and emits
   EventAggregator --> EventHandler : emits composite events
+
+  class ChangeFilter <<template<typename T>>> {
+    +{static} MAXIMUM_SLOTS : uint8_t = 8
+    +Slot : struct {lastValue, deadband, hasLastValue}
+    +configureSlotWithDeadband(slotIndex : uint8_t, deadband : T) : void
+    +isSignificantChange(slotIndex : uint8_t, newValue : T) : bool
+    +reset() : void
+  }
 
   class ConfigurationStore {
     +begin(namespaceName : const char*, readOnly : bool) : bool
