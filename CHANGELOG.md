@@ -4,6 +4,11 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 
 ## [Unreleased]
 
+### Fixed
+
+#### Compile Examples — ESP32 4.0.0 Restoration
+- **.github/workflows/compile-examples.yml**: Restored ESPressif board package index initialization (`arduino-cli config init --additional-urls`), ESP32 4.0.0 version pin (`arduino-cli core install esp32:esp32@4.0.0`), and `huge_app` partition scheme (`--build-property build.partitions=huge_app --build-property upload.maximum_size=3145728`) that were lost during the v1.2.1 release merge conflict resolution. Without these changes, CI compiles against ESP32 3.3.12 which lacks the unified `BLE.h` header required by the ESP32 4.0.0 BLE API migration.
+
 ### Changed
 
 #### Release Process — Documentation Alignment Step
