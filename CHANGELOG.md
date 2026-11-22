@@ -4,12 +4,36 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 
 ## [Unreleased]
 
+### Added
+
+#### Change-Only Mode (W43)
+- **src/ChangeFilter.h**: New template class `ChangeFilter<T>` for per-slot deadband-based telemetry suppression. Configurable deadband threshold per sensor slot (0–7), with first-reading passthrough, NaN/Inf protection, and zero heap allocation. Supports both float (temperature, humidity, pressure) and int (ADC, pulse counts) sensor values.
+- **src/Device.h**: Added `ChangeFilter<float>` and `ChangeFilter<int>` mutable members, two `shouldEnqueue()` template methods, and two new `appendSensorToScheduler()` overloads with deadband parameter for `EventHandler*` and `Sensor*` registration.
+- **src/Device.cpp**: Implemented deadband-aware `appendSensorToScheduler()` overloads that configure the ChangeFilter slot when registering sensors with a non-zero deadband.
+- **tests/ChangeFilter/test.cpp**: 45 host tests covering first reading, deadband boundaries, multi-slot independence, float/int types, NaN/Inf, negative values, and realistic sensor simulations.
+- **examples/WeatherStation/WeatherStation.ino**: Demonstrates change-only mode with 0.5°C temperature deadband on DHT22 sensor.
+
+## [1.2.1] - 2026-11-21
+
 ### Fixed
 
 #### Compile Examples — ESP32 4.0.0 Restoration
 - **.github/workflows/compile-examples.yml**: Restored ESPressif board package index initialization (`arduino-cli config init --additional-urls`), ESP32 4.0.0 version pin (`arduino-cli core install esp32:esp32@4.0.0`), and `huge_app` partition scheme (`--build-property build.partitions=huge_app --build-property upload.maximum_size=3145728`) that were lost during the v1.2.1 release merge conflict resolution. Without these changes, CI compiles against ESP32 3.3.12 which lacks the unified `BLE.h` header required by the ESP32 4.0.0 BLE API migration.
 
+- **tests/run_coverage.sh**: Added `--exclude` patterns to `lcov --capture` to filter out GCC standard library headers (Homebrew GCC, Xcode SDK, Linux system headers) from the coverage report. Previously, system headers compiled with coverage flags appeared in the HTML report, inflating the coverage numbers with irrelevant data.
+- **docs/coverage.md**: Updated coverage numbers from 89.6% to 91.5% line coverage and 86.1% to 84.4% function coverage to reflect the GCC header exclusion. Added explanation of the `--exclude` mechanism.
+- **docs/quick-start.md**: Updated version references from 1.1.2 to 1.2.0 in three locations: Arduino Library Manager version text, VS Code PlatformIO `lib_deps` + download message, and CLion PlatformIO `lib_deps`.
+- **CHANGELOG.md**: Updated Code Coverage Reporting section coverage number from 89.6% to 91.5% line coverage.
+
 ### Changed
+
+#### ESP32 4.0.0 BLE API Migration
+- **src/BleConnectivityDriver.h/cpp**: Migrated from ESP32 3.x BLE API (`BLEDevice.h`/`BLEServer.h`) to ESP32 4.0.0 unified `BLE.h`. All BLE API calls updated: `BLE::begin()` instead of `BLEDevice::init()`, `BLE::createServer()` returns reference instead of pointer, lambda callbacks instead of callback classes, `BLEProperty::Notify` enum instead of `BLECharacteristic::PROPERTY_NOTIFY`, and `chr.getValue(&length)` replaces `chr.getData()`/`chr.getLength()`. ESP32 4.0.0 is now the minimum supported version for BLE functionality.
+- **tests/fakes/BLE.h**: Consolidated all BLE mock types (BLEProperty, BLEPermission, BLEConnInfo, BTStatus, BLECharacteristic, BLEService, BLEServer, BLEAdvertising, BLE namespace) into a single file mirroring the production `BLE.h` structure. Renamed from `BLEDevice.h` to `BLE.h` to match the original header name.
+- **tests/BleConnectivityDriver/test.cpp** and **tests/BleGatewayClient/test.cpp**: Updated all BLE API usage to match ESP32 4.0.0 value-based API.
+- **README.md**: Added ESP32 4.0.0 requirement note to the BLE section.
+- **docs/quick-start.md**: Added ESP32 4.0.0 requirement to the hardware prerequisites.
+- **.github/workflows/compile-examples.yml**: Initialized arduino-cli config with ESPressif board package index URL (`https://espressif.github.io/arduino-esp32/package_esp32_index.json`) using `arduino-cli config init --additional-urls` before installing ESP32 core 4.0.0. The default Arduino index does not include ESP32 4.0.0; the ESPressif-specific index is required. Pinned ESP32 Arduino core to version 4.0.0 (`arduino-cli core install esp32:esp32@4.0.0`) to ensure CI compiles all examples against the required BLE API version. Added `--build-property build.partitions=huge_app --build-property upload.maximum_size=3145728` to the compile command (singular `--build-property`, one per property) to use the "Huge APP" partition scheme (3 MB app / 1 MB SPIFFS), as ESP32 4.0.0 changed the default partition scheme from "no_ota" (2 MB app) to "default" (1.2 MB app / 1.5 MB SPIFFS), which caused examples to exceed the Flash limit.
 
 #### Release Process — Documentation Alignment Step
 - **docs/release.md**: Added "Documentation Alignment" section to the release protocol. Before finalizing a release, review all documentation for effects of the changes being released (e.g., ADR supersession, class diagram updates, CONTRIBUTING.md changes). Includes a review table of 11 documentation files, common triggers (API migration, dependency removal, new feature, CI changes, coverage changes), and a 5-step review process. Added to the Pre-Release Checklist and Step-by-Step guide.
@@ -35,25 +59,6 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - **.github/workflows/lint.yml**: Updated `actions/checkout@v4` → `@v5` and `arduino/arduino-lint-action@v1` → `@v3` for Node.js 24 compatibility. Removed the `ACTIONS_RUNNER_NODE_VERSION: 24` environment variable as v3 natively supports Node.js 24.
 - **.github/workflows/release.yml**: Updated `actions/checkout@v4` → `@v5` (both jobs), `actions/upload-artifact@v4` → `@v4.6.0`, `actions/download-artifact@v4` → `@v4.3.0`, and `softprops/action-gh-release@v2` → `@v3` for Node.js 24 compatibility.
 - **.github/workflows/dependency-status.yml**: Updated `actions/checkout@v4` → `@v5` for Node.js 24 compatibility.
-
-## [1.2.1] - 2026-11-21
-
-### Fixed
-
-- **tests/run_coverage.sh**: Added `--exclude` patterns to `lcov --capture` to filter out GCC standard library headers (Homebrew GCC, Xcode SDK, Linux system headers) from the coverage report. Previously, system headers compiled with coverage flags appeared in the HTML report, inflating the coverage numbers with irrelevant data.
-- **docs/coverage.md**: Updated coverage numbers from 89.6% to 91.5% line coverage and 86.1% to 84.4% function coverage to reflect the GCC header exclusion. Added explanation of the `--exclude` mechanism.
-- **docs/quick-start.md**: Updated version references from 1.1.2 to 1.2.0 in three locations: Arduino Library Manager version text, VS Code PlatformIO `lib_deps` + download message, and CLion PlatformIO `lib_deps`.
-- **CHANGELOG.md**: Updated Code Coverage Reporting section coverage number from 89.6% to 91.5% line coverage.
-
-### Changed
-
-#### ESP32 4.0.0 BLE API Migration
-- **src/BleConnectivityDriver.h/cpp**: Migrated from ESP32 3.x BLE API (`BLEDevice.h`/`BLEServer.h`) to ESP32 4.0.0 unified `BLE.h`. All BLE API calls updated: `BLE::begin()` instead of `BLEDevice::init()`, `BLE::createServer()` returns reference instead of pointer, lambda callbacks instead of callback classes, `BLEProperty::Notify` enum instead of `BLECharacteristic::PROPERTY_NOTIFY`, and `chr.getValue(&length)` replaces `chr.getData()`/`chr.getLength()`. ESP32 4.0.0 is now the minimum supported version for BLE functionality.
-- **tests/fakes/BLE.h**: Consolidated all BLE mock types (BLEProperty, BLEPermission, BLEConnInfo, BTStatus, BLECharacteristic, BLEService, BLEServer, BLEAdvertising, BLE namespace) into a single file mirroring the production `BLE.h` structure. Renamed from `BLEDevice.h` to `BLE.h` to match the original header name.
-- **tests/BleConnectivityDriver/test.cpp** and **tests/BleGatewayClient/test.cpp**: Updated all BLE API usage to match ESP32 4.0.0 value-based API.
-- **README.md**: Added ESP32 4.0.0 requirement note to the BLE section.
-- **docs/quick-start.md**: Added ESP32 4.0.0 requirement to the hardware prerequisites.
-- **.github/workflows/compile-examples.yml**: Initialized arduino-cli config with ESPressif board package index URL (`https://espressif.github.io/arduino-esp32/package_esp32_index.json`) using `arduino-cli config init --additional-urls` before installing ESP32 core 4.0.0. The default Arduino index does not include ESP32 4.0.0; the ESPressif-specific index is required. Pinned ESP32 Arduino core to version 4.0.0 (`arduino-cli core install esp32:esp32@4.0.0`) to ensure CI compiles all examples against the required BLE API version. Added `--build-property build.partitions=huge_app --build-property upload.maximum_size=3145728` to the compile command (singular `--build-property`, one per property) to use the "Huge APP" partition scheme (3 MB app / 1 MB SPIFFS), as ESP32 4.0.0 changed the default partition scheme from "no_ota" (2 MB app) to "default" (1.2 MB app / 1.5 MB SPIFFS), which caused examples to exceed the Flash limit.
 
 ## [1.2.0] - 2026-11-20
 
