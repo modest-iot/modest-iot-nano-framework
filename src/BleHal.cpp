@@ -156,6 +156,7 @@ BleHalCharacteristic BleHalService::createCharacteristic(
         static_cast<BLEPermission>(perms));
 
     BleHalCharacteristic result;
+    result.pImpl = nullptr;
     result.pImpl = new BleHalCharacteristicImpl(std::move(chr));
     return result;
 }
@@ -200,6 +201,7 @@ void BleHalServer::onDisconnect(std::function<void(uint8_t reason)> callback) {
 BleHalService BleHalServer::createService(const char* uuid) {
     BLEService svc = pImpl->server.createService(uuid);
     BleHalService result;
+    result.pImpl = nullptr;
     result.pImpl = new BleHalServiceImpl(std::move(svc));
     return result;
 }
@@ -260,12 +262,14 @@ void bleHalBegin(const char* name) {
 BleHalServer bleHalCreateServer() {
     BLEServer srv = BLE.createServer();
     BleHalServer server;
+    server.pImpl = nullptr;
     server.pImpl = new BleHalServerImpl(std::move(srv));
     return server;
 }
 
 BleHalAdvertising bleHalGetAdvertising() {
     BleHalAdvertising adv;
+    adv.pImpl = nullptr;
     adv.pImpl = new BleHalAdvertisingImpl();
     return adv;
 }
