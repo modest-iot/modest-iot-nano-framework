@@ -6,6 +6,17 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 
 ### Added
 
+#### On-Device ML Inference via emlearn (W47)
+- **src/AiMicroModelController.h**: New abstract base class defining the ML inference interface with `predict()`, `regress()`, `isModelLoaded()`, and `lastResult()` methods. Includes `InferenceResult` enum for status reporting. Zero resource impact when not used.
+- **src/EmlearnController.h**: emlearn-specific implementation wrapping `eml_trees_predict()`, `eml_trees_regress()`, and `eml_net_predict()` behind the uniform AiMicroModelController interface. Forward-declared emlearn types so the header compiles without the library; quantization helper for float-to-int16_t conversion.
+- **tests/AiMicroModelController/test.cpp**: 28 host tests covering tree prediction, net prediction, regression, no model loaded, invalid features, model switching, last result tracking, NaN/Inf in features, and build guard verification.
+- **src/ModestIoT.h**: Added `AiMicroModelController.h` and `EmlearnController.h` to umbrella header in Core Asynchronous Engine section.
+
+#### MPU6050 IMU Sensor
+- **src/ImuSensor.h/cpp**: New MPU6050 6-axis inertial measurement unit sensor (accelerometer + gyroscope). I²C communication with factory calibration data, compensation formulas, and cached readings. Includes circular sample buffer (configurable up to 32 samples) with automatic per-axis windowed RMS and peak-to-peak statistics for vibration analysis.
+- **examples/VibrationMonitor/VibrationMonitor.ino**: New example demonstrating the complete sensor → ML → actuator pipeline: ImuSensor collects vibration data, EmlearnController runs anomaly detection inference, and Buzzer sounds an audible alert when an anomaly is detected.
+- **src/ModestIoT.h**: Added `ImuSensor.h` to umbrella header in Sensors section.
+
 #### Change-Only Mode (W43)
 - **src/ChangeFilter.h**: New template class `ChangeFilter<T>` for per-slot deadband-based telemetry suppression. Configurable deadband threshold per sensor slot (0–7), with first-reading passthrough, NaN/Inf protection, and zero heap allocation. Supports both float (temperature, humidity, pressure) and int (ADC, pulse counts) sensor values.
 - **src/Device.h**: Added `ChangeFilter<float>` and `ChangeFilter<int>` mutable members, two `shouldEnqueue()` template methods, and two new `appendSensorToScheduler()` overloads with deadband parameter for `EventHandler*` and `Sensor*` registration.
@@ -74,7 +85,7 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - **CONTRIBUTING.md**: Updated Version Management section to document all 7 version-managed files (4 core + 3 documentation) with a note that other docs/ files contain historical version references that should not be updated during a release.
 
 #### Code Coverage Reporting
-- **tests/run_coverage.sh**: Coverage runner script that compiles all 49 test suites with gcov instrumentation (`-fprofile-arcs -ftest-coverage`), runs them, and generates an HTML coverage report using lcov's `genhtml`. Supports configurable minimum coverage threshold (default 80%) via `MIN_COVERAGE` environment variable, and optional enforcement via `ENFORCE_COVERAGE=1`. Runs without sanitizers to avoid gcov interference. Requires GCC (not Clang) and the lcov package. Includes a gcov wrapper that suppresses `.gcov` annotated source files from being written to the project root. Platform-specific files (OneWireTemperatureSensor.cpp, DhtSensor.cpp, UltrasonicSensor.cpp, LoadCellAmplifier.cpp, TelemetryBuffer.cpp, PowerManager.cpp, GatewayClient.h) are excluded from the coverage report and deleted from the build directory before `genhtml` runs, so the HTML report reflects only testable code (91.5% line coverage).
+- **tests/run_coverage.sh**: Coverage runner script that compiles all 51 test suites with gcov instrumentation (`-fprofile-arcs -ftest-coverage`), runs them, and generates an HTML coverage report using lcov's `genhtml`. Supports configurable minimum coverage threshold (default 80%) via `MIN_COVERAGE` environment variable, and optional enforcement via `ENFORCE_COVERAGE=1`. Runs without sanitizers to avoid gcov interference. Requires GCC (not Clang) and the lcov package. Includes a gcov wrapper that suppresses `.gcov` annotated source files from being written to the project root. Platform-specific files (OneWireTemperatureSensor.cpp, DhtSensor.cpp, UltrasonicSensor.cpp, LoadCellAmplifier.cpp, TelemetryBuffer.cpp, PowerManager.cpp, GatewayClient.h) are excluded from the coverage report and deleted from the build directory before `genhtml` runs, so the HTML report reflects only testable code (91.5% line coverage).
 - **src/Device.cpp**: Added `LCOV_EXCL_START/END` markers to exclude FreeRTOS-specific functions from coverage: ISR handler, task creation, queue operations, command marshaling, diagnostics collection, power management, and engine stop. These ~200 lines cannot execute in host tests.
 - **.github/workflows/host-tests.yml**: Added `coverage` job that runs on Ubuntu, installs lcov and bc, executes the coverage script, uploads the HTML report as a `coverage-report` artifact (14-day retention), and posts the coverage summary to the GitHub step summary.
 - **.gitignore**: Added `*.gcov`, `*.gcda`, `*.gcno` to prevent accidental commits of gcov coverage artifacts.

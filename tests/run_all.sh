@@ -426,6 +426,18 @@ run_test "test_EventAggregator" \
 run_test "test_ChangeFilter" \
     tests/ChangeFilter/test.cpp
 
+# 50. AiMicroModelController Suite
+run_test "test_AiMicroModelController" \
+    -DUSE_EMLEARN \
+    tests/AiMicroModelController/test.cpp
+
+# 51. ImuSensor Suite
+run_test "test_ImuSensor" \
+    tests/fakes/ArduinoFake.cpp \
+    src/Sensor.cpp \
+    src/ImuSensor.cpp \
+    tests/ImuSensor/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="

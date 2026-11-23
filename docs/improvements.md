@@ -42,9 +42,15 @@ Improvements are grouped by theme. Target versions indicate when each improvemen
 
 **✓ Implemented**: ArduinoJson eliminated via `TelemetryWriter` abstraction and native `snprintf`-based JSON serialization. Saves ~30-40 KB Flash, removes per-serialization heap allocation, and unblocks downstream telemetry features. The framework now has only one external dependency (MQTT >=2.5.3).
 
-### On-Device ML Inference (W47)
+### On-Device ML Inference (W47) ✓ Implemented
 
-Latency-critical on-device ML inference using emlearn (~2 KB Flash, ~50 bytes RAM). Opt-in via build guards, Arduino Library Manager compatible. Supports classical ML models: Random Forest, Decision Trees, KNN, simple neural networks.
+**✓ Implemented**: `AiMicroModelController` abstract base class defining the ML inference interface with `predict()`, `regress()`, `isModelLoaded()`, and `lastResult()` methods. `EmlearnController` wraps emlearn's C API (`eml_trees_predict`, `eml_net_predict`) behind the uniform interface with forward-declared emlearn types and float-to-int16_t quantization. Supports tree-based models (RandomForest, DecisionTree), neural networks, and emlearn-generated inline C code via `loadGeneratedModel()`. 28 host tests. Demonstrated in VibrationMonitor example.
+
+**Target**: v1.3.0
+
+### MPU6050 IMU Sensor
+
+**✓ Implemented**: `ImuSensor` for MPU6050 6-axis inertial measurement unit (accelerometer + gyroscope). I²C communication with factory calibration data, compensation formulas, and cached readings. Circular sample buffer (configurable up to 32 samples, default 10) with automatic per-axis windowed RMS and peak-to-peak statistics. Follows the polling sensor event pattern (`DATA_READ_EVENT`) with change detection suppression. Demonstrated in VibrationMonitor example with EmlearnController for anomaly detection.
 
 **Target**: v1.3.0
 
@@ -97,7 +103,7 @@ ESP-NOW or MQTT-based device-to-device messaging for relay nodes and distributed
 
 ### Sensor/Actuator Expansion
 
-Expand the component library (currently 21 sensors, 9 actuators) with additional IoT components: BMP280, INA219, SGP30/SGP40, BMA4000/LIS2DH12, VL53L0X, CAP1188, DC Motor Controller, Stepper Motor, Multi-channel Relay Board.
+Expand the component library (currently 22 sensors, 9 actuators) with additional IoT components: BMP280, INA219, SGP30/SGP40, BMA4000/LIS2DH12, VL53L0X, CAP1188, DC Motor Controller, Stepper Motor, Multi-channel Relay Board.
 
 **Target**: v1.2.0+
 
@@ -158,7 +164,7 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT v1.2.0 (cu
 | Cloud-to-device | Hand-rolled callback                         | `Device::enqueueCommand` with `int32_t` payload for parameterized commands                   | Same, with event aggregation for composite patterns (W29)   |
 | Offline data    | Lost when network unavailable                | `TelemetryBuffer` with LittleFS persistence for offline replay                                      | Same, with event aggregation for composite patterns (W29)       |
 | Updates         | Manual reflashing required                   | OTA updates via `OtaUpdateHandler` component                                                    | Same                                                     |
-| Testing         | Rarely possible off-device                   | 49 host test suites with CI, sanitizers enabled                               | Same                                                |
+| Testing         | Rarely possible off-device                   | 51 host test suites with CI, sanitizers enabled                               | Same                                                |
 | Documentation   | README or inline comments                    | 30 ADRs with rationale, user stories with ADR cross-references, PlantUML class diagram, Doxygen API reference, versioned CHANGELOG, and cross-linked doc ecosystem | Same                                                |
 
 ### Performance

@@ -160,7 +160,7 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
 ### TS15: Validate Framework with Automated Tests
 - **As an** IoT Developer, **I want** the framework to have comprehensive host unit tests and CI workflows, **so that** I can trust the codebase compiles and behaves correctly without deploying to hardware.
 - **Acceptance Criteria**:
-    - **Given** a new pull request, **when** CI runs, **then** all 49 host test suites pass with Address and Undefined sanitizers enabled.
+    - **Given** a new pull request, **when** CI runs, **then** all 51 host test suites pass with Address and Undefined sanitizers enabled.
     - **Given** a new pull request, **when** CI runs, **then** all 26 example sketches compile cleanly on ESP32 and ESP32-S3 targets.
     - **Given** library metadata is changed, **when** CI runs, **then** `arduino-lint` validates Arduino Library Manager compliance.
     - **Given** a telemetry package is serialized in a host test, **when** the golden JSON is compared, **then** the exact output matches the expected string.
@@ -259,7 +259,7 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
     - **Given** W46 is complete, **when** `library.properties` and `library.json` are checked, **then** ArduinoJson is removed from the dependencies list.
     - **Given** W46 is complete, **when** all source files are searched for `#include <ArduinoJson.h>`, **then** no matches are found in production code.
     - **Given** W46 is complete, **when** all 26 examples compile, **then** the build succeeds without ArduinoJson.
-    - **Given** W46 is complete, **when** all 49 host test suites run, **then** all tests pass without the ArduinoJson mock.
+    - **Given** W46 is complete, **when** all 51 host test suites run, **then** all tests pass without the ArduinoJson mock.
 - **Status**: ✓ Implemented (v1.2.0). See `library.properties`, `library.json`, and all migrated source files.
 
 ### TS25: Implement TelemetryWriter Abstraction

@@ -113,7 +113,7 @@ When you push the release branch (step 2: Release Publish), the existing CI work
 
 | Workflow | Purpose |
 |----------|---------|
-| **Host Unit Tests** | Runs all 49 test suites with AddressSanitizer and UBSan (Ubuntu + macOS) |
+| **Host Unit Tests** | Runs all 51 test suites with AddressSanitizer and UBSan (Ubuntu + macOS) |
 | **Code Coverage** | Generates gcov/lcov coverage report (80% threshold) |
 | **Compile Examples** | Compiles all 26 examples for esp32 and esp32s3 |
 | **Lint** | Validates library metadata with strict compliance |

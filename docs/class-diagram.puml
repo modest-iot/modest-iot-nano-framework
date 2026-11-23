@@ -5,7 +5,7 @@ skinparam classFontStyle bold
 skinparam packageStyle rectangle
 skinparam linetype ortho
 skinparam shadowing false
-title Modest IoT Nano Framework — Class Diagram (v1.2.1, 57 headers, ESP32 4.0.0 BLE API)
+title Modest IoT Nano Framework — Class Diagram (v1.3.0, 60 headers, ESP32 4.0.0 BLE API)
 
 ' ─────────────────────────────────────────────
 '  CORE
@@ -116,6 +116,36 @@ package "Core" #FAFAFA {
     +isSignificantChange(slotIndex : uint8_t, newValue : T) : bool
     +reset() : void
   }
+
+  class InferenceResult <<enum>> {
+    + Success
+    + Error
+    + ModelNotLoaded
+    + InvalidFeatures
+  }
+
+  abstract class AiMicroModelController {
+    + predict(features : const float*, nFeatures : int32_t) : int32_t <<abstract>>
+    + regress(features : const float*, nFeatures : int32_t) : float <<abstract>>
+    + isModelLoaded() : bool <<abstract>>
+    + lastResult() : InferenceResult <<abstract>>
+  }
+
+  class EmlearnController {
+    + loadTreeModel(model : const EmlTrees*) : void
+    + loadNetModel(model : const EmlNet*) : void
+    + predict(features : const float*, nFeatures : int32_t) : int32_t
+    + regress(features : const float*, nFeatures : int32_t) : float
+    + isModelLoaded() : bool
+    + lastResult() : InferenceResult
+    - modelType : ModelType
+    - treeModel : const EmlTrees*
+    - netModel : const EmlNet*
+    - lastResultValue : InferenceResult
+  }
+
+  AiMicroModelController <|-- EmlearnController
+  EmlearnController ..> InferenceResult
 
   class ConfigurationStore {
     +begin(namespaceName : const char*, readOnly : bool) : bool
@@ -455,6 +485,65 @@ package "Sensors" #EEF6EE {
   }
 
   BmeEnvironmentalSensor <|-- EnvironmentalGasSensor
+
+  class ImuSensor {
+    -i2cAddress : uint8_t
+    -accelerationOffsetX : int16_t
+    -accelerationOffsetY : int16_t
+    -accelerationOffsetZ : int16_t
+    -gyroscopeOffsetX : int16_t
+    -gyroscopeOffsetY : int16_t
+    -gyroscopeOffsetZ : int16_t
+    -cachedAccelerationXInGForce : float
+    -cachedAccelerationYInGForce : float
+    -cachedAccelerationZInGForce : float
+    -cachedGyroscopeXInDegreesPerSecond : float
+    -cachedGyroscopeYInDegreesPerSecond : float
+    -cachedGyroscopeZInDegreesPerSecond : float
+    -cachedInternalTemperatureInCelsius : float
+    -sampleBufferX : float[MAXIMUM_SAMPLE_WINDOW_SIZE]
+    -sampleBufferY : float[MAXIMUM_SAMPLE_WINDOW_SIZE]
+    -sampleBufferZ : float[MAXIMUM_SAMPLE_WINDOW_SIZE]
+    -sampleWindowIndex : int
+    -sampleWindowCount : int
+    -sampleWindowSize : int
+    +{static} DEFAULT_I2C_ADDRESS : uint8_t = 0x68
+    +{static} ALTERNATE_I2C_ADDRESS : uint8_t = 0x69
+    +{static} DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS : uint32_t = 100
+    +{static} MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS : uint32_t = 5
+    +{static} MAXIMUM_SAMPLE_WINDOW_SIZE : int = 32
+    +{static} DEFAULT_SAMPLE_WINDOW_SIZE : int = 10
+    +{static} IMU_ACCEL_FS_2G : uint8_t
+    +{static} IMU_ACCEL_FS_4G : uint8_t
+    +{static} IMU_ACCEL_FS_8G : uint8_t
+    +{static} IMU_ACCEL_FS_16G : uint8_t
+    +{static} IMU_GYRO_FS_250 : uint8_t
+    +{static} IMU_GYRO_FS_500 : uint8_t
+    +{static} IMU_GYRO_FS_1000 : uint8_t
+    +{static} IMU_GYRO_FS_2000 : uint8_t
+    +ImuSensor(signalGpioPin : int, i2cAddress : uint8_t, accelerationFullScale : uint8_t, gyroscopeFullScale : uint8_t, parentHandler : EventHandler* = nullptr)
+    +initialize() : bool
+    +isInitialized() const : bool
+    +getAccelerationXInGForce() const : float
+    +getAccelerationYInGForce() const : float
+    +getAccelerationZInGForce() const : float
+    +getGyroscopeXInDegreesPerSecond() const : float
+    +getGyroscopeYInDegreesPerSecond() const : float
+    +getGyroscopeZInDegreesPerSecond() const : float
+    +getInternalTemperatureInCelsius() const : float
+    +getAccelerationMagnitudeInGForce() const : float
+    +getAccelerationRmsInGForce() const : float
+    +setSampleWindowSize(size : int) : void
+    +getSampleWindowSize() const : int
+    +getSampleCount() const : int
+    +getAccelerationXRmsInGForce() const : float
+    +getAccelerationYRmsInGForce() const : float
+    +getAccelerationZRmsInGForce() const : float
+    +getAccelerationXPeakToPeakInGForce() const : float
+    +getAccelerationYPeakToPeakInGForce() const : float
+    +getAccelerationZPeakToPeakInGForce() const : float
+    #processEvent(event : Event&) : void
+  }
 
   class WaterFlowSensor {
     -pulseCount : volatile uint32_t
@@ -917,6 +1006,7 @@ Sensor <|-- WaterLeakSensor
 Sensor <|-- DoorWindowSensor
 Sensor <|-- OneWireTemperatureSensor
 Sensor <|-- EnvironmentalGasSensor
+Sensor <|-- ImuSensor
 Sensor <|-- PassiveInfraredSensor
 Sensor <|-- DigitalLightIntensitySensor
 Sensor <|-- GasSensor
