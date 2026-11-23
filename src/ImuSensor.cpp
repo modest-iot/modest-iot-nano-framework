@@ -270,7 +270,7 @@ bool ImuSensor::initialize() {
     delay(IMU_WAKE_UP_DELAY_IN_MILLISECONDS);
 
     // Verify chip ID
-    if (const uint8_t chipId = readRegister(IMU_REGISTER_CHIP_ID); chipId != IMU_CHIP_ID) {
+    if (const uint8_t chipId = readRegister(IMU_REGISTER_CHIP_ID); chipId != IMU_CHIP_ID_INTERNAL) {
         initialized = false;
         return false;
     }

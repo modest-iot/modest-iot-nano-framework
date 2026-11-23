@@ -136,24 +136,16 @@ protected:
     static constexpr uint8_t IMU_REGISTER_SELF_TEST_A = 0x10;
     //@} // IMU I²C Register Addresses
 
-    /** @name IMU Configuration Constants */
+    /** @name IMU Internal Configuration Constants */
     //@{
-    static constexpr uint8_t IMU_CHIP_ID = 0x68; ///< Expected chip ID for MPU6050.
+    static constexpr uint8_t IMU_CHIP_ID_INTERNAL = 0x68; ///< Expected chip ID for MPU6050.
     static constexpr uint8_t IMU_CLOCK_SRC_PLL = 0x01; ///< Use PLL with X-axis gyroscope reference.
     static constexpr uint8_t IMU_DLPF_CFG_184HZ = 0x01; ///< DLPF configuration: 184 Hz bandwidth.
-    static constexpr uint8_t IMU_ACCEL_FS_2G = 0x00; ///< Accelerometer full scale: ±2 g.
-    static constexpr uint8_t IMU_ACCEL_FS_4G = 0x08; ///< Accelerometer full scale: ±4 g.
-    static constexpr uint8_t IMU_ACCEL_FS_8G = 0x10; ///< Accelerometer full scale: ±8 g.
-    static constexpr uint8_t IMU_ACCEL_FS_16G = 0x18; ///< Accelerometer full scale: ±16 g.
-    static constexpr uint8_t IMU_GYRO_FS_250 = 0x00; ///< Gyroscope full scale: ±250 °/s.
-    static constexpr uint8_t IMU_GYRO_FS_500 = 0x08; ///< Gyroscope full scale: ±500 °/s.
-    static constexpr uint8_t IMU_GYRO_FS_1000 = 0x10; ///< Gyroscope full scale: ±1000 °/s.
-    static constexpr uint8_t IMU_GYRO_FS_2000 = 0x18; ///< Gyroscope full scale: ±2000 °/s.
     static constexpr uint8_t IMU_SLEEP_BIT = 0x40; ///< Sleep mode bit in PWR_MGMT_1.
     static constexpr uint8_t IMU_CYCLE_BIT = 0x20; ///< Cycle mode bit in PWR_MGMT_1.
     static constexpr uint8_t IMU_TEMP_DIS_BIT = 0x08; ///< Temperature disable bit in PWR_MGMT_1.
     static constexpr uint32_t IMU_WAKE_UP_DELAY_IN_MILLISECONDS = 30; ///< Gyro ZRO settling time after wake-up (datasheet spec).
-    //@} // IMU Configuration Constants
+    //@} // IMU Internal Configuration Constants
 
     /** @name IMU Data Format Constants */
     //@{
@@ -272,6 +264,23 @@ public:
     static constexpr uint32_t DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS = 100;
     /// Minimum sampling interval in milliseconds (5 ms = 200 Hz, limited by I²C speed).
     static constexpr uint32_t MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS = 5;
+
+    /// Accelerometer full scale: ±2 g.
+    static constexpr uint8_t IMU_ACCEL_FS_2G = 0x00;
+    /// Accelerometer full scale: ±4 g.
+    static constexpr uint8_t IMU_ACCEL_FS_4G = 0x08;
+    /// Accelerometer full scale: ±8 g.
+    static constexpr uint8_t IMU_ACCEL_FS_8G = 0x10;
+    /// Accelerometer full scale: ±16 g.
+    static constexpr uint8_t IMU_ACCEL_FS_16G = 0x18;
+    /// Gyroscope full scale: ±250 °/s.
+    static constexpr uint8_t IMU_GYRO_FS_250 = 0x00;
+    /// Gyroscope full scale: ±500 °/s.
+    static constexpr uint8_t IMU_GYRO_FS_500 = 0x08;
+    /// Gyroscope full scale: ±1000 °/s.
+    static constexpr uint8_t IMU_GYRO_FS_1000 = 0x10;
+    /// Gyroscope full scale: ±2000 °/s.
+    static constexpr uint8_t IMU_GYRO_FS_2000 = 0x18;
 
     /**
      * @brief Constructs an MPU6050 IMU sensor.
