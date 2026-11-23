@@ -31,6 +31,8 @@
 #include "OtaUpdateHandler.h"
 #include "EventAggregator.h"
 #include "ChangeFilter.h"
+#include "AiMicroModelController.h"
+#include "EmlearnController.h"
 //@} // Core Asynchronous Engine & Signaling Primitives
 
 /** @name Layer-Isolated Network Comprehension */
@@ -65,6 +67,7 @@
 #include "SoilMoistureSensor.h"
 #include "WaterFlowSensor.h"
 #include "BmeEnvironmentalSensor.h"
+#include "ImuSensor.h"
 #include "PthSensor.h"
 #include "WaterLeakSensor.h"
 #include "DoorWindowSensor.h"
