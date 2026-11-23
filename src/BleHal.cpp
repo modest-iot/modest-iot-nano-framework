@@ -266,7 +266,7 @@ BleHalAdvertising bleHalGetAdvertising() {
     return adv;
 }
 
-#elif __has_include(<BLEDevice.h>)
+#elif __has_include(<BLEDevice.h>) || defined(ARDUINO_ARCH_ESP32)
 // ============================================================================
 // ESP32 Arduino core 3.x implementation
 // ============================================================================
