@@ -495,6 +495,7 @@ The framework includes 51 host unit test suites that run natively without hardwa
 | `tests/JsonParser/` | JSON parsing utilities, token extraction, Bearer token parsing |
 | `tests/ChangeFilter/` | Deadband-based telemetry suppression, first reading passthrough, multi-slot independence, float/int types, NaN/Inf protection |
 | `tests/AiMicroModelController/` | ML inference interface, tree/net prediction, regression, model switching, invalid features, NaN/Inf handling |
+| `tests/ImuSensor/` | MPU6050 I²C IMU sensor, compensation formulas, sample buffer statistics, event emission, calibration data |
 
 Run all tests locally:
 
@@ -519,7 +520,7 @@ Documentation is split between architecture artifacts in `docs/` and code-level 
 | [`docs/user-stories.md`](docs/user-stories.md) | 19 user stories covering functional and non-functional requirements. |
 | [`docs/improvements.md`](docs/improvements.md) | Active work items, comparison tables, and future work. |
 | [`docs/evolution.md`](docs/evolution.md) | Historical record of completed work items W1–W28 with implementation details. |
-| [`docs/class-diagram.puml`](docs/class-diagram.puml) | PlantUML class diagram covering all 58 source headers. |
+| [`docs/class-diagram.puml`](docs/class-diagram.puml) | PlantUML class diagram covering all 60 source headers. |
 | [`docs/doxygen-mainpage.md`](docs/doxygen-mainpage.md) | Doxygen API reference main page with module navigation and generation instructions. |
 | [`docs/benchmarks.md`](docs/benchmarks.md) | Performance comparison table with 9 metrics: Flash, RAM, latency, throughput, queue depth, stack, heap, serialization, and power. |
 | [`docs/coverage.md`](docs/coverage.md) | Code coverage guide: local execution with gcov/lcov, CI integration, threshold configuration, and report interpretation. |
