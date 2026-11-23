@@ -67,6 +67,8 @@ namespace EmlearnFake {
     inline float gTreesRegressResult = 0.0f;
 }
 
+extern "C" {
+
 // emlearn's real signature: int eml_trees_predict(const EmlTrees*, const int16_t*, int8_t)
 static inline int eml_trees_predict(const EmlTrees* model, const int16_t* features, int8_t nFeatures) {
     (void)model;
@@ -98,3 +100,5 @@ static inline int eml_net_predict_proba(const EmlNet* model, const float* featur
     (void)probs;
     return EmlearnFake::gNetPredictResult;
 }
+
+} // extern "C"
