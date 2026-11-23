@@ -284,7 +284,9 @@ BleHalAdvertising bleHalGetAdvertising() {
 #include <BLECharacteristic.h>
 #include <BLEAdvertising.h>
 #include <BLEUtils.h>
+#if defined(CONFIG_BLUEDROID_ENABLED)
 #include <BLE2902.h>
+#endif
 
 // ---------- Callback adapters ----------
 
@@ -451,12 +453,17 @@ BleHalCharacteristic BleHalService::createCharacteristic(
     }
 
     // Add Client Characteristic Configuration descriptor for Notify/Indicate
+    // Note: NimBLE auto-adds 2902 descriptors when Notify/Indicate properties are set,
+    // so manual addition is only needed for Bluedroid. Guard with type check to avoid
+    // compilation errors when BLE2902 is unavailable.
+#if defined(CONFIG_BLUEDROID_ENABLED)
     if (props & (static_cast<uint32_t>(BleHalProperty::Notify) |
                  static_cast<uint32_t>(BleHalProperty::Indicate))) {
         BLE2902* desc = new BLE2902();
         desc->setNotifications(true);
         chr->addDescriptor(desc);
     }
+#endif
 
     BleHalCharacteristic result;
     result.pImpl->characteristic = chr;
