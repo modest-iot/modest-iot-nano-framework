@@ -159,8 +159,10 @@ public:
 
         // Register MPU6050 accelerometer with the scheduler.
         // The accelerometer samples at 1 Hz (1000 ms interval) for vibration analysis.
+        // Cast to EventHandler* to disambiguate the period-based overload from the
+        // Sensor* deadband overload, since ImuSensor inherits from both.
         appendSensorToScheduler(
-            &accelerometer,
+            static_cast<EventHandler*>(&accelerometer),
             Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
             VIBRATION_SAMPLE_INTERVAL_IN_MILLISECONDS
         );
