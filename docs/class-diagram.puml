@@ -5,7 +5,7 @@ skinparam classFontStyle bold
 skinparam packageStyle rectangle
 skinparam linetype ortho
 skinparam shadowing false
-title Modest IoT Nano Framework — Class Diagram (v1.2.1, 57 headers, ESP32 4.0.0 BLE API)
+title Modest IoT Nano Framework — Class Diagram (v1.3.0, 58 headers, ESP32 4.0.0 BLE API)
 
 ' ─────────────────────────────────────────────
 '  CORE
@@ -116,6 +116,36 @@ package "Core" #FAFAFA {
     +isSignificantChange(slotIndex : uint8_t, newValue : T) : bool
     +reset() : void
   }
+
+  class InferenceResult <<enum>> {
+    + Success
+    + Error
+    + ModelNotLoaded
+    + InvalidFeatures
+  }
+
+  abstract class AiMicroModelController {
+    + predict(features : const float*, nFeatures : int32_t) : int32_t <<abstract>>
+    + regress(features : const float*, nFeatures : int32_t) : float <<abstract>>
+    + isModelLoaded() : bool <<abstract>>
+    + lastResult() : InferenceResult <<abstract>>
+  }
+
+  class EmlearnController {
+    + loadTreeModel(model : const EmlTrees*) : void
+    + loadNetModel(model : const EmlNet*) : void
+    + predict(features : const float*, nFeatures : int32_t) : int32_t
+    + regress(features : const float*, nFeatures : int32_t) : float
+    + isModelLoaded() : bool
+    + lastResult() : InferenceResult
+    - modelType : ModelType
+    - treeModel : const EmlTrees*
+    - netModel : const EmlNet*
+    - lastResultValue : InferenceResult
+  }
+
+  AiMicroModelController <|-- EmlearnController
+  EmlearnController ..> InferenceResult
 
   class ConfigurationStore {
     +begin(namespaceName : const char*, readOnly : bool) : bool
@@ -455,6 +485,24 @@ package "Sensors" #EEF6EE {
   }
 
   BmeEnvironmentalSensor <|-- EnvironmentalGasSensor
+
+  class ImuSensor {
+    -i2cAddress : uint8_t
+    -accelerationOffsetX : int16_t
+    -gyroscopeOffsetX : int16_t
+    -cachedAccelerationXInGForce : float
+    -cachedGyroscopeXInDegreesPerSecond : float
+    -sampleBufferX : float[MAXIMUM_SAMPLE_WINDOW_SIZE]
+    -sampleWindowSize : int
+    +ImuSensor(signalGpioPin : int, i2cAddress : uint8_t, parentHandler : EventHandler* = nullptr)
+    +initialize() : bool
+    +getAccelerationXInGForce() const : float
+    +getGyroscopeXInDegreesPerSecond() const : float
+    +getAccelerationXRmsInGForce() const : float
+    +getAccelerationXPeakToPeakInGForce() const : float
+    +setSampleWindowSize(size : int) : void
+    #processEvent(event : Event&) : void
+  }
 
   class WaterFlowSensor {
     -pulseCount : volatile uint32_t
@@ -917,6 +965,7 @@ Sensor <|-- WaterLeakSensor
 Sensor <|-- DoorWindowSensor
 Sensor <|-- OneWireTemperatureSensor
 Sensor <|-- EnvironmentalGasSensor
+Sensor <|-- ImuSensor
 Sensor <|-- PassiveInfraredSensor
 Sensor <|-- DigitalLightIntensitySensor
 Sensor <|-- GasSensor
