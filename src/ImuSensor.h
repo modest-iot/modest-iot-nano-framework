@@ -63,7 +63,7 @@ protected:
     float cachedGyroscopeXInDegreesPerSecond;     ///< Cached X-axis angular rate in degrees/s.
     float cachedGyroscopeYInDegreesPerSecond;     ///< Cached Y-axis angular rate in degrees/s.
     float cachedGyroscopeZInDegreesPerSecond;     ///< Cached Z-axis angular rate in degrees/s.
-    float cachedTemperatureInCelsius; ///< Cached internal temperature in °C.
+    float cachedInternalTemperatureInCelsius; ///< Cached internal chip temperature in °C.
     //@} // Cached Readings
 
     /** @name Sample Window Configuration */
@@ -115,60 +115,60 @@ protected:
 
     static constexpr int PROPAGATION_SUPPRESSION_IDENTIFIER = -1; ///< Event identifier used internally to prevent propagation.
 
-    /** @name MPU6050 I²C Register Addresses */
+    /** @name IMU I²C Register Addresses */
     //@{
-    static constexpr uint8_t MPU6050_REGISTER_CHIP_ID = 0x75;
-    static constexpr uint8_t MPU6050_REGISTER_SMPLRT_DIV = 0x19;
-    static constexpr uint8_t MPU6050_REGISTER_CONFIG = 0x1A;
-    static constexpr uint8_t MPU6050_REGISTER_GYRO_CONFIG = 0x1B;
-    static constexpr uint8_t MPU6050_REGISTER_ACCEL_CONFIG = 0x1C;
-    static constexpr uint8_t MPU6050_REGISTER_ACCEL_CONFIG2 = 0x1D;
-    static constexpr uint8_t MPU6050_REGISTER_PWR_MGMT_1 = 0x6B;
-    static constexpr uint8_t MPU6050_REGISTER_PWR_MGMT_2 = 0x6C;
-    static constexpr uint8_t MPU6050_REGISTER_INT_ENABLE = 0x38;
-    static constexpr uint8_t MPU6050_REGISTER_INT_STATUS = 0x3A;
-    static constexpr uint8_t MPU6050_REGISTER_ACCEL_XOUT_H = 0x3B;
-    static constexpr uint8_t MPU6050_REGISTER_TEMP_OUT_H = 0x41;
-    static constexpr uint8_t MPU6050_REGISTER_GYRO_XOUT_H = 0x43;
-    static constexpr uint8_t MPU6050_REGISTER_SELF_TEST_X = 0x0D;
-    static constexpr uint8_t MPU6050_REGISTER_SELF_TEST_Y = 0x0E;
-    static constexpr uint8_t MPU6050_REGISTER_SELF_TEST_Z = 0x0F;
-    static constexpr uint8_t MPU6050_REGISTER_SELF_TEST_A = 0x10;
-    //@} // MPU6050 I²C Register Addresses
+    static constexpr uint8_t IMU_REGISTER_CHIP_ID = 0x75;
+    static constexpr uint8_t IMU_REGISTER_SMPLRT_DIV = 0x19;
+    static constexpr uint8_t IMU_REGISTER_CONFIG = 0x1A;
+    static constexpr uint8_t IMU_REGISTER_GYRO_CONFIG = 0x1B;
+    static constexpr uint8_t IMU_REGISTER_ACCEL_CONFIG = 0x1C;
+    static constexpr uint8_t IMU_REGISTER_ACCEL_CONFIG2 = 0x1D;
+    static constexpr uint8_t IMU_REGISTER_PWR_MGMT_1 = 0x6B;
+    static constexpr uint8_t IMU_REGISTER_PWR_MGMT_2 = 0x6C;
+    static constexpr uint8_t IMU_REGISTER_INT_ENABLE = 0x38;
+    static constexpr uint8_t IMU_REGISTER_INT_STATUS = 0x3A;
+    static constexpr uint8_t IMU_REGISTER_ACCEL_XOUT_H = 0x3B;
+    static constexpr uint8_t IMU_REGISTER_TEMP_OUT_H = 0x41;
+    static constexpr uint8_t IMU_REGISTER_GYRO_XOUT_H = 0x43;
+    static constexpr uint8_t IMU_REGISTER_SELF_TEST_X = 0x0D;
+    static constexpr uint8_t IMU_REGISTER_SELF_TEST_Y = 0x0E;
+    static constexpr uint8_t IMU_REGISTER_SELF_TEST_Z = 0x0F;
+    static constexpr uint8_t IMU_REGISTER_SELF_TEST_A = 0x10;
+    //@} // IMU I²C Register Addresses
 
-    /** @name MPU6050 Configuration Constants */
+    /** @name IMU Configuration Constants */
     //@{
-    static constexpr uint8_t MPU6050_CHIP_ID = 0x68; ///< Expected chip ID for MPU6050.
-    static constexpr uint8_t MPU6050_CLOCK_SRC_PLL = 0x01; ///< Use PLL with X-axis gyroscope reference.
-    static constexpr uint8_t MPU6050_DLPF_CFG_184HZ = 0x01; ///< DLPF configuration: 184 Hz bandwidth.
-    static constexpr uint8_t MPU6050_ACCEL_FS_2G = 0x00; ///< Accelerometer full scale: ±2 g.
-    static constexpr uint8_t MPU6050_ACCEL_FS_4G = 0x08; ///< Accelerometer full scale: ±4 g.
-    static constexpr uint8_t MPU6050_ACCEL_FS_8G = 0x10; ///< Accelerometer full scale: ±8 g.
-    static constexpr uint8_t MPU6050_ACCEL_FS_16G = 0x18; ///< Accelerometer full scale: ±16 g.
-    static constexpr uint8_t MPU6050_GYRO_FS_250 = 0x00; ///< Gyroscope full scale: ±250 °/s.
-    static constexpr uint8_t MPU6050_GYRO_FS_500 = 0x08; ///< Gyroscope full scale: ±500 °/s.
-    static constexpr uint8_t MPU6050_GYRO_FS_1000 = 0x10; ///< Gyroscope full scale: ±1000 °/s.
-    static constexpr uint8_t MPU6050_GYRO_FS_2000 = 0x18; ///< Gyroscope full scale: ±2000 °/s.
-    static constexpr uint8_t MPU6050_SLEEP_BIT = 0x40; ///< Sleep mode bit in PWR_MGMT_1.
-    static constexpr uint8_t MPU6050_CYCLE_BIT = 0x20; ///< Cycle mode bit in PWR_MGMT_1.
-    static constexpr uint8_t MPU6050_TEMP_DIS_BIT = 0x08; ///< Temperature disable bit in PWR_MGMT_1.
-    static constexpr uint32_t MPU6050_WAKE_UP_DELAY_IN_MILLISECONDS = 30; ///< Gyro ZRO settling time after wake-up (datasheet spec).
-    //@} // MPU6050 Configuration Constants
+    static constexpr uint8_t IMU_CHIP_ID = 0x68; ///< Expected chip ID for MPU6050.
+    static constexpr uint8_t IMU_CLOCK_SRC_PLL = 0x01; ///< Use PLL with X-axis gyroscope reference.
+    static constexpr uint8_t IMU_DLPF_CFG_184HZ = 0x01; ///< DLPF configuration: 184 Hz bandwidth.
+    static constexpr uint8_t IMU_ACCEL_FS_2G = 0x00; ///< Accelerometer full scale: ±2 g.
+    static constexpr uint8_t IMU_ACCEL_FS_4G = 0x08; ///< Accelerometer full scale: ±4 g.
+    static constexpr uint8_t IMU_ACCEL_FS_8G = 0x10; ///< Accelerometer full scale: ±8 g.
+    static constexpr uint8_t IMU_ACCEL_FS_16G = 0x18; ///< Accelerometer full scale: ±16 g.
+    static constexpr uint8_t IMU_GYRO_FS_250 = 0x00; ///< Gyroscope full scale: ±250 °/s.
+    static constexpr uint8_t IMU_GYRO_FS_500 = 0x08; ///< Gyroscope full scale: ±500 °/s.
+    static constexpr uint8_t IMU_GYRO_FS_1000 = 0x10; ///< Gyroscope full scale: ±1000 °/s.
+    static constexpr uint8_t IMU_GYRO_FS_2000 = 0x18; ///< Gyroscope full scale: ±2000 °/s.
+    static constexpr uint8_t IMU_SLEEP_BIT = 0x40; ///< Sleep mode bit in PWR_MGMT_1.
+    static constexpr uint8_t IMU_CYCLE_BIT = 0x20; ///< Cycle mode bit in PWR_MGMT_1.
+    static constexpr uint8_t IMU_TEMP_DIS_BIT = 0x08; ///< Temperature disable bit in PWR_MGMT_1.
+    static constexpr uint32_t IMU_WAKE_UP_DELAY_IN_MILLISECONDS = 30; ///< Gyro ZRO settling time after wake-up (datasheet spec).
+    //@} // IMU Configuration Constants
 
-    /** @name MPU6050 Data Format Constants */
+    /** @name IMU Data Format Constants */
     //@{
-    static constexpr uint8_t MPU6050_RAW_DATA_BYTE_COUNT = 14; ///< 6 axes + temperature (2 bytes each).
-    static constexpr int16_t MPU6050_ACCEL_LSB_PER_G_2G = 16384; ///< LSB/g for ±2 g range.
-    static constexpr int16_t MPU6050_ACCEL_LSB_PER_G_4G = 8192;  ///< LSB/g for ±4 g range.
-    static constexpr int16_t MPU6050_ACCEL_LSB_PER_G_8G = 4096;  ///< LSB/g for ±8 g range.
-    static constexpr int16_t MPU6050_ACCEL_LSB_PER_G_16G = 2048; ///< LSB/g for ±16 g range.
-    static constexpr float MPU6050_GYRO_DPS_PER_LSB_250 = 131.0f;   ///< LSB per °/s for ±250 °/s.
-    static constexpr float MPU6050_GYRO_DPS_PER_LSB_500 = 65.5f;    ///< LSB per °/s for ±500 °/s.
-    static constexpr float MPU6050_GYRO_DPS_PER_LSB_1000 = 32.8f;   ///< LSB per °/s for ±1000 °/s.
-    static constexpr float MPU6050_GYRO_DPS_PER_LSB_2000 = 16.4f;   ///< LSB per °/s for ±2000 °/s.
-    static constexpr float MPU6050_TEMP_SENSITIVITY = 340.0f;       ///< Temperature sensitivity (counts/°C).
-    static constexpr float MPU6050_TEMP_OFFSET = 36.53f;            ///< Temperature offset (°C).
-    //@} // MPU6050 Data Format Constants
+    static constexpr uint8_t IMU_RAW_DATA_BYTE_COUNT = 14; ///< 6 axes + temperature (2 bytes each).
+    static constexpr int16_t IMU_ACCEL_LSB_PER_G_2G = 16384; ///< LSB/g for ±2 g range.
+    static constexpr int16_t IMU_ACCEL_LSB_PER_G_4G = 8192;  ///< LSB/g for ±4 g range.
+    static constexpr int16_t IMU_ACCEL_LSB_PER_G_8G = 4096;  ///< LSB/g for ±8 g range.
+    static constexpr int16_t IMU_ACCEL_LSB_PER_G_16G = 2048; ///< LSB/g for ±16 g range.
+    static constexpr float IMU_GYRO_DPS_PER_LSB_250 = 131.0f;   ///< LSB per °/s for ±250 °/s.
+    static constexpr float IMU_GYRO_DPS_PER_LSB_500 = 65.5f;    ///< LSB per °/s for ±500 °/s.
+    static constexpr float IMU_GYRO_DPS_PER_LSB_1000 = 32.8f;   ///< LSB per °/s for ±1000 °/s.
+    static constexpr float IMU_GYRO_DPS_PER_LSB_2000 = 16.4f;   ///< LSB per °/s for ±2000 °/s.
+    static constexpr float IMU_TEMP_SENSITIVITY = 340.0f;       ///< Temperature sensitivity (counts/°C).
+    static constexpr float IMU_TEMP_OFFSET = 36.53f;            ///< Temperature offset (°C).
+    //@} // IMU Data Format Constants
 
     uint8_t accelerationFullScale; ///< Current accelerometer full-scale range configuration.
     uint8_t gyroscopeFullScale;  ///< Current gyroscope full-scale range configuration.
@@ -282,8 +282,8 @@ public:
      * @param parentHandler Optional handler that receives emitted events.
      */
     explicit ImuSensor(int signalGpioPin, uint8_t i2cAddress = DEFAULT_I2C_ADDRESS,
-                        uint8_t accelerationFullScale = MPU6050_ACCEL_FS_2G,
-                        uint8_t gyroscopeFullScale = MPU6050_GYRO_FS_250,
+                        uint8_t accelerationFullScale = IMU_ACCEL_FS_2G,
+                        uint8_t gyroscopeFullScale = IMU_GYRO_FS_250,
                         EventHandler* parentHandler = nullptr);
 
     /**
@@ -349,11 +349,13 @@ public:
     //@} // Gyroscope Readings
 
     /**
-     * @brief Returns the internal temperature from the most recent successful sample.
-     * @return Temperature in degrees Celsius.
+     * @brief Returns the internal chip temperature from the most recent successful sample.
+     * @return Internal temperature in degrees Celsius.
+     * @note This is the IMU internal die temperature, not the ambient environmental
+     *       temperature. It reflects chip heating from operation and ambient conditions.
      * @warning Check isInitialized() first; before initialization this returns 0.
      */
-    [[nodiscard]] float getTemperatureInCelsius() const;
+    [[nodiscard]] float getInternalTemperatureInCelsius() const;
 
     /**
      * @brief Computes the total acceleration magnitude from the three axes.

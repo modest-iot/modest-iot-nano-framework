@@ -29,7 +29,7 @@ ImuSensor::ImuSensor(const int signalGpioPin, const uint8_t i2cAddress,
     , cachedGyroscopeXInDegreesPerSecond(INITIAL_CACHED_GYROSCOPE_IN_DEGREES_PER_SECOND)
     , cachedGyroscopeYInDegreesPerSecond(INITIAL_CACHED_GYROSCOPE_IN_DEGREES_PER_SECOND)
     , cachedGyroscopeZInDegreesPerSecond(INITIAL_CACHED_GYROSCOPE_IN_DEGREES_PER_SECOND)
-    , cachedTemperatureInCelsius(INITIAL_CACHED_TEMPERATURE_IN_CELSIUS)
+    , cachedInternalTemperatureInCelsius(INITIAL_CACHED_TEMPERATURE_IN_CELSIUS)
     , sampleBufferX{}
     , sampleBufferY{}
     , sampleBufferZ{}
@@ -43,8 +43,8 @@ ImuSensor::ImuSensor(const int signalGpioPin, const uint8_t i2cAddress,
     , lastNotifiedGyroscopeYInDegreesPerSecond(INITIAL_LAST_NOTIFIED_GYROSCOPE_IN_DEGREES_PER_SECOND)
     , lastNotifiedGyroscopeZInDegreesPerSecond(INITIAL_LAST_NOTIFIED_GYROSCOPE_IN_DEGREES_PER_SECOND)
     , initialized(false)
-    , accelerationFullScale(MPU6050_ACCEL_FS_2G)
-    , gyroscopeFullScale(MPU6050_GYRO_FS_250)
+    , accelerationFullScale(IMU_ACCEL_FS_2G)
+    , gyroscopeFullScale(IMU_GYRO_FS_250)
 {
     Wire.begin();
 }
@@ -67,7 +67,7 @@ ImuSensor::ImuSensor(const int signalGpioPin, const uint8_t i2cAddress,
     , cachedGyroscopeXInDegreesPerSecond(INITIAL_CACHED_GYROSCOPE_IN_DEGREES_PER_SECOND)
     , cachedGyroscopeYInDegreesPerSecond(INITIAL_CACHED_GYROSCOPE_IN_DEGREES_PER_SECOND)
     , cachedGyroscopeZInDegreesPerSecond(INITIAL_CACHED_GYROSCOPE_IN_DEGREES_PER_SECOND)
-    , cachedTemperatureInCelsius(INITIAL_CACHED_TEMPERATURE_IN_CELSIUS)
+    , cachedInternalTemperatureInCelsius(INITIAL_CACHED_TEMPERATURE_IN_CELSIUS)
     , sampleBufferX{}
     , sampleBufferY{}
     , sampleBufferZ{}
@@ -97,19 +97,19 @@ bool ImuSensor::writeRegister(const uint8_t registerAddress, const uint8_t data)
 uint8_t ImuSensor::readRegister(const uint8_t registerAddress) const {
     Wire.beginTransmission(i2cAddress);
     Wire.write(registerAddress);
-    Wire.endTransmission(false);
+    (void)Wire.endTransmission(false);
     Wire.requestFrom(i2cAddress, (uint8_t)1);
     return Wire.read();
 }
 
 bool ImuSensor::readCalibrationData() {
     // Read gyroscope factory trim offsets (registers 0x0D-0x0F)
-    gyroscopeOffsetX = static_cast<int16_t>(readRegister(MPU6050_REGISTER_SELF_TEST_X) << 3);
-    gyroscopeOffsetY = static_cast<int16_t>(readRegister(MPU6050_REGISTER_SELF_TEST_Y) << 3);
-    gyroscopeOffsetZ = static_cast<int16_t>(readRegister(MPU6050_REGISTER_SELF_TEST_Z) << 3);
+    gyroscopeOffsetX = static_cast<int16_t>(readRegister(IMU_REGISTER_SELF_TEST_X) << 3);
+    gyroscopeOffsetY = static_cast<int16_t>(readRegister(IMU_REGISTER_SELF_TEST_Y) << 3);
+    gyroscopeOffsetZ = static_cast<int16_t>(readRegister(IMU_REGISTER_SELF_TEST_Z) << 3);
 
     // Read accelerometer factory trim offset (register 0x10)
-    accelerationOffsetX = static_cast<int16_t>(readRegister(MPU6050_REGISTER_SELF_TEST_A));
+    accelerationOffsetX = static_cast<int16_t>(readRegister(IMU_REGISTER_SELF_TEST_A));
     accelerationOffsetY = 0; // MPU6050 does not expose Y/Z acceleration trim separately
     accelerationOffsetZ = 0;
 
@@ -120,17 +120,17 @@ bool ImuSensor::readRawData(int16_t& rawAccelerationX, int16_t& rawAccelerationY
                                        int16_t& rawTemperature, int16_t& rawGyroscopeX, int16_t& rawGyroscopeY,
                                        int16_t& rawGyroscopeZ) const {
     Wire.beginTransmission(i2cAddress);
-    Wire.write(MPU6050_REGISTER_ACCEL_XOUT_H);
+    Wire.write(IMU_REGISTER_ACCEL_XOUT_H);
     if (Wire.endTransmission(false) != 0) {
         return false;
     }
 
-    if (Wire.requestFrom(i2cAddress, MPU6050_RAW_DATA_BYTE_COUNT) != MPU6050_RAW_DATA_BYTE_COUNT) {
+    if (Wire.requestFrom(i2cAddress, IMU_RAW_DATA_BYTE_COUNT) != IMU_RAW_DATA_BYTE_COUNT) {
         return false;
     }
 
-    uint8_t buffer[MPU6050_RAW_DATA_BYTE_COUNT];
-    for (uint8_t i = 0; i < MPU6050_RAW_DATA_BYTE_COUNT; i++) {
+    uint8_t buffer[IMU_RAW_DATA_BYTE_COUNT];
+    for (uint8_t i = 0; i < IMU_RAW_DATA_BYTE_COUNT; i++) {
         buffer[i] = Wire.read();
     }
 
@@ -161,32 +161,32 @@ float ImuSensor::compensateGyroscope(const int16_t rawGyroscope) const {
 }
 
 float ImuSensor::compensateTemperature(const int16_t rawTemp) {
-    return static_cast<float>(rawTemp) / MPU6050_TEMP_SENSITIVITY + MPU6050_TEMP_OFFSET;
+    return static_cast<float>(rawTemp) / IMU_TEMP_SENSITIVITY + IMU_TEMP_OFFSET;
 }
 
 int16_t ImuSensor::getAccelerationLsbPerGForce() const {
     switch (accelerationFullScale) {
-        case MPU6050_ACCEL_FS_4G:
-            return MPU6050_ACCEL_LSB_PER_G_4G;
-        case MPU6050_ACCEL_FS_8G:
-            return MPU6050_ACCEL_LSB_PER_G_8G;
-        case MPU6050_ACCEL_FS_16G:
-            return MPU6050_ACCEL_LSB_PER_G_16G;
+        case IMU_ACCEL_FS_4G:
+            return IMU_ACCEL_LSB_PER_G_4G;
+        case IMU_ACCEL_FS_8G:
+            return IMU_ACCEL_LSB_PER_G_8G;
+        case IMU_ACCEL_FS_16G:
+            return IMU_ACCEL_LSB_PER_G_16G;
         default:
-            return MPU6050_ACCEL_LSB_PER_G_2G;
+            return IMU_ACCEL_LSB_PER_G_2G;
     }
 }
 
 float ImuSensor::getGyroscopeDegreesPerSecondPerLsb() const {
     switch (gyroscopeFullScale) {
-        case MPU6050_GYRO_FS_500:
-            return MPU6050_GYRO_DPS_PER_LSB_500;
-        case MPU6050_GYRO_FS_1000:
-            return MPU6050_GYRO_DPS_PER_LSB_1000;
-        case MPU6050_GYRO_FS_2000:
-            return MPU6050_GYRO_DPS_PER_LSB_2000;
+        case IMU_GYRO_FS_500:
+            return IMU_GYRO_DPS_PER_LSB_500;
+        case IMU_GYRO_FS_1000:
+            return IMU_GYRO_DPS_PER_LSB_1000;
+        case IMU_GYRO_FS_2000:
+            return IMU_GYRO_DPS_PER_LSB_2000;
         default:
-            return MPU6050_GYRO_DPS_PER_LSB_250;
+            return IMU_GYRO_DPS_PER_LSB_250;
     }
 }
 
@@ -231,7 +231,7 @@ void ImuSensor::processEvent(Event& event) {
         cachedAccelerationXInGForce = newAccelerationX;
         cachedAccelerationYInGForce = newAccelerationY;
         cachedAccelerationZInGForce = newAccelerationZ;
-        cachedTemperatureInCelsius = newTemperature;
+        cachedInternalTemperatureInCelsius = newTemperature;
         cachedGyroscopeXInDegreesPerSecond = newGyroscopeX;
         cachedGyroscopeYInDegreesPerSecond = newGyroscopeY;
         cachedGyroscopeZInDegreesPerSecond = newGyroscopeZ;
@@ -260,39 +260,39 @@ uint32_t ImuSensor::getMinimalSamplingIntervalInMilliseconds() const {
 }
 
 bool ImuSensor::initialize() {
-    // Wake up the MPU6050 (clear sleep bit)
-    if (!writeRegister(MPU6050_REGISTER_PWR_MGMT_1, 0x00)) {
+    // Wake up the IMU (clear sleep bit)
+    if (!writeRegister(IMU_REGISTER_PWR_MGMT_1, 0x00)) {
         initialized = false;
         return false;
     }
     // Datasheet specifies 30ms gyroscope ZRO settling time from power-on.
     // This delay runs once during setup, not in the periodic sampling loop.
-    delay(MPU6050_WAKE_UP_DELAY_IN_MILLISECONDS);
+    delay(IMU_WAKE_UP_DELAY_IN_MILLISECONDS);
 
     // Verify chip ID
-    if (const uint8_t chipId = readRegister(MPU6050_REGISTER_CHIP_ID); chipId != MPU6050_CHIP_ID) {
+    if (const uint8_t chipId = readRegister(IMU_REGISTER_CHIP_ID); chipId != IMU_CHIP_ID) {
         initialized = false;
         return false;
     }
 
     // Configure sample rate, DLPF, full-scale ranges, and clock source
-    if (!writeRegister(MPU6050_REGISTER_SMPLRT_DIV, 0x07)) {
+    if (!writeRegister(IMU_REGISTER_SMPLRT_DIV, 0x07)) {
         initialized = false;
         return false;
     }
-    if (!writeRegister(MPU6050_REGISTER_CONFIG, MPU6050_DLPF_CFG_184HZ)) {
+    if (!writeRegister(IMU_REGISTER_CONFIG, IMU_DLPF_CFG_184HZ)) {
         initialized = false;
         return false;
     }
-    if (!writeRegister(MPU6050_REGISTER_GYRO_CONFIG, gyroscopeFullScale)) {
+    if (!writeRegister(IMU_REGISTER_GYRO_CONFIG, gyroscopeFullScale)) {
         initialized = false;
         return false;
     }
-    if (!writeRegister(MPU6050_REGISTER_ACCEL_CONFIG, accelerationFullScale)) {
+    if (!writeRegister(IMU_REGISTER_ACCEL_CONFIG, accelerationFullScale)) {
         initialized = false;
         return false;
     }
-    if (!writeRegister(MPU6050_REGISTER_PWR_MGMT_1, MPU6050_CLOCK_SRC_PLL)) {
+    if (!writeRegister(IMU_REGISTER_PWR_MGMT_1, IMU_CLOCK_SRC_PLL)) {
         initialized = false;
         return false;
     }
@@ -335,8 +335,8 @@ float ImuSensor::getGyroscopeZInDegreesPerSecond() const {
     return cachedGyroscopeZInDegreesPerSecond;
 }
 
-float ImuSensor::getTemperatureInCelsius() const {
-    return cachedTemperatureInCelsius;
+float ImuSensor::getInternalTemperatureInCelsius() const {
+    return cachedInternalTemperatureInCelsius;
 }
 
 float ImuSensor::getAccelerationMagnitudeInGForce() const {
