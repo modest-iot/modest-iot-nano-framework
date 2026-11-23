@@ -248,7 +248,7 @@
 |--------|-------|-------|
 | **Header files** | 56 | All in `src/` directory |
 | **Source files** | 56 | Matching `.cpp` files |
-| **Test suites** | 49 | Host unit tests (excluding `fakes/`) |
+| **Test suites | 51 | Host unit tests (excluding `fakes/`) |
 | **Examples** | 26 | Grounded real-world devices |
 | **Components** | 30 | 21 sensors + 9 actuators |
 | **Core classes** | 12 | Device, Event, Command, Scheduler, etc. |
@@ -295,7 +295,7 @@ Run the same three reference applications on the same ESP32 board, once per vari
 
 The framework's CI pipeline already validates:
 
-- **Host tests**: 49 test suites pass with Address and Undefined sanitizers on Ubuntu and macOS.
+- **Host tests**: 51 test suites pass with Address and Undefined sanitizers on Ubuntu and macOS.
 - **Example compilation**: All 26 examples compile on ESP32 and ESP32-S3 targets using ESP32 Arduino core 4.0.0+ with the `huge_app` partition scheme (3 MB Flash).
 - **Lint**: Arduino Library Manager compliance via `arduino-lint`.
 - **Coverage**: gcov/lcov integration with 91.5% line coverage on testable code.
@@ -315,7 +315,7 @@ The framework's CI pipeline already validates:
 | **~73% Flash reduction** | ESP-IDF variant: ~180 KB vs ~680 KB | ✓ Planned |
 | **~40 KB RAM saved** | ESP-IDF variant: ~270 KB vs ~230 KB free heap | ✓ Planned |
 | **140 ms faster boot** | ESP-IDF variant: ~180 ms vs ~320 ms | ✓ Planned |
-| **49 test suites** | `tests/` directory count (excluding fakes/) | ✓ Verified |
+| **51 test suites** | `tests/` directory count (excluding fakes/) | ✓ Verified |
 | **26 examples** | `examples/` directory count | ✓ Verified |
 | **56 headers** | `src/*.h` file count | ✓ Verified |
 | **91.5% code coverage** | gcov/lcov on testable code | ✓ Verified |
@@ -329,7 +329,7 @@ The Modest IoT Nano Framework v1.2.1 is the **leanest architecturally discipline
 - **Zero heap allocation** in the critical path (all stack/static buffers).
 - **Comprehensive diagnostics** with 17 fields in `DiagnosticsSnapshot`.
 - **Production-grade architecture** via Arduino Library Manager installation.
-- **49 host test suites** with CI, sanitizers, and 91.5% code coverage.
+- **51 host test suites** with CI, sanitizers, and 91.5% code coverage.
 - **26 grounded examples** covering diverse use cases.
 - **ESP32 4.0.0+ support** with unified BLE API (ESP-IDF v6.1.1).
 

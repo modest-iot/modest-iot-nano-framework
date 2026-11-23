@@ -164,7 +164,7 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT v1.2.0 (cu
 | Cloud-to-device | Hand-rolled callback                         | `Device::enqueueCommand` with `int32_t` payload for parameterized commands                   | Same, with event aggregation for composite patterns (W29)   |
 | Offline data    | Lost when network unavailable                | `TelemetryBuffer` with LittleFS persistence for offline replay                                      | Same, with event aggregation for composite patterns (W29)       |
 | Updates         | Manual reflashing required                   | OTA updates via `OtaUpdateHandler` component                                                    | Same                                                     |
-| Testing         | Rarely possible off-device                   | 49 host test suites with CI, sanitizers enabled                               | Same                                                |
+| Testing         | Rarely possible off-device                   | 51 host test suites with CI, sanitizers enabled                               | Same                                                |
 | Documentation   | README or inline comments                    | 30 ADRs with rationale, user stories with ADR cross-references, PlantUML class diagram, Doxygen API reference, versioned CHANGELOG, and cross-linked doc ecosystem | Same                                                |
 
 ### Performance

@@ -9,7 +9,7 @@
 
 ## Overview
 
-The Modest IoT Nano Framework uses **gcov** and **lcov** to measure test coverage across all 49 host test suites. The coverage report shows which lines of source code are exercised by the test suite, providing evidence of test quality and identifying untested code paths.
+The Modest IoT Nano Framework uses **gcov** and **lcov** to measure test coverage across all 51 host test suites. The coverage report shows which lines of source code are exercised by the test suite, providing evidence of test quality and identifying untested code paths.
 
 ## Running Coverage Locally
 
@@ -41,7 +41,7 @@ Generate a coverage report:
 ./tests/run_coverage.sh
 ```
 
-This compiles all 49 test suites with coverage instrumentation (`-fprofile-arcs -ftest-coverage`), runs them, and generates an HTML report in `build/coverage/index.html`.
+This compiles all 51 test suites with coverage instrumentation (`-fprofile-arcs -ftest-coverage`), runs them, and generates an HTML report in `build/coverage/index.html`.
 
 Set a custom minimum coverage threshold (default: 80%):
 ```bash
