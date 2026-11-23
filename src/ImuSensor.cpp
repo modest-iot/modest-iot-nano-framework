@@ -1,3 +1,11 @@
+/**
+ * @file ImuSensor.cpp
+ * @brief Implements MPU6050 IMU sampling with I²C communication and compensation.
+ * @copyright (c) 2025-2026 Angel Velasquez
+ * @date 2026-11-23
+ * @version 1.0
+ */
+
 #include "ImuSensor.h"
 #include <Wire.h>
 #include <cmath>
@@ -419,4 +427,4 @@ float ImuSensor::getAccelerationZPeakToPeakInGForce() const {
     return maxValue - minValue;
 }
 
-//@} // AccelerometerSensor Implementation
+//@} // ImuSensor Implementation

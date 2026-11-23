@@ -6,6 +6,8 @@
  * @brief Declares the MPU6050 6-axis inertial measurement unit (IMU) sensor.
  * @ingroup sensors_module
  * @copyright (c) 2025-2026 Angel Velasquez
+ * @date 2026-11-23
+ * @version 1.0
  */
 
 #include "Sensor.h"
@@ -27,6 +29,7 @@
  *       interface. Call initialize() to verify connectivity and read calibration
  *       data.
  * @see BmeEnvironmentalSensor
+ * @ingroup sensors_module
  */
 class ImuSensor : public Sensor {
 protected:
@@ -175,6 +178,7 @@ protected:
      * @param registerAddress MPU6050 register address.
      * @param data Byte to write.
      * @return @c true if the write was successful.
+     * @runs_on{sampler}
      */
     bool writeRegister(uint8_t registerAddress, uint8_t data) const;
 
@@ -182,12 +186,14 @@ protected:
      * @brief Reads a single byte from an MPU6050 register.
      * @param registerAddress MPU6050 register address.
      * @return Byte read from the register.
+     * @runs_on{sampler}
      */
     [[nodiscard]] uint8_t readRegister(uint8_t registerAddress) const;
 
     /**
      * @brief Reads the factory calibration offsets from self-test/trim registers.
      * @return @c true if all calibration registers were read successfully.
+     * @runs_on{sampler}
      */
     [[nodiscard]] bool readCalibrationData();
 
@@ -201,6 +207,7 @@ protected:
      * @param rawGyroscopeY Output receiving raw Y-axis angular rate (16-bit).
      * @param rawGyroscopeZ Output receiving raw Z-axis angular rate (16-bit).
      * @return @c true if all 14 data bytes were read successfully.
+     * @runs_on{sampler}
      */
     bool readRawData(int16_t& rawAccelerationX, int16_t& rawAccelerationY, int16_t& rawAccelerationZ,
                      int16_t& rawTemperature, int16_t& rawGyroscopeX, int16_t& rawGyroscopeY,
@@ -210,6 +217,7 @@ protected:
      * @brief Compensates raw acceleration reading to physical units.
      * @param rawAcceleration Raw 16-bit accelerometer value.
      * @return Compensated acceleration in g-force.
+     * @runs_on{sampler}
      */
     float compensateAcceleration(int16_t rawAcceleration) const;
 
@@ -217,6 +225,7 @@ protected:
      * @brief Compensates raw gyroscope reading to physical units.
      * @param rawGyroscope Raw 16-bit gyroscope value.
      * @return Compensated angular rate in degrees/s.
+     * @runs_on{sampler}
      */
     float compensateGyroscope(int16_t rawGyroscope) const;
 
@@ -224,18 +233,21 @@ protected:
      * @brief Compensates raw temperature reading.
      * @param rawTemp Raw 16-bit temperature value.
      * @return Compensated temperature in degrees Celsius.
+     * @runs_on{sampler}
      */
     static float compensateTemperature(int16_t rawTemp);
 
     /**
      * @brief Returns the LSB/g-force divisor for the current accelerometer full-scale range.
      * @return LSB per g-force for the configured range.
+     * @runs_on{sampler}
      */
     [[nodiscard]] int16_t getAccelerationLsbPerGForce() const;
 
     /**
      * @brief Returns the degrees/s per LSB divisor for the current gyroscope full-scale range.
      * @return Degrees/s per LSB for the configured range.
+     * @runs_on{sampler}
      */
     [[nodiscard]] float getGyroscopeDegreesPerSecondPerLsb() const;
 
@@ -243,6 +255,7 @@ protected:
     /**
      * @brief Performs an MPU6050 read cycle and updates cached measurements.
      * @param event Mutable event request/response payload.
+     * @runs_on{sampler}
      */
     void processEvent(Event& event) override;
 
