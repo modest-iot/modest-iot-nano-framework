@@ -145,5 +145,8 @@ void setup() {
 }
 
 void loop() {
+    // The master loop is completely clean and empty.
+    // The framework handles all timing, sensor sampling, and perimeter monitoring asynchronously.
+    // vTaskDelay clarifies that this loop yields to FreeRTOS — the device is loopless.
     vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_IN_MILLISECONDS));
 }

@@ -429,5 +429,6 @@ void setup() {
 
 void loop() {
     // All event handling is interrupt-driven; main loop remains idle.
+    // vTaskDelay clarifies that this loop yields to FreeRTOS — the device is loopless.
     vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_IN_MILLISECONDS));
 }
