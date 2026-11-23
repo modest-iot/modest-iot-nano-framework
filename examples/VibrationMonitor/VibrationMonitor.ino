@@ -83,8 +83,6 @@ static const unsigned long ANOMALY_ALERT_TONE_DURATION_IN_MILLISECONDS = 500;
 
 /** @name Serial Output Configuration */
 //@{
-/** @brief Buffer size for formatted serial output messages. */
-static const size_t SERIAL_OUTPUT_BUFFER_SIZE = 128;
 /** @brief Log prefix for all VibrationMonitor serial output. */
 static const char* VIBRATION_MONITOR_LOG_PREFIX = "[VibrationMonitor]";
 //@} // Serial Output Configuration
@@ -107,30 +105,24 @@ private:
      * @param prediction ML prediction class index.
      */
     void handlePrediction(int32_t prediction) {
-        char buffer[SERIAL_OUTPUT_BUFFER_SIZE];
-
         if (prediction == ANOMALY_CLASS) {
-            snprintf(buffer, SERIAL_OUTPUT_BUFFER_SIZE,
-                     "%s ANOMALY DETECTED — vibration pattern abnormal",
-                     VIBRATION_MONITOR_LOG_PREFIX);
-            Serial.println(buffer);
+            Serial.printf("%s ANOMALY DETECTED — vibration pattern abnormal\n",
+                          VIBRATION_MONITOR_LOG_PREFIX);
 
             // Trigger audible alert via Buzzer actuator.
             // Uses PLAY_TONE_COMMAND with buffered frequency and duration.
             alertBuzzer.setTone(ANOMALY_ALERT_TONE_FREQUENCY_IN_HERTZ,
                                 ANOMALY_ALERT_TONE_DURATION_IN_MILLISECONDS);
-            alertBuzzer.handleCommand(Buzzer::PLAY_TONE_COMMAND);
+            alertBuzzer.handle(Buzzer::PLAY_TONE_COMMAND);
         } else {
-            snprintf(buffer, SERIAL_OUTPUT_BUFFER_SIZE,
-                     "%s Normal vibration — class %d",
-                     VIBRATION_MONITOR_LOG_PREFIX, prediction);
-            Serial.println(buffer);
+            Serial.printf("%s Normal vibration — class %d\n",
+                          VIBRATION_MONITOR_LOG_PREFIX, prediction);
         }
     }
 
 public:
     VibrationMonitor()
-        : Device(DEFAULT_TIMER_CHANNEL, SAMPLER_QUEUE_LENGTH)
+        : Device(VIBRATION_SAMPLE_INTERVAL_IN_MILLISECONDS, DEFAULT_TIMER_CHANNEL)
         , accelerometer(ACCELEROMETER_I2C_ADDRESS, ImuSensor::DEFAULT_I2C_ADDRESS,
                         ImuSensor::IMU_ACCEL_FS_8G,
                         ImuSensor::IMU_GYRO_FS_2000, this)
@@ -143,9 +135,9 @@ public:
 
         // Initialize the MPU6050 accelerometer
         if (!accelerometer.initialize()) {
-            Serial.println(F(VIBRATION_MONITOR_LOG_PREFIX " ERROR: MPU6050 not found!"));
+            Serial.printf("%s ERROR: MPU6050 not found!\n", VIBRATION_MONITOR_LOG_PREFIX);
         } else {
-            Serial.println(F(VIBRATION_MONITOR_LOG_PREFIX " MPU6050 initialized successfully"));
+            Serial.printf("%s MPU6050 initialized successfully\n", VIBRATION_MONITOR_LOG_PREFIX);
         }
 
         // Load the emlearn-generated model into EmlearnController.
@@ -154,29 +146,28 @@ public:
         // the model through a uniform API.
         mlController.loadGeneratedModel(&vibration_predict);
 
-        Serial.println(F(VIBRATION_MONITOR_LOG_PREFIX " Starting vibration monitor"));
-        Serial.println(F(VIBRATION_MONITOR_LOG_PREFIX " ML model: 3 trees, "
-                        "6 features, 2 classes (normal/anomaly)"));
-        Serial.println(F(VIBRATION_MONITOR_LOG_PREFIX " Accelerometer: MPU6050 (±8g, ±2000°/s)"));
-        snprintf(buffer, SERIAL_OUTPUT_BUFFER_SIZE,
-                 "%s Alert buzzer: GPIO %d",
-                 VIBRATION_MONITOR_LOG_PREFIX, BUZZER_GPIO_PIN);
-        Serial.println(buffer);
-        Serial.println(F(VIBRATION_MONITOR_LOG_PREFIX " ML inference ready"));
+        Serial.printf("%s Starting vibration monitor\n", VIBRATION_MONITOR_LOG_PREFIX);
+        Serial.printf("%s ML model: 3 trees, 6 features, 2 classes (normal/anomaly)\n",
+                      VIBRATION_MONITOR_LOG_PREFIX);
+        Serial.printf("%s Accelerometer: MPU6050 (±8g, ±2000°/s)\n",
+                      VIBRATION_MONITOR_LOG_PREFIX);
+        Serial.printf("%s Alert buzzer: GPIO %d\n",
+                      VIBRATION_MONITOR_LOG_PREFIX, BUZZER_GPIO_PIN);
+        Serial.printf("%s ML inference ready\n", VIBRATION_MONITOR_LOG_PREFIX);
 
-        Device::start();
+        initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
 
         // Register MPU6050 accelerometer with the scheduler.
         // The accelerometer samples at 1 Hz (1000 ms interval) for vibration analysis.
         appendSensorToScheduler(
             &accelerometer,
-            MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
+            Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
             VIBRATION_SAMPLE_INTERVAL_IN_MILLISECONDS
         );
     }
 
     void on(Event event) override {
-        if (event.identifier == DATA_READ_EVENT_IDENTIFIER) {
+        if (event.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER) {
             // Extract time-domain features directly from the accelerometer sensor.
             // The sensor maintains a circular sample buffer and computes
             // windowed statistics (RMS and peak-to-peak) automatically.
@@ -196,7 +187,7 @@ public:
             if (mlController.lastResult() == InferenceResult::Success) {
                 handlePrediction(prediction);
             } else {
-                Serial.println(F(VIBRATION_MONITOR_LOG_PREFIX " ML inference failed"));
+                Serial.printf("%s ML inference failed\n", VIBRATION_MONITOR_LOG_PREFIX);
             }
         }
     }
