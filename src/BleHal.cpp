@@ -22,9 +22,7 @@
 #include <esp_arduino_version.h>
 #endif
 
-#if __has_include(<BLE.h>) || defined(TEST_MOCK_BLE) || \
-   (defined(ESP_ARDUINO_VERSION_VAL) && defined(ESP_ARDUINO_VERSION) && \
-    ESP_ARDUINO_VERSION >= ESP_ARDUINO_VERSION_VAL(4, 0, 0))
+#if defined(TEST_MOCK_BLE) || __has_include(<BLE.h>)
 // ============================================================================
 // ESP32 Arduino core 4.0.0+ implementation (also used for TEST_MOCK_BLE)
 // ============================================================================
@@ -272,9 +270,7 @@ BleHalAdvertising bleHalGetAdvertising() {
     return adv;
 }
 
-#elif __has_include(<BLEDevice.h>) || \
-     (defined(ESP_ARDUINO_VERSION_VAL) && defined(ESP_ARDUINO_VERSION) && \
-      ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(4, 0, 0))
+#elif __has_include(<BLEDevice.h>)
 // ============================================================================
 // ESP32 Arduino core 3.x implementation
 // ============================================================================
@@ -585,6 +581,15 @@ BleHalAdvertising bleHalGetAdvertising() {
     return adv;
 }
 
+#elif defined(ARDUINO_ARCH_ESP32)
+// ============================================================================
+// ESP32 Arduino core fallback (Arduino CLI __has_include workaround)
+// ============================================================================
+#if ESP_ARDUINO_VERSION >= ESP_ARDUINO_VERSION_VAL(4, 0, 0)
+#include <BLE.h>
+#else
+#include <BLEDevice.h>
+#endif
 #else
 #error "BLE HAL: No supported ESP32 BLE API found. Requires ESP32 Arduino core 3.x or 4.0.0+"
 #endif
