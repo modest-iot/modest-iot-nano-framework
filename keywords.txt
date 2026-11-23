@@ -39,6 +39,7 @@ DoorWindowSensor	KEYWORD1
 EnvironmentalGasSensor	KEYWORD1
 GasSensor	KEYWORD1
 GeolocationSensor	KEYWORD1
+ImuSensor	KEYWORD1
 LoadCellAmplifier	KEYWORD1
 OneWireTemperatureSensor	KEYWORD1
 PassiveInfraredSensor	KEYWORD1
@@ -265,6 +266,7 @@ OtaUpdateStatus_Error	LITERAL1
 
 # Sensor data getters
 getTemperatureInCelsius	KEYWORD2
+getInternalTemperatureInCelsius	KEYWORD2
 getHumidityInPercentage	KEYWORD2
 getPressureInHectopascals	KEYWORD2
 getAltitudeInMeters	KEYWORD2
@@ -279,6 +281,25 @@ isWaterLeakDetected	KEYWORD2
 isDoorOpen	KEYWORD2
 isActive	KEYWORD2
 changeDetected	KEYWORD2
+
+# ImuSensor specific
+getAccelerationXInGForce	KEYWORD2
+getAccelerationYInGForce	KEYWORD2
+getAccelerationZInGForce	KEYWORD2
+getGyroscopeXInDegreesPerSecond	KEYWORD2
+getGyroscopeYInDegreesPerSecond	KEYWORD2
+getGyroscopeZInDegreesPerSecond	KEYWORD2
+getAccelerationMagnitudeInGForce	KEYWORD2
+getAccelerationRmsInGForce	KEYWORD2
+getAccelerationXRmsInGForce	KEYWORD2
+getAccelerationYRmsInGForce	KEYWORD2
+getAccelerationZRmsInGForce	KEYWORD2
+getAccelerationXPeakToPeakInGForce	KEYWORD2
+getAccelerationYPeakToPeakInGForce	KEYWORD2
+getAccelerationZPeakToPeakInGForce	KEYWORD2
+setSampleWindowSize	KEYWORD2
+getSampleWindowSize	KEYWORD2
+getSampleCount	KEYWORD2
 
 # GasSensor specific
 setR0	KEYWORD2
@@ -423,6 +444,16 @@ DOOR_CLOSED_EVENT_IDENTIFIER	LITERAL1
 # GasSensor events
 DIGITAL_GAS_DETECTED_EVENT	LITERAL1
 DIGITAL_GAS_DETECTED_EVENT_IDENTIFIER	LITERAL1
+
+# ImuSensor constants
+IMU_ACCEL_FS_2G	LITERAL1
+IMU_ACCEL_FS_4G	LITERAL1
+IMU_ACCEL_FS_8G	LITERAL1
+IMU_ACCEL_FS_16G	LITERAL1
+IMU_GYRO_FS_250	LITERAL1
+IMU_GYRO_FS_500	LITERAL1
+IMU_GYRO_FS_1000	LITERAL1
+IMU_GYRO_FS_2000	LITERAL1
 
 # Buzzer commands
 TURN_ON_COMMAND	LITERAL1
