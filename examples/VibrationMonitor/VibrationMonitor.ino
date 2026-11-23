@@ -132,8 +132,8 @@ public:
     VibrationMonitor()
         : Device(DEFAULT_TIMER_CHANNEL, SAMPLER_QUEUE_LENGTH)
         , accelerometer(ACCELEROMETER_I2C_ADDRESS, ImuSensor::DEFAULT_I2C_ADDRESS,
-                        ImuSensor::MPU6050_ACCEL_FS_8G,
-                        ImuSensor::MPU6050_GYRO_FS_2000, this)
+                        ImuSensor::IMU_ACCEL_FS_8G,
+                        ImuSensor::IMU_GYRO_FS_2000, this)
         , alertBuzzer(BUZZER_GPIO_PIN, this)
     {
     }
