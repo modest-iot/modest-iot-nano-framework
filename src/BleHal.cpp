@@ -289,10 +289,9 @@ public:
         if (onConnectCb) onConnectCb();
     }
 
-    void onDisconnect(BLEServer* server, uint16_t conn_id, int reason, bool from_enabler) override {
+    void onDisconnect(BLEServer* server, uint16_t conn_id, int reason) override {
         (void)server;
         (void)conn_id;
-        (void)from_enabler;
         if (onDisconnectCb) onDisconnectCb(static_cast<uint8_t>(reason));
     }
 };
@@ -304,7 +303,7 @@ public:
     void onWrite(BLECharacteristic* chr) override {
         if (onWriteCb && chr) {
             std::string value = chr->getValue();
-            onWriteCb(reinterpret_cast<const uint8_t*>(value.c_str()), value.length());
+            onWriteCb(reinterpret_cast<const uint8_t*>(value.data()), value.length());
         }
     }
 };
@@ -370,7 +369,7 @@ void BleHalCharacteristic::onWrite(std::function<void(const uint8_t* data, size_
 
 void BleHalCharacteristic::setValue(const uint8_t* data, size_t length) {
     if (pImpl->characteristic) {
-        pImpl->characteristic->setValue(reinterpret_cast<const char*>(data), length);
+        pImpl->characteristic->setValue(data, length);
     }
 }
 
@@ -378,7 +377,7 @@ const uint8_t* BleHalCharacteristic::getValue(size_t* len) const {
     if (pImpl->characteristic) {
         pImpl->valueBuffer = pImpl->characteristic->getValue();
         if (len) *len = pImpl->valueBuffer.length();
-        return reinterpret_cast<const uint8_t*>(pImpl->valueBuffer.c_str());
+        return reinterpret_cast<const uint8_t*>(pImpl->valueBuffer.data());
     }
     if (len) *len = 0;
     return nullptr;
@@ -428,7 +427,7 @@ BleHalCharacteristic BleHalService::createCharacteristic(
     if (props & static_cast<uint32_t>(BleHalProperty::ExtendedProps))   ble_props |= 0x80;
 
     BLECharacteristic* chr = pImpl->service->createCharacteristic(
-        BLEUUID(uuid).getNative()->handle, ble_props);
+        uuid, ble_props, ESP_GATT_IF_DEFAULT);
 
     // Set permissions
     uint32_t access_perms = 0;
@@ -445,11 +444,10 @@ BleHalCharacteristic BleHalService::createCharacteristic(
     // Add Client Characteristic Configuration descriptor for Notify/Indicate
     if (props & (static_cast<uint32_t>(BleHalProperty::Notify) |
                  static_cast<uint32_t>(BleHalProperty::Indicate))) {
-        chr->addDescriptor(new BLE2902());
+        BLE2902* desc = new BLE2902();
+        desc->setNotifications(true);
+        chr->addDescriptor(desc);
     }
-
-    // Set up callbacks
-    chr->setCallbacks(chr->getCallbacks() ? chr->getCallbacks() : nullptr);
 
     BleHalCharacteristic result;
     result.pImpl->characteristic = chr;
@@ -505,10 +503,7 @@ BleHalService BleHalServer::createService(const char* uuid) {
 
 void BleHalServer::start() {
     if (pImpl->server) {
-        std::vector<BLEService*> services = pImpl->server->getServices();
-        for (auto* svc : services) {
-            svc->start();
-        }
+        pImpl->server->getServices();
     }
 }
 
