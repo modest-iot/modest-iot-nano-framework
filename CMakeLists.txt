@@ -663,6 +663,33 @@ add_executable(test_EventAggregator
 target_include_directories(test_EventAggregator PRIVATE tests/fakes src)
 target_compile_options(test_EventAggregator PRIVATE -Wall -Wextra -Werror)
 
+add_executable(test_ChangeFilter
+        tests/ChangeFilter/test.cpp
+        ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
+)
+target_include_directories(test_ChangeFilter PRIVATE tests/fakes src)
+target_compile_options(test_ChangeFilter PRIVATE -Wall -Wextra -Werror)
+
+add_executable(test_AiMicroModelController
+        tests/AiMicroModelController/test.cpp
+        ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
+)
+target_compile_definitions(test_AiMicroModelController PRIVATE USE_EMLEARN)
+target_include_directories(test_AiMicroModelController PRIVATE tests/fakes src)
+target_compile_options(test_AiMicroModelController PRIVATE -Wall -Wextra -Werror)
+
+add_executable(test_ImuSensor
+        tests/ImuSensor/test.cpp
+        src/Sensor.cpp
+        src/ImuSensor.cpp
+        ${TEST_FAKES}
+        ${TEST_FAKES_SRC}
+)
+target_include_directories(test_ImuSensor PRIVATE tests/fakes src)
+target_compile_options(test_ImuSensor PRIVATE -Wall -Wextra -Werror)
+
 add_test(NAME DigitalLightIntensitySensorTest COMMAND test_DigitalLightIntensitySensor)
 add_test(NAME RgbLedTest COMMAND test_RgbLed)
 add_test(NAME RelayActuatorTest COMMAND test_RelayActuator)
@@ -711,9 +738,12 @@ add_test(NAME LoadCellAmplifierTest COMMAND test_LoadCellAmplifier)
 add_test(NAME DeviceTest COMMAND test_Device)
 add_test(NAME GeolocationSensorTest COMMAND test_GeolocationSensor)
 add_test(NAME EventAggregatorTest COMMAND test_EventAggregator)
+add_test(NAME ChangeFilterTest COMMAND test_ChangeFilter)
+add_test(NAME AiMicroModelControllerTest COMMAND test_AiMicroModelController)
+add_test(NAME ImuSensorTest COMMAND test_ImuSensor)
 
 add_custom_target(run_tests
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfiguration test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor test_PthSensor test_WaterLeakSensor test_DoorWindowSensor test_OneWireTemperatureSensor test_DhtSensor test_DeepSleep test_ServoMotor test_CharacterLcdDisplay test_OledDisplay test_EnvironmentalGasSensor test_BleGatewayClient test_HttpGatewayClient test_Buzzer test_ConfigurationStore test_TimeSynchronizationDriver test_GasSensor test_Button test_PowerManager test_TelemetryBuffer test_OtaUpdateHandler test_Led test_PassiveInfraredSensor test_PulseSensor test_Hd44780Driver test_Ssd1306Driver test_WiFiConnectivityDriver test_BmeEnvironmentalSensor test_GeolocationSensor test_UltrasonicSensor test_LoadCellAmplifier test_Device test_EventAggregator
+        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfiguration test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor test_PthSensor test_WaterLeakSensor test_DoorWindowSensor test_OneWireTemperatureSensor test_DhtSensor test_DeepSleep test_ServoMotor test_CharacterLcdDisplay test_OledDisplay test_EnvironmentalGasSensor test_BleGatewayClient test_HttpGatewayClient test_Buzzer test_ConfigurationStore test_TimeSynchronizationDriver test_GasSensor test_Button test_PowerManager test_TelemetryBuffer test_OtaUpdateHandler test_Led test_PassiveInfraredSensor test_PulseSensor test_Hd44780Driver test_Ssd1306Driver test_WiFiConnectivityDriver test_BmeEnvironmentalSensor test_GeolocationSensor test_UltrasonicSensor test_LoadCellAmplifier test_Device test_EventAggregator test_ChangeFilter test_AiMicroModelController test_ImuSensor
         COMMENT "Executing all native host test suites..."
 )
