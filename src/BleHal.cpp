@@ -18,7 +18,8 @@
 #include <cstdlib>
 #include <cstring>
 
-#if __has_include(<BLE.h>) || defined(TEST_MOCK_BLE)
+#if __has_include(<BLE.h>) || defined(TEST_MOCK_BLE) || \
+   (defined(ESP_ARDUINO_VERSION) && ESP_ARDUINO_VERSION >= ESP_ARDUINO_VERSION_VAL(4, 0, 0))
 // ============================================================================
 // ESP32 Arduino core 4.0.0+ implementation (also used for TEST_MOCK_BLE)
 // ============================================================================
@@ -266,7 +267,8 @@ BleHalAdvertising bleHalGetAdvertising() {
     return adv;
 }
 
-#elif __has_include(<BLEDevice.h>) || defined(ARDUINO_ARCH_ESP32)
+#elif __has_include(<BLEDevice.h>) || \
+     (defined(ESP_ARDUINO_VERSION) && ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(4, 0, 0))
 // ============================================================================
 // ESP32 Arduino core 3.x implementation
 // ============================================================================
