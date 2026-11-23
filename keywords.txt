@@ -32,14 +32,19 @@ HttpGatewayClient	KEYWORD1
 BleGatewayClient	KEYWORD1
 
 # Sensors
+AiMicroModelController	KEYWORD1
 Button	KEYWORD1
+ChangeFilter	KEYWORD1
 DhtSensor	KEYWORD1
 DigitalLightIntensitySensor	KEYWORD1
 DoorWindowSensor	KEYWORD1
+EmlearnController	KEYWORD1
 EnvironmentalGasSensor	KEYWORD1
+EventAggregator	KEYWORD1
 GasSensor	KEYWORD1
 GeolocationSensor	KEYWORD1
 ImuSensor	KEYWORD1
+JsonParser	KEYWORD1
 LoadCellAmplifier	KEYWORD1
 OneWireTemperatureSensor	KEYWORD1
 PassiveInfraredSensor	KEYWORD1
@@ -66,8 +71,20 @@ Hd44780Driver	KEYWORD1
 Ssd1306Driver	KEYWORD1
 
 # Value types
+DiagnosticsTelemetryPackage	KEYWORD1
+JsonTelemetryWriter	KEYWORD1
 RgbColor	KEYWORD1
 LocationData	KEYWORD1
+TelemetryWriter	KEYWORD1
+PowerManager	KEYWORD1
+TelemetryBuffer	KEYWORD1
+EvictionCallback	KEYWORD1
+OtaUpdateHandler	KEYWORD1
+OtaUpdateStatus	KEYWORD1
+OtaProgressCallback	KEYWORD1
+OtaErrorCallback	KEYWORD1
+OtaStartCallback	KEYWORD1
+OtaEndCallback	KEYWORD1
 
 # Nested types (enum classes and structs)
 AddResult	KEYWORD1
@@ -79,6 +96,11 @@ CommandEntry	KEYWORD1
 OperatingMode	KEYWORD1
 GasType	KEYWORD1
 HttpMethod	KEYWORD1
+InferenceResult	KEYWORD1
+CapturedEvent	KEYWORD1
+EventPattern	KEYWORD1
+PatternLogic	KEYWORD1
+PatternCondition	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
@@ -214,8 +236,6 @@ setTelemetrySchemaVersion	KEYWORD2
 getTelemetrySchemaVersion	KEYWORD2
 
 # PowerManager
-PowerManager	KEYWORD1
-begin	KEYWORD2
 getBatteryVoltageInMillivolts	KEYWORD2
 getBatteryLevelInPercentage	KEYWORD2
 isLowBattery	KEYWORD2
@@ -224,10 +244,8 @@ getLowBatteryThresholdInMillivolts	KEYWORD2
 setBatteryVoltageRange	KEYWORD2
 getMinVoltageInMillivolts	KEYWORD2
 getMaxVoltageInMillivolts	KEYWORD2
-isInitialized	KEYWORD2
 
 # TelemetryBuffer
-TelemetryBuffer	KEYWORD1
 store	KEYWORD2
 retrieveNext	KEYWORD2
 getBufferedPacketCount	KEYWORD2
@@ -235,34 +253,56 @@ getMaxPacketsCount	KEYWORD2
 hasBufferedPackets	KEYWORD2
 clear	KEYWORD2
 onEviction	KEYWORD2
-EvictionCallback	KEYWORD1
-DEFAULT_MAX_BUFFERED_PACKETS	LITERAL1
-TELEMETRY_BUFFER_DIRECTORY	LITERAL1
 
 # OtaUpdateHandler
-OtaUpdateHandler	KEYWORD1
-OtaUpdateStatus	KEYWORD1
-OtaProgressCallback	KEYWORD1
-OtaErrorCallback	KEYWORD1
-OtaStartCallback	KEYWORD1
-OtaEndCallback	KEYWORD1
-begin	KEYWORD2
 setPassword	KEYWORD2
 onProgress	KEYWORD2
 onError	KEYWORD2
 onStart	KEYWORD2
 onEnd	KEYWORD2
-service	KEYWORD2
 getHostname	KEYWORD2
 getStatus	KEYWORD2
 getLastError	KEYWORD2
 getProgressInPercentage	KEYWORD2
-isInitialized	KEYWORD2
-OtaUpdateStatus_Idle	LITERAL1
-OtaUpdateStatus_Starting	LITERAL1
-OtaUpdateStatus_Running	LITERAL1
-OtaUpdateStatus_Finished	LITERAL1
-OtaUpdateStatus_Error	LITERAL1
+
+# AiMicroModelController
+predict	KEYWORD2
+regress	KEYWORD2
+isModelLoaded	KEYWORD2
+lastResult	KEYWORD2
+
+# EmlearnController
+loadTreeModel	KEYWORD2
+loadNetModel	KEYWORD2
+loadGeneratedModel	KEYWORD2
+
+# ChangeFilter
+configureSlotWithDeadband	KEYWORD2
+isSignificantChange	KEYWORD2
+reset	KEYWORD2
+maximumSlots	KEYWORD2
+
+# EventAggregator
+addAllMatchPattern	KEYWORD2
+addAnyMatchPattern	KEYWORD2
+removePattern	KEYWORD2
+cleanupPatterns	KEYWORD2
+setOutputHandler	KEYWORD2
+
+# JsonParser
+parseInt	KEYWORD2
+parseInt32	KEYWORD2
+parseFloat	KEYWORD2
+parseBool	KEYWORD2
+parseString	KEYWORD2
+
+# JsonTelemetryWriter
+finalize	KEYWORD2
+getString	KEYWORD2
+hasOverflow	KEYWORD2
+
+# TelemetryWriter
+field	KEYWORD2
 
 # Sensor data getters
 getTemperatureInCelsius	KEYWORD2
@@ -304,17 +344,9 @@ getSampleCount	KEYWORD2
 # GasSensor specific
 setR0	KEYWORD2
 setTargetGas	KEYWORD2
-setGain	KEYWORD2
 setGasCalibrationParameters	KEYWORD2
 startCalibration	KEYWORD2
 calibrate	KEYWORD2
-applyCalibration	KEYWORD2
-applyMovingAverageFilter	KEYWORD2
-calculateAverageRawValue	KEYWORD2
-updateDigitalGasDetectedState	KEYWORD2
-handleRawModeLogic	KEYWORD2
-handleCalibratingModeLogic	KEYWORD2
-handleAccurateModeLogic	KEYWORD2
 
 # GeolocationSensor specific
 parseNmeaSentence	KEYWORD2
@@ -323,7 +355,7 @@ parseRmcSentence	KEYWORD2
 
 # LoadCellAmplifier specific
 tare	KEYWORD2
-reset	KEYWORD2
+setGain	KEYWORD2
 
 # ServoMotor specific
 validateOrAdjustPhysicalAngle	KEYWORD2
@@ -454,6 +486,47 @@ IMU_GYRO_FS_250	LITERAL1
 IMU_GYRO_FS_500	LITERAL1
 IMU_GYRO_FS_1000	LITERAL1
 IMU_GYRO_FS_2000	LITERAL1
+IMU_CHIP_ID	LITERAL1
+IMU_CLOCK_SRC_PLL	LITERAL1
+IMU_DLPF_CFG_184HZ	LITERAL1
+IMU_SLEEP_BIT	LITERAL1
+IMU_CYCLE_BIT	LITERAL1
+IMU_TEMP_DIS_BIT	LITERAL1
+IMU_WAKE_UP_DELAY_IN_MILLISECONDS	LITERAL1
+IMU_RAW_DATA_BYTE_COUNT	LITERAL1
+IMU_ACCEL_LSB_PER_G_2G	LITERAL1
+IMU_ACCEL_LSB_PER_G_4G	LITERAL1
+IMU_ACCEL_LSB_PER_G_8G	LITERAL1
+IMU_ACCEL_LSB_PER_G_16G	LITERAL1
+IMU_GYRO_DPS_PER_LSB_250	LITERAL1
+IMU_GYRO_DPS_PER_LSB_500	LITERAL1
+IMU_GYRO_DPS_PER_LSB_1000	LITERAL1
+IMU_GYRO_DPS_PER_LSB_2000	LITERAL1
+IMU_TEMP_SENSITIVITY	LITERAL1
+IMU_TEMP_OFFSET	LITERAL1
+MAXIMUM_SAMPLE_WINDOW_SIZE	LITERAL1
+DEFAULT_SAMPLE_WINDOW_SIZE	LITERAL1
+
+# ChangeFilter constants
+CHANGE_FILTER_MAXIMUM_SLOTS	LITERAL1
+
+# EventAggregator constants
+EVENT_AGGREGATOR_MAX_CAPTURED_EVENTS	LITERAL1
+EVENT_AGGREGATOR_MAX_PATTERNS	LITERAL1
+EVENT_AGGREGATOR_MAX_PATTERN_SIZE	LITERAL1
+
+# JsonTelemetryWriter constants
+JSON_TELEMETRY_BUFFER_SIZE	LITERAL1
+
+# InferenceResult values
+InferenceResult::Success	LITERAL1
+InferenceResult::Error	LITERAL1
+InferenceResult::ModelNotLoaded	LITERAL1
+InferenceResult::InvalidFeatures	LITERAL1
+
+# PatternLogic values
+PatternLogic::And	LITERAL1
+PatternLogic::Or	LITERAL1
 
 # Buzzer commands
 TURN_ON_COMMAND	LITERAL1
@@ -555,3 +628,14 @@ restoreFromRtc	KEYWORD2
 
 # SamplingScheduler constants
 MAXIMUM_SLOTS	LITERAL1
+
+# TelemetryBuffer constants
+DEFAULT_MAX_BUFFERED_PACKETS	LITERAL1
+TELEMETRY_BUFFER_DIRECTORY	LITERAL1
+
+# OtaUpdateHandler constants
+OtaUpdateStatus_Idle	LITERAL1
+OtaUpdateStatus_Starting	LITERAL1
+OtaUpdateStatus_Running	LITERAL1
+OtaUpdateStatus_Finished	LITERAL1
+OtaUpdateStatus_Error	LITERAL1
