@@ -23,10 +23,12 @@ struct EmlNet;
 
 // emlearn C library function signatures (declared here so EmlearnController
 // compiles without the emlearn library; linked at build time when present).
+// These are weak symbols so the linker doesn't fail when emlearn is not installed.
+// The loadGeneratedModel() path (most common) doesn't need these symbols at all.
 extern "C" {
-    int eml_trees_predict(const EmlTrees* model, const int16_t* features, int8_t nFeatures);
-    float eml_trees_regress(const EmlTrees* model, const int16_t* features, int8_t nFeatures);
-    int eml_net_predict(const EmlNet* model, const float* features, int32_t nFeatures);
+    __attribute__((weak)) int eml_trees_predict(const EmlTrees* model, const int16_t* features, int8_t nFeatures);
+    __attribute__((weak)) float eml_trees_regress(const EmlTrees* model, const int16_t* features, int8_t nFeatures);
+    __attribute__((weak)) int eml_net_predict(const EmlNet* model, const float* features, int32_t nFeatures);
 }
 
 /**
