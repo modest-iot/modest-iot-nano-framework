@@ -6,6 +6,12 @@
 #include <cstdint>
 #include <cstddef>
 
+// Suppress weak declarations in EmlearnController.h — this header provides
+// the actual definitions used by host tests instead of the weak symbols.
+#define EML_TREES_PREDICT_DEFINED
+#define EML_TREES_REGRESS_DEFINED
+#define EML_NET_PREDICT_DEFINED
+
 // Fake emlearn C API for host tests.
 // Mirrors the emlearn library's C structs (eml_trees.h, eml_net.h) so that
 // EmlearnController can be tested without the actual emlearn library.
@@ -67,33 +73,35 @@ namespace EmlearnFake {
     inline float gTreesRegressResult = 0.0f;
 }
 
+// Override the weak emlearn C library declarations from EmlearnController.h.
+// These inline definitions replace the weak symbols so host tests can control
+// the return values via EmlearnFake::gTreesPredictResult, etc.
+// Must be inside extern "C" to match the linkage of weak declarations in EmlearnController.h.
+// Using 'inline' (not 'static inline') so the definition can override the weak declaration.
 extern "C" {
 
-// emlearn's real signature: int eml_trees_predict(const EmlTrees*, const int16_t*, int8_t)
-static inline int eml_trees_predict(const EmlTrees* model, const int16_t* features, int8_t nFeatures) {
+int eml_trees_predict(const EmlTrees* model, const int16_t* features, int8_t nFeatures) {
     (void)model;
     (void)features;
     (void)nFeatures;
     return EmlearnFake::gTreesPredictResult;
 }
 
-// emlearn's real signature: float eml_trees_regress(const EmlTrees*, const int16_t*, int8_t)
-static inline float eml_trees_regress(const EmlTrees* model, const int16_t* features, int8_t nFeatures) {
+float eml_trees_regress(const EmlTrees* model, const int16_t* features, int8_t nFeatures) {
     (void)model;
     (void)features;
     (void)nFeatures;
     return EmlearnFake::gTreesRegressResult;
 }
 
-// emlearn's real signature: int eml_net_predict(const EmlNet*, const float*, int32_t)
-static inline int eml_net_predict(const EmlNet* model, const float* features, int32_t nFeatures) {
+int eml_net_predict(const EmlNet* model, const float* features, int32_t nFeatures) {
     (void)model;
     (void)features;
     (void)nFeatures;
     return EmlearnFake::gNetPredictResult;
 }
 
-static inline int eml_net_predict_proba(const EmlNet* model, const float* features, int32_t nFeatures, float* probs) {
+int eml_net_predict_proba(const EmlNet* model, const float* features, int32_t nFeatures, float* probs) {
     (void)model;
     (void)features;
     (void)nFeatures;
