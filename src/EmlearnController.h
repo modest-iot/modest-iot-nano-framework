@@ -25,10 +25,18 @@ struct EmlNet;
 // compiles without the emlearn library; linked at build time when present).
 // These are weak symbols so the linker doesn't fail when emlearn is not installed.
 // The loadGeneratedModel() path (most common) doesn't need these symbols at all.
+// Host tests can suppress these weak declarations by defining the corresponding
+// EML_*_DEFINED macro before including this header (see tests/fakes/emlearn.h).
 extern "C" {
+#ifndef EML_TREES_PREDICT_DEFINED
     __attribute__((weak)) int eml_trees_predict(const EmlTrees* model, const int16_t* features, int8_t nFeatures);
+#endif
+#ifndef EML_TREES_REGRESS_DEFINED
     __attribute__((weak)) float eml_trees_regress(const EmlTrees* model, const int16_t* features, int8_t nFeatures);
+#endif
+#ifndef EML_NET_PREDICT_DEFINED
     __attribute__((weak)) int eml_net_predict(const EmlNet* model, const float* features, int32_t nFeatures);
+#endif
 }
 
 /**
