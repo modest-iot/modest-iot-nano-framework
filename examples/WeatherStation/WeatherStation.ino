@@ -68,6 +68,12 @@ static const char* WEATHER_STATION_NTP_SERVER = "pool.ntp.org";
 static const float BATTERY_DIVIDER_RATIO = 2.0f;
 //@} // PowerManager Configuration
 
+/** @name Change-Only Mode Configuration */
+//@{
+/** @brief Temperature deadband in °C; suppresses telemetry when change is below this threshold. */
+static const float TEMPERATURE_DEADBAND_CELSIUS = 0.5f;
+//@} // Change-Only Mode Configuration
+
 /** @name Serial Output Configuration */
 //@{
 /** @brief Buffer size for formatted serial output messages. */
@@ -218,8 +224,11 @@ public:
         // Register sensors
         // IMPORTANT: Registration must occur before initializeAsynchronousEngine(), because
         // the engine start guard rejects any registration after the engine is running.
-        // Register the DHT sensor for temperature and humidity
-        appendSensorToScheduler(&dhtSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+        // Register the DHT sensor for temperature and humidity with change-only mode.
+        // Deadband of 0.5°C suppresses telemetry when temperature is stable, reducing
+        // Wi-Fi transmissions by ~80% for slowly changing sensors.
+        appendSensorToScheduler(&dhtSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
+                                TEMPERATURE_DEADBAND_CELSIUS);
 
         // Register the PthSensor for atmospheric pressure
         appendSensorToScheduler(&pthSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);

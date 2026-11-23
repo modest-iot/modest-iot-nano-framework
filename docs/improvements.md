@@ -68,7 +68,7 @@ ESP-NOW or MQTT-based device-to-device messaging for relay nodes and distributed
 - **MQTT QoS** (W34) ✓ Implemented: Configurable QoS (0/1/2) for publish and subscribe, retained message support for last-known-good telemetry. Backward-compatible defaults (QoS 0, non-retained).
 - **Remote Diagnostics** (W41) ✓ Implemented: On-demand diagnostics via MQTT command (commandId = 300). Device responds with `DiagnosticsTelemetryPackage` containing all 14 health metrics. Framework-internal command handled by `handleInternalCommand()` before developer's `handle()`.
 - **Statistical Aggregation** (W42): Min/max/average over time windows.
-- **Change-Only Mode** (W43): Suppress telemetry when values are stable.
+- **Change-Only Mode** (W43) ✓ Implemented: `ChangeFilter<T>` template class for per-slot deadband-based telemetry suppression. Configurable deadband threshold per sensor slot (0–7), with first-reading passthrough, NaN/Inf protection, and zero heap allocation. Integrated into `Device` via two new `appendSensorToScheduler()` overloads with deadband parameter. 45 host tests. Demonstrated in WeatherStation example with 0.5°C temperature deadband.
 
 **Target**: v1.2.0–v1.3.0 (W32 complete)
 

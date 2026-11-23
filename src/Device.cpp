@@ -160,6 +160,37 @@ bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, const i
            result != SamplingScheduler::AddResult::InvalidArgument;
 }
 
+bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, const int requestedEventIdentifier,
+                                     const uint32_t periodInMilliseconds,
+                                     const uint32_t minimumPeriodInMilliseconds,
+                                     const float deadband) {
+    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == INVALID_EVENT_IDENTIFIER) {
+        return false;
+    }
+    const auto result = scheduler.add(targetSensorInstance, requestedEventIdentifier,
+                                      periodInMilliseconds, minimumPeriodInMilliseconds);
+    if (result == SamplingScheduler::AddResult::TableFull ||
+        result == SamplingScheduler::AddResult::InvalidArgument) {
+        return false;
+    }
+    // Configure deadband for the slot that was just added (slot index = count - 1)
+    const uint8_t slotIndex = static_cast<uint8_t>(scheduler.count() - 1);
+    floatChangeFilter.configureSlotWithDeadband(slotIndex, deadband);
+    return true;
+}
+
+bool Device::appendSensorToScheduler(Sensor *targetSensorInstance, const int requestedEventIdentifier,
+                                     const float deadband) {
+    if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == INVALID_EVENT_IDENTIFIER) {
+        return false;
+    }
+    const uint32_t periodInMilliseconds = targetSensorInstance->getSamplingIntervalInMilliseconds();
+    const uint32_t minimumPeriodInMilliseconds = targetSensorInstance->
+            getEffectiveMinimalSamplingIntervalInMilliseconds();
+    return appendSensorToScheduler(targetSensorInstance, requestedEventIdentifier,
+                                   periodInMilliseconds, minimumPeriodInMilliseconds, deadband);
+}
+
 // LCOV_EXCL_START — FreeRTOS queue operations, cannot run in host tests
 bool Device::enqueueTelemetryPayload(TelemetryPackage **telemetryPackagePointerAddress) const {
     if (telemetryQueueHandle == nullptr || telemetryPackagePointerAddress == nullptr) return false;

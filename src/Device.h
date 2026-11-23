@@ -16,6 +16,7 @@
 #include "TelemetryPackage.h"
 #include "GatewayClient.h"
 #include "SamplingScheduler.h"
+#include "ChangeFilter.h"
 #include <memory>
 #include <atomic>
 
@@ -133,6 +134,10 @@ private:
     hw_timer_t* hardwareTimer; ///< Pointer to the hardware timer.
     const unsigned long pollingIntervalInMilliseconds; ///< Polling interval in milliseconds.
     const uint8_t hardwareTimerIndex; ///< Index of the hardware timer.
+
+    // Change-only mode: deadband filtering per slot
+    mutable ChangeFilter<float> floatChangeFilter; ///< Deadband filter for float sensor values.
+    mutable ChangeFilter<int> intChangeFilter; ///< Deadband filter for int sensor values.
 
     /**
      * @brief FreeRTOS task entry point for sensor polling.
@@ -386,6 +391,45 @@ protected:
                                   uint32_t minimumPeriodInMilliseconds = 0);
 
     /**
+     * @brief Registers a sensor/event pair with an explicit sampling period and deadband.
+     * @param targetSensorInstance Sensor (or any `EventHandler`) to poll.
+     * @param requestedEventIdentifier Event identifier to request from that sensor.
+     * @param periodInMilliseconds Desired sampling period in milliseconds.
+     * @param minimumPeriodInMilliseconds Optional minimum period; if the requested period
+     *        is below this value, it is clamped up.
+     * @param deadband Deadband threshold for change-only mode; 0.0f disables filtering.
+     * @return `true` when the slot is registered, `false` when the scheduler is full,
+     *        the engine has already started, or arguments are invalid.
+     *
+     * Extends the period-based overload with a deadband parameter. When configured,
+     * the ChangeFilter suppresses telemetry for this slot when the sensor value hasn't
+     * changed beyond the deadband from the last enqueued value. The slot index is
+     * returned via the scheduler's count so the Device subclass can call
+     * `shouldEnqueue(slotIndex, value)` before creating a telemetry package.
+     *
+     * Calls after `initializeAsynchronousEngine()` are rejected.
+     */
+    bool appendSensorToScheduler(EventHandler* targetSensorInstance, int requestedEventIdentifier,
+                                  uint32_t periodInMilliseconds,
+                                  uint32_t minimumPeriodInMilliseconds,
+                                  float deadband);
+
+    /**
+     * @brief Registers a sensor with its own sampling interval defaults and a deadband.
+     * @param targetSensorInstance Sensor to poll; period is resolved via
+     *        `getSamplingIntervalInMilliseconds()` and `getMinimalSamplingIntervalInMilliseconds()`.
+     * @param requestedEventIdentifier Event identifier to request from that sensor.
+     * @param deadband Deadband threshold for change-only mode; 0.0f disables filtering.
+     * @return `true` when the slot is registered, `false` when the scheduler is full or
+     *        the engine has already started.
+     *
+     * Combines the Sensor* overload (auto-resolves period) with deadband configuration.
+     * Calls after `initializeAsynchronousEngine()` are rejected.
+     */
+    bool appendSensorToScheduler(Sensor* targetSensorInstance, int requestedEventIdentifier,
+                                  float deadband);
+
+    /**
      * @brief Registers a sensor for interrupt-driven operation.
      * @param targetSensorInstance Sensor to trigger on GPIO edge.
      * @param requestedEventIdentifier Event identifier to emit on trigger.
@@ -423,6 +467,47 @@ protected:
     virtual bool appendToBothSchedulers(Sensor* targetSensorInstance,
                                  int requestedEventIdentifier,
                                  int interruptMode = CHANGE);
+
+    /**
+     * @brief Checks deadband before enqueueing a float sensor value.
+     * @param slotIndex Slot index (0-based, matches scheduler slot order).
+     * @param value The new sensor reading.
+     * @return `true` if the value should be enqueued, `false` if suppressed.
+     *
+     * Call this method before creating a telemetry package to check whether
+     * the sensor value has changed beyond the configured deadband.
+     * The slot index corresponds to the order in which sensors were registered
+     * via `appendSensorToScheduler()`.
+     *
+     * Example:
+     * @code
+     * void on(Event event) override {
+     *     if (event.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER) {
+     *         float temp = dhtSensor.getTemperature();
+     *         if (shouldEnqueue(0, temp)) {
+     *             auto packet = std::make_unique<TemperatureTelemetry>(temp);
+     *             enqueueTelemetryPayload(std::move(packet));
+     *         }
+     *     }
+     * }
+     * @endcode
+     */
+    bool shouldEnqueue(uint8_t slotIndex, float value) const {
+        return floatChangeFilter.isSignificantChange(slotIndex, value);
+    }
+
+    /**
+     * @brief Checks deadband before enqueueing an int sensor value.
+     * @param slotIndex Slot index (0-based, matches scheduler slot order).
+     * @param value The new sensor reading.
+     * @return `true` if the value should be enqueued, `false` if suppressed.
+     *
+     * Same as the float overload but for integer sensor values (ADC readings,
+     * pulse counts, etc.).
+     */
+    bool shouldEnqueue(uint8_t slotIndex, int value) const {
+        return intChangeFilter.isSignificantChange(slotIndex, value);
+    }
 
     /**
      * @brief Subclass hook for converting queued payloads into network transmissions.

@@ -30,6 +30,7 @@
 #include "TelemetryBuffer.h"
 #include "OtaUpdateHandler.h"
 #include "EventAggregator.h"
+#include "ChangeFilter.h"
 //@} // Core Asynchronous Engine & Signaling Primitives
 
 /** @name Layer-Isolated Network Comprehension */
