@@ -284,6 +284,7 @@ BleHalAdvertising bleHalGetAdvertising() {
 #include <BLECharacteristic.h>
 #include <BLEAdvertising.h>
 #include <BLEUtils.h>
+#include <BLE2902.h>
 
 // ---------- Callback adapters ----------
 
@@ -297,10 +298,9 @@ public:
         if (onConnectCb) onConnectCb();
     }
 
-    void onDisconnect(BLEServer* server, uint16_t conn_id, int reason) override {
+    void onDisconnect(BLEServer* server) override {
         (void)server;
-        (void)conn_id;
-        if (onDisconnectCb) onDisconnectCb(static_cast<uint8_t>(reason));
+        if (onDisconnectCb) onDisconnectCb(0);
     }
 };
 
@@ -310,8 +310,8 @@ public:
 
     void onWrite(BLECharacteristic* chr) override {
         if (onWriteCb && chr) {
-            std::string value = chr->getValue();
-            onWriteCb(reinterpret_cast<const uint8_t*>(value.data()), value.length());
+            String value = chr->getValue();
+            onWriteCb(reinterpret_cast<const uint8_t*>(value.c_str()), value.length());
         }
     }
 };
@@ -383,7 +383,8 @@ void BleHalCharacteristic::setValue(const uint8_t* data, size_t length) {
 
 const uint8_t* BleHalCharacteristic::getValue(size_t* len) const {
     if (pImpl->characteristic) {
-        pImpl->valueBuffer = pImpl->characteristic->getValue();
+        String value = pImpl->characteristic->getValue();
+        pImpl->valueBuffer = std::string(value.c_str(), value.length());
         if (len) *len = pImpl->valueBuffer.length();
         return reinterpret_cast<const uint8_t*>(pImpl->valueBuffer.data());
     }
@@ -435,7 +436,7 @@ BleHalCharacteristic BleHalService::createCharacteristic(
     if (props & static_cast<uint32_t>(BleHalProperty::ExtendedProps))   ble_props |= 0x80;
 
     BLECharacteristic* chr = pImpl->service->createCharacteristic(
-        uuid, ble_props, ESP_GATT_IF_DEFAULT);
+        uuid, ble_props);
 
     // Set permissions
     uint32_t access_perms = 0;
@@ -511,7 +512,7 @@ BleHalService BleHalServer::createService(const char* uuid) {
 
 void BleHalServer::start() {
     if (pImpl->server) {
-        pImpl->server->getServices();
+        pImpl->server->start();
     }
 }
 
