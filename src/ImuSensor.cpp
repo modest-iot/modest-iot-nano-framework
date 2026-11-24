@@ -10,9 +10,6 @@
 #include <Wire.h>
 #include <cmath>
 
-/** @name ImuSensor Implementation */
-//@{
-
 ImuSensor::ImuSensor(const int signalGpioPin, const uint8_t i2cAddress,
                      EventHandler* parentHandler)
     : Sensor(signalGpioPin, parentHandler)
@@ -404,7 +401,6 @@ float ImuSensor::getAccelerationXPeakToPeakInGForce() const {
     }
     return maxValue - minValue;
 }
-
 float ImuSensor::getAccelerationYPeakToPeakInGForce() const {
     if (sampleWindowCount == 0) return 0.0f;
     float minValue = sampleBufferY[0];
@@ -426,5 +422,3 @@ float ImuSensor::getAccelerationZPeakToPeakInGForce() const {
     }
     return maxValue - minValue;
 }
-
-//@} // ImuSensor Implementation

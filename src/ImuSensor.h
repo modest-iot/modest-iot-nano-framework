@@ -4,7 +4,6 @@
 /**
  * @file ImuSensor.h
  * @brief Declares the MPU6050 6-axis inertial measurement unit (IMU) sensor.
- * @ingroup sensors_module
  * @copyright (c) 2025-2026 Angel Velasquez
  * @date 2026-11-23
  * @version 1.0
