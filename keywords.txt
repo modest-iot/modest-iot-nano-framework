@@ -41,6 +41,7 @@ DoorWindowSensor	KEYWORD1
 EmlearnController	KEYWORD1
 EnvironmentalGasSensor	KEYWORD1
 EventAggregator	KEYWORD1
+RulesEngine	KEYWORD1
 GasSensor	KEYWORD1
 GeolocationSensor	KEYWORD1
 ImuSensor	KEYWORD1
@@ -101,6 +102,8 @@ CapturedEvent	KEYWORD1
 EventPattern	KEYWORD1
 PatternLogic	KEYWORD1
 PatternCondition	KEYWORD1
+Rule	KEYWORD1
+RuleAction	KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)
@@ -288,6 +291,12 @@ addAnyMatchPattern	KEYWORD2
 removePattern	KEYWORD2
 cleanupPatterns	KEYWORD2
 setOutputHandler	KEYWORD2
+
+# RulesEngine
+addRule	KEYWORD2
+addActionToRule	KEYWORD2
+removeRule	KEYWORD2
+cleanupRules	KEYWORD2
 
 # JsonParser
 parseInt	KEYWORD2
@@ -513,6 +522,10 @@ CHANGE_FILTER_MAXIMUM_SLOTS	LITERAL1
 EVENT_AGGREGATOR_MAX_CAPTURED_EVENTS	LITERAL1
 EVENT_AGGREGATOR_MAX_PATTERNS	LITERAL1
 EVENT_AGGREGATOR_MAX_PATTERN_SIZE	LITERAL1
+
+# RulesEngine constants
+RULES_ENGINE_MAX_RULES	LITERAL1
+RULES_ENGINE_MAX_ACTIONS_PER_RULE	LITERAL1
 
 # JsonTelemetryWriter constants
 JSON_TELEMETRY_BUFFER_SIZE	LITERAL1
