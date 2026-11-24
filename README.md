@@ -67,6 +67,7 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 | `PowerManager` | Battery voltage sensing via ADC with configurable voltage divider, level calculation, and low-battery alerts. |
 | `OtaUpdateHandler` | Over-The-Air firmware update service with hostname configuration, password protection, and progress callbacks. |
 | `EventAggregator` | Composite event pattern matching with AND/OR logic, source-aware matching, conditional patterns, nested aggregators, and dynamic pattern management. |
+| `RulesEngine` | On-device automation rules. Maps composite events from EventAggregator to automated actuator Commands. Fixed-size rule array (4 rules, 4 actions per rule) — zero heap allocation. |
 | `ChangeFilter` | Template class for deadband-based telemetry suppression. Per-slot tracking with configurable thresholds, supporting float and int sensor values. |
 | `AiMicroModelController` | Abstract base class for ML inference on microcontrollers. Uniform interface for classification and regression with opt-in emlearn implementation via `USE_EMLEARN` build guard. |
 
@@ -436,6 +437,7 @@ The framework ships with 27 example sketches demonstrating various use cases:
 | `IntrusionDetector` | Motion, door, and water leak sensors with composite event patterns; demonstrates `EventAggregator` standard AND patterns for home security. |
 | `ColdChainMonitor` | Refrigerated truck cargo bay monitoring; demonstrates `EventAggregator` conditional patterns with `PatternCondition` callbacks for IIoT cold chain logistics. |
 | `PharmaceuticalCleanRoom` | Clean room environmental monitoring; demonstrates `EventAggregator` nested 3-level aggregator chains, OR patterns, and `DEVICE_SOURCE_ID` for IIoT pharmaceutical manufacturing. |
+| `SmartFactoryAlarm` | Factory alarm system with automated rules; demonstrates `EventAggregator` AND pattern + `RulesEngine` for automated buzzer alert on water leak + door intrusion. |
 | `VibrationMonitor` | Industrial vibration monitoring with anomaly detection; demonstrates `ImuSensor` with windowed statistics, `EmlearnController` for on-device ML inference, and `Buzzer` actuator for audible alerts. |
 
 ## Testing
@@ -492,6 +494,7 @@ The framework includes 51 host unit test suites that run natively without hardwa
 | `tests/GeolocationSensor/` | GPS NMEA parsing, GGA/RMC sentences, coordinate conversion, location change detection |
 | `tests/Device/` | Device base class, engine initialization, scheduler integration, telemetry pipeline |
 | `tests/EventAggregator/` | Composite event patterns, AND/OR logic, source-aware matching, condition functions, nested aggregators, dynamic pattern management |
+| `tests/RulesEngine/` | Rules engine, rule creation, multiple actions, rule removal, cleanup, full capacity, payload, unknown event |
 | `tests/JsonParser/` | JSON parsing utilities, token extraction, Bearer token parsing |
 | `tests/ChangeFilter/` | Deadband-based telemetry suppression, first reading passthrough, multi-slot independence, float/int types, NaN/Inf protection |
 | `tests/AiMicroModelController/` | ML inference interface, tree/net prediction, regression, model switching, invalid features, NaN/Inf handling |
@@ -680,7 +683,7 @@ Contributions, improvements, and extensions are welcome under the Apache License
 
 ## Future Directions
 
-- **v1.3.0**: Rules Engine for dynamic rule management on top of EventAggregator (W29).
+- **v1.3.0**: On-device ML inference via emlearn (W47, ✓ Complete), change-only telemetry mode (W43, ✓ Complete), Rules Engine (W29, ✓ Complete).
 - **Benchmark Publication**: See [docs/benchmarks.md](docs/benchmarks.md) for the performance comparison table.
 - **Edge Framework Phase 1**: Python-based edge server with MQTT broker, device registry, and telemetry ingestion.
 - **Edge Framework Phase 2.5**: Matter Bridge to expose Nano devices via Matter ecosystem.
