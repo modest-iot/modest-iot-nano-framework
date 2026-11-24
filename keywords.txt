@@ -129,9 +129,10 @@ processQueuedTelemetryData	KEYWORD2
 processTriggeredSensors	KEYWORD2
 processPendingCommands	KEYWORD2
 maintainNetworkServices	KEYWORD2
+shouldEnqueue	KEYWORD2
 
 # Device diagnostics
-diagnostics	KEYWORD2
+collectDiagnostics	KEYWORD2
 setTelemetryGateway	KEYWORD2
 onSensorTrigger	KEYWORD2
 onSensorTriggerWrapper	KEYWORD2
@@ -172,6 +173,7 @@ setReconnectInterval	KEYWORD2
 getReconnectInterval	KEYWORD2
 
 # BLE specific
+getDeviceName	KEYWORD2
 startAdvertising	KEYWORD2
 stopAdvertising	KEYWORD2
 isAdvertising	KEYWORD2
