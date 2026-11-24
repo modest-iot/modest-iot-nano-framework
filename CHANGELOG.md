@@ -2,9 +2,14 @@
 
 All notable changes to the Modest IoT Nano Framework will be documented in this file.
 
-## [Unreleased]
+## [1.3.0] - 2026-11-24
 
 ### Added
+
+#### BLE Hardware Abstraction Layer Compatibility
+- **src/BleHal.h/cpp**: Added a BLE hardware abstraction layer that supports ESP32 Arduino core 3.x and 4.x API differences, including the unified BLE API. BLE adapter implementation details are isolated behind pImpl ownership and cleaned up safely.
+- **tests/BleConnectivityDriver/** and **tests/BleGatewayClient/**: Expanded host coverage for the BLE HAL and driver integration.
+- **README.md** and **docs/quick-start.md**: Updated BLE core compatibility requirements to reflect support for both core generations.
 
 #### On-Device ML Inference via emlearn (W47)
 - **src/AiMicroModelController.h**: New abstract base class defining the ML inference interface with `predict()`, `regress()`, `isModelLoaded()`, and `lastResult()` methods. Includes `InferenceResult` enum for status reporting. Zero resource impact when not used.
@@ -29,6 +34,14 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - **tests/RulesEngine/test.cpp**: 30 host tests covering basic rule, multiple actions, rule removal, cleanup, full capacity, payload, unknown event, and edge cases.
 - **examples/SmartFactoryAlarm/SmartFactoryAlarm.ino**: New example demonstrating the complete pipeline: WaterLeakSensor + DoorWindowSensor → EventAggregator AND pattern → RulesEngine → Buzzer PLAY_TONE command. Factory alarm system with automated rules for water leak and door intrusion detection.
 - **src/ModestIoT.h**: Added `RulesEngine.h` to umbrella header in Core Asynchronous Engine section.
+
+### Changed
+
+#### Host Test Runner Alignment
+- **CMakeLists.txt**: Registered `JsonParserTest` with CTest and the `run_tests` target, and added `src/BleHal.cpp` to the BLE host-test targets. The CMake/CTest path now covers the same 53 host suites as `tests/run_all.sh` and `tests/run_coverage.sh`.
+
+#### Release Documentation Alignment
+- **docs/release.md**: Expanded the pre-release checklist to verify ADR coverage, class-diagram and Doxygen alignment, public API keywords, user-story acceptance criteria, benchmark evidence, and consistent test-runner coverage.
 
 ## [1.2.1] - 2026-11-21
 
