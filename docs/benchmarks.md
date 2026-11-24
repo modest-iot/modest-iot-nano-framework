@@ -18,11 +18,11 @@
 | **Framework code** | ~0 KB (no framework) | ~250 KB | ~220-230 KB | ~220-230 KB | v1.2.0 saved ~20-30 KB by removing ArduinoJson |
 | **ArduinoJson dependency** | N/A | ~30-40 KB | **0 KB** | **0 KB** | Removed in v1.2.0 (W46) |
 | **External dependencies** | Board package only | MQTT + ArduinoJson | **MQTT only** | **MQTT only** | Only 1 external dependency |
-| **ESP32 Arduino core** | 3.x | 3.x | 3.x | **4.0.0** | ESP32 4.0.0 required for BLE (ESP-IDF v6.1.1) |
+| **ESP32 Arduino core** | 3.x | 3.x | 3.x | **3.x and 4.x** | v1.3.0 supports BLE on both core generations; this benchmark uses core 4.0.0 |
 | **Minimal firmware binary** | ~350-400 KB | ~680 KB | ~650-660 KB | ~650-660 KB | Includes Arduino core + Wi-Fi + BLE |
 | **ESP-IDF variant (planned)** | N/A | N/A | ~180 KB | ~180 KB | **~73% Flash reduction** vs Arduino variant |
 
-**Key finding**: v1.2.0 eliminated ArduinoJson (~30-40 KB savings), making it the **leanest architecturally disciplined Arduino library**. v1.2.1 migrates to ESP32 4.0.0 (ESP-IDF v6.1.1) with no Flash increase. The planned ESP-IDF variant reduces Flash by ~73% (~500 KB savings).
+**Key finding**: v1.2.0 eliminated ArduinoJson (~30-40 KB savings), making it the **leanest architecturally disciplined Arduino library**. v1.2.1 required ESP32 Arduino core 4.0.0 for BLE; v1.3.0 supports BLE with both core 3.x and 4.x. This benchmark uses core 4.0.0 (ESP-IDF v6.1.1) with no Flash increase. The planned ESP-IDF variant reduces Flash by ~73% (~500 KB savings).
 
 ### Static RAM
 
