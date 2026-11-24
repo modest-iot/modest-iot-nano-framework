@@ -52,6 +52,10 @@ extern "C" {
  * or loadNetModel() is called. The loadGeneratedModel() path (most common)
  * works with any emlearn-generated model header.
  *
+ * Regression is supported only for tree models. For neural-network and
+ * generated models, regress() returns the predicted class index as a float.
+ * @ingroup core_module
+ *
  * Example using a generated emlearn model (most common):
  * @code
  * #include <ModestIoT.h>
@@ -198,6 +202,11 @@ public:
         return result;
     }
 
+    /**
+     * @brief Run inference using the model's regression path when available.
+     * @note Tree models return a regression value. Neural-network and generated
+     * models return their predicted class index converted to a float.
+     */
     float regress(const float* features, const int32_t numberOfFeatures) override {
         if (features == nullptr || numberOfFeatures <= 0) {
             lastResultValue = InferenceResult::InvalidFeatures;
