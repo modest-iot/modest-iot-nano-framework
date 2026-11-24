@@ -36,7 +36,7 @@
  *
  * When the cloud sends a diagnostics command (commandId = 300), the device
  * creates this package from Device::collectDiagnostics() and enqueues it via the
- * standard telemetry queue. The JSON output contains all 14 health metrics
+ * standard telemetry queue. The JSON output contains all 16 health metrics
  * plus envelope metadata (timestamp, sequence, schema version, firmware version).
  */
 class DiagnosticsTelemetryPackage : public TelemetryPackage {
@@ -70,7 +70,7 @@ public:
     explicit DiagnosticsTelemetryPackage(const struct DiagnosticsSnapshot& snapshot);
 
     /**
-     * @brief Writes all 14 diagnostics fields to the given TelemetryWriter.
+     * @brief Writes all 16 diagnostics fields to the given TelemetryWriter.
      * @param writer The telemetry writer to write fields to.
      */
     void write(TelemetryWriter& writer) const override;
