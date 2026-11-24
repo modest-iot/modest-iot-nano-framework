@@ -6,6 +6,20 @@ Each section covers one migration pattern with a **before** (traditional `loop()
 
 ---
 
+## Migrating from v1.2.1 to v1.3.0
+
+Existing `Device`, sensor, and gateway usage can continue as before. The release adds the following opt-in capabilities:
+
+- **BLE compatibility**: `BleHal` supports ESP32 Arduino core 3.x and 4.x; core 4.0.0 is no longer required solely for BLE.
+- **Change-only telemetry**: Configure a per-sensor deadband through the `appendSensorToScheduler()` overloads to suppress insignificant measurement changes.
+- **Composite-event automation**: Connect `EventAggregator` to `RulesEngine` to dispatch one or more actuator commands for a matching composite event.
+- **On-device inference**: Use `AiMicroModelController` and `EmlearnController` for local prediction or regression. Generated C models do not require the emlearn package; other emlearn model APIs are optional.
+- **MPU6050 sensing**: Use `ImuSensor` for calibrated inertial readings and windowed vibration statistics; it requires an MPU6050 on the device's I²C bus.
+
+MQTT remains the only required external Arduino library dependency.
+
+---
+
 ## Why Migrate?
 
 Traditional Arduino sketches have several limitations:
