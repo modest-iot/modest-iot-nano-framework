@@ -18,7 +18,7 @@ Comparison tables and future work for the Modest IoT Nano Framework.
 | Architecture decisions | [adrs.md](adrs.md) |
 | User stories | [user-stories.md](user-stories.md) |
 | Class diagram | [class-diagram.puml](class-diagram.puml) |
-| Completed work items W1–W28 | [evolution.md](evolution.md) |
+| Completed work items through W47 | [evolution.md](evolution.md) |
 | Doxygen API reference | [doxygen-mainpage.md](doxygen-mainpage.md) |
 
 ## Status Overview
@@ -32,7 +32,15 @@ Comparison tables and future work for the Modest IoT Nano Framework.
 | 4: Capabilities                         | **Complete** |
 | 5: Optimization and power               | **Complete** |
 | Pre-Release Prerequisites (W20–W24)     | **Complete** |
-| v1.1.0 Features (W25–W28)              | **Complete** |
+| v1.3.0 Release Features (W29, W43, W47) | **Complete** |
+
+## v1.3.0 Release Summary
+
+- **BLE compatibility**: `BleHal` supports ESP32 Arduino core 3.x and 4.x while preserving the `BleConnectivityDriver` NUS interface.
+- **W29 automation**: `RulesEngine` maps composite events to fixed-capacity actuator actions.
+- **W43 change-only telemetry**: `ChangeFilter<T>` applies per-sensor deadbands without dynamic allocation.
+- **W47 on-device ML**: `AiMicroModelController` and the optional `EmlearnController` provide local inference.
+- **MPU6050 sensing**: `ImuSensor` supplies calibrated inertial readings and windowed statistics for the `VibrationMonitor` example.
 
 ## Planned Improvements
 
@@ -46,20 +54,20 @@ Improvements are grouped by theme. Target versions indicate when each improvemen
 
 **✓ Implemented**: `AiMicroModelController` abstract base class defining the ML inference interface with `predict()`, `regress()`, `isModelLoaded()`, and `lastResult()` methods. `EmlearnController` wraps emlearn's C API (`eml_trees_predict`, `eml_net_predict`) behind the uniform interface with forward-declared emlearn types and float-to-int16_t quantization. Supports tree-based models (RandomForest, DecisionTree), neural networks, and emlearn-generated inline C code via `loadGeneratedModel()`. 28 host tests. Demonstrated in VibrationMonitor example.
 
-**Target**: v1.3.0
+**Released**: v1.3.0
 
 ### MPU6050 IMU Sensor
 
 **✓ Implemented**: `ImuSensor` for MPU6050 6-axis inertial measurement unit (accelerometer + gyroscope). I²C communication with factory calibration data, compensation formulas, and cached readings. Circular sample buffer (configurable up to 32 samples, default 10) with automatic per-axis windowed RMS and peak-to-peak statistics. Follows the polling sensor event pattern (`DATA_READ_EVENT`) with change detection suppression. Demonstrated in VibrationMonitor example with EmlearnController for anomaly detection.
 
-**Target**: v1.3.0
+**Released**: v1.3.0
 
 ### Event Aggregation & Rules Engine (W29, W31)
 
 - **Event Aggregator** (W31) ✓ Implemented: `EventAggregator` component for composite event pattern matching with time-windowed detection. Implements `EventHandler` to intercept sensor events. Fixed-size circular buffer (32 captured events) and pattern array (4 patterns) — zero heap allocation. Supports AND patterns via `addAllMatchPattern()` (all required events within time window) and OR patterns via `addAnyMatchPattern()` (any single event triggers). Source-aware matching distinguishes sensors sharing the same event identifier (e.g., 9+ sensors share `DATA_READ_EVENT_IDENTIFIER = 20`) using per-position source filters with `EventAggregator::ANY_SOURCE` wildcards. Conditional patterns via `PatternCondition` callback (`bool (*)(int compositeEventId)`) suppress composite events based on sensor values at match time. Dynamic pattern management with `removePattern()` and `cleanupPatterns()`. Nested aggregator chains enabled by `EventAggregator::DEVICE_SOURCE_ID` — composite events carry sourceId 0, allowing downstream aggregators to filter composite events from raw sensor events. Three grounded examples: IntrusionDetector (standard patterns), ColdChainMonitor (conditional patterns), and PharmaceuticalCleanRoom (nested chains with OR patterns). 43 host tests.
 - **Rules Engine** (W29) ✓ Implemented: `RulesEngine` component for on-device automation rules. Maps composite events from EventAggregator to automated actions (actuator Commands). Fixed-size rule array (4 rules, 4 actions per rule) — zero heap allocation. SmartFactoryAlarm example demonstrates the complete pipeline.
 
-**Target**: v1.2.0–v1.3.0
+**Released**: v1.3.0
 
 ### Multi-Device Coordination (W30, W36)
 
@@ -76,7 +84,7 @@ ESP-NOW or MQTT-based device-to-device messaging for relay nodes and distributed
 - **Statistical Aggregation** (W42): Min/max/average over time windows.
 - **Change-Only Mode** (W43) ✓ Implemented: `ChangeFilter<T>` template class for per-slot deadband-based telemetry suppression. Configurable deadband threshold per sensor slot (0–7), with first-reading passthrough, NaN/Inf protection, and zero heap allocation. Integrated into `Device` via two new `appendSensorToScheduler()` overloads with deadband parameter. 45 host tests. Demonstrated in WeatherStation example with 0.5°C temperature deadband.
 
-**Target**: v1.2.0–v1.3.0 (W32 complete)
+**Status**: W32–W34, W41, and W43 are implemented; W42 statistical aggregation remains planned.
 
 ### Power & Battery (W37–W38)
 
@@ -144,15 +152,15 @@ Expand the component library (currently 22 sensors, 9 actuators) with additional
 
 ## Comparison with traditional development
 
-Compares three points: a traditional Arduino `loop()` app, Modest IoT v1.2.0 (current with W46), and Modest IoT v1.3.0 (planned).
+Compares three points: a traditional Arduino `loop()` app, Modest IoT v1.2.1 (previous), and Modest IoT v1.3.0 (current).
 
-> **Note**: Comparison tables are replaced with each release — past comparisons are not archived. When v1.3.0 ships, this table is updated to compare v1.3.0 vs v1.4.0.
+> **Note**: Comparison tables are replaced with each release — past comparisons are not archived. Hardware resource and performance figures remain estimates until the validation methodology below is run on physical boards.
 
 ### Developer experience
 
-| Aspect          | Traditional `loop()`                         | Modest IoT v1.2.0 (current)                                                 | Modest IoT v1.3.0 (planned)                                 |
+| Aspect          | Traditional `loop()`                         | Modest IoT v1.2.1 (previous)                                                | Modest IoT v1.3.0 (current)                                 |
 |-----------------|----------------------------------------------|-------------------------------------------------------------------------------|----------------------------------------------------------------------|
-| First build     | Works with the board package                 | All 26 examples compile in CI; 1 dependency (MQTT)                            | Same                                                                |
+| First build     | Works with the board package                 | 26 examples; 1 required Arduino library (MQTT)                                 | 28 examples; release checklist targets ESP32/ESP32-S3 with core 3.3.13 and 4.0.0 |
 | Structure       | One growing `loop()` with `millis()` flags   | Sensors emit events, a `Device` mediates, actuators take commands             | Same, with event aggregation and rules engine for automated actions (W29 + W31)    |
 | Adding a sensor | New globals, new timing variable, new branch | Subclass or reuse, register in the scheduler; per-sensor default periods; `PowerManager` for battery-aware sensors | Same, with event aggregation and rules engine for automated actions (W29 + W31)                  |
 | Sampling rates  | Hand-written per-sensor timers               | Per-slot periods, minimums enforced, staggering handled                       | Same, with event aggregation and rules engine for automated actions (W29 + W31)                |
@@ -164,12 +172,13 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT v1.2.0 (cu
 | Cloud-to-device | Hand-rolled callback                         | `Device::enqueueCommand` with `int32_t` payload for parameterized commands                   | Same, with event aggregation and rules engine for automated actions (W29 + W31)   |
 | Offline data    | Lost when network unavailable                | `TelemetryBuffer` with LittleFS persistence for offline replay                                      | Same, with event aggregation and rules engine for automated actions (W29 + W31)       |
 | Updates         | Manual reflashing required                   | OTA updates via `OtaUpdateHandler` component                                                    | Same                                                     |
-| Testing         | Rarely possible off-device                   | 51 host test suites with CI, sanitizers enabled                               | Same                                                |
+| Testing         | Rarely possible off-device                   | 51 host test suites                                                           | 53 host test suites; local macOS ASan/UBSan run passed; local coverage is 91.2% line |
 | Documentation   | README or inline comments                    | 30 ADRs with rationale, user stories with ADR cross-references, PlantUML class diagram, Doxygen API reference, versioned CHANGELOG, and cross-linked doc ecosystem | Same                                                |
+| v1.3.0 additions | N/A                                           | N/A                                                                           | BLE core 3.x/4.x HAL, `RulesEngine`, `ChangeFilter<T>`, `ImuSensor`, and optional on-device ML |
 
 ### Performance
 
-| Aspect                     | Traditional `loop()`              | Modest IoT v1.2.0 (current)                             | Modest IoT v1.3.0 (planned)                              |
+| Aspect                     | Traditional `loop()`              | Modest IoT v1.2.1 (previous)                            | Modest IoT v1.3.0 (current)                              |
 |----------------------------|-----------------------------------|-----------------------------------------------------------|--------------------------------------------------------------------|
 | Timing model               | Cooperative polling; jitter grows | Timer ISR plus sampler task; per-slot periods; interrupt-driven sensors | Same, with event aggregation and rules engine for automated actions (W29 + W31) |
 | Sample period accuracy     | Depends on `loop()` duration      | Per-slot periods independent of slot count                | Same |
@@ -184,14 +193,14 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT v1.2.0 (cu
 
 ### Resource consumption
 
-| Resource                 | Traditional `loop()` | Modest IoT v1.2.0 (current)                                                               | Modest IoT v1.3.0 (planned)                           |
+| Resource                 | Traditional `loop()` | Modest IoT v1.2.1 (previous)                                                              | Modest IoT v1.3.0 (current)                           |
 |--------------------------|----------------------|---------------------------------------------------------------------------------------------|----------------------------------------------------------------|
 | Task stacks              | `loop()` task only   | 4096 B sampler + 8192 B network, configurable via `EngineConfiguration`; `PowerManager` adds minimal stack for sleep handling | Same defaults                                             |
 | Queue and packets        | None                 | Queue of pointers + one heap packet per reading; bounded by queue policy; `TelemetryBuffer` adds LittleFS storage for offline replay | Same, with event aggregation and rules engine for automated actions (W29 + W31) |
 | Flash                    | Smallest             | Framework, Wi-Fi, BLE driver; only 1 dependency (MQTT); ~30-40 KB saved by W46; plus `OtaUpdateHandler`, `TelemetryBuffer` | Same                                                                |
 | Static RAM               | Small                | Slot table, per-object state; trigger table (4 slots); ConfigurationStore NVS cache; `TelemetryBuffer` adds LittleFS buffer | Same                                             |
 | Heap fragmentation       | Low                  | Lower with explicit ownership; `unique_ptr` transfer; LittleFS reduces heap pressure        | Same; pool in Tier 5 if measured (W18)                              |
-| Third-party dependencies | As needed            | Only MQTT — ArduinoJson removed by W46; ESP32Servo, LiquidCrystal_I2C, PubSubClient, DHT, Adafruit, and HX711 also removed | Same                                                                |
+| Third-party dependencies | As needed            | Only MQTT is required — ArduinoJson removed by W46; emlearn remains optional | Same                                                                |
 | Logging overhead         | User-controlled      | Zero when compiled out; UART cost when on                                                  | Same                                                           |
 | Persistent storage       | Manual SPIFFS/LittleFS | ConfigurationStore uses ESP32 NVS with namespace isolation; `TelemetryBuffer` uses LittleFS for offline replay | Same, with event aggregation for composite patterns (W29)  |
 | Security overhead        | None by default      | TLS examples provided; `NetworkClientSecure` usage guided; no framework-level TLS enforcement                                  | Same, with event aggregation for composite patterns (W29) |
@@ -200,7 +209,7 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT v1.2.0 (cu
 
 ## How to validate the comparison
 
-Run the same three reference applications on the same ESP32 board, once per variant (plain `loop()`, Modest IoT v1.2.0, Modest IoT v1.3.0):
+Run the same three reference applications on the same ESP32 board, once per variant (plain `loop()`, Modest IoT v1.2.1, Modest IoT v1.3.0):
 
 1. **Multi-sensor monitor:** DHT, BH1750 and a button, with a display and Wi-Fi/MQTT telemetry.
 2. **Blocking-sensor stress:** the monitor plus an HX711 and an ultrasonic sensor.
@@ -217,4 +226,3 @@ Run the same three reference applications on the same ESP32 board, once per vari
 | Flash and static RAM                    | Size report from the build for each variant                                |
 | Current draw                            | Inline current meter (Wokwi cannot measure it)                             |
 | Lines of application code               | Count in the reference sketches                                            |
-
