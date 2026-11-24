@@ -5,7 +5,7 @@ skinparam classFontStyle bold
 skinparam packageStyle rectangle
 skinparam linetype ortho
 skinparam shadowing false
-title Modest IoT Nano Framework — Class Diagram (v1.3.0, 60 headers, ESP32 4.0.0 BLE API)
+title Modest IoT Nano Framework — Class Diagram (v1.3.0, 61 headers, W29 Rules Engine)
 
 ' ─────────────────────────────────────────────
 '  CORE
@@ -108,6 +108,36 @@ package "Core" #FAFAFA {
   EventHandler <|.. EventAggregator : implements
   EventAggregator ..> Event : captures and emits
   EventAggregator --> EventHandler : emits composite events
+
+  class RuleAction {
+    +target : CommandHandler*
+    +commandId : int
+    +payload : int32_t
+    +active : bool
+  }
+
+  class Rule {
+    +compositeEventId : int
+    +actions : RuleAction[4]
+    +actionCount : uint8_t
+    +active : bool
+  }
+
+  class RulesEngine {
+    +{static} RULES_ENGINE_MAX_RULES : uint8_t = 4
+    +{static} RULES_ENGINE_MAX_ACTIONS_PER_RULE : uint8_t = 4
+    +addRule(compositeEventId : int, target : CommandHandler*, commandId : int) : bool
+    +addRule(compositeEventId : int, target : CommandHandler*, commandId : int, payload : int32_t) : bool
+    +addActionToRule(compositeEventId : int, target : CommandHandler*, commandId : int) : bool
+    +addActionToRule(compositeEventId : int, target : CommandHandler*, commandId : int, payload : int32_t) : bool
+    +removeRule(compositeEventId : int) : bool
+    +cleanupRules() : void
+    +on(event : Event) : void
+  }
+  EventHandler <|.. RulesEngine : implements
+  RulesEngine ..> CommandHandler : dispatches commands
+  RulesEngine ..> Rule : contains
+  RulesEngine ..> RuleAction : contains
 
   class ChangeFilter <<template<typename T>>> {
     +{static} MAXIMUM_SLOTS : uint8_t = 8

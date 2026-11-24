@@ -1022,10 +1022,44 @@ Optional `schemaVersion` and `firmwareVersion` fields in telemetry envelope meta
 - OR patterns complement AND logic, covering the two fundamental boolean combinations
 - Condition functions bridge event correlation and value-based decisions without coupling the aggregator to sensor internals
 - `DEVICE_SOURCE_ID` enables nested aggregator chains for multi-level pattern detection (faults → situations → escalation)
-- Dynamic pattern management (`removePattern`, `cleanupPatterns`) unblocks W29 (Rules Engine) for v1.3.0
+- Dynamic pattern management (`removePattern`, `cleanupPatterns`) enables W29 (Rules Engine) for declarative on-device automation.
 - Zero heap allocation matches the framework's philosophy
 - The three examples provide clear, non-overlapping demonstrations: standard patterns, conditional patterns, and nested chains
 
 **Source**: `src/EventAggregator.h`, `src/EventAggregator.cpp`, `tests/EventAggregator/test.cpp`, `examples/IntrusionDetector/IntrusionDetector.ino`, `examples/ColdChainMonitor/ColdChainMonitor.ino`, `examples/PharmaceuticalCleanRoom/PharmaceuticalCleanRoom.ino`
+
+---
+
+### W29: Rules Engine — **Complete** ✓
+
+**Problem**: EventAggregator (W31) provides composite event pattern matching, but the action layer required manual `on(Event)` switch statements in every Device subclass. Developers had to write boilerplate code to map composite events to actuator commands, making automation rules verbose and error-prone. There was no declarative way to say "when this pattern matches, execute these commands."
+
+**Resolution**: Added `RulesEngine` as a framework component that maps composite events from EventAggregator to automated actions (actuator Commands). It implements `EventHandler` so EventAggregator calls `RulesEngine::on(Event)` when a pattern matches. RulesEngine looks up the rule for that composite event ID and dispatches the associated Commands to target CommandHandlers (e.g., actuators). All storage uses fixed-size arrays — zero heap allocation.
+
+**Implementation**:
+
+- **RulesEngine class** (`src/RulesEngine.h/cpp`): Implements `EventHandler` interface. Fixed-size rule array (4 rules) with up to 4 actions per rule — zero heap allocation.
+- **`addRule()` (2 overloads)**: Registers a rule mapping a composite event ID to a CommandHandler target and command ID. Optional payload for parameterized commands (e.g., frequency, angle, brightness).
+- **`addActionToRule()` (2 overloads)**: Adds an additional action to an existing rule. Enables one pattern to trigger multiple commands (e.g., sound buzzer AND send telemetry).
+- **`removeRule(compositeEventId)`**: Dynamically removes a rule by composite event ID, keeping the array compact.
+- **`cleanupRules()`**: Removes all registered rules in one call for proper housekeeping in destructors.
+- **`on(Event)`**: Looks up the rule for the event's identifier and dispatches all actions via `target->handle(Command(commandId, payload))`. Unknown event IDs are silently ignored.
+- **RuleAction struct**: Holds `CommandHandler* target`, `int commandId`, `int32_t payload`, and `bool active`.
+- **Rule struct**: Holds `int compositeEventId`, `RuleAction actions[4]`, `uint8_t actionCount`, and `bool active`.
+- **30 host tests**: Covering basic rule, multiple actions, rule removal, cleanup, full capacity, payload, unknown event, and edge cases.
+
+**Examples**:
+
+- **SmartFactoryAlarm** (`examples/SmartFactoryAlarm/SmartFactoryAlarm.ino`): Factory alarm system with automated rules. WaterLeakSensor + DoorWindowSensor → EventAggregator AND pattern → RulesEngine → Buzzer PLAY_TONE command. Demonstrates the complete pipeline: sensor events, composite pattern matching, and automated action dispatch without any manual `on(Event)` switch statement.
+
+**Benefits**:
+- Declarative rules replace manual `on(Event)` switch statements for common automation patterns
+- One pattern can trigger multiple actions (e.g., sound buzzer AND send high-priority telemetry)
+- Dynamic rule management (`removeRule`, `cleanupRules`) enables runtime rule changes
+- Fixed-size arrays ensure zero heap allocation and predictable memory usage
+- Complements EventAggregator: EventAggregator handles the "when" (pattern matching), RulesEngine handles the "then" (action dispatch)
+- The SmartFactoryAlarm example provides a clear, grounded demonstration of the complete pipeline
+
+**Source**: `src/RulesEngine.h`, `src/RulesEngine.cpp`, `tests/RulesEngine/test.cpp`, `examples/SmartFactoryAlarm/SmartFactoryAlarm.ino`
 
 ---

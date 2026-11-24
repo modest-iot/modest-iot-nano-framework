@@ -424,16 +424,22 @@ run_test "test_EventAggregator" \
     src/TimeSynchronizationDriver.cpp \
     tests/EventAggregator/test.cpp
 
-# 49. ChangeFilter Suite
+# 49. RulesEngine Suite
+run_test "test_RulesEngine" \
+    tests/fakes/ArduinoFake.cpp \
+    src/RulesEngine.cpp \
+    tests/RulesEngine/test.cpp
+
+# 50. ChangeFilter Suite
 run_test "test_ChangeFilter" \
     tests/ChangeFilter/test.cpp
 
-# 50. AiMicroModelController Suite
+# 51. AiMicroModelController Suite
 run_test "test_AiMicroModelController" \
     -DUSE_EMLEARN \
     tests/AiMicroModelController/test.cpp
 
-# 51. ImuSensor Suite
+# 52. ImuSensor Suite
 run_test "test_ImuSensor" \
     tests/fakes/ArduinoFake.cpp \
     src/Sensor.cpp \

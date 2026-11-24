@@ -24,6 +24,12 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 - **tests/ChangeFilter/test.cpp**: 45 host tests covering first reading, deadband boundaries, multi-slot independence, float/int types, NaN/Inf, negative values, and realistic sensor simulations.
 - **examples/WeatherStation/WeatherStation.ino**: Demonstrates change-only mode with 0.5°C temperature deadband on DHT22 sensor.
 
+#### Rules Engine (W29)
+- **src/RulesEngine.h/cpp**: New component for on-device automation rules. Maps composite events from EventAggregator to automated actions (actuator Commands). Implements EventHandler so EventAggregator calls `RulesEngine::on(Event)` when a pattern matches. Fixed-size rule array (4 rules, 4 actions per rule), zero heap allocation. API: `addRule()` (2 overloads with/without payload), `addActionToRule()` (2 overloads), `removeRule()`, `cleanupRules()`.
+- **tests/RulesEngine/test.cpp**: 30 host tests covering basic rule, multiple actions, rule removal, cleanup, full capacity, payload, unknown event, and edge cases.
+- **examples/SmartFactoryAlarm/SmartFactoryAlarm.ino**: New example demonstrating the complete pipeline: WaterLeakSensor + DoorWindowSensor → EventAggregator AND pattern → RulesEngine → Buzzer PLAY_TONE command. Factory alarm system with automated rules for water leak and door intrusion detection.
+- **src/ModestIoT.h**: Added `RulesEngine.h` to umbrella header in Core Asynchronous Engine section.
+
 ## [1.2.1] - 2026-11-21
 
 ### Fixed
