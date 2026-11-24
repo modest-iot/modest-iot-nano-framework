@@ -27,21 +27,21 @@
  * @runs_on{network} All gateway client methods
  */
 
+#include <Arduino.h>
 #include <ModestIoT.h>
 
 // --- Serial and timing constants ---
 static const uint32_t SERIAL_BAUD_RATE = 115200;
 static const uint32_t MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
 
+// --- Sampling intervals ---
+static const uint32_t SAMPLING_INTERVAL_IN_MILLISECONDS = 1000;
+
 // --- Pin assignments ---
 static const int WATER_LEAK_PIN = 4;
 static const int DOOR_WINDOW_PIN = 5;
 static const int BUZZER_PIN = 18;
 static const int EMERGENCY_VENTILATION_PIN = 19;
-
-// --- Sampling intervals ---
-static const uint32_t WATER_LEAK_INTERVAL_IN_MILLISECONDS = 1000;
-static const uint32_t DOOR_WINDOW_INTERVAL_IN_MILLISECONDS = 1000;
 
 // --- MQTT configuration ---
 static const char* MQTT_BROKER = "broker.example.com";
@@ -55,9 +55,6 @@ static const uint32_t PATTERN_TIME_WINDOW_SECONDS = 10;
 // --- Log prefix ---
 static const char* LOG_PREFIX = "SmartFactoryAlarm";
 
-// --- Application instance ---
-SmartFactoryAlarm* smartFactoryAlarmApplication = nullptr;
-
 /**
  * @name SmartFactoryAlarm Application
  * @{
@@ -68,40 +65,36 @@ private:
     DoorWindowSensor doorWindowSensor;
     Buzzer buzzer;
     RelayActuator emergencyVentilationController;
-    MqttGatewayClient mqttClient;
     EventAggregator eventAggregator;
     RulesEngine rulesEngine;
 
 public:
-    explicit SmartFactoryAlarm(int waterLeakPin, int doorWindowPin, int buzzerPin, int emergencyVentilationPin)
-        : waterLeakSensor(waterLeakPin, &eventAggregator)
+    explicit SmartFactoryAlarm(int waterLeakPin, int doorWindowPin, int buzzerPin,
+                               int emergencyVentilationPin)
+        : Device(SAMPLING_INTERVAL_IN_MILLISECONDS)
+        , waterLeakSensor(waterLeakPin, &eventAggregator)
         , doorWindowSensor(doorWindowPin, &eventAggregator)
         , buzzer(buzzerPin)
         , emergencyVentilationController(emergencyVentilationPin)
-        , mqttClient(MQTT_BROKER, MQTT_PORT)
         , eventAggregator()
         , rulesEngine()
     {
-        setFirmwareVersion("SFA-100 FW 1.0.0");
+        // Register sensors with the triggering scheduler before starting the engine
+        appendSensorToTriggeringScheduler(
+            &waterLeakSensor, WaterLeakSensor::WATER_LEAK_DETECTED_EVENT_IDENTIFIER, CHANGE);
+        appendSensorToTriggeringScheduler(
+            &doorWindowSensor, DoorWindowSensor::DOOR_OPENED_EVENT_IDENTIFIER, CHANGE);
+
+        // Wire EventAggregator to Device (this) as output handler
+        eventAggregator.setOutputHandler(this);
+
+        // Launch internal background task workers
+        initializeAsynchronousEngine();
     }
 
-    void start() override {
+    void start() {
         Serial.begin(SERIAL_BAUD_RATE);
-        Serial.println(LOG_PREFIX " starting...");
-
-        // Configure engine
-        EngineConfiguration engineConfiguration;
-        engineConfiguration.samplerStackFreeWords = 4096;
-        engineConfiguration.networkStackFreeWords = 8192;
-        startEngine(engineConfiguration);
-
-        // Register sensors with per-slot scheduling
-        appendSensorToScheduler(&waterLeakSensor, WATER_LEAK_INTERVAL_IN_MILLISECONDS);
-        appendSensorToScheduler(&doorWindowSensor, DOOR_WINDOW_INTERVAL_IN_MILLISECONDS);
-
-        // Set up MQTT gateway
-        setTelemetryGateway(&mqttClient);
-        mqttClient.setServiceEndpointUrl(MQTT_TOPIC);
+        Serial.println((String(LOG_PREFIX) + " starting...").c_str());
 
         // --- EventAggregator: composite event pattern ---
         // When water leak AND door opened within 10 seconds, emit composite event 100
@@ -123,13 +116,13 @@ public:
                                     &emergencyVentilationController,
                                     RelayActuator::RELAY_ON_COMMAND_IDENTIFIER);
 
-        // Wire EventAggregator to Device (this) as output handler.
-        // Sensors dispatch to EventAggregator (see constructor). EventAggregator
-        // matches patterns and emits composite events to this Device.
-        // Non-matching individual sensor events are also forwarded to this Device.
-        eventAggregator.setOutputHandler(this);
+        Serial.println((String(LOG_PREFIX) + " ready. Monitoring for water leak + door intrusion.").c_str());
+    }
 
-        Serial.println(LOG_PREFIX " ready. Monitoring for water leak + door intrusion.");
+    ~SmartFactoryAlarm() override {
+        rulesEngine.cleanupRules();
+        eventAggregator.cleanupPatterns();
+        stopAsynchronousEngine();
     }
 
     /**
@@ -152,19 +145,19 @@ public:
                 break;
 
             case WaterLeakSensor::WATER_LEAK_DETECTED_EVENT_IDENTIFIER:
-                Serial.println(LOG_PREFIX " WARNING: Water leak detected!");
+                Serial.println((String(LOG_PREFIX) + " WARNING: Water leak detected!").c_str());
                 break;
 
             case WaterLeakSensor::WATER_LEAK_CLEARED_EVENT_IDENTIFIER:
-                Serial.println(LOG_PREFIX " Water leak cleared.");
+                Serial.println((String(LOG_PREFIX) + " Water leak cleared.").c_str());
                 break;
 
             case DoorWindowSensor::DOOR_OPENED_EVENT_IDENTIFIER:
-                Serial.println(LOG_PREFIX " NOTICE: Door opened.");
+                Serial.println((String(LOG_PREFIX) + " NOTICE: Door opened.").c_str());
                 break;
 
             case DoorWindowSensor::DOOR_CLOSED_EVENT_IDENTIFIER:
-                Serial.println(LOG_PREFIX " Door closed.");
+                Serial.println((String(LOG_PREFIX) + " Door closed.").c_str());
                 break;
 
             default:
@@ -181,11 +174,14 @@ public:
 
 /** @} */
 
+static SmartFactoryAlarm* smartFactoryAlarmApplication = nullptr;
+
 void setup() {
-    smartFactoryAlarmApplication = new SmartFactoryAlarm(WATER_LEAK_PIN, DOOR_WINDOW_PIN, BUZZER_PIN, EMERGENCY_VENTILATION_PIN);
+    smartFactoryAlarmApplication = new SmartFactoryAlarm(
+        WATER_LEAK_PIN, DOOR_WINDOW_PIN, BUZZER_PIN, EMERGENCY_VENTILATION_PIN);
     smartFactoryAlarmApplication->start();
 }
 
 void loop() {
-    delay(MAIN_LOOP_DELAY_IN_MILLISECONDS);
+    vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_IN_MILLISECONDS));
 }
