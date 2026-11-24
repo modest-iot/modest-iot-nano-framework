@@ -5,7 +5,7 @@ skinparam classFontStyle bold
 skinparam packageStyle rectangle
 skinparam linetype ortho
 skinparam shadowing false
-title Modest IoT Nano Framework — Class Diagram (v1.3.0, 61 headers, W29 Rules Engine)
+title Modest IoT Nano Framework — Class Diagram (v1.3.0, 62 headers, W29 Rules Engine)
 
 ' ─────────────────────────────────────────────
 '  CORE
@@ -208,19 +208,23 @@ package "Core" #FAFAFA {
   }
 
   class PowerManager {
-    +{static} DEFAULT_VCC_REFERENCE_IN_MILLIVOLTS : uint32_t = 3300
-    +{static} DEFAULT_LOW_BATTERY_THRESHOLD_IN_MILLIVOLTS : uint32_t = 3000
-    +{static} DEFAULT_VOLTAGE_DIVIDER_RATIO : float = 2.0
-    +begin(pin : int, voltageDividerRatio : float, vccReferenceInMillivolts : uint32_t) : bool
-    +isInitialized() : bool
-    +getBatteryVoltageInMillivolts() : uint32_t
-    +getBatteryLevelInPercentage() : uint8_t
-    +isLowBattery() : bool
-    +setLowBatteryThresholdInMillivolts(thresholdInMillivolts : uint32_t) : void
-    +setBatteryVoltageRange(minimumVoltageInMillivolts : uint32_t, maximumVoltageInMillivolts : uint32_t) : void
-    +getMinVoltageInMillivolts() : uint32_t
-    +getMaxVoltageInMillivolts() : uint32_t
-    +onLowBattery(callback : LowBatteryCallback) : void
+    -{static} batteryPin : uint8_t = 0
+    -{static} dividerRatio : float = 1.0
+    -{static} vccReferenceInMillivolts : uint32_t = 1100
+    -{static} lowBatteryThresholdInMillivolts : uint32_t = 3300
+    -{static} minVoltageInMillivolts : uint32_t = 3000
+    -{static} maxVoltageInMillivolts : uint32_t = 4200
+    -{static} initialized : bool = false
+    +{static} begin(batteryPin : uint8_t, dividerRatio : float, vccReferenceInMillivolts : uint32_t = 1100) : void
+    +{static} isInitialized() : bool
+    +{static} getBatteryVoltageInMillivolts() : uint32_t
+    +{static} getBatteryLevelInPercentage() : float
+    +{static} isLowBattery() : bool
+    +{static} setLowBatteryThresholdInMillivolts(thresholdInMillivolts : uint32_t) : void
+    +{static} getLowBatteryThresholdInMillivolts() : uint32_t
+    +{static} setBatteryVoltageRange(minimumVoltageInMillivolts : uint32_t, maximumVoltageInMillivolts : uint32_t) : void
+    +{static} getMinVoltageInMillivolts() : uint32_t
+    +{static} getMaxVoltageInMillivolts() : uint32_t
   }
 
   class TelemetryBuffer {
@@ -864,6 +868,24 @@ package "Connectivity" #EDF3FF {
     +canTransmit() : bool
   }
 
+  enum BleHalProperty {
+    Broadcast = 0x01
+    Read = 0x02
+    WriteWithoutRsp = 0x04
+    Write = 0x08
+    Notify = 0x10
+    Indicate = 0x20
+    SignedWrite = 0x40
+    ExtendedProps = 0x80
+  }
+
+  enum BleHalPermission {
+    None = 0x0000
+    ReadOpen = 0x0001
+    WriteOpen = 0x0010
+    ReadWriteOpen = 0x0011
+  }
+
   class WiFiConnectivityDriver {
     -networkSsidIdentifier : const char*
     -networkPasswordCredential : const char*
@@ -884,15 +906,44 @@ package "Connectivity" #EDF3FF {
     +getReconnectInterval() : unsigned long
   }
 
+  class BleHalCharacteristic {
+    -pImpl : BleHalCharacteristicImpl*
+    +onWrite(callback : function<void(const uint8_t*, size_t)>) : void
+    +setValue(data : const uint8_t*, length : size_t) : void
+    +getValue(length : size_t* = nullptr) const : const uint8_t*
+    +notify() : void
+  }
+
+  class BleHalService {
+    -pImpl : BleHalServiceImpl*
+    +createCharacteristic(uuid : const char*, props : uint32_t, perms : uint16_t) : BleHalCharacteristic
+  }
+
+  class BleHalServer {
+    -pImpl : BleHalServerImpl*
+    +onConnect(callback : function<void()>) : void
+    +onDisconnect(callback : function<void(uint8_t)>) : void
+    +createService(uuid : const char*) : BleHalService
+    +start() : void
+  }
+
+  class BleHalAdvertising {
+    -pImpl : BleHalAdvertisingImpl*
+    +addServiceUUID(uuid : const char*) : void
+    +setScanResponse(enable : bool) : void
+    +start() : void
+    +stop() : void
+  }
+
   class BleConnectivityDriver {
     -localDeviceName : const char*
     -deviceConnected : volatile bool
     -advertisingActive : bool
     -initialized : bool
-    -bleServer : BLEServer
-    -bleService : BLEService
-    -txCharacteristic : BLECharacteristic
-    -rxCharacteristic : BLECharacteristic
+    -bleServer : BleHalServer
+    -bleService : BleHalService
+    -txCharacteristic : BleHalCharacteristic
+    -rxCharacteristic : BleHalCharacteristic
     -onDataReceivedHandler : DataReceivedCallback
     +{static} NUS_SERVICE_UUID : const char*
     +{static} NUS_RX_CHARACTERISTIC_UUID : const char*
@@ -915,6 +966,12 @@ package "Connectivity" #EDF3FF {
     +getSignalStrengthInDbm() const : int32_t
     +handleDataReceived(data : const uint8_t*, length : size_t) : void
   }
+
+  note as BleHalFunctions
+    bleHalBegin(name : const char*) : void
+    bleHalCreateServer() : BleHalServer
+    bleHalGetAdvertising() : BleHalAdvertising
+  end note
 }
 
 ' ─────────────────────────────────────────────
@@ -1068,7 +1125,7 @@ Device <|-- CustomDevice
 ' ─────────────────────────────────────────────
 Sensor   "0..1" o--> EventHandler   : eventHandler
 Actuator "0..1" o--> CommandHandler : commandHandler
-Device   "0..8" o--> SamplingScheduler : scheduler
+Device   *-- "1" SamplingScheduler : owns scheduler
 Device   "0..4" o--> Sensor : triggerTable
 
 GatewayClient     --> ConnectivityDriver : uses
@@ -1085,8 +1142,10 @@ WiFiConnectivityDriver ..> WiFiClient : allocates
 WiFiConnectivityDriver ..> Client     : exposes
 WiFiConnectivityDriver ..> WiFiClientSecure : creates
 
-BleConnectivityDriver ..> BLEServer : uses
-BleConnectivityDriver ..> BLECharacteristic : uses
+BleConnectivityDriver *-- BleHalServer : owns
+BleConnectivityDriver *-- BleHalService : owns
+BleConnectivityDriver *-- "2" BleHalCharacteristic : owns TX/RX
+BleConnectivityDriver ..> BleHalAdvertising : obtains global handle
 
 GasSensor +-- GasSensor_OperatingMode
 GasSensor +-- GasSensor_GasType
