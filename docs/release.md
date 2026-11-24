@@ -160,6 +160,7 @@ Before finalizing the release, review all documentation for effects of the chang
 |----------|-----------|
 | **docs/adrs.md** | Stale references to removed dependencies or old APIs; mark superseded ADRs if decisions were reversed; record new architectural decisions where warranted and verify the ADR index and count |
 | **docs/class-diagram.puml** | Current classes, APIs, member types, relationships, ownership, and cardinality match the codebase |
+| **Doxygen API documentation** (`docs/doxygen-mainpage.md` and public headers) | Documented behavior, API details, and module grouping match the current implementation; generated reference builds successfully |
 | **CONTRIBUTING.md** | Dependency changes, version management updates, bug report template |
 | **docs/quick-start.md** | Minimum version requirements, hardware prerequisites, BLE simulation limits |
 | **docs/dependencies.md** | Added/removed dependencies, monitoring changes |
@@ -201,6 +202,7 @@ Before starting the release process, verify:
 - [ ] `README.md` `**Last updated**` date is updated
 - [ ] `SECURITY.md` Supported Versions table is updated
 - [ ] `docs/doxygen-mainpage.md` version reference is updated
+- [ ] Doxygen API documentation is aligned with current codebase behavior and `doxygen docs/Doxyfile` succeeds
 - [ ] `docs/benchmarks.md` version, date, and platform are updated
 - [ ] `docs/class-diagram.puml` matches the current codebase structure and relationships
 - [ ] `keywords.txt` entries match the current public API

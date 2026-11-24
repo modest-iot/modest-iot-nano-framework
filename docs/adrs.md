@@ -445,7 +445,7 @@ Retain ArduinoJson (pinned to `>=7.0.0` in `library.properties`) for now. Defer 
 
 ### Supersession
 
-**Superseded in v1.2.0 (W46)**: ArduinoJson was removed and replaced with `TelemetryWriter`/`JsonTelemetryWriter` — a native snprintf-based JSON writer with zero heap allocation. The `TelemetryWriter` abstraction decouples serialization format from telemetry packages, enabling future CBOR/MessagePack support. See [ADR-028](#adr-028-telemetrywriter-abstraction-and-arduinojson-removal-w46).
+**Superseded in v1.2.0 (W46)**: ArduinoJson was removed and replaced with `TelemetryWriter`/`JsonTelemetryWriter` — a native snprintf-based JSON writer with zero heap allocation. The `TelemetryWriter` abstraction decouples serialization format from telemetry packages, enabling future CBOR/MessagePack support. See the [W46 implementation summary](improvements.md).
 
 ### References
 
