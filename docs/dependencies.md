@@ -7,7 +7,7 @@ This document lists all external dependencies of the Modest IoT Nano Framework a
 | Dependency | Type | Version | Monitored By |
 |------------|------|---------|--------------|
 | **MQTT** | Arduino Library | ≥2.5.3 | Automated (weekly status badge) |
-| **ESP32 Arduino Core** | Platform Core | Latest | Automated (weekly status badge) |
+| **ESP32 Arduino Core** | Platform Core | Latest; BLE HAL supports core 3.x and 4.x | Automated (weekly status badge) |
 | **GitHub Actions** | CI/CD | Various | Dependabot (automated) |
 
 ### Status Badges
@@ -23,12 +23,14 @@ Badges are stored as JSON files in `.badges/` and updated automatically by the w
 
 ### MQTT Library (≥2.5.3)
 
-The only external Arduino library dependency after W46 (ArduinoJson removal).
+The only required external Arduino library dependency after W46 (ArduinoJson removal).
 
 - **Repository**: [256dpi/arduino-mqtt](https://github.com/256dpi/arduino-mqtt)
 - **Used in**: `library.properties` (depends field), `library.json` (dependencies), `compile-examples.yml` (CI install)
 - **Minimum version**: 2.5.3
 - **Update process**: Manual — check releases page periodically, update all 3 files simultaneously
+
+On-device inference is also available through `EmlearnController`. Generated-model inference uses application-provided C code and does not require an additional package; tree and neural-network model APIs can link emlearn when needed. emlearn is optional and is not a required Arduino Library Manager dependency.
 
 To update the MQTT library version:
 

@@ -1,6 +1,6 @@
 # Modest IoT Framework Evolution
 
-Historical record of completed work items W1–W28 with implementation details.
+Historical record of completed work items through W47 with implementation details.
 
 > This document records completed work. For current status and planned improvements, see [improvements.md](improvements.md).
 
@@ -200,6 +200,8 @@ Zero-cost compile-time level filtering (`MODEST_LOG_LEVEL` 0-5). ESP32 `esp32-ha
 #### Diagnostics Snapshot
 
 12-field `DiagnosticsSnapshot` struct: missedTicks, worstCaseWakeMicros, packetsEnqueued, packetsDropped, queueHighWaterMark, sendsSucceeded, sendsFailed, freeHeapBytes, minFreeHeapBytes, samplerStackFreeWords, networkStackFreeWords, uptimeSeconds.
+
+This is the original W6 field list; the current public API documents a 16-field snapshot.
 
 `Device::diagnostics()` queries FreeRTOS `uxTaskGetStackHighWaterMark()`, `ESP.getFreeHeap()`, `ESP.getMinFreeHeap()`, and `millis()`.
 
@@ -1022,10 +1024,76 @@ Optional `schemaVersion` and `firmwareVersion` fields in telemetry envelope meta
 - OR patterns complement AND logic, covering the two fundamental boolean combinations
 - Condition functions bridge event correlation and value-based decisions without coupling the aggregator to sensor internals
 - `DEVICE_SOURCE_ID` enables nested aggregator chains for multi-level pattern detection (faults → situations → escalation)
-- Dynamic pattern management (`removePattern`, `cleanupPatterns`) unblocks W29 (Rules Engine) for v1.3.0
+- Dynamic pattern management (`removePattern`, `cleanupPatterns`) enables W29 (Rules Engine) for declarative on-device automation.
 - Zero heap allocation matches the framework's philosophy
 - The three examples provide clear, non-overlapping demonstrations: standard patterns, conditional patterns, and nested chains
 
 **Source**: `src/EventAggregator.h`, `src/EventAggregator.cpp`, `tests/EventAggregator/test.cpp`, `examples/IntrusionDetector/IntrusionDetector.ino`, `examples/ColdChainMonitor/ColdChainMonitor.ino`, `examples/PharmaceuticalCleanRoom/PharmaceuticalCleanRoom.ino`
+
+---
+
+### W29: Rules Engine — **Complete** ✓
+
+**Problem**: EventAggregator (W31) provides composite event pattern matching, but the action layer required manual `on(Event)` switch statements in every Device subclass. Developers had to write boilerplate code to map composite events to actuator commands, making automation rules verbose and error-prone. There was no declarative way to say "when this pattern matches, execute these commands."
+
+**Resolution**: Added `RulesEngine` as a framework component that maps composite events from EventAggregator to automated actions (actuator Commands). It implements `EventHandler` so EventAggregator calls `RulesEngine::on(Event)` when a pattern matches. RulesEngine looks up the rule for that composite event ID and dispatches the associated Commands to target CommandHandlers (e.g., actuators). All storage uses fixed-size arrays — zero heap allocation.
+
+**Implementation**:
+
+- **RulesEngine class** (`src/RulesEngine.h/cpp`): Implements `EventHandler` interface. Fixed-size rule array (4 rules) with up to 4 actions per rule — zero heap allocation.
+- **`addRule()` (2 overloads)**: Registers a rule mapping a composite event ID to a CommandHandler target and command ID. Optional payload for parameterized commands (e.g., frequency, angle, brightness).
+- **`addActionToRule()` (2 overloads)**: Adds an additional action to an existing rule. Enables one pattern to trigger multiple commands (e.g., sound buzzer AND send telemetry).
+- **`removeRule(compositeEventId)`**: Dynamically removes a rule by composite event ID, keeping the array compact.
+- **`cleanupRules()`**: Removes all registered rules in one call for proper housekeeping in destructors.
+- **`on(Event)`**: Looks up the rule for the event's identifier and dispatches all actions via `target->handle(Command(commandId, payload))`. Unknown event IDs are silently ignored.
+- **RuleAction struct**: Holds `CommandHandler* target`, `int commandId`, `int32_t payload`, and `bool active`.
+- **Rule struct**: Holds `int compositeEventId`, `RuleAction actions[4]`, `uint8_t actionCount`, and `bool active`.
+- **30 host tests**: Covering basic rule, multiple actions, rule removal, cleanup, full capacity, payload, unknown event, and edge cases.
+
+**Examples**:
+
+- **SmartFactoryAlarm** (`examples/SmartFactoryAlarm/SmartFactoryAlarm.ino`): Factory alarm system with automated rules. WaterLeakSensor + DoorWindowSensor → EventAggregator AND pattern → RulesEngine → Buzzer PLAY_TONE command. Demonstrates the complete pipeline: sensor events, composite pattern matching, and automated action dispatch without any manual `on(Event)` switch statement.
+
+**Benefits**:
+- Declarative rules replace manual `on(Event)` switch statements for common automation patterns
+- One pattern can trigger multiple actions (e.g., sound buzzer AND send high-priority telemetry)
+- Dynamic rule management (`removeRule`, `cleanupRules`) enables runtime rule changes
+- Fixed-size arrays ensure zero heap allocation and predictable memory usage
+- Complements EventAggregator: EventAggregator handles the "when" (pattern matching), RulesEngine handles the "then" (action dispatch)
+- The SmartFactoryAlarm example provides a clear, grounded demonstration of the complete pipeline
+
+**Source**: `src/RulesEngine.h`, `src/RulesEngine.cpp`, `tests/RulesEngine/test.cpp`, `examples/SmartFactoryAlarm/SmartFactoryAlarm.ino`
+
+---
+
+## BLE HAL Compatibility across ESP32 Arduino Cores
+
+The v1.3.0 release adds `BleHal` to isolate the BLE API differences between ESP32 Arduino core 3.x and 4.x. `BleConnectivityDriver` continues to provide the Nordic UART Service interface while delegating platform-specific operations to the HAL, so applications no longer require core 4.0.0 solely for BLE support.
+
+**Source**: `src/BleHal.h`, `src/BleHal.cpp`, `src/BleConnectivityDriver.h`, `src/BleConnectivityDriver.cpp`, `tests/BleConnectivityDriver/test.cpp`
+
+---
+
+## W43: Change-Only Telemetry
+
+`ChangeFilter<T>` maintains a fixed set of per-sensor slots with independent deadband thresholds. The first reading passes, later readings pass only when their absolute change is greater than the configured deadband, a zero deadband disables filtering, and non-finite floating-point readings or invalid slot indices are suppressed. `Device` exposes registration overloads that configure a deadband for a scheduled sensor; the implementation uses fixed storage and allocates no heap memory.
+
+**Example**: `WeatherStation` demonstrates temperature telemetry with a 0.5°C deadband.
+
+**Validation**: 45 host tests cover boundaries, slot independence, numeric types, non-finite values, and sensor-like sequences.
+
+**Source**: `src/ChangeFilter.h`, `src/Device.h`, `src/Device.cpp`, `tests/ChangeFilter/test.cpp`, `examples/WeatherStation/WeatherStation.ino`
+
+---
+
+## W47: On-Device ML Inference and MPU6050 Sensing
+
+`AiMicroModelController` defines the inference interface for prediction, regression, model readiness, and result status. `EmlearnController` adapts tree, neural-network, regression, and generated C models; generated-model use does not require the emlearn package, while emlearn symbols are optional for the other model paths.
+
+`ImuSensor` adds an MPU6050 6-axis accelerometer/gyroscope adapter with calibrated readings and fixed-window RMS and peak-to-peak statistics. The `VibrationMonitor` example connects sensor statistics to on-device anomaly inference and a buzzer alert.
+
+**Validation**: 28 host tests cover model results, invalid input, switching, and no-model cases; the IMU has its own host suite.
+
+**Source**: `src/AiMicroModelController.h`, `src/EmlearnController.h`, `src/ImuSensor.h`, `src/ImuSensor.cpp`, `tests/AiMicroModelController/test.cpp`, `tests/ImuSensor/test.cpp`, `examples/VibrationMonitor/VibrationMonitor.ino`
 
 ---

@@ -130,6 +130,7 @@ run_test "test_RfidSensor" \
 run_test "test_BleConnectivityDriver" \
     -DTEST_MOCK_BLE \
     tests/fakes/ArduinoFake.cpp \
+    src/BleHal.cpp \
     src/BleConnectivityDriver.cpp \
     tests/BleConnectivityDriver/test.cpp
 
@@ -314,6 +315,7 @@ run_test "test_EnvironmentalGasSensor" \
 run_test "test_BleGatewayClient" \
     -DTEST_MOCK_BLE \
     tests/fakes/ArduinoFake.cpp \
+    src/BleHal.cpp \
     src/BleGatewayClient.cpp \
     src/BleConnectivityDriver.cpp \
     src/JsonTelemetryWriter.cpp \
@@ -467,6 +469,28 @@ run_test "test_EventAggregator" \
     src/TimeSynchronizationDriver.cpp \
     tests/EventAggregator/test.cpp
 
+# 49. RulesEngine Suite
+run_test "test_RulesEngine" \
+    tests/fakes/ArduinoFake.cpp \
+    src/RulesEngine.cpp \
+    tests/RulesEngine/test.cpp
+
+# 50. ChangeFilter Suite
+run_test "test_ChangeFilter" \
+    tests/ChangeFilter/test.cpp
+
+# 51. AiMicroModelController Suite
+run_test "test_AiMicroModelController" \
+    -DUSE_EMLEARN \
+    tests/AiMicroModelController/test.cpp
+
+# 52. ImuSensor Suite
+run_test "test_ImuSensor" \
+    tests/fakes/ArduinoFake.cpp \
+    src/Sensor.cpp \
+    src/ImuSensor.cpp \
+    tests/ImuSensor/test.cpp
+
 echo "=========================================================="
 echo " Test Summary: ${PASSED} passed, ${FAILED} failed"
 echo "=========================================================="
@@ -548,6 +572,7 @@ lcov --remove "${INFO_FILE}" \
     '*/DhtSensor.cpp' \
     '*/UltrasonicSensor.cpp' \
     '*/LoadCellAmplifier.cpp' \
+    '*/ImuSensor.cpp' \
     '*/TelemetryBuffer.cpp' \
     '*/PowerManager.cpp' \
     '*/GatewayClient.h' \
@@ -565,6 +590,7 @@ PLATFORM_EXCLUDED=(
     "DhtSensor"
     "UltrasonicSensor"
     "LoadCellAmplifier"
+    "ImuSensor"
     "TelemetryBuffer"
     "PowerManager"
     "GatewayClient"

@@ -2,7 +2,7 @@
 
 PROJECT_NAME           = "Modest IoT Nano Framework (C++ Edition)"
 PROJECT_BRIEF          = "Lightweight event-driven Arduino framework for resource-constrained IoT devices"
-PROJECT_NUMBER         = 1.2.1
+PROJECT_NUMBER         = 1.3.0
 OUTPUT_DIRECTORY       = docs/build
 CREATE_SUBDIRS         = NO
 
@@ -55,4 +55,3 @@ CALLER_GRAPH           = NO
 UML_LOOK               = YES
 DOT_IMAGE_FORMAT       = svg
 DOT_GRAPH_MAX_NODES    = 100
-

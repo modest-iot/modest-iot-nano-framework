@@ -25,10 +25,10 @@ Git Flow Helper Plugin                    GitHub Actions CI (on release/* push)
 ─────────────────────────                 ───────────────────────────────────
                                          
 1. Release Start                          (Existing workflows validate)
-   - Create release branch               - Host tests (49 suites)
+   - Create release branch               - Host tests (53 suites)
    - Specify version tag                 - Code coverage (gcov/lcov)
                                          
-2. Release Publish                        - Compile examples (26 × 2 boards)
+2. Release Publish                        - Compile examples (28 × 4 board/core combinations)
    - Push release branch to remote       - Lint (strict compliance)
    → Triggers CI validation              - Dependency status (weekly)
                                         
@@ -63,8 +63,8 @@ The Git Flow Helper Plugin in CLion provides the following release commands:
 
 1. **Release Start**
    - In CLion: `Git → Git Flow → Release Start`
-   - Specify the version tag (e.g., `v1.2.0`)
-   - This creates the `release/v1.2.0` branch from `develop`
+   - Specify the version tag (e.g., `v1.3.0`)
+   - This creates the `release/v1.3.0` branch from `develop`
 
 2. **Prepare the Release**
    - Update version numbers (see [Version Bump](#version-bump))
@@ -82,11 +82,11 @@ The Git Flow Helper Plugin in CLion provides the following release commands:
    ```bash
    # Merge into main
    git checkout main
-   git merge --no-ff release/v1.2.0
+   git merge --no-ff release/v1.3.0
    
    # Merge into develop
    git checkout develop
-   git merge --no-ff release/v1.2.0
+   git merge --no-ff release/v1.3.0
    
    # Push both branches
    git push origin main develop
@@ -94,8 +94,8 @@ The Git Flow Helper Plugin in CLion provides the following release commands:
 
 5. **Release Finish**
    - In CLion: `Git → Git Flow → Release Finish`
-   - Select the release branch (`release/v1.2.0`)
-   - This closes the branch, creates the tag (`v1.2.0`), and deletes the branch
+   - Select the release branch (`release/v1.3.0`)
+   - This closes the branch, creates the tag (`v1.3.0`), and deletes the branch
    - **The tag push triggers the automated Release workflow**
 
 6. **Publish to PlatformIO Registry**
@@ -113,9 +113,9 @@ When you push the release branch (step 2: Release Publish), the existing CI work
 
 | Workflow | Purpose |
 |----------|---------|
-| **Host Unit Tests** | Runs all 49 test suites with AddressSanitizer and UBSan (Ubuntu + macOS) |
+| **Host Unit Tests** | Runs all 53 test suites with AddressSanitizer and UBSan (Ubuntu + macOS) |
 | **Code Coverage** | Generates gcov/lcov coverage report (80% threshold) |
-| **Compile Examples** | Compiles all 26 examples for esp32 and esp32s3 |
+| **Compile Examples** | Compiles all 28 examples for esp32 and esp32s3 on ESP32 Arduino cores 3.3.13 and 4.0.0 |
 | **Lint** | Validates library metadata with strict compliance |
 
 **Important:** Verify all CI workflows pass on the release branch before proceeding to the manual merge step. If any job fails, fix the issues on the release branch and push again.
@@ -132,7 +132,7 @@ When the tag is pushed by **Release Finish**, the `.github/workflows/release.yml
 ### Job Flow
 
 ```
-Tag push (v1.2.0)
+Tag push (v1.3.0)
   │
   ├──→ doxygen ──→ release
   │    (HTML)      (GitHub Release)
@@ -158,17 +158,18 @@ Before finalizing the release, review all documentation for effects of the chang
 
 | Document | Review for |
 |----------|-----------|
-| **docs/adrs.md** | Stale references to removed dependencies or old APIs; mark superseded ADRs if decisions were reversed |
-| **docs/class-diagram.puml** | API changes (new/removed methods, member type changes, new classes) |
+| **docs/adrs.md** | Stale references to removed dependencies or old APIs; mark superseded ADRs if decisions were reversed; record new architectural decisions where warranted and verify the ADR index and count |
+| **docs/class-diagram.puml** | Current classes, APIs, member types, relationships, ownership, and cardinality match the codebase |
+| **Doxygen API documentation** (`docs/doxygen-mainpage.md` and public headers) | Documented behavior, API details, and module grouping match the current implementation; generated reference builds successfully |
 | **CONTRIBUTING.md** | Dependency changes, version management updates, bug report template |
 | **docs/quick-start.md** | Minimum version requirements, hardware prerequisites, BLE simulation limits |
 | **docs/dependencies.md** | Added/removed dependencies, monitoring changes |
 | **docs/evolution.md** | New W-items or resolutions that should be documented |
 | **docs/improvements.md** | Comparison tables, current-state accuracy |
-| **docs/user-stories.md** | Implementation status updates, method name changes |
+| **docs/user-stories.md** | Implementation status and method name updates; verify acceptance criteria against current API behavior and constraints |
 | **docs/troubleshooting.md** | New error patterns, platform-specific issues |
 | **docs/coverage.md** | Coverage number changes, new exclusions |
-| **docs/benchmarks.md** | Version, date, platform; new metrics or comparison data |
+| **docs/benchmarks.md** | Version, date, platform; new metrics or comparison data; distinguish newly measured values from carried-forward estimates |
 
 ### Common Triggers
 
@@ -197,11 +198,15 @@ Before starting the release process, verify:
 - [ ] `library.json` version is updated
 - [ ] `docs/Doxyfile` `PROJECT_NUMBER` is updated
 - [ ] `CMakeLists.txt` `VERSION` is updated
+- [ ] Host test entry points (`tests/run_all.sh`, `tests/run_coverage.sh`, and CMake/CTest) execute the same complete suite set and report a consistent suite count
 - [ ] `README.md` `**Version**` is updated
 - [ ] `README.md` `**Last updated**` date is updated
 - [ ] `SECURITY.md` Supported Versions table is updated
 - [ ] `docs/doxygen-mainpage.md` version reference is updated
+- [ ] Doxygen API documentation is aligned with current codebase behavior and `doxygen docs/Doxyfile` succeeds
 - [ ] `docs/benchmarks.md` version, date, and platform are updated
+- [ ] `docs/class-diagram.puml` matches the current codebase structure and relationships
+- [ ] `keywords.txt` entries match the current public API
 - [ ] Documentation alignment review is complete (see [Documentation Alignment](#documentation-alignment))
 - [ ] No blocking issues or open pull requests
 - [ ] Dependency status badges are current (check README badges)
@@ -209,36 +214,36 @@ Before starting the release process, verify:
 **After pushing the release branch (Release Publish), verify:**
 
 - [ ] All CI workflows pass on the `release/*` branch
-- [ ] Host tests: 49 suites pass on Ubuntu and macOS
+- [ ] Host tests: 53 suites pass on Ubuntu and macOS
 - [ ] Code coverage: 80% threshold met
-- [ ] Compile examples: All 26 examples compile for esp32 and esp32s3
+- [ ] Compile examples: All 28 examples compile for esp32 and esp32s3 on ESP32 Arduino cores 3.3.13 and 4.0.0
 - [ ] Lint: Strict compliance passes
 
 **Only proceed to the manual merge step after all CI checks pass on the release branch.**
 
 ## Version Bump
 
-The version is managed in four core files, with three additional documentation files that reference the current version. Update all seven simultaneously during the release preparation phase:
+The version is managed in four core files, with five documentation references. Update all nine simultaneously during the release preparation phase:
 
 **Core version files:**
 
 | File | Field | Example |
 |------|-------|---------|
-| `library.properties` | `version=1.2.1` | Arduino Library Manager |
-| `library.json` | `"version": "1.2.1"` | PlatformIO Registry |
-| `docs/Doxyfile` | `PROJECT_NUMBER = 1.2.1` | Doxygen API reference |
-| `CMakeLists.txt` | `VERSION 1.2.1` | CMake host test builds |
+| `library.properties` | `version=1.3.0` | Arduino Library Manager |
+| `library.json` | `"version": "1.3.0"` | PlatformIO Registry |
+| `docs/Doxyfile` | `PROJECT_NUMBER = 1.3.0` | Doxygen API reference |
+| `CMakeLists.txt` | `VERSION 1.3.0` | CMake host test builds |
 
 **Documentation version references:**
 
 | File | Field | Example |
 |------|-------|---------|
-| `README.md` | `**Version**: 1.2.1` | Front matter version |
-| `README.md` | `**Last updated**: 2026-11-21` | Front matter date |
+| `README.md` | `**Version**: 1.3.0` | Front matter version |
+| `README.md` | `**Last updated**: 2026-11-24` | Front matter date |
 | `SECURITY.md` | Supported Versions table | Current version row |
-| `docs/doxygen-mainpage.md` | `(v1.2.1)` in first paragraph | API reference version |
-| `docs/benchmarks.md` | `**Version**: 1.2.1` | Benchmark table version |
-| `docs/benchmarks.md` | `**Date**: 2026-11-21` | Benchmark table date |
+| `docs/doxygen-mainpage.md` | `(v1.3.0)` in first paragraph | API reference version |
+| `docs/benchmarks.md` | `**Version**: 1.3.0` | Benchmark table version |
+| `docs/benchmarks.md` | `**Date**: 2026-11-24` | Benchmark table date |
 | `docs/benchmarks.md` | `**Platform**: ESP32 (Arduino core 4.0.0)` | Benchmark table platform |
 
 ### Version Bump Rules
@@ -255,7 +260,7 @@ After updating the version files, commit:
 
 ```bash
 git add library.properties library.json docs/Doxyfile CMakeLists.txt README.md SECURITY.md docs/doxygen-mainpage.md docs/benchmarks.md
-git commit -m "chore(release): bump version to 1.2.1"
+git commit -m "chore(release): bump version to 1.3.0"
 ```
 
 ## Registry Publishing
@@ -271,7 +276,7 @@ After the Release workflow completes (Doxygen + GitHub Release), publish to both
 
 **Fully automatic.** The Arduino Library Manager indexer checks repositories hourly for new tags. After the tag is pushed:
 
-1. The Arduino indexer detects the new tag (`v1.2.0`)
+1. The Arduino indexer detects the new tag (`v1.3.0`)
 2. The library is validated against the Arduino Library Manager requirements
 3. The new version appears in the Library Manager within ~1 hour
 
@@ -345,7 +350,7 @@ git push origin develop
 ### Release branch CI fails
 
 - Check the GitHub Actions run log for the specific workflow that failed on the `release/*` branch.
-- Fix the issues on the release branch and push again: `git push origin release/v1.2.0 --force`
+- Fix the issues on the release branch and push again: `git push origin release/v1.3.0`
 - **Do not merge to `main` or `develop` until all CI checks pass on the release branch.**
 - If host tests fail, fix the tests and push the fix to the release branch.
 - If example compilation fails, verify the example compiles locally with `arduino-cli`.

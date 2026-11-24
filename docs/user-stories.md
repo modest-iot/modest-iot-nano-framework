@@ -120,11 +120,12 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
 ### TS11: Observe System Health via Diagnostics
 - **As an** IoT Developer, **I want** to query runtime diagnostics at any time, **so that** I can tune task stacks, detect memory pressure, and observe queue behavior.
 - **Acceptance Criteria**:
-    - **Given** the engine is running, **when** `Device::diagnostics()` is called, **then** a 12-field snapshot is returned with heap, stack, queue, and send statistics.
-    - **Given** stack high-water marks are queried, **when** the snapshot is computed, **then** values are reported in bytes (not words) for direct interpretation.
+    - **Given** the engine is running, **when** `Device::collectDiagnostics()` is called, **then** a 16-field snapshot is returned with heap, stack, queue, and send statistics.
+    - **Given** stack high-water marks are queried, **when** the snapshot is computed, **then** values are reported in words, as returned by the FreeRTOS API.
+    - **Given** the diagnostics snapshot includes `worstCaseWakeMicros`, **when** the snapshot is collected, **then** its current value is reported as 0 and is not treated as a measured wake-time metric.
     - **Given** the diagnostics query runs, **when** it completes, **then** no background CPU overhead is incurred during normal operation.
     - **Given** gateway send statistics are available, **when** the snapshot is computed, **then** send success and failure counts are included.
-- **Status**: ✓ Implemented. See `Device.h` (`DiagnosticsSnapshot`), `Device.cpp` (`diagnostics()`), `GatewayClient.h` (`GatewayStatistics`), and `tests/DiagnosticsSnapshot/test.cpp`.
+- **Status**: ✓ Implemented. See `Device.h` (`DiagnosticsSnapshot`), `Device.cpp` (`collectDiagnostics()`), `GatewayClient.h` (`GatewayStatistics`), and `tests/DiagnosticsSnapshot/test.cpp`.
   Related: [ADR-018](adrs.md#adr-018-diagnosticssnapshot--on-demand-stack-and-heap-metrics), [ADR-010](adrs.md#adr-010-engineconfig-for-tunable-freertos-task-parameters)
 
 ### TS12: Log Framework Activity with Zero-Cost Macros
@@ -160,8 +161,8 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
 ### TS15: Validate Framework with Automated Tests
 - **As an** IoT Developer, **I want** the framework to have comprehensive host unit tests and CI workflows, **so that** I can trust the codebase compiles and behaves correctly without deploying to hardware.
 - **Acceptance Criteria**:
-    - **Given** a new pull request, **when** CI runs, **then** all 49 host test suites pass with Address and Undefined sanitizers enabled.
-    - **Given** a new pull request, **when** CI runs, **then** all 26 example sketches compile cleanly on ESP32 and ESP32-S3 targets.
+    - **Given** a new pull request, **when** CI runs, **then** all 53 current host test suites pass with Address and Undefined sanitizers enabled.
+    - **Given** a new pull request, **when** CI runs, **then** all 28 current examples compile cleanly on ESP32 and ESP32-S3 targets.
     - **Given** library metadata is changed, **when** CI runs, **then** `arduino-lint` validates Arduino Library Manager compliance.
     - **Given** a telemetry package is serialized in a host test, **when** the golden JSON is compared, **then** the exact output matches the expected string.
 - **Status**: ✓ Implemented. See `tests/run_all.sh`, `.github/workflows/host-tests.yml`, `.github/workflows/compile-examples.yml`, `.github/workflows/lint.yml`, and `tests/TelemetryPackage/test.cpp`.
@@ -174,16 +175,17 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
     - **Given** a battery is connected to an ADC pin, **when** `PowerManager::begin()` is called, **then** the voltage divider ratio is configured and readings begin.
     - **Given** the battery voltage is read, **when** `getBatteryVoltageInMillivolts()` is called, **then** the value is returned in millivolts with proper ADC-to-voltage conversion.
     - **Given** the battery voltage is known, **when** `getBatteryLevelInPercentage()` is called, **then** a 0.0–100.0 percentage is returned based on the configured voltage range.
-    - **Given** the battery voltage drops below the threshold, **when** `isLowBattery()` is called, **then** it returns `true` and the low-battery callback fires if registered.
+    - **Given** the battery voltage drops below the threshold, **when** `isLowBattery()` is called, **then** it returns `true` so the application can take its configured low-battery action; `PowerManager` does not provide a callback API.
     - **Given** a custom battery chemistry, **when** `setBatteryVoltageRange()` is called, **then** the min/max voltage bounds are updated for level calculation.
 - **Status**: ✓ Implemented (v1.1.0). See `PowerManager.h`, `PowerManager.cpp`, and `tests/PowerManager/test.cpp` (18 tests).
 
 ### TS17: Buffer Telemetry Offline
 
-- **As an** IoT Developer, **I want** telemetry packets to be persisted when the network is unavailable, **so that** no data is lost during connectivity outages and packets are replayed when connectivity is restored.
+- **As an** IoT Developer, **I want** an optional bounded persistent telemetry buffer that my application can integrate when a send fails, **so that** buffered packets can be replayed after connectivity returns, subject to the buffer capacity and eviction policy.
 - **Acceptance Criteria**:
-    - **Given** the network is unavailable, **when** a telemetry send fails, **then** the packet JSON is stored in LittleFS via `TelemetryBuffer::store()`.
-    - **Given** the buffer is at capacity, **when** a new packet is stored, **then** the oldest packet is evicted (FIFO policy) and the eviction callback fires if registered.
+    - **Given** an application integrates `TelemetryBuffer`, **when** it chooses to persist a failed telemetry send, **then** it can store the packet JSON in LittleFS via `TelemetryBuffer::store()`; the base `Device` pipeline does not persist failed sends automatically.
+    - **Given** `ClimateDataUploader` handles a failed send in its custom `processQueuedTelemetryData()` override, **when** it stores the packet, **then** the example uses `TelemetryBuffer` for offline persistence.
+    - **Given** the buffer is at capacity, **when** a new packet is stored, **then** the oldest packet is evicted (FIFO policy), so persistence is bounded and does not guarantee that no data is lost; the eviction callback fires if registered.
     - **Given** connectivity is restored, **when** `TelemetryBuffer::retrieveNext()` is called, **then** packets are returned in FIFO order until the buffer is empty.
     - **Given** the device reboots unexpectedly, **when** `TelemetryBuffer::begin()` is called, **then** previously buffered packets are recovered from LittleFS.
     - **Given** the buffer is cleared, **when** `TelemetryBuffer::clear()` is called, **then** all buffered packets are removed from LittleFS.
@@ -247,9 +249,9 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
 
 - **As an** IoT Developer, **I want** incoming MQTT commands to be parsed without ArduinoJson, **so that** the framework has zero external dependencies for JSON handling.
 - **Acceptance Criteria**:
-    - **Given** an incoming MQTT message with JSON payload `{"commandIdentifier": N, "commandPayload": V}`, **when** the native JSON parser extracts values, **then** the command ID and payload are extracted correctly.
+    - **Given** an incoming MQTT message with JSON payload `{"commandId": N, "payload": V}`, **when** the native JSON parser extracts values, **then** the command ID and payload are extracted correctly.
     - **Given** the JSON payload is malformed, **when** the native JSON parser processes it, **then** an error is logged and the message is ignored.
-    - **Given** the JSON payload is missing the `commandIdentifier` field, **when** the native JSON parser processes it, **then** an error is logged and the message is ignored.
+    - **Given** the JSON payload is missing the `commandId` field, **when** the native JSON parser processes it, **then** an error is logged and the message is ignored.
 - **Status**: ✓ Implemented (v1.2.0). See `MqttGatewayClient.cpp` (`JsonParser::parseInt()`, `JsonParser::parseInt32()`).
 
 ### TS24: ArduinoJson Dependency Removal
@@ -258,8 +260,8 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
 - **Acceptance Criteria**:
     - **Given** W46 is complete, **when** `library.properties` and `library.json` are checked, **then** ArduinoJson is removed from the dependencies list.
     - **Given** W46 is complete, **when** all source files are searched for `#include <ArduinoJson.h>`, **then** no matches are found in production code.
-    - **Given** W46 is complete, **when** all 26 examples compile, **then** the build succeeds without ArduinoJson.
-    - **Given** W46 is complete, **when** all 49 host test suites run, **then** all tests pass without the ArduinoJson mock.
+    - **Given** W46 is complete, **when** all 26 examples in the v1.2.0 baseline compile, **then** the build succeeds without ArduinoJson.
+    - **Given** W46 is complete, **when** all 51 host test suites in the v1.2.0 baseline run, **then** all tests pass without the ArduinoJson mock.
 - **Status**: ✓ Implemented (v1.2.0). See `library.properties`, `library.json`, and all migrated source files.
 
 ### TS25: Implement TelemetryWriter Abstraction
@@ -288,7 +290,7 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
 - **Acceptance Criteria**:
     - **Given** `MqttGatewayClient::sendTelemetryRecord()` uses `serializeToBuffer()`, **when** telemetry is sent, **then** the JSON payload is serialized to a fixed buffer without heap allocation.
     - **Given** `BleGatewayClient::sendTelemetryRecord()` uses `serializeToBuffer()`, **when** telemetry is sent, **then** the JSON payload is serialized to a fixed buffer without heap allocation.
-    - **Given** `mqttMessageCallback()` uses a native JSON parser, **when** a command arrives, **then** `commandIdentifier` and `commandPayload` are extracted without ArduinoJson.
+    - **Given** `mqttMessageCallback()` uses a native JSON parser, **when** a command arrives, **then** `commandId` and `payload` are extracted without ArduinoJson.
     - **Given** the native JSON parser handles malformed JSON, **when** invalid JSON arrives, **then** an error is logged and the message is ignored.
 - **Status**: ✓ Implemented (v1.2.0). See `MqttGatewayClient.cpp`, `BleGatewayClient.cpp`, `HttpGatewayClient.cpp`.
 
@@ -306,9 +308,9 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
 
 - **As an** IoT Developer, **I want** to monitor high-priority lane statistics via DiagnosticsSnapshot, **so that** I can detect dropped alerts and high-priority queue pressure.
 - **Acceptance Criteria**:
-    - **Given** high-priority alerts have been enqueued, **when** `diagnostics()` is called, **then** `highPriorityEnqueued` reflects the total count of alerts successfully enqueued.
-    - **Given** high-priority alerts have been dropped due to a full queue, **when** `diagnostics()` is called, **then** `highPriorityDropped` reflects the total count of dropped alerts.
-    - **Given** the high-priority queue has reached a certain depth, **when** `diagnostics()` is called, **then** `highPriorityQueueHighWaterMark` reflects the maximum depth observed.
+    - **Given** high-priority alerts have been enqueued, **when** `Device::collectDiagnostics()` is called, **then** `highPriorityEnqueued` reflects the total count of alerts successfully enqueued.
+    - **Given** high-priority alerts have been dropped due to a full queue, **when** `Device::collectDiagnostics()` is called, **then** `highPriorityDropped` reflects the total count of dropped alerts.
+    - **Given** the high-priority queue has reached a certain depth, **when** `Device::collectDiagnostics()` is called, **then** `highPriorityQueueHighWaterMark` reflects the maximum depth observed.
 - **Status**: ✓ Implemented (v1.2.0). See `Device.h` (DiagnosticsSnapshot extension), `Device.cpp`.
 
 ### TS30: Configure MQTT QoS for Telemetry Publishing
@@ -359,12 +361,13 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
 
 ### TS35: Parse JSON Commands with JsonParser
 
-- **As an** IoT Developer, **I want** to parse JSON payloads from MQTT commands, HTTP responses, and BLE notifications, **so that** I can extract values without ArduinoJson.
+- **As an** IoT Developer, **I want** a general-purpose JSON parser for application payloads, **so that** I can extract values without ArduinoJson and use it with data from MQTT, HTTP, BLE, or other sources.
 - **Acceptance Criteria**:
     - **Given** a JSON string `{"commandId": 1, "threshold": 42.5}`, **when** `JsonParser::parseInt()` is called with key "commandId", **then** the value 1 is extracted.
     - **Given** a JSON string `{"enabled": true}`, **when** `JsonParser::parseBool()` is called with key "enabled", **then** the value true is extracted.
     - **Given** a JSON string `{"name": "sensor_01"}`, **when** `JsonParser::parseString()` is called with key "name", **then** the string "sensor_01" is copied to the output buffer.
     - **Given** a missing key, **when** any `JsonParser` method is called, **then** false is returned and the output value is unchanged.
+    - **Given** an application receives JSON through HTTP or BLE, **when** it wants to parse that payload, **then** it can call `JsonParser` itself; the built-in transport integration is the MQTT command callback.
 - **Status**: ✓ Implemented (v1.2.0). See `JsonParser.h`, `JsonParser.cpp`, `tests/JsonParser/test.cpp`.
 
 ### TS36: Request On-Demand Diagnostics via MQTT Command
@@ -372,7 +375,7 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
 - **As an** IoT Developer, **I want** to request diagnostics from a device via an MQTT command, **so that** I can monitor fleet health without continuous telemetry overhead.
 - **Acceptance Criteria**:
     - **Given** a device is connected to an MQTT broker, **when** a command with `commandId` equal to 300 is published, **then** the device creates a `DiagnosticsTelemetryPackage` from `Device::collectDiagnostics()`.
-    - **Given** a diagnostics command is received, **when** the device serializes the diagnostics snapshot, **then** the JSON output contains all 14 DiagnosticsSnapshot fields (missedTicks, packetsEnqueued, highPriorityEnqueued, sendsSucceeded, freeHeapBytes, etc.).
+    - **Given** a diagnostics command is received, **when** the device serializes the diagnostics snapshot, **then** the JSON output contains all 16 DiagnosticsSnapshot fields (missedTicks, packetsEnqueued, highPriorityEnqueued, sendsSucceeded, freeHeapBytes, etc.).
     - **Given** a diagnostics command is received, **when** the device sends the diagnostics telemetry, **then** it uses `enqueueTelemetryPayload()` (standard queue) to avoid blocking the sampler task.
     - **Given** a diagnostics command is received but no gateway client is registered, **when** the device processes the command, **then** a warning is logged and no telemetry is sent.
 - **Status**: ✓ Implemented (v1.2.0). See `Device.h`, `Device.cpp`, `DiagnosticsTelemetryPackage.h`.
@@ -389,9 +392,9 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
 
 - **As an** IoT Developer, **I want** a `DiagnosticsTelemetryPackage` that wraps `DiagnosticsSnapshot` fields, **so that** diagnostics data is serialized as JSON via `TelemetryWriter`.
 - **Acceptance Criteria**:
-    - **Given** `DiagnosticsTelemetryPackage` exists, **when** it is constructed with a `DiagnosticsSnapshot`, **then** all 14 fields are stored as member variables.
-    - **Given** `DiagnosticsTelemetryPackage::write()` is called, **when** a `TelemetryWriter` serializes it, **then** the JSON output contains all 14 fields with correct key names.
-    - **Given** a golden test for `DiagnosticsTelemetryPackage`, **when** `toJsonString()` is called, **then** the output matches the expected JSON format with envelope metadata and all 14 data fields.
+    - **Given** `DiagnosticsTelemetryPackage` exists, **when** it is constructed with a `DiagnosticsSnapshot`, **then** all 16 fields are stored as member variables.
+    - **Given** `DiagnosticsTelemetryPackage::write()` is called, **when** a `TelemetryWriter` serializes it, **then** the JSON output contains all 16 fields with correct key names.
+    - **Given** a golden test for `DiagnosticsTelemetryPackage`, **when** `toJsonString()` is called, **then** the output matches the expected JSON format with envelope metadata and all 16 data fields.
 - **Status**: ✓ Implemented (v1.2.0). See `DiagnosticsTelemetryPackage.h`, `DiagnosticsTelemetryPackage.cpp`, `tests/TelemetryPackage/test.cpp`.
 
 ### TS39: Implement Diagnostics Command Handler in Device
@@ -491,5 +494,54 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
 
 ---
 
+### TS48: Suppress Insignificant Telemetry Changes
+
+- **As an** IoT Developer, **I want** a per-sensor deadband filter, **so that** stable measurements do not generate redundant telemetry.
+- **Acceptance Criteria**:
+    - **Given** a filter slot has no previous value, **when** its first valid reading arrives, **then** the reading passes.
+    - **Given** a slot has a nonzero deadband, **when** a reading changes by more than that threshold, **then** it passes and becomes the new reference value.
+    - **Given** a reading changes by less than or equal to the deadband, **when** it is checked, **then** it is suppressed.
+    - **Given** a slot's deadband is zero, **when** a valid reading arrives, **then** filtering is disabled for that slot.
+    - **Given** a floating-point reading is NaN or infinite, or the slot index is invalid, **when** the filter checks it, **then** the reading is suppressed without an out-of-bounds access.
+- **Status**: ✓ Implemented (v1.3.0, W43). See `ChangeFilter.h`, `Device.h`, `tests/ChangeFilter/test.cpp`.
+
+### TS49: Measure Motion and Vibration with an MPU6050
+
+- **As an** IoT Developer, **I want** calibrated acceleration and angular-rate readings with windowed statistics, **so that** I can detect motion and vibration on-device.
+- **Acceptance Criteria**:
+    - **Given** an MPU6050 is connected over I²C, **when** `ImuSensor` initializes successfully, **then** it provides cached acceleration, angular-rate, and temperature readings.
+    - **Given** samples are collected, **when** the configured sample window advances, **then** per-axis RMS and peak-to-peak statistics are available.
+    - **Given** the sensor is not initialized or a read fails, **when** readings are requested, **then** the documented failure/default behavior is returned and no invalid sample is added.
+- **Status**: ✓ Implemented (v1.3.0). See `ImuSensor.h`, `tests/ImuSensor/test.cpp`, and `examples/VibrationMonitor/`.
+
+### TS50: Run Optional On-Device Inference
+
+- **As an** IoT Developer, **I want** a uniform inference interface with an optional emlearn adapter, **so that** generated or trained models can run locally without requiring cloud inference.
+- **Acceptance Criteria**:
+    - **Given** a model is loaded, **when** prediction or regression is requested with valid features, **then** the result and inference status are reported.
+    - **Given** no model is loaded or the input is invalid, **when** inference is requested, **then** the operation fails safely and `lastResult()` identifies the outcome.
+    - **Given** an application uses a generated C model, **when** it builds with the framework, **then** the generated-model path does not require the emlearn package.
+- **Status**: ✓ Implemented (v1.3.0, W47). See `AiMicroModelController.h`, `EmlearnController.h`, `tests/AiMicroModelController/test.cpp`.
+
+### TS51: Dispatch Actions for Composite Events
+
+- **As an** IoT Developer, **I want** rules to map composite event identifiers to actuator commands, **so that** common automation does not require a large `on(Event)` switch statement.
+- **Acceptance Criteria**:
+    - **Given** a rule is registered for a composite event, **when** the matching event arrives, **then** its registered actions are dispatched to their command handlers.
+    - **Given** a rule contains multiple actions, **when** it matches, **then** each active action is dispatched in registration order, including any command payload.
+    - **Given** the fixed rule or action capacity is full, **when** another entry is registered, **then** registration fails without overwriting existing entries.
+    - **Given** a rule is removed or all rules are cleaned up, **when** a new rule is added, **then** the available slot can be reused.
+- **Status**: ✓ Implemented (v1.3.0, W29). See `RulesEngine.h`, `tests/RulesEngine/test.cpp`, and `examples/SmartFactoryAlarm/`.
+
+### TS52: Support BLE across ESP32 Arduino Core Generations
+
+- **As an** IoT Developer, **I want** the same BLE NUS driver to work with ESP32 Arduino core 3.x and 4.x, **so that** BLE support does not force an upgrade to core 4.0.0.
+- **Acceptance Criteria**:
+    - **Given** an ESP32 board uses core 3.x or 4.x, **when** the BLE driver is built, **then** the HAL selects the compatible platform API.
+    - **Given** the BLE driver is used by an application, **when** data is sent or received, **then** its NUS behavior remains independent of the underlying core API differences.
+- **Status**: ✓ Implemented (v1.3.0). See `BleHal.h`, `BleHal.cpp`, `BleConnectivityDriver.h`, and `tests/BleConnectivityDriver/test.cpp`.
+
+---
+
 *Created: March 23, 2025.*
-*Last Updated: November 19, 2026.*
+*Last Updated: November 24, 2026.*

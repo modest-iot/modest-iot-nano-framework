@@ -5,7 +5,7 @@ skinparam classFontStyle bold
 skinparam packageStyle rectangle
 skinparam linetype ortho
 skinparam shadowing false
-title Modest IoT Nano Framework — Class Diagram (v1.2.1, 56 headers, ESP32 4.0.0 BLE API)
+title Modest IoT Nano Framework — Class Diagram (v1.3.0, 62 headers, W29 Rules Engine)
 
 ' ─────────────────────────────────────────────
 '  CORE
@@ -109,6 +109,74 @@ package "Core" #FAFAFA {
   EventAggregator ..> Event : captures and emits
   EventAggregator --> EventHandler : emits composite events
 
+  class RuleAction {
+    +target : CommandHandler*
+    +commandId : int
+    +payload : int32_t
+    +active : bool
+  }
+
+  class Rule {
+    +compositeEventId : int
+    +actions : RuleAction[4]
+    +actionCount : uint8_t
+    +active : bool
+  }
+
+  class RulesEngine {
+    +{static} RULES_ENGINE_MAX_RULES : uint8_t = 4
+    +{static} RULES_ENGINE_MAX_ACTIONS_PER_RULE : uint8_t = 4
+    +addRule(compositeEventId : int, target : CommandHandler*, commandId : int) : bool
+    +addRule(compositeEventId : int, target : CommandHandler*, commandId : int, payload : int32_t) : bool
+    +addActionToRule(compositeEventId : int, target : CommandHandler*, commandId : int) : bool
+    +addActionToRule(compositeEventId : int, target : CommandHandler*, commandId : int, payload : int32_t) : bool
+    +removeRule(compositeEventId : int) : bool
+    +cleanupRules() : void
+    +on(event : Event) : void
+  }
+  EventHandler <|.. RulesEngine : implements
+  RulesEngine ..> CommandHandler : dispatches commands
+  RulesEngine ..> Rule : contains
+  RulesEngine ..> RuleAction : contains
+
+  class ChangeFilter <<template<typename T>>> {
+    +{static} MAXIMUM_SLOTS : uint8_t = 8
+    +Slot : struct {lastValue, deadband, hasLastValue}
+    +configureSlotWithDeadband(slotIndex : uint8_t, deadband : T) : void
+    +isSignificantChange(slotIndex : uint8_t, newValue : T) : bool
+    +reset() : void
+  }
+
+  class InferenceResult <<enum>> {
+    + Success
+    + Error
+    + ModelNotLoaded
+    + InvalidFeatures
+  }
+
+  abstract class AiMicroModelController {
+    + predict(features : const float*, nFeatures : int32_t) : int32_t <<abstract>>
+    + regress(features : const float*, nFeatures : int32_t) : float <<abstract>>
+    + isModelLoaded() : bool <<abstract>>
+    + lastResult() : InferenceResult <<abstract>>
+  }
+
+  class EmlearnController {
+    + loadTreeModel(model : const EmlTrees*) : void
+    + loadNetModel(model : const EmlNet*) : void
+    + predict(features : const float*, nFeatures : int32_t) : int32_t
+    + regress(features : const float*, nFeatures : int32_t) : float
+    + isModelLoaded() : bool
+    + lastResult() : InferenceResult
+    - modelType : ModelType
+    - treeModel : const EmlTrees*
+    - netModel : const EmlNet*
+    - lastResultValue : InferenceResult
+  }
+
+  AiMicroModelController <|-- EmlearnController
+  EmlearnController ..> InferenceResult
+
   class ConfigurationStore {
     +begin(namespaceName : const char*, readOnly : bool) : bool
     +end() : void
@@ -140,19 +208,23 @@ package "Core" #FAFAFA {
   }
 
   class PowerManager {
-    +{static} DEFAULT_VCC_REFERENCE_IN_MILLIVOLTS : uint32_t = 3300
-    +{static} DEFAULT_LOW_BATTERY_THRESHOLD_IN_MILLIVOLTS : uint32_t = 3000
-    +{static} DEFAULT_VOLTAGE_DIVIDER_RATIO : float = 2.0
-    +begin(pin : int, voltageDividerRatio : float, vccReferenceInMillivolts : uint32_t) : bool
-    +isInitialized() : bool
-    +getBatteryVoltageInMillivolts() : uint32_t
-    +getBatteryLevelInPercentage() : uint8_t
-    +isLowBattery() : bool
-    +setLowBatteryThresholdInMillivolts(thresholdInMillivolts : uint32_t) : void
-    +setBatteryVoltageRange(minimumVoltageInMillivolts : uint32_t, maximumVoltageInMillivolts : uint32_t) : void
-    +getMinVoltageInMillivolts() : uint32_t
-    +getMaxVoltageInMillivolts() : uint32_t
-    +onLowBattery(callback : LowBatteryCallback) : void
+    -{static} batteryPin : uint8_t = 0
+    -{static} dividerRatio : float = 1.0
+    -{static} vccReferenceInMillivolts : uint32_t = 1100
+    -{static} lowBatteryThresholdInMillivolts : uint32_t = 3300
+    -{static} minVoltageInMillivolts : uint32_t = 3000
+    -{static} maxVoltageInMillivolts : uint32_t = 4200
+    -{static} initialized : bool = false
+    +{static} begin(batteryPin : uint8_t, dividerRatio : float, vccReferenceInMillivolts : uint32_t = 1100) : void
+    +{static} isInitialized() : bool
+    +{static} getBatteryVoltageInMillivolts() : uint32_t
+    +{static} getBatteryLevelInPercentage() : float
+    +{static} isLowBattery() : bool
+    +{static} setLowBatteryThresholdInMillivolts(thresholdInMillivolts : uint32_t) : void
+    +{static} getLowBatteryThresholdInMillivolts() : uint32_t
+    +{static} setBatteryVoltageRange(minimumVoltageInMillivolts : uint32_t, maximumVoltageInMillivolts : uint32_t) : void
+    +{static} getMinVoltageInMillivolts() : uint32_t
+    +{static} getMaxVoltageInMillivolts() : uint32_t
   }
 
   class TelemetryBuffer {
@@ -448,6 +520,65 @@ package "Sensors" #EEF6EE {
 
   BmeEnvironmentalSensor <|-- EnvironmentalGasSensor
 
+  class ImuSensor {
+    -i2cAddress : uint8_t
+    -accelerationOffsetX : int16_t
+    -accelerationOffsetY : int16_t
+    -accelerationOffsetZ : int16_t
+    -gyroscopeOffsetX : int16_t
+    -gyroscopeOffsetY : int16_t
+    -gyroscopeOffsetZ : int16_t
+    -cachedAccelerationXInGForce : float
+    -cachedAccelerationYInGForce : float
+    -cachedAccelerationZInGForce : float
+    -cachedGyroscopeXInDegreesPerSecond : float
+    -cachedGyroscopeYInDegreesPerSecond : float
+    -cachedGyroscopeZInDegreesPerSecond : float
+    -cachedInternalTemperatureInCelsius : float
+    -sampleBufferX : float[MAXIMUM_SAMPLE_WINDOW_SIZE]
+    -sampleBufferY : float[MAXIMUM_SAMPLE_WINDOW_SIZE]
+    -sampleBufferZ : float[MAXIMUM_SAMPLE_WINDOW_SIZE]
+    -sampleWindowIndex : int
+    -sampleWindowCount : int
+    -sampleWindowSize : int
+    +{static} DEFAULT_I2C_ADDRESS : uint8_t = 0x68
+    +{static} ALTERNATE_I2C_ADDRESS : uint8_t = 0x69
+    +{static} DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS : uint32_t = 100
+    +{static} MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS : uint32_t = 5
+    +{static} MAXIMUM_SAMPLE_WINDOW_SIZE : int = 32
+    +{static} DEFAULT_SAMPLE_WINDOW_SIZE : int = 10
+    +{static} IMU_ACCEL_FS_2G : uint8_t
+    +{static} IMU_ACCEL_FS_4G : uint8_t
+    +{static} IMU_ACCEL_FS_8G : uint8_t
+    +{static} IMU_ACCEL_FS_16G : uint8_t
+    +{static} IMU_GYRO_FS_250 : uint8_t
+    +{static} IMU_GYRO_FS_500 : uint8_t
+    +{static} IMU_GYRO_FS_1000 : uint8_t
+    +{static} IMU_GYRO_FS_2000 : uint8_t
+    +ImuSensor(signalGpioPin : int, i2cAddress : uint8_t, accelerationFullScale : uint8_t, gyroscopeFullScale : uint8_t, parentHandler : EventHandler* = nullptr)
+    +initialize() : bool
+    +isInitialized() const : bool
+    +getAccelerationXInGForce() const : float
+    +getAccelerationYInGForce() const : float
+    +getAccelerationZInGForce() const : float
+    +getGyroscopeXInDegreesPerSecond() const : float
+    +getGyroscopeYInDegreesPerSecond() const : float
+    +getGyroscopeZInDegreesPerSecond() const : float
+    +getInternalTemperatureInCelsius() const : float
+    +getAccelerationMagnitudeInGForce() const : float
+    +getAccelerationRmsInGForce() const : float
+    +setSampleWindowSize(size : int) : void
+    +getSampleWindowSize() const : int
+    +getSampleCount() const : int
+    +getAccelerationXRmsInGForce() const : float
+    +getAccelerationYRmsInGForce() const : float
+    +getAccelerationZRmsInGForce() const : float
+    +getAccelerationXPeakToPeakInGForce() const : float
+    +getAccelerationYPeakToPeakInGForce() const : float
+    +getAccelerationZPeakToPeakInGForce() const : float
+    #processEvent(event : Event&) : void
+  }
+
   class WaterFlowSensor {
     -pulseCount : volatile uint32_t
     -cachedFlowRateInLitersPerMinute : float
@@ -737,6 +868,24 @@ package "Connectivity" #EDF3FF {
     +canTransmit() : bool
   }
 
+  enum BleHalProperty {
+    Broadcast = 0x01
+    Read = 0x02
+    WriteWithoutRsp = 0x04
+    Write = 0x08
+    Notify = 0x10
+    Indicate = 0x20
+    SignedWrite = 0x40
+    ExtendedProps = 0x80
+  }
+
+  enum BleHalPermission {
+    None = 0x0000
+    ReadOpen = 0x0001
+    WriteOpen = 0x0010
+    ReadWriteOpen = 0x0011
+  }
+
   class WiFiConnectivityDriver {
     -networkSsidIdentifier : const char*
     -networkPasswordCredential : const char*
@@ -757,15 +906,44 @@ package "Connectivity" #EDF3FF {
     +getReconnectInterval() : unsigned long
   }
 
+  class BleHalCharacteristic {
+    -pImpl : BleHalCharacteristicImpl*
+    +onWrite(callback : function<void(const uint8_t*, size_t)>) : void
+    +setValue(data : const uint8_t*, length : size_t) : void
+    +getValue(length : size_t* = nullptr) const : const uint8_t*
+    +notify() : void
+  }
+
+  class BleHalService {
+    -pImpl : BleHalServiceImpl*
+    +createCharacteristic(uuid : const char*, props : uint32_t, perms : uint16_t) : BleHalCharacteristic
+  }
+
+  class BleHalServer {
+    -pImpl : BleHalServerImpl*
+    +onConnect(callback : function<void()>) : void
+    +onDisconnect(callback : function<void(uint8_t)>) : void
+    +createService(uuid : const char*) : BleHalService
+    +start() : void
+  }
+
+  class BleHalAdvertising {
+    -pImpl : BleHalAdvertisingImpl*
+    +addServiceUUID(uuid : const char*) : void
+    +setScanResponse(enable : bool) : void
+    +start() : void
+    +stop() : void
+  }
+
   class BleConnectivityDriver {
     -localDeviceName : const char*
     -deviceConnected : volatile bool
     -advertisingActive : bool
     -initialized : bool
-    -bleServer : BLEServer
-    -bleService : BLEService
-    -txCharacteristic : BLECharacteristic
-    -rxCharacteristic : BLECharacteristic
+    -bleServer : BleHalServer
+    -bleService : BleHalService
+    -txCharacteristic : BleHalCharacteristic
+    -rxCharacteristic : BleHalCharacteristic
     -onDataReceivedHandler : DataReceivedCallback
     +{static} NUS_SERVICE_UUID : const char*
     +{static} NUS_RX_CHARACTERISTIC_UUID : const char*
@@ -788,6 +966,12 @@ package "Connectivity" #EDF3FF {
     +getSignalStrengthInDbm() const : int32_t
     +handleDataReceived(data : const uint8_t*, length : size_t) : void
   }
+
+  note as BleHalFunctions
+    bleHalBegin(name : const char*) : void
+    bleHalCreateServer() : BleHalServer
+    bleHalGetAdvertising() : BleHalAdvertising
+  end note
 }
 
 ' ─────────────────────────────────────────────
@@ -909,6 +1093,7 @@ Sensor <|-- WaterLeakSensor
 Sensor <|-- DoorWindowSensor
 Sensor <|-- OneWireTemperatureSensor
 Sensor <|-- EnvironmentalGasSensor
+Sensor <|-- ImuSensor
 Sensor <|-- PassiveInfraredSensor
 Sensor <|-- DigitalLightIntensitySensor
 Sensor <|-- GasSensor
@@ -940,7 +1125,7 @@ Device <|-- CustomDevice
 ' ─────────────────────────────────────────────
 Sensor   "0..1" o--> EventHandler   : eventHandler
 Actuator "0..1" o--> CommandHandler : commandHandler
-Device   "0..8" o--> SamplingScheduler : scheduler
+Device   *-- "1" SamplingScheduler : owns scheduler
 Device   "0..4" o--> Sensor : triggerTable
 
 GatewayClient     --> ConnectivityDriver : uses
@@ -957,8 +1142,10 @@ WiFiConnectivityDriver ..> WiFiClient : allocates
 WiFiConnectivityDriver ..> Client     : exposes
 WiFiConnectivityDriver ..> WiFiClientSecure : creates
 
-BleConnectivityDriver ..> BLEServer : uses
-BleConnectivityDriver ..> BLECharacteristic : uses
+BleConnectivityDriver *-- BleHalServer : owns
+BleConnectivityDriver *-- BleHalService : owns
+BleConnectivityDriver *-- "2" BleHalCharacteristic : owns TX/RX
+BleConnectivityDriver ..> BleHalAdvertising : obtains global handle
 
 GasSensor +-- GasSensor_OperatingMode
 GasSensor +-- GasSensor_GasType

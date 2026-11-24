@@ -17,10 +17,10 @@
 [![MQTT](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/modest-iot/modest-iot-nano-framework/develop/.badges/mqtt.json)](https://github.com/256dpi/arduino-mqtt)
 [![ESP32](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/modest-iot/modest-iot-nano-framework/develop/.badges/esp32.json)](https://github.com/espressif/arduino-esp32)
 
-**Version**: 1.2.1  
+**Version**: 1.3.0<br>
 **Author**: Angel Velasquez  
 **Date created**: 2025-03-23  
-**Last updated**: 2026-11-21
+**Last updated**: 2026-11-24
 
 > **Git Flow**: This project uses Git Flow. `main` holds release versions (tagged `v1.0.0`, etc.), `develop` is the integration branch, and feature branches (e.g., `feature/W27-firmware-version`) merge into `develop`.
 
@@ -32,7 +32,7 @@ Modest IoT Nano Framework (C++ Edition) is a lightweight, object-oriented, event
 
 The framework uses a **Mediator pattern** where a `Device` subclass owns and coordinates its sensors and actuators. Sensors emit events that propagate synchronously through the mediator, which issues commands to actuators. Telemetry flows through a queue-based pipeline from the sampler task to the network task, keeping sensor polling and network transmission isolated.
 
-This repository contains the C++ edition of the framework. A MicroPython edition is planned as a separate distribution. The [`examples/`](examples/) folder includes 26 grounded real-world devices; start with [`StatusIndicator`](examples/StatusIndicator/) for the simplest usage demonstration.
+This repository contains the C++ edition of the framework. A MicroPython edition is planned as a separate distribution. The [`examples/`](examples/) folder includes 28 grounded real-world devices; start with [`StatusIndicator`](examples/StatusIndicator/) for the simplest usage demonstration.
 
 ## Key Characteristics
 
@@ -42,7 +42,7 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 - **Asynchronous Engine**: Two FreeRTOS tasks (sampler and network worker) with configurable stack sizes, priorities, and core pinning via `EngineConfiguration`.
 - **Per-Slot Scheduling**: `SamplingScheduler` supports independent polling intervals per sensor, independent of slot count.
 - **Zero-Cost Logging**: `MODEST_LOG_*` macros with compile-time level filtering; `MIOT_LOG_*` shorthand aliases available.
-- **Runtime Diagnostics**: `DiagnosticsSnapshot` with 12 fields: stack high-water marks, heap stats, queue counters, send statistics, and uptime.
+- **Runtime Diagnostics**: `DiagnosticsSnapshot` with 16 fields: stack high-water marks, heap stats, queue counters, send statistics, and uptime.
 - **Sensor Health**: Debounced fault and recovery events (IDs 22/23) with configurable failure thresholds.
 - **Telemetry Pipeline**: `unique_ptr` ownership, drop-oldest queue policy, bounded serialization buffer, and envelope metadata (timestamp/sequence).
 
@@ -60,13 +60,17 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 | `EngineConfiguration` | Configuration struct for FreeRTOS task stack sizes, priorities, core pinning, and queue depth. |
 | `ConfigurationStore` | Persistent key-value configuration using ESP32 NVS with namespace isolation, type-safe access, and schema validation. |
 | `TimeSynchronizationDriver` | NTP-based time synchronization with RTC fallback for deep-sleep devices; replaces `millis()` timestamps with Unix epoch seconds. |
-| `DiagnosticsSnapshot` | 12-field runtime health snapshot (stack, heap, queue, timing). |
+| `DiagnosticsSnapshot` | 16-field runtime health snapshot (stack, heap, queue, timing). |
 | `SamplingScheduler` | Per-slot countdown scheduler with phase-aligned re-arming and minimum period enforcement. |
 | `TelemetryPackage` | Base class for telemetry payloads with envelope metadata (timestamp, sequence). |
 | `TelemetryBuffer` | Persistent telemetry buffer using LittleFS with monotonic indices for offline storage and FIFO replay — no file shifting overhead. |
 | `PowerManager` | Battery voltage sensing via ADC with configurable voltage divider, level calculation, and low-battery alerts. |
 | `OtaUpdateHandler` | Over-The-Air firmware update service with hostname configuration, password protection, and progress callbacks. |
 | `EventAggregator` | Composite event pattern matching with AND/OR logic, source-aware matching, conditional patterns, nested aggregators, and dynamic pattern management. |
+| `RulesEngine` | On-device automation rules. Maps composite events from EventAggregator to automated actuator Commands. Fixed-size rule array (4 rules, 4 actions per rule) — zero heap allocation. |
+| `ChangeFilter` | Template class for deadband-based telemetry suppression. Per-slot tracking with configurable thresholds, supporting float and int sensor values. |
+| `AiMicroModelController` | Abstract base class for ML inference on microcontrollers. Uniform interface for classification and regression. |
+| `EmlearnController` | Optional emlearn adapter for tree, neural-network, regression, and generated C models; generated-model use does not require the emlearn library. |
 
 ### Sensors
 
@@ -85,6 +89,7 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 | `PthSensor` | I²C BME280 sensor for temperature, humidity, and pressure with altitude calculation. |
 | `EnvironmentalGasSensor` | I²C BME680 sensor for temperature, humidity, pressure, and gas resistance (VOC detection). |
 | `BmeEnvironmentalSensor` | Abstract base for Bosch BME280/BME680 compensation formulas and calibration data. |
+| `ImuSensor` | MPU6050 6-axis inertial measurement unit (accelerometer + gyroscope) with I²C communication, factory calibration, and windowed statistics (RMS, peak-to-peak). |
 | `RfidSensor` | SPI RFID card reader with CRC calculation and card communication. |
 | `SoilMoistureSensor` | Analog soil moisture sensor with epsilon-based change detection. |
 | `UltrasonicSensor` | HC-SR04 ultrasonic distance measurement. |
@@ -223,7 +228,7 @@ Set `MODEST_LOG_LEVEL` in your build flags or sketch to control verbosity. At le
 
 ## Diagnostics
 
-Call `device.collectDiagnostics()` to get a `DiagnosticsSnapshot` with 12 runtime health fields:
+Call `device.collectDiagnostics()` to get a `DiagnosticsSnapshot` with 16 runtime health fields:
 
 ```cpp
 DiagnosticsSnapshot health = device.collectDiagnostics();
@@ -347,7 +352,7 @@ BleConnectivityDriver bleDriver("MyDevice");
 bleDriver.connect();
 ```
 
-Uses the Nordic UART Service (NUS) GATT profile. Compatible with all ESP32 variants (ESP32, S3, C3, C6, H2). Supports GATT notifications for transmission and write callbacks for reception. Requires **ESP32 Arduino core 4.0.0 or later** for BLE API compatibility.
+Uses the Nordic UART Service (NUS) GATT profile. Compatible with all ESP32 variants (ESP32, S3, C3, C6, H2). Supports GATT notifications for transmission and write callbacks for reception. The BLE hardware abstraction layer supports both ESP32 Arduino core 3.x and 4.x APIs.
 
 ### MQTT
 
@@ -403,7 +408,7 @@ HttpGatewayClient httpGateway(wifiDriver, "https://api.example.com/device/teleme
 
 ## Examples
 
-The framework ships with 26 example sketches demonstrating various use cases:
+The framework ships with 27 example sketches demonstrating various use cases:
 
 | Example | Description |
 |---|---|
@@ -433,10 +438,12 @@ The framework ships with 26 example sketches demonstrating various use cases:
 | `IntrusionDetector` | Motion, door, and water leak sensors with composite event patterns; demonstrates `EventAggregator` standard AND patterns for home security. |
 | `ColdChainMonitor` | Refrigerated truck cargo bay monitoring; demonstrates `EventAggregator` conditional patterns with `PatternCondition` callbacks for IIoT cold chain logistics. |
 | `PharmaceuticalCleanRoom` | Clean room environmental monitoring; demonstrates `EventAggregator` nested 3-level aggregator chains, OR patterns, and `DEVICE_SOURCE_ID` for IIoT pharmaceutical manufacturing. |
+| `SmartFactoryAlarm` | Factory alarm system with automated rules; demonstrates `EventAggregator` AND pattern + `RulesEngine` for automated buzzer alert on water leak + door intrusion. |
+| `VibrationMonitor` | Industrial vibration monitoring with anomaly detection; demonstrates `ImuSensor` with windowed statistics, `EmlearnController` for on-device ML inference, and `Buzzer` actuator for audible alerts. |
 
 ## Testing
 
-The framework includes 49 host unit test suites that run natively without hardware:
+The framework includes 53 host unit test suites that run natively without hardware:
 
 | Suite | What It Tests |
 |---|---|
@@ -488,7 +495,11 @@ The framework includes 49 host unit test suites that run natively without hardwa
 | `tests/GeolocationSensor/` | GPS NMEA parsing, GGA/RMC sentences, coordinate conversion, location change detection |
 | `tests/Device/` | Device base class, engine initialization, scheduler integration, telemetry pipeline |
 | `tests/EventAggregator/` | Composite event patterns, AND/OR logic, source-aware matching, condition functions, nested aggregators, dynamic pattern management |
+| `tests/RulesEngine/` | Rules engine, rule creation, multiple actions, rule removal, cleanup, full capacity, payload, unknown event |
 | `tests/JsonParser/` | JSON parsing utilities, token extraction, Bearer token parsing |
+| `tests/ChangeFilter/` | Deadband-based telemetry suppression, first reading passthrough, multi-slot independence, float/int types, NaN/Inf protection |
+| `tests/AiMicroModelController/` | ML inference interface, tree/net prediction, regression, model switching, invalid features, NaN/Inf handling |
+| `tests/ImuSensor/` | MPU6050 I²C IMU sensor, compensation formulas, sample buffer statistics, event emission, calibration data |
 
 Run all tests locally:
 
@@ -506,28 +517,28 @@ Documentation is split between architecture artifacts in `docs/` and code-level 
 
 | Artifact | Description |
 |---|---|
-| [`docs/quick-start.md`](docs/quick-start.md) | Step-by-step guide to go from zero to a working device in under 10 minutes. |
-| [`docs/troubleshooting.md`](docs/troubleshooting.md) | Common issues and solutions: serial output, board detection, Wi-Fi, BLE, MQTT, memory, and sensors. |
-| [`docs/migration.md`](docs/migration.md) | How to convert traditional `loop()` sketches to the framework's event-driven pattern with before/after examples. |
+| [`docs/quick-start.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/quick-start.md) | Step-by-step guide to go from zero to a working device in under 10 minutes. |
+| [`docs/troubleshooting.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/troubleshooting.md) | Common issues and solutions: serial output, board detection, Wi-Fi, BLE, MQTT, memory, and sensors. |
+| [`docs/migration.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/migration.md) | How to convert traditional `loop()` sketches to the framework's event-driven pattern with before/after examples. |
 | [`docs/adrs.md`](docs/adrs.md) | 30 Architecture Decision Records with rationale, trade-offs, and consequences. |
 | [`docs/user-stories.md`](docs/user-stories.md) | 19 user stories covering functional and non-functional requirements. |
 | [`docs/improvements.md`](docs/improvements.md) | Active work items, comparison tables, and future work. |
-| [`docs/evolution.md`](docs/evolution.md) | Historical record of completed work items W1–W28 with implementation details. |
-| [`docs/class-diagram.puml`](docs/class-diagram.puml) | PlantUML class diagram covering all 56 source headers. |
+| [`docs/evolution.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/evolution.md) | Historical record of completed work items W1–W28 with implementation details. |
+| [`docs/class-diagram.puml`](docs/class-diagram.puml) | PlantUML class diagram covering all 62 source headers. |
 | [`docs/doxygen-mainpage.md`](docs/doxygen-mainpage.md) | Doxygen API reference main page with module navigation and generation instructions. |
-| [`docs/benchmarks.md`](docs/benchmarks.md) | Performance comparison table with 9 metrics: Flash, RAM, latency, throughput, queue depth, stack, heap, serialization, and power. |
-| [`docs/coverage.md`](docs/coverage.md) | Code coverage guide: local execution with gcov/lcov, CI integration, threshold configuration, and report interpretation. |
-| [`docs/dependencies.md`](docs/dependencies.md) | External dependencies list with update processes: Dependabot for GitHub Actions, weekly status badges for MQTT library and ESP32 core. |
-| [`docs/release.md`](docs/release.md) | Complete release process: Git Flow Helper Plugin steps, automated release workflow, version bump, registry publishing, and troubleshooting. |
+| [`docs/benchmarks.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/benchmarks.md) | Performance comparison table with 9 metrics: Flash, RAM, latency, throughput, queue depth, stack, heap, serialization, and power. |
+| [`docs/coverage.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/coverage.md) | Code coverage guide: local execution with gcov/lcov, CI integration, threshold configuration, and report interpretation. |
+| [`docs/dependencies.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/dependencies.md) | External dependencies list with update processes: Dependabot for GitHub Actions, weekly status badges for MQTT library and ESP32 core. |
+| [`docs/release.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/release.md) | Complete release process: Git Flow Helper Plugin steps, automated release workflow, version bump, registry publishing, and troubleshooting. |
 
 ### Project Standards
 
 | Artifact | Description |
 |---|---|
-| [`ACCESSIBILITY.md`](ACCESSIBILITY.md) | Accessibility statement, reporting guidance, and known limitations. |
-| [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) | Contributor Covenant Code of Conduct. |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Contribution guidelines, Git Flow workflow, and coding standards. |
-| [`SECURITY.md`](SECURITY.md) | Security policy and vulnerability reporting process. |
+| [`ACCESSIBILITY.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/ACCESSIBILITY.md) | Accessibility statement, reporting guidance, and known limitations. |
+| [`CODE_OF_CONDUCT.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/CODE_OF_CONDUCT.md) | Contributor Covenant Code of Conduct. |
+| [`CONTRIBUTING.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/CONTRIBUTING.md) | Contribution guidelines, Git Flow workflow, and coding standards. |
+| [`SECURITY.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/SECURITY.md) | Security policy and vulnerability reporting process. |
 
 ### API and Code-Level Reference (`src/`)
 
@@ -647,7 +658,7 @@ void loop() {
 }
 ```
 
-For complete, grounded examples with connectivity, telemetry, and cloud integration, see the [Examples](#examples) section (26 sketches covering MQTT, HTTP, BLE, TLS, deep sleep, battery monitoring, offline buffering, OTA updates, and composite event patterns).
+For complete, grounded examples with connectivity, telemetry, and cloud integration, browse the [example sketches](https://github.com/modest-iot/modest-iot-nano-framework/tree/release/v1.3.0/examples) (28 sketches covering MQTT, HTTP, BLE, TLS, deep sleep, battery monitoring, offline buffering, OTA updates, vibration monitoring, and composite-event automation).
 
 ## Notes
 
@@ -671,10 +682,10 @@ Contributions, improvements, and extensions are welcome under the Apache License
 - Submit feedback, bug reports, or feature suggestions via GitHub.
 - Fork and adapt the framework for your own needs (with attribution).
 
-## Future Directions
+## Release Highlights and Future Directions
 
-- **v1.3.0**: Rules Engine for dynamic rule management on top of EventAggregator (W29).
-- **Benchmark Publication**: See [docs/benchmarks.md](docs/benchmarks.md) for the performance comparison table.
+- **v1.3.0**: Adds on-device ML inference, MPU6050 vibration sensing, change-only telemetry, and composite-event automation; BLE supports ESP32 Arduino core 3.x and 4.x.
+- **Benchmark Publication**: See [docs/benchmarks.md](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/benchmarks.md) for the performance comparison table.
 - **Edge Framework Phase 1**: Python-based edge server with MQTT broker, device registry, and telemetry ingestion.
 - **Edge Framework Phase 2.5**: Matter Bridge to expose Nano devices via Matter ecosystem.
 - **MicroPython Edition**: A planned port to MicroPython in a separate repository.

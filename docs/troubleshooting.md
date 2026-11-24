@@ -147,6 +147,18 @@ Log levels from most to least verbose: `VERBOSE` (5), `DEBUG` (4), `INFO` (3), `
 | **MTU too small** | The default MTU may be too small for large payloads. Request a larger MTU from the phone side. |
 | **Interrupt conflicts** | If using interrupts on the same GPIO as BLE, move the interrupt to a different pin. |
 
+### BLE API compile errors
+
+**Symptom**: A BLE example fails to compile with missing BLE headers or API/signature errors.
+
+**Causes & Solutions**:
+
+| Cause | Solution |
+|---|---|
+| **Non-ESP32 board selected** | Select a supported ESP32 board; the BLE driver and `BleHal` target ESP32 BLE APIs. |
+| **Unsupported or missing ESP32 core headers** | Install an ESP32 Arduino core from the supported 3.x or 4.x series and rebuild. The HAL uses the unified BLE API on core 4.x and the separate BLE headers on core 3.x. |
+| **BLE stack unavailable in the board configuration** | Verify that the selected board package enables its BLE stack and that the build is using that package's headers. |
+
 ---
 
 ## MQTT Connectivity Issues

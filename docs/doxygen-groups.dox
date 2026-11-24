@@ -183,6 +183,14 @@
 /** @} */
 
 /**
+ * @name Sensors: Inertial Measurement
+ * @ingroup sensors_module
+ * @{
+ */
+// ImuSensor (MPU6050) 6-axis IMU with I²C communication, factory calibration, and windowed statistics defined here
+/** @} */
+
+/**
  * @name Sensors: Data Types
  * @ingroup sensors_module
  * @{

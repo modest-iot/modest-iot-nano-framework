@@ -208,24 +208,24 @@ The Modest IoT Nano Framework follows [Semantic Versioning 2.0.0](https://semver
 
 ### Version Management
 
-The version is managed in four core files, with three additional documentation files that reference the current version:
+The version is managed in four core files, with five documentation references (including the README version and date):
 
 **Core version files:**
 
-1. **`library.properties`**: `version=1.2.1` — used by Arduino Library Manager
-2. **`library.json`**: `"version": "1.2.1"` — used by PlatformIO Registry
-3. **`docs/Doxyfile`**: `PROJECT_NUMBER = 1.2.1` — used by Doxygen API reference
-4. **`CMakeLists.txt`**: `VERSION 1.2.1` — used by CMake host test builds
+1. **`library.properties`**: `version=1.3.0` — used by Arduino Library Manager
+2. **`library.json`**: `"version": "1.3.0"` — used by PlatformIO Registry
+3. **`docs/Doxyfile`**: `PROJECT_NUMBER = 1.3.0` — used by Doxygen API reference
+4. **`CMakeLists.txt`**: `VERSION 1.3.0` — used by CMake host test builds
 
 **Documentation version references:**
 
-5. **`README.md`**: `**Version**: 1.2.1` — front matter version
-6. **`README.md`**: `**Last updated**: 2026-11-21` — front matter date
+5. **`README.md`**: `**Version**: 1.3.0` — front matter version
+6. **`README.md`**: `**Last updated**: 2026-11-24` — front matter date
 7. **`SECURITY.md`**: Supported Versions table — current version row
-8. **`docs/doxygen-mainpage.md`**: `(v1.2.1)` — API reference version
-9. **`docs/benchmarks.md`**: `**Version**: 1.2.1`, `**Date**`, `**Platform**` — benchmark table header
+8. **`docs/doxygen-mainpage.md`**: `(v1.3.0)` — API reference version
+9. **`docs/benchmarks.md`**: `**Version**: 1.3.0`, `**Date**`, `**Platform**` — benchmark table header
 
-All nine must be updated together when creating a release. Git tags (`v1.2.1`) are created automatically by the Git Flow Helper Plugin during the Release Finish step.
+All nine must be updated together when creating a release. Git tags (for example, `v1.3.0`) are created automatically by the Git Flow Helper Plugin during the Release Finish step.
 
 **Note**: Other documentation files (e.g., `docs/improvements.md`, `docs/user-stories.md`, `docs/evolution.md`, `docs/quick-start.md`) contain historical version references that should not be updated during a release.
 

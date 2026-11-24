@@ -379,11 +379,6 @@ bool GasSensor::isGasDetected() const {
     return false;
 }
 
-/**
- * @brief Returns a human-readable name for a GasType enum value.
- * @param type The GasType to convert.
- * @return A null-terminated string representing the gas type name.
- */
 const char* GasSensor::gasTypeName(GasType type) {
     switch (type) {
         case GasType::LPG: return "LPG";
@@ -401,11 +396,6 @@ const char* GasSensor::gasTypeName(GasType type) {
     }
 }
 
-/**
- * @brief Returns a human-readable name for an OperatingMode enum value.
- * @param mode The OperatingMode to convert.
- * @return A null-terminated string representing the operating mode name.
- */
 const char* GasSensor::operatingModeName(OperatingMode mode) {
     switch (mode) {
         case OperatingMode::RawMode: return "RAW";

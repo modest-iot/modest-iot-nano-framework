@@ -183,12 +183,11 @@ void setup() {
  * This master loop is intentionally kept completely clean and empty.
  * It yields 100% of its execution cycles natively back to the FreeRTOS kernel scheduler,
  * allowing the Modest-IoT Nano-Framework's background tasks to manage the application logic.
- * A `vTaskDelay` is included to prevent watchdog timer resets in some FreeRTOS configurations
- * when the loop is otherwise completely idle.
  */
 void loop() {
     // The master loop is completely clean and empty.
     // It yields 100% of its execution cycles natively back to the FreeRTOS kernel scheduler.
+    // vTaskDelay clarifies that this loop yields to FreeRTOS — the device is loopless.
     vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_IN_MILLISECONDS));
 }
 //@} // Top-Level Declarative Canvas

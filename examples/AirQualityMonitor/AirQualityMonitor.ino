@@ -358,7 +358,8 @@ void setup() {
  */
 void loop() {
     // The master loop is completely clean and empty.
-    // It yields 100% of its execution cycles natively back to the FreeRTOS kernel scheduler.
+    // The framework handles all timing, sensor sampling, and telemetry publishing asynchronously.
+    // vTaskDelay clarifies that this loop yields to FreeRTOS — the device is loopless.
     vTaskDelay(pdMS_TO_TICKS(MAIN_LOOP_DELAY_IN_MILLISECONDS));
 }
 //@} // Top-Level Declarative Canvas
