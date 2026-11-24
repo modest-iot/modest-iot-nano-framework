@@ -198,6 +198,7 @@ Before starting the release process, verify:
 - [ ] `library.json` version is updated
 - [ ] `docs/Doxyfile` `PROJECT_NUMBER` is updated
 - [ ] `CMakeLists.txt` `VERSION` is updated
+- [ ] Host test entry points (`tests/run_all.sh`, `tests/run_coverage.sh`, and CMake/CTest) execute the same complete suite set and report a consistent suite count
 - [ ] `README.md` `**Version**` is updated
 - [ ] `README.md` `**Last updated**` date is updated
 - [ ] `SECURITY.md` Supported Versions table is updated
