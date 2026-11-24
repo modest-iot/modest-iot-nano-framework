@@ -7,6 +7,7 @@
 
 /**
  * Result of an ML inference operation.
+ * @ingroup core_module
  */
 enum class InferenceResult : uint8_t {
     Success,          ///< Inference completed successfully.
@@ -25,6 +26,7 @@ enum class InferenceResult : uint8_t {
  * The controller is a domain service — not a Sensor or Actuator. It is a
  * pure computation service: given features, return a prediction. Devices
  * call it in their on(Event) handler after reading sensor values.
+ * @ingroup core_module
  */
 class AiMicroModelController {
 public:
