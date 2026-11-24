@@ -6,9 +6,9 @@ Each ADR documents **why** a decision was made, not just **what** was decided. T
 
 ## Overview
 
-The Modest IoT Nano Framework is a lightweight, deterministic IoT framework for ESP32-based devices. It provides a Mediator design pattern for sensor-actuator wiring, a per-slot sampling scheduler, a telemetry pipeline with ownership safety, and connectivity drivers for Wi-Fi, BLE, and MQTT. The framework runs on FreeRTOS with two isolated tasks: a sampler task for all sensor/actuator I/O and a network task for asynchronous transmission.
+The Modest IoT Nano Framework is a lightweight, deterministic IoT framework for ESP32-based devices. It provides a Mediator design pattern for sensor-actuator wiring, a per-slot sampling scheduler, a telemetry pipeline with ownership safety and change-only filtering, event-driven rules and on-device inference, and connectivity drivers for Wi-Fi, BLE, and MQTT. The framework runs on FreeRTOS with two isolated tasks: a sampler task for all sensor/actuator I/O and a network task for asynchronous transmission.
 
-The 30 ADRs below span six categories that shaped the framework's architecture. Two are superseded by later decisions.
+The 33 ADRs below span 12 categories that shaped the framework's architecture. Two are superseded by later decisions.
 
 | #                                                                                          | Title                                                         | Status   | Category     |
 |--------------------------------------------------------------------------------------------|---------------------------------------------------------------|----------|--------------|
@@ -42,6 +42,9 @@ The 30 ADRs below span six categories that shaped the framework's architecture. 
 | [ADR-028](#adr-028-deep-sleep-cycle-and-battery-example-w17)                               | Deep-Sleep Cycle and Battery Example (W17)                    | Accepted | Power        |
  | [ADR-029](#adr-029-native-servo-and-lcd-drivers-w19)                                       | Native Servo and LCD Drivers (W19)                            | Accepted | Dependencies |
  | [ADR-030](#adr-030-bosch-environmental-sensor-base-class)                                   | Bosch Environmental Sensor Base Class                         | Accepted | Refactoring    |
+| [ADR-031](#adr-031-fixed-capacity-event-driven-rules-engine)                                | Fixed-Capacity Event-Driven Rules Engine                      | Accepted | Architecture |
+| [ADR-032](#adr-032-deadband-based-change-only-telemetry)                                   | Deadband-Based Change-Only Telemetry                          | Accepted | Telemetry    |
+| [ADR-033](#adr-033-runtime-independent-on-device-inference-interface)                     | Runtime-Independent On-Device Inference Interface              | Accepted | Architecture |
 
 ### Status Legend
 
@@ -56,14 +59,15 @@ The 30 ADRs below span six categories that shaped the framework's architecture. 
 | **Naming**       | 2     | `MODEST_LOG_*` macros with `MIOT_LOG_*` aliases; `SCREAMING_SNAKE_CASE` convention                   |
 | **Connectivity** | 3     | BLE via NUS GATT profile; MQTT reconnect; cloud-to-device MQTT subscribe                            |
 | **Scheduling**   | 3     | Hybrid sensor intervals with virtual getters; per-slot countdown scheduler; non-blocking sensors     |
-| **Telemetry**    | 4     | `unique_ptr` ownership; drop-oldest policy; bounded buffer; envelope metadata                        |
+| **Telemetry**    | 5     | `unique_ptr` ownership; drop-oldest policy; bounded buffer; envelope metadata; change-only deadband  |
 | **Diagnostics**  | 2     | Sensor fault events with debounced threshold; on-demand `DiagnosticsSnapshot`                        |
 | **Threading**    | 5     | Single-context sampler model; `EngineConfiguration`; cooperative shutdown; notification redesign; command marshaling |
 | **API Design**   | 2     | `serialize` overload rename; identifier registry with reserved ranges                                |
 | **Dependencies** | 3     | ArduinoJson removed (W46); five hygiene principles for dependency decisions; native servo and LCD drivers |
 | **Testing**      | 2     | Shared mock harness (BLE.h consolidated); golden host tests migrated to native JSON (W46)            |
-| **Architecture** | 1     | DDD adoption, bounded contexts, ubiquitous language, embedded-friendly subset                        |
-| **Power**        | 3     | Tickless scheduling with light sleep; deep sleep with RTC memory; native drivers for battery operation |
+| **Architecture** | 3     | DDD bounded contexts; fixed-capacity event rules; runtime-independent inference interface             |
+| **Power**        | 2     | Tickless scheduling with light sleep; deep sleep with RTC memory                                      |
+| **Refactoring**  | 1     | Shared Bosch environmental sensor base class                                                          |
 
 ---
 
@@ -121,6 +125,7 @@ Implement `BleConnectivityDriver` using the Nordic UART Service (NUS) GATT profi
 - **Positive**: Runs on all ESP32 variants (original, S3, C3, C6, H2), direct serial equivalence to `BluetoothSerial`, interoperable with nRF Connect, Web Bluetooth API, and mobile apps.
 - **Negative**: Requires NimBLE or BLE stack enabled in ESP-IDF configuration.
 - **Rationale**: NUS provides the highest net utility: universal compatibility, low memory footprint, and ecosystem interoperability while preserving the `ConnectivityDriver` contract.
+- **v1.3.0 compatibility note**: `BleHal` isolates core-specific BLE types behind PIMPL wrappers and selects the ESP32 Arduino core 3.x or 4.x API at compile time. This preserves the NUS driver interface without runtime dispatch; core 4.0.0 is no longer the minimum requirement for BLE. See `src/BleHal.h` and `src/BleHal.cpp`.
 
 ### References
 
@@ -616,7 +621,7 @@ Consolidate all mocks into a centralized `tests/fakes/` directory with shared he
 
 - **Positive**: Single source of truth for mocks. Changes to a mock (e.g., adding a new API) benefit all test suites. Eliminates duplicate code.
 - **Negative**: All tests share the same mock interface; test-specific mocks require conditional compilation.
-- **Rationale**: With 51 test suites, the shared harness eliminates ~51× duplicate mock code and ensures consistent behavior across all tests.
+- **Rationale**: At the time of this ADR, 51 test suites shared the harness, eliminating ~51× duplicate mock code and ensuring consistent behavior. The v1.3.0 release has 53 suites using this harness.
 
 ### Notes
 
@@ -648,6 +653,8 @@ Three alternatives were evaluated:
 ### Decision
 
 Implement `DiagnosticsSnapshot` as an on-demand 12-field struct queried via `Device::diagnostics() const`. Fields include: missedTicks, worstCaseWakeMicros, packetsEnqueued, packetsDropped, queueHighWaterMark, sendsSucceeded, sendsFailed, freeHeapBytes, minFreeHeapBytes, samplerStackFreeWords, networkStackFreeWords, uptimeSeconds.
+
+**Historical note**: This records the original 12-field design. The current public API exposes a 16-field `DiagnosticsSnapshot`.
 
 Stack high-water marks are queried via `uxTaskGetStackHighWaterMark()` and converted from words to bytes. Heap stats from `ESP.getFreeHeap()` and `ESP.getMinFreeHeap()`.
 
@@ -1154,6 +1161,92 @@ Extract the shared Bosch compensation formulas, calibration reading, and I²C he
 
 ---
 
+<a id="adr-031-fixed-capacity-event-driven-rules-engine"></a>
+## ADR-031: Fixed-Capacity Event-Driven Rules Engine
+
+**Status**: Accepted | **Date**: 2026-11-24 | **Supersedes**: N/A
+
+### Context
+
+`EventAggregator` can emit composite events, but applications otherwise need to implement their own event-to-actuator dispatch. An automation component must remain predictable on a resource-constrained device and must respect the framework's sampler-task execution model.
+
+The alternatives were application-specific event branching, dynamically allocated rule/action collections, or a reusable rules component with bounded storage.
+
+### Decision
+
+Implement `RulesEngine` as an `EventHandler` that matches composite event identifiers to registered `CommandHandler` actions. Store up to four rules with up to four actions each in fixed-size arrays, including optional `int32_t` command payloads; do not allocate heap memory for rule storage. Dispatch matching commands synchronously from `on(Event)` in sampler-task context.
+
+### Consequences
+
+- **Positive**: Provides reusable event-to-command automation with bounded memory use and predictable storage; supports multiple actions for one event without application-specific dispatch code.
+- **Negative**: Rule and action capacity is fixed. Actions execute in sampler-task context and must be fast and non-blocking to avoid delaying sensor sampling or other handlers.
+- **Rationale**: Fixed-size storage and synchronous dispatch match the framework's deterministic, allocation-conscious sampler model; the limits mirror the four event patterns supported by `EventAggregator`.
+
+### References
+
+- `src/RulesEngine.h`, `src/RulesEngine.cpp`
+- `src/EventAggregator.h`
+- `tests/RulesEngine/test.cpp`
+- `examples/SmartFactoryAlarm/SmartFactoryAlarm.ino`
+
+---
+
+<a id="adr-032-deadband-based-change-only-telemetry"></a>
+## ADR-032: Deadband-Based Change-Only Telemetry
+
+**Status**: Accepted | **Date**: 2026-11-24 | **Supersedes**: N/A
+
+### Context
+
+Periodic sampling can enqueue repeated sensor values or small fluctuations that do not matter to an application. Sending every reading consumes queue capacity and network bandwidth, while filtering globally would prevent sensors with different units and noise levels from being tuned independently.
+
+### Decision
+
+Add an optional per-slot `ChangeFilter<T>` to the device telemetry path. Each of the eight scheduler slots stores its own deadband and last enqueued value in fixed-size storage. The first valid reading passes; later readings pass only when their difference from the last enqueued value is greater than the configured deadband. A zero deadband disables filtering, and non-finite floating-point readings are suppressed.
+
+### Consequences
+
+- **Positive**: Reduces redundant telemetry and queue/network load while allowing thresholds to be tuned independently for each sensor slot, without heap allocation.
+- **Negative**: Values that remain within the deadband are intentionally not reported, so applications must choose thresholds appropriate to their accuracy requirements. Comparing with the last enqueued value means small changes can accumulate until the total difference exceeds the threshold.
+- **Rationale**: Per-slot filtering preserves simple periodic sensor scheduling while making telemetry suppression opt-in and sensor-specific.
+
+### References
+
+- `src/ChangeFilter.h`
+- `src/Device.h`, `src/Device.cpp`
+- `tests/ChangeFilter/test.cpp`
+- `examples/WeatherStation/WeatherStation.ino`
+
+---
+
+<a id="adr-033-runtime-independent-on-device-inference-interface"></a>
+## ADR-033: Runtime-Independent On-Device Inference Interface
+
+**Status**: Accepted | **Date**: 2026-11-24 | **Supersedes**: N/A
+
+### Context
+
+On-device inference can support sensor-driven decisions without a network round trip, but tying the framework's domain code directly to one machine-learning runtime would make that runtime a core dependency and couple application logic to its API.
+
+### Decision
+
+Define `AiMicroModelController` as a runtime-independent domain interface for classification, regression, model readiness, and inference status. Implement emlearn support in a separate `EmlearnController` adapter, keeping emlearn declarations and C API integration out of the common interface and allowing applications that do not use inference to avoid the runtime dependency. Model-specific representation and conversion remain the adapter's responsibility.
+
+### Consequences
+
+- **Positive**: Keeps inference use optional and isolates application code from a particular ML library, while allowing another runtime to be integrated behind the same controller contract.
+- **Negative**: Runtime-specific capabilities must be expressed through the common API or a separate adapter, and model-specific conversions (including bounded feature quantization for tree models) can impose representation limits.
+- **Rationale**: Separating the domain-level inference contract from the runtime adapter enables local inference while preserving the framework's dependency-hygiene principles.
+
+### References
+
+- `src/AiMicroModelController.h`
+- `src/EmlearnController.h`
+- `tests/AiMicroModelController/test.cpp`
+- `examples/VibrationMonitor/VibrationMonitor.ino`
+
+---
+
 ## Consolidated Improvements Document
 
 The 8 individual improvement documents and the roadmap have been consolidated into a single `docs/improvements.md` file, organized by tier. This eliminates cross-document maintenance overhead while keeping all information accessible through headings and search.
@@ -1201,4 +1294,4 @@ For future architecture decisions, use this template:
 
 ---
 
-*Last updated: 2026-11-10 (30 ADRs: 13 original + 9 from improvements.md review + 1 DDD adoption + 4 from W12-W16 + 1 from W17 + 1 from W19 + 1 BME base class)*
+*Last updated: 2026-11-24 (33 ADRs: 13 original + 9 from improvements.md review + 1 DDD adoption + 4 from W12-W16 + 1 from W17 + 1 from W19 + 1 BME base class + 3 from v1.3.0)*
