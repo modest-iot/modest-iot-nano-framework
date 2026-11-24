@@ -1,6 +1,6 @@
 # Modest IoT Framework Evolution
 
-Historical record of completed work items W1–W28 with implementation details.
+Historical record of completed work items through W47 with implementation details.
 
 > This document records completed work. For current status and planned improvements, see [improvements.md](improvements.md).
 
@@ -200,6 +200,8 @@ Zero-cost compile-time level filtering (`MODEST_LOG_LEVEL` 0-5). ESP32 `esp32-ha
 #### Diagnostics Snapshot
 
 12-field `DiagnosticsSnapshot` struct: missedTicks, worstCaseWakeMicros, packetsEnqueued, packetsDropped, queueHighWaterMark, sendsSucceeded, sendsFailed, freeHeapBytes, minFreeHeapBytes, samplerStackFreeWords, networkStackFreeWords, uptimeSeconds.
+
+This is the original W6 field list; the current public API documents a 16-field snapshot.
 
 `Device::diagnostics()` queries FreeRTOS `uxTaskGetStackHighWaterMark()`, `ESP.getFreeHeap()`, `ESP.getMinFreeHeap()`, and `millis()`.
 
@@ -1061,5 +1063,37 @@ Optional `schemaVersion` and `firmwareVersion` fields in telemetry envelope meta
 - The SmartFactoryAlarm example provides a clear, grounded demonstration of the complete pipeline
 
 **Source**: `src/RulesEngine.h`, `src/RulesEngine.cpp`, `tests/RulesEngine/test.cpp`, `examples/SmartFactoryAlarm/SmartFactoryAlarm.ino`
+
+---
+
+## BLE HAL Compatibility across ESP32 Arduino Cores
+
+The v1.3.0 release adds `BleHal` to isolate the BLE API differences between ESP32 Arduino core 3.x and 4.x. `BleConnectivityDriver` continues to provide the Nordic UART Service interface while delegating platform-specific operations to the HAL, so applications no longer require core 4.0.0 solely for BLE support.
+
+**Source**: `src/BleHal.h`, `src/BleHal.cpp`, `src/BleConnectivityDriver.h`, `src/BleConnectivityDriver.cpp`, `tests/BleConnectivityDriver/test.cpp`
+
+---
+
+## W43: Change-Only Telemetry
+
+`ChangeFilter<T>` maintains a fixed set of per-sensor slots with independent deadband thresholds. The first reading passes, later readings pass only when their absolute change is greater than the configured deadband, a zero deadband disables filtering, and non-finite floating-point readings or invalid slot indices are suppressed. `Device` exposes registration overloads that configure a deadband for a scheduled sensor; the implementation uses fixed storage and allocates no heap memory.
+
+**Example**: `WeatherStation` demonstrates temperature telemetry with a 0.5°C deadband.
+
+**Validation**: 45 host tests cover boundaries, slot independence, numeric types, non-finite values, and sensor-like sequences.
+
+**Source**: `src/ChangeFilter.h`, `src/Device.h`, `src/Device.cpp`, `tests/ChangeFilter/test.cpp`, `examples/WeatherStation/WeatherStation.ino`
+
+---
+
+## W47: On-Device ML Inference and MPU6050 Sensing
+
+`AiMicroModelController` defines the inference interface for prediction, regression, model readiness, and result status. `EmlearnController` adapts tree, neural-network, regression, and generated C models; generated-model use does not require the emlearn package, while emlearn symbols are optional for the other model paths.
+
+`ImuSensor` adds an MPU6050 6-axis accelerometer/gyroscope adapter with calibrated readings and fixed-window RMS and peak-to-peak statistics. The `VibrationMonitor` example connects sensor statistics to on-device anomaly inference and a buzzer alert.
+
+**Validation**: 28 host tests cover model results, invalid input, switching, and no-model cases; the IMU has its own host suite.
+
+**Source**: `src/AiMicroModelController.h`, `src/EmlearnController.h`, `src/ImuSensor.h`, `src/ImuSensor.cpp`, `tests/AiMicroModelController/test.cpp`, `tests/ImuSensor/test.cpp`, `examples/VibrationMonitor/VibrationMonitor.ino`
 
 ---
