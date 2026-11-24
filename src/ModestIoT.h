@@ -30,6 +30,7 @@
 #include "TelemetryBuffer.h"
 #include "OtaUpdateHandler.h"
 #include "EventAggregator.h"
+#include "RulesEngine.h"
 #include "ChangeFilter.h"
 #include "AiMicroModelController.h"
 #include "EmlearnController.h"
