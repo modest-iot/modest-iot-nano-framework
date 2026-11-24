@@ -10,11 +10,6 @@
 
 #if defined(CONFIG_BT_ENABLED) || defined(ARDUINO_ARCH_ESP32) || defined(TEST_MOCK_BLE)
 
-#if defined(TEST_MOCK_BLE)
-#include "BLE.h"
-#else
-#include <BLE.h>
-#endif
 // ReSharper disable once CppClangTidyCERTerr52cpp
 #include <cstring>
 
@@ -33,15 +28,14 @@ BleConnectivityDriver::~BleConnectivityDriver() {
 
 void BleConnectivityDriver::connect() {
     if (!initialized) {
-        BLE.begin(localDeviceName);
+        bleHalBegin(localDeviceName);
 
-        // ESP32 4.0.0 BLE API returns value types wrapping std::shared_ptr<Impl>.
-        // Storing by value is cheap and safe — the shared_ptr ensures lifetime.
-        bleServer = BLE.createServer();
-        bleServer.onConnect([this](BLEServer &, const BLEConnInfo &) {
+        bleServer = bleHalCreateServer();
+        bleServer.onConnect([this]() {
             handlePeerConnected();
         });
-        bleServer.onDisconnect([this](BLEServer &, const BLEConnInfo &, uint8_t) {
+        bleServer.onDisconnect([this](uint8_t reason) {
+            (void)reason;
             handlePeerDisconnected();
         });
 
@@ -49,17 +43,17 @@ void BleConnectivityDriver::connect() {
 
         // TX Characteristic (Notify) - Peripheral to Central
         txCharacteristic = bleService.createCharacteristic(NUS_TX_CHARACTERISTIC_UUID,
-            BLEProperty::Notify, BLEPermission::None);
+            static_cast<uint32_t>(BleHalProperty::Notify),
+            static_cast<uint16_t>(BleHalPermission::None));
 
         // RX Characteristic (Write / Write without response) - Central to Peripheral
         rxCharacteristic = bleService.createCharacteristic(NUS_RX_CHARACTERISTIC_UUID,
-            BLEProperty::Write | BLEProperty::WriteNR, BLEPermission::WriteOpen
+            static_cast<uint32_t>(BleHalProperty::Write | BleHalProperty::WriteWithoutRsp),
+            static_cast<uint16_t>(BleHalPermission::WriteOpen)
         );
-        rxCharacteristic.onWrite([this](BLECharacteristic &chr, const BLEConnInfo &) {
-            size_t rxLength = 0;
-            const uint8_t* rxData = chr.getValue(&rxLength);
-            if (rxData != nullptr && rxLength > 0) {
-                handleDataReceived(rxData, rxLength);
+        rxCharacteristic.onWrite([this](const uint8_t* data, size_t length) {
+            if (data != nullptr && length > 0) {
+                handleDataReceived(data, length);
             }
         });
 
@@ -106,7 +100,7 @@ void BleConnectivityDriver::startAdvertising() {
     if (!initialized)
         return;
 
-    BLEAdvertising advertising = BLE.getAdvertising();
+    BleHalAdvertising advertising = bleHalGetAdvertising();
     advertising.addServiceUUID(NUS_SERVICE_UUID);
     advertising.setScanResponse(true);
     advertising.start();
@@ -115,7 +109,7 @@ void BleConnectivityDriver::startAdvertising() {
 
 void BleConnectivityDriver::stopAdvertising() {
     if (advertisingActive) {
-        BLEAdvertising advertising = BLE.getAdvertising();
+        BleHalAdvertising advertising = bleHalGetAdvertising();
         advertising.stop();
         advertisingActive = false;
     }

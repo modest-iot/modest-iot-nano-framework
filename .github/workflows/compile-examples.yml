@@ -46,3 +46,42 @@ jobs:
               arduino-cli compile --fqbn esp32:esp32:${{ matrix.board }} --library "${{ github.workspace }}" --build-property build.partitions=huge_app --build-property upload.maximum_size=3145728 "$ino_file"
             fi
           done
+  compile-examples-on-legacy:
+    name: Compile Examples - Legacy (${{ matrix.board }})
+    runs-on: ubuntu-latest
+    env:
+      ACTIONS_RUNNER_NODE_VERSION: 24
+    strategy:
+      fail-fast: false
+      matrix:
+        board: [esp32, esp32s3]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install arduino-cli
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Initialize arduino-cli config with ESP32 board package index
+        run: arduino-cli config init --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json --overwrite
+
+      - name: Update arduino-cli index
+        run: arduino-cli core update-index
+
+      - name: Install ESP32 core 3.X+
+        run: arduino-cli core install esp32:esp32@3.3.13
+
+      - name: Install library dependencies
+        run: |
+          arduino-cli lib install "MQTT@2.5.3"
+
+      - name: Compile examples for ${{ matrix.board }}
+        run: |
+          for sketch in examples/*/; do
+            ino_file=$(find "$sketch" -name "*.ino" -maxdepth 1 | head -1)
+            if [ -n "$ino_file" ]; then
+              echo "Compiling: $ino_file"
+              arduino-cli compile --fqbn esp32:esp32:${{ matrix.board }} --library "${{ github.workspace }}" --build-property build.partitions=huge_app --build-property upload.maximum_size=3145728 "$ino_file"
+            fi
+          done

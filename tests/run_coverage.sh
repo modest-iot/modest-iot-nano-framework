@@ -130,6 +130,7 @@ run_test "test_RfidSensor" \
 run_test "test_BleConnectivityDriver" \
     -DTEST_MOCK_BLE \
     tests/fakes/ArduinoFake.cpp \
+    src/BleHal.cpp \
     src/BleConnectivityDriver.cpp \
     tests/BleConnectivityDriver/test.cpp
 
@@ -314,6 +315,7 @@ run_test "test_EnvironmentalGasSensor" \
 run_test "test_BleGatewayClient" \
     -DTEST_MOCK_BLE \
     tests/fakes/ArduinoFake.cpp \
+    src/BleHal.cpp \
     src/BleGatewayClient.cpp \
     src/BleConnectivityDriver.cpp \
     src/JsonTelemetryWriter.cpp \
