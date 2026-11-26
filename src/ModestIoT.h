@@ -20,6 +20,8 @@
 #include "Command.h"
 #include "EventHandler.h"
 #include "CommandHandler.h"
+#include "I2cBus.h"
+#include "ArduinoI2cBus.h"
 #include "TelemetryPackage.h"
 #include "JsonParser.h"
 #include "Device.h"
