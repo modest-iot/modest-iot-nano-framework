@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <cstddef>
 
 class FakeWire {
 public:
@@ -15,18 +16,86 @@ public:
     uint8_t readBuffer[64]; ///< Pre-loaded data for multi-byte reads (PthSensor).
     int readBufferSize = 0; ///< Size of readBuffer.
     bool useReadBuffer = false; ///< If true, read() returns from readBuffer instead of raw.
+    bool beginResult = true;
+    int transmissionResult = 0;
+    int writeLimit = -1;
+    int beginCount = 0;
+    int endTransmissionCount = 0;
+    int operationCount = 0;
+    int requestedLength = 0;
+    uint8_t lastTransmissionAddress = 0;
+    uint8_t lastRequestAddress = 0;
+    bool lastStop = true;
+    bool lastEndTransmissionStop = true;
+    int lastSdaPin = -1;
+    int lastSclPin = -1;
+    uint32_t lastFrequency = 0;
+    char operations[128]{};
+
     void pushReadBuffer(uint8_t b) { if (readBufferSize < 64) readBuffer[readBufferSize++] = b; }
     void clearCommands() { commandCount = 0; }
     void clearReadBuffer() { readBufferSize = 0; }
 
-    static void begin() {}
-    void beginTransmission(const uint8_t) { ++transmissionCount; }
-    void write(const uint8_t command) { if (commandCount < 64) commands[commandCount++] = command; }
-    [[nodiscard]] int endTransmission(bool stop = false) const {
-        (void)stop;
-        return commandCount == failureAt ? 1 : 0;
+    bool begin() {
+        ++beginCount;
+        recordOperation('B');
+        return beginResult;
     }
-    uint8_t requestFrom(const uint8_t, const uint8_t) { ++requests; readIndex = 0; return useReadBuffer ? static_cast<uint8_t>(readBufferSize) : static_cast<uint8_t>(byteCount); }
+
+    bool begin(const int sdaPin, const int sclPin, const uint32_t frequencyHz) {
+        ++beginCount;
+        lastSdaPin = sdaPin;
+        lastSclPin = sclPin;
+        lastFrequency = frequencyHz;
+        recordOperation('B');
+        return beginResult;
+    }
+
+    void beginTransmission(const uint8_t address) {
+        ++transmissionCount;
+        lastTransmissionAddress = address;
+        recordOperation('T');
+    }
+
+    std::size_t write(const uint8_t command) {
+        recordOperation('W');
+        if (commandCount >= 64 || (writeLimit >= 0 && commandCount >= writeLimit)) return 0;
+        commands[commandCount++] = command;
+        return 1;
+    }
+
+    std::size_t write(const uint8_t* bytes, const std::size_t length) {
+        if (bytes == nullptr) return 0;
+        std::size_t written = 0;
+        while (written < length && write(bytes[written]) == 1) {
+            ++written;
+        }
+        return written;
+    }
+
+    [[nodiscard]] int endTransmission(const bool stop = true) {
+        ++endTransmissionCount;
+        lastStop = stop;
+        lastEndTransmissionStop = stop;
+        recordOperation('E');
+        if (commandCount == failureAt) return 1;
+        return transmissionResult;
+    }
+
+    std::size_t requestFrom(const uint8_t address, const std::size_t quantity,
+                            const bool stop = true) {
+        ++requests;
+        lastRequestAddress = address;
+        requestedLength = static_cast<int>(quantity);
+        lastStop = stop;
+        recordOperation('R');
+        readIndex = 0;
+        const std::size_t available = useReadBuffer
+                                          ? static_cast<std::size_t>(readBufferSize)
+                                          : static_cast<std::size_t>(byteCount);
+        return available < quantity ? available : quantity;
+    }
+
     int available() { return useReadBuffer ? readBufferSize - readIndex : byteCount - readIndex; }
     int read() {
         const int index = readIndex++;
@@ -38,6 +107,23 @@ public:
         }
         return index == 0 ? (raw >> 8) : (raw & 0xFF);
     }
+
+    void clearHistory() {
+        operationCount = 0;
+        endTransmissionCount = 0;
+        requests = 0;
+        transmissionCount = 0;
+        lastEndTransmissionStop = true;
+        for (char& operation : operations) operation = '\0';
+    }
+
+private:
+    void recordOperation(const char operation) {
+        if (operationCount < static_cast<int>(sizeof(operations))) {
+            operations[operationCount++] = operation;
+        }
+    }
 };
 
+using TwoWire = FakeWire;
 inline FakeWire Wire;
