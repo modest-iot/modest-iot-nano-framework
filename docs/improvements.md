@@ -46,6 +46,10 @@ Comparison tables and future work for the Modest IoT Nano Framework.
 
 Improvements are grouped by theme. Target versions indicate when each improvement is expected, not a commitment.
 
+### Hardware & Platform Readiness
+
+Improve reliability on physical ESP32 devices while preparing incrementally for a native ESP-IDF component without destabilizing the existing Arduino library. Readiness work covers runtime and peripheral lifecycles, bounded I²C failure handling, sensor and actuator behavior, networking and OTA safety, preserved CI support, and validation on physical hardware where simulation is insufficient. See the [detailed hardware platform readiness plan](../.junie/plans/hardware-platform-readiness.md) for implementation gates and acceptance criteria.
+
 ### ArduinoJson Removal (W46) ✓
 
 **✓ Implemented**: ArduinoJson eliminated via `TelemetryWriter` abstraction and native `snprintf`-based JSON serialization. Saves ~30-40 KB Flash, removes per-serialization heap allocation, and unblocks downstream telemetry features. The framework now has only one external dependency (MQTT >=2.5.3).
