@@ -581,6 +581,14 @@ add_executable(test_Hd44780Driver
 target_include_directories(test_Hd44780Driver PRIVATE tests/fakes src)
 target_compile_options(test_Hd44780Driver PRIVATE -Wall -Wextra -Werror)
 
+add_executable(test_I2cBus
+        tests/I2cBus/test.cpp
+        src/ArduinoI2cBus.cpp
+        ${TEST_FAKES_SRC}
+)
+target_include_directories(test_I2cBus PRIVATE tests/fakes src)
+target_compile_options(test_I2cBus PRIVATE -Wall -Wextra -Werror)
+
 add_executable(test_Ssd1306Driver
         tests/Ssd1306Driver/test.cpp
         src/Ssd1306Driver.cpp
@@ -741,6 +749,7 @@ add_test(NAME LedTest COMMAND test_Led)
 add_test(NAME PassiveInfraredSensorTest COMMAND test_PassiveInfraredSensor)
 add_test(NAME PulseSensorTest COMMAND test_PulseSensor)
 add_test(NAME Hd44780DriverTest COMMAND test_Hd44780Driver)
+add_test(NAME I2cBusTest COMMAND test_I2cBus)
 add_test(NAME Ssd1306DriverTest COMMAND test_Ssd1306Driver)
 add_test(NAME WiFiConnectivityDriverTest COMMAND test_WiFiConnectivityDriver)
 add_test(NAME BmeEnvironmentalSensorTest COMMAND test_BmeEnvironmentalSensor)
@@ -756,6 +765,6 @@ add_test(NAME ImuSensorTest COMMAND test_ImuSensor)
 
 add_custom_target(run_tests
         COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfiguration test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_JsonParser test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor test_PthSensor test_WaterLeakSensor test_DoorWindowSensor test_OneWireTemperatureSensor test_DhtSensor test_DeepSleep test_ServoMotor test_CharacterLcdDisplay test_OledDisplay test_EnvironmentalGasSensor test_BleGatewayClient test_HttpGatewayClient test_Buzzer test_ConfigurationStore test_TimeSynchronizationDriver test_GasSensor test_Button test_PowerManager test_TelemetryBuffer test_OtaUpdateHandler test_Led test_PassiveInfraredSensor test_PulseSensor test_Hd44780Driver test_Ssd1306Driver test_WiFiConnectivityDriver test_BmeEnvironmentalSensor test_GeolocationSensor test_UltrasonicSensor test_LoadCellAmplifier test_Device test_EventAggregator test_RulesEngine test_ChangeFilter test_AiMicroModelController test_ImuSensor
+        DEPENDS test_DigitalLightIntensitySensor test_RgbLed test_RelayActuator test_RfidSensor test_BleConnectivityDriver test_ModestLog test_MqttGatewayClient test_EngineConfiguration test_DiagnosticsSnapshot test_SensorFault test_SamplingScheduler test_TelemetryPackage test_JsonParser test_TriggeringScheduler test_CommandMarshaling test_WaterFlowSensor test_SoilMoistureSensor test_PthSensor test_WaterLeakSensor test_DoorWindowSensor test_OneWireTemperatureSensor test_DhtSensor test_DeepSleep test_ServoMotor test_CharacterLcdDisplay test_OledDisplay test_EnvironmentalGasSensor test_BleGatewayClient test_HttpGatewayClient test_Buzzer test_ConfigurationStore test_TimeSynchronizationDriver test_GasSensor test_Button test_PowerManager test_TelemetryBuffer test_OtaUpdateHandler test_Led test_PassiveInfraredSensor test_PulseSensor test_Hd44780Driver test_I2cBus test_Ssd1306Driver test_WiFiConnectivityDriver test_BmeEnvironmentalSensor test_GeolocationSensor test_UltrasonicSensor test_LoadCellAmplifier test_Device test_EventAggregator test_RulesEngine test_ChangeFilter test_AiMicroModelController test_ImuSensor
         COMMENT "Executing all native host test suites..."
 )
