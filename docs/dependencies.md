@@ -53,11 +53,11 @@ To update the MQTT library version:
 
 ### ESP32 Arduino Core
 
-The ESP32 platform core is installed dynamically in CI. No manifest pins a specific version.
+The example-build workflow uses an explicit ESP32 Arduino core matrix rather than installing the latest version.
 
 - **Repository**: [espressif/arduino-esp32](https://github.com/espressif/arduino-esp32)
-- **Used in**: `compile-examples.yml` (CI installs latest via `arduino-cli core install esp32:esp32`)
-- **Update process**: CI always uses the latest core. To pin a specific version, modify `compile-examples.yml`.
+- **Current matrix**: Arduino-ESP32 3.3.13 and 4.0.0, each compiled for ESP32 and ESP32-S3 in `.github/workflows/compile-examples.yml`.
+- **Update process**: Change the workflow matrix intentionally when adding or retiring a supported core version; this matrix does not imply compatibility with every upstream release.
 
 ## GitHub Actions Dependencies
 
