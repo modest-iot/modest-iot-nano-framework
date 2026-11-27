@@ -37,6 +37,7 @@ static const unsigned long BUTTON_DEBOUNCE_IN_MILLISECONDS = 150;
 
 /** @brief Sampler event queue length. */
 static const int ASYNC_ENGINE_QUEUE_DEPTH = 8;
+/** @brief Shared I2C bus configuration: board-default pins, 100 kHz, and 50 ms per transfer. */
 static const I2cBusConfiguration AIR_CONDITIONING_I2C_CONFIGURATION{-1, -1, 100000};
 
 /** @brief Default target temperature (°C). */
