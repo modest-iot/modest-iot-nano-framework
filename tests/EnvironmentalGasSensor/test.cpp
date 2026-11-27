@@ -10,6 +10,7 @@
 #include "EnvironmentalGasSensor.h"
 #include "Event.h"
 #include "Sensor.h"
+#include "FakeI2cBus.h"
 #include <cassert>
 #include <time.h>
 #include <cmath>
@@ -75,6 +76,53 @@ public:
         EnvironmentalGasSensor::DEFAULT_I2C_ADDRESS, EventHandler* parentHandler = nullptr)
         : EnvironmentalGasSensor(signalGpioPin, i2cAddress, parentHandler) {}
 };
+
+class TestableInjectedEnvironmentalGasSensor : public EnvironmentalGasSensor {
+public:
+    TestableInjectedEnvironmentalGasSensor(I2cBus& bus, const int pin)
+        : EnvironmentalGasSensor(bus, pin) {}
+    using EnvironmentalGasSensor::processEvent;
+};
+
+void testInjectedBusStartupAndIncompleteGasRead() {
+    FakeI2cBus bus;
+    TestableInjectedEnvironmentalGasSensor sensor(bus, 4);
+    assert(bus.writeCount == 0);
+    assert(bus.writeReadCount == 0);
+    assert(!sensor.isInitialized());
+
+    assert(bus.start({21, 22, 400000}) == I2cStatus::Ok);
+    bus.queueRead({0x61});
+    bus.queueRead(std::vector<std::uint8_t>(26, 0));
+    bus.queueRead(std::vector<std::uint8_t>(7, 0));
+    bus.queueRead(std::vector<std::uint8_t>(3, 0));
+    assert(sensor.start());
+    assert(sensor.isInitialized());
+    assert(bus.writeReadCount == 4);
+    assert(bus.writeCount == 1);
+
+    bus.queueRead(std::vector<std::uint8_t>(8, 0));
+    bus.queueRead(std::vector<std::uint8_t>(3, 0));
+    Event successfulSample(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+    sensor.processEvent(successfulSample);
+    assert(successfulSample.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER);
+    const float temperature = sensor.getTemperatureInCelsius();
+    const float humidity = sensor.getHumidityInPercentage();
+    const float pressure = sensor.getPressureInHectopascals();
+    const float gasResistance = sensor.getGasResistanceInKOhms();
+
+    bus.queueRead(std::vector<std::uint8_t>(8, 0));
+    bus.queueRead({0}, I2cStatus::ShortRead);
+    sensor.setFaultThreshold(1);
+    Event failedSample(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+    sensor.processEvent(failedSample);
+    assert(failedSample.identifier == Sensor::SENSOR_FAULT_EVENT_IDENTIFIER);
+    assert(sensor.getTemperatureInCelsius() == temperature);
+    assert(sensor.getHumidityInPercentage() == humidity);
+    assert(sensor.getPressureInHectopascals() == pressure);
+    assert(sensor.getGasResistanceInKOhms() == gasResistance);
+    assert(sensor.getLastI2cResult().status == I2cStatus::ShortRead);
+}
 
 void testConstructorInitializesState() {
     std::cout << "Test: Constructor initializes state correctly... ";
@@ -405,6 +453,7 @@ int main() {
     testGettersReturnCachedValues();
     testFirstReadingEmitsDataReadEvent();
     testUnchangedValuesSuppressPropagation();
+    testInjectedBusStartupAndIncompleteGasRead();
     
     std::cout << "All EnvironmentalGasSensor tests passed!" << std::endl;
     return 0;
