@@ -9,11 +9,112 @@
 
 #include "Arduino.h"
 #include "Device.h"
+#include "FakeI2cBus.h"
 #include <cassert>
 #include <cstdio>
+#include <vector>
+
+namespace {
+
+class CompositionSensor final : public Sensor {
+public:
+    CompositionSensor() : Sensor(1, nullptr) {}
+
+protected:
+    void processEvent(Event&) override {}
+    uint32_t getDefaultSamplingIntervalInMilliseconds() const override { return 1000; }
+    uint32_t getMinimalSamplingIntervalInMilliseconds() const override { return 250; }
+};
+
+class CompositionPeripheral {
+public:
+    CompositionPeripheral(I2cBus& bus, std::vector<int>& startupOrder, const int order)
+        : bus(bus), startupOrder(startupOrder), order(order) {}
+
+    bool start() {
+        startupOrder.push_back(order);
+        return bus.isReady() && startResult;
+    }
+
+    I2cBus& bus;
+    std::vector<int>& startupOrder;
+    int order;
+    bool startResult = true;
+};
+
+class CompositionDevice final : public Device {
+public:
+    explicit CompositionDevice(std::vector<int>& startupOrder)
+        : Device(100),
+          sensorPeripheral(bus, startupOrder, 1),
+          displayPeripheral(bus, startupOrder, 2),
+          startupOrder(startupOrder) {}
+
+    void on(Event) override {}
+    void handle(Command) override {}
+
+    bool start() {
+        if (bus.start({-1, -1, 100000}) != I2cStatus::Ok) {
+            return false;
+        }
+        if (!sensorPeripheral.start() || !displayPeripheral.start()) {
+            return false;
+        }
+        if (!appendSensorToScheduler(&sensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
+                                     1000, 250)) {
+            return false;
+        }
+        startupOrder.push_back(3);
+        initializeAsynchronousEngine();
+        startupOrder.push_back(4);
+        return true;
+    }
+
+    bool canRegisterSensor() {
+        return appendSensorToScheduler(&sensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
+                                       1000, 250);
+    }
+
+    FakeI2cBus bus;
+    CompositionPeripheral sensorPeripheral;
+    CompositionPeripheral displayPeripheral;
+    CompositionSensor sensor;
+
+private:
+    std::vector<int>& startupOrder;
+};
+
+void testComposedDeviceStartupOrderAndPeripheralFailure() {
+    std::vector<int> startupOrder;
+    {
+        CompositionDevice device(startupOrder);
+        device.displayPeripheral.startResult = false;
+
+        assert(!device.start());
+        assert(device.bus.startCount == 1);
+        assert(device.sensorPeripheral.bus.isReady());
+        assert(startupOrder == std::vector<int>({1, 2}));
+        assert(device.canRegisterSensor());
+    }
+
+    startupOrder.clear();
+    {
+        CompositionDevice device(startupOrder);
+
+        assert(device.start());
+        assert(device.bus.startCount == 1);
+        assert(&device.sensorPeripheral.bus == &device.bus);
+        assert(&device.displayPeripheral.bus == &device.bus);
+        assert(startupOrder == std::vector<int>({1, 2, 3, 4}));
+        assert(!device.canRegisterSensor());
+    }
+}
+
+} // namespace
 
 int main() {
     std::printf("Running Device tests...\n");
+    testComposedDeviceStartupOrderAndPeripheralFailure();
 
     // Test 1: Default telemetry schema version is nullptr
     {
