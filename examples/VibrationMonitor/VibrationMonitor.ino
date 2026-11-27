@@ -51,7 +51,7 @@ static const int BUZZER_GPIO_PIN = 13;
 static const unsigned long VIBRATION_SAMPLE_INTERVAL_IN_MILLISECONDS = 1000;
 /** @brief Delay in the main loop when no work is pending. */
 static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
-/** @brief Shared I2C bus configuration for the MPU6050 accelerometer. */
+/** @brief Shared I2C bus configuration: board-default pins, 100 kHz, and 50 ms per transfer. */
 static const I2cBusConfiguration VIBRATION_MONITOR_I2C_CONFIGURATION{-1, -1, 100000};
 //@} // Timing Configuration
 
@@ -182,6 +182,11 @@ public:
         );
     }
 
+    /**
+     * @brief Extracts vibration features and evaluates each completed sensor sample.
+     * @param event Event emitted by the accelerometer adapter.
+     * @runs_on{sampler}
+     */
     void on(Event event) override {
         if (event.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER) {
             // Extract time-domain features directly from the accelerometer sensor.
