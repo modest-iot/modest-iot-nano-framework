@@ -40,6 +40,7 @@ static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS     = 200;
 static const unsigned long DEVICE_EVENT_DELAY_IN_MILLISECONDS    = 0;
 static const int           ASYNC_ENGINE_QUEUE_DEPTH = 8;
 static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS       = 1000;
+/** @brief Shared I2C bus configuration: board-default pins, 100 kHz, and 50 ms per transfer. */
 static const I2cBusConfiguration OUTDOOR_SECURITY_I2C_CONFIGURATION{-1, -1, 100000};
 
 // Initial state: bright, no motion -> light off
