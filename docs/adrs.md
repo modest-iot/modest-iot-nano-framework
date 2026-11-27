@@ -8,7 +8,7 @@ Each ADR documents **why** a decision was made, not just **what** was decided. T
 
 The Modest IoT Nano Framework is a lightweight, deterministic IoT framework for ESP32-based devices. It provides a Mediator design pattern for sensor-actuator wiring, a per-slot sampling scheduler, a telemetry pipeline with ownership safety and change-only filtering, event-driven rules and on-device inference, and connectivity drivers for Wi-Fi, BLE, and MQTT. The framework runs on FreeRTOS with two isolated tasks: a sampler task for all sensor/actuator I/O and a network task for asynchronous transmission.
 
-The 33 ADRs below span 12 categories that shaped the framework's architecture. Two are superseded by later decisions.
+The 34 ADRs below span 12 categories that shaped the framework's architecture. Two are superseded by later decisions.
 
 | #                                                                                          | Title                                                         | Status   | Category     |
 |--------------------------------------------------------------------------------------------|---------------------------------------------------------------|----------|--------------|
@@ -45,6 +45,7 @@ The 33 ADRs below span 12 categories that shaped the framework's architecture. T
 | [ADR-031](#adr-031-fixed-capacity-event-driven-rules-engine)                                | Fixed-Capacity Event-Driven Rules Engine                      | Accepted | Architecture |
 | [ADR-032](#adr-032-deadband-based-change-only-telemetry)                                   | Deadband-Based Change-Only Telemetry                          | Accepted | Telemetry    |
 | [ADR-033](#adr-033-runtime-independent-on-device-inference-interface)                     | Runtime-Independent On-Device Inference Interface              | Accepted | Architecture |
+| [ADR-034](#adr-034-device-owned-shared-i2c-bus-for-composed-devices)                       | Device-Owned Shared I²C Bus for Composed Devices               | Accepted | Architecture |
 
 ### Status Legend
 
@@ -65,7 +66,7 @@ The 33 ADRs below span 12 categories that shaped the framework's architecture. T
 | **API Design**   | 2     | `serialize` overload rename; identifier registry with reserved ranges                                |
 | **Dependencies** | 3     | ArduinoJson removed (W46); five hygiene principles for dependency decisions; native servo and LCD drivers |
 | **Testing**      | 2     | Shared mock harness (BLE.h consolidated); golden host tests migrated to native JSON (W46)            |
-| **Architecture** | 3     | DDD bounded contexts; fixed-capacity event rules; runtime-independent inference interface             |
+| **Architecture** | 4     | DDD bounded contexts; fixed-capacity event rules; runtime-independent inference; device-owned I²C bus |
 | **Power**        | 2     | Tickless scheduling with light sleep; deep sleep with RTC memory                                      |
 | **Refactoring**  | 1     | Shared Bosch environmental sensor base class                                                          |
 
@@ -1247,6 +1248,35 @@ Define `AiMicroModelController` as a runtime-independent domain interface for cl
 
 ---
 
+<a id="adr-034-device-owned-shared-i2c-bus-for-composed-devices"></a>
+## ADR-034: Device-Owned Shared I²C Bus for Composed Devices
+
+**Status**: Accepted | **Date**: 2026-11-27 | **Supersedes**: N/A
+
+### Context
+
+I²C sensors and displays need to share a transport without constructors performing hardware I/O or generic framework base classes becoming tied to a platform bus. Composed devices also need one explicit lifecycle boundary to start the bus and required peripherals before sampling or display work begins. A global bus service hides dependencies, while an application-owned bus requires separate lifetime and startup coordination outside the device composition.
+
+### Decision
+
+Each concrete composed device that uses I²C owns one `ArduinoI2cBus` member, declared before its I²C peripheral members. Those peripherals borrow the same `I2cBus` reference; injected constructors are configuration-only and perform no hardware I/O. The device starts the bus, starts each required peripheral, then registers sampling and starts its asynchronous engine. A failed bus or peripheral start is observable and prevents engine startup. Keep legacy Arduino constructors source-compatible, and keep `Device`, `Sensor`, and `Actuator` transport-neutral.
+
+### Consequences
+
+- **Positive**: Bus lifetime and startup order are visible in the composition; multiple peripherals use the same serialized bus; peripherals remain testable against the platform-neutral interface; no global registry or transport dependency is added to generic bases.
+- **Negative**: A physical bus shared across multiple independently composed devices needs a different, higher-level owner; retry and cleanup after partial peripheral startup remain composition-specific rather than being handled by a bus registry.
+- **Rationale**: Device ownership aligns the shared resource lifetime with the concrete application composition and makes startup sequencing explicit while retaining an abstraction boundary that can support other backends.
+
+### References
+
+- `src/I2cBus.h`, `src/ArduinoI2cBus.h`, `src/ArduinoI2cBus.cpp`
+- `src/PthSensor.h`, `src/EnvironmentalGasSensor.h`, `src/ImuSensor.h`, `src/DigitalLightIntensitySensor.h`
+- `src/CharacterLcdDisplay.h`, `src/OledDisplay.h`
+- `examples/WeatherStation/WeatherStation.ino`, `examples/IndoorAirQualityDisplay/IndoorAirQualityDisplay.ino`
+- `tests/I2cBus/test.cpp`
+
+---
+
 ## Consolidated Improvements Document
 
 The 8 individual improvement documents and the roadmap have been consolidated into a single `docs/improvements.md` file, organized by tier. This eliminates cross-document maintenance overhead while keeping all information accessible through headings and search.
@@ -1294,4 +1324,4 @@ For future architecture decisions, use this template:
 
 ---
 
-*Last updated: 2026-11-24 (33 ADRs: 13 original + 9 from improvements.md review + 1 DDD adoption + 4 from W12-W16 + 1 from W17 + 1 from W19 + 1 BME base class + 3 from v1.3.0)*
+*Last updated: 2026-11-27 (34 ADRs: 13 original + 9 from improvements.md review + 1 DDD adoption + 4 from W12-W16 + 1 from W17 + 1 from W19 + 1 BME base class + 3 from v1.3.0 + 1 I²C shared-bus ownership decision)*
