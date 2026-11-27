@@ -5,6 +5,7 @@
  */
 
 #include "OledDisplay.h"
+#include "FakeI2cBus.h"
 #include <cassert>
 #include <cstring>
 #include <vector>
@@ -15,7 +16,34 @@ public:
     void handle(Command cmd) override { commandsReceived.push_back(cmd); }
 };
 
+void testInjectedBusStartupAndDisplayFailure() {
+    Wire.transmissionCount = 0;
+    FakeI2cBus bus;
+    OledDisplay display(bus);
+
+    assert(bus.writeCount == 0);
+    assert(Wire.transmissionCount == 0);
+    assert(!display.isInitialized());
+    display.handle(OledDisplay::UPDATE_DISPLAY_COMMAND);
+    assert(display.getLastI2cResult().status == I2cStatus::NotStarted);
+    assert(bus.writeCount == 0);
+
+    const I2cBusConfiguration config{21, 22, 400000};
+    assert(bus.start(config) == I2cStatus::Ok);
+    assert(display.start());
+    assert(display.isInitialized());
+    assert(display.isBacklightOn());
+    assert(Wire.transmissionCount == 0);
+
+    const int writesBeforeFailure = bus.writeCount;
+    bus.nextWriteStatus = I2cStatus::AddressNack;
+    display.handle(OledDisplay::UPDATE_DISPLAY_COMMAND);
+    assert(bus.writeCount == writesBeforeFailure + 1);
+    assert(display.getLastI2cResult().status == I2cStatus::AddressNack);
+}
+
 [[nodiscard]] int main() {
+    testInjectedBusStartupAndDisplayFailure();
     // Test 1: Constructor initializes I2C address and clears frame buffer
     Recorder parent;
     OledDisplay oled(0x3C, &parent);
