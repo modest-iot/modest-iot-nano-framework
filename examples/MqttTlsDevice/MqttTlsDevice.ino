@@ -28,6 +28,7 @@
 
 /** @brief Sampler event queue length for MQTT TLS telemetry. */
 static const int MQTT_TLS_SAMPLER_QUEUE_LENGTH = 10;
+/** @brief Shared I2C bus configuration: board-default pins, 100 kHz, and 50 ms per transfer. */
 static const I2cBusConfiguration MQTT_TLS_I2C_CONFIGURATION{-1, -1, 100000};
 
 /** @name Telemetry JSON Keys */
@@ -128,6 +129,11 @@ class MqttTlsDevice : public Device {
         stopAsynchronousEngine();
     }
 
+    /**
+     * @brief Queues a telemetry snapshot after a sensor sample is reported.
+     * @param event Event emitted by the sensor adapter.
+     * @runs_on{sampler}
+     */
     void on(Event event) override {
         if (event.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER) {
             packageAndQueueTelemetrySnapshot();
