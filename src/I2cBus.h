@@ -8,6 +8,7 @@ struct I2cBusConfiguration {
     int sdaPin;
     int sclPin;
     std::uint32_t frequencyInHertz;
+    std::uint16_t timeoutInMilliseconds = 50; ///< Per-transfer timeout in milliseconds; zero is invalid.
 };
 
 enum class I2cStatus : std::uint8_t {
