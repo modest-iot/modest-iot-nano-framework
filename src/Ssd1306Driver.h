@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <Wire.h>
+#include "I2cBus.h"
 
 /**
  * @brief Low-level SSD1306 OLED controller driver over I2C.
@@ -21,10 +22,14 @@
  */
 class Ssd1306Driver {
 private:
+    I2cBus* bus; ///< Shared I2C bus, or null for the legacy global Wire path.
     uint8_t i2cAddress; ///< I2C address of the SSD1306 controller (0x3C or 0x3D).
     uint8_t displayWidth; ///< Display width in pixels (typically 128).
     uint8_t displayHeight; ///< Display height in pixels (32 or 64).
     bool displayOn; ///< Current display on/off state.
+    mutable bool initialized;
+    mutable bool initializing;
+    mutable I2cResult lastI2cResult;
 
     // SSD1306 command constants
     static constexpr uint8_t SSD1306_COMMAND_PREFIX = 0x00; ///< I2C command mode prefix byte.
@@ -50,6 +55,7 @@ private:
 
     // SSD1306 display dimensions
     static constexpr uint8_t SSD1306_MAX_DISPLAY_WIDTH = 128; ///< Maximum display width in pixels.
+    static constexpr size_t SSD1306_MAX_DATA_BYTES_PER_TRANSFER = 127; ///< Leaves space for the I2C control byte.
 
     // SSD1306 initialization parameter defaults
     static constexpr uint8_t SSD1306_CLOCK_DIVIDE_RATIO_DEFAULT = 0x80; ///< Default clock divide ratio.
@@ -66,10 +72,17 @@ private:
      * @brief Sends a single command byte to the SSD1306.
      * @param command Command byte to send.
      */
-    void sendCommandByte(uint8_t command) const;
+    bool sendCommandByte(uint8_t command) const;
+    bool initializeSequence();
+    I2cResult sendBytes(const uint8_t* bytes, size_t length) const;
+    static I2cStatus mapWireStatus(uint8_t status);
 
 public:
     explicit Ssd1306Driver(uint8_t i2cAddress = 0x3C, uint8_t width = 128, uint8_t height = 64);
+    Ssd1306Driver(I2cBus& bus, uint8_t i2cAddress = 0x3C, uint8_t width = 128, uint8_t height = 64);
+
+    /** Initializes the display through the configured transport. */
+    [[nodiscard]] bool start();
 
     /**
      * @brief Initializes SSD1306 hardware registers via I2C.
@@ -120,6 +133,12 @@ public:
 
     /** @brief Returns the display height in pixels. */
     [[nodiscard]] uint8_t getHeight() const;
+
+    /** @brief Returns the most recent I2C operation result. */
+    [[nodiscard]] I2cResult getLastI2cResult() const;
+
+    /** @brief Reports whether initialization completed successfully. */
+    [[nodiscard]] bool isInitialized() const;
 };
 
 #endif // SSD1306_DRIVER_H
