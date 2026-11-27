@@ -17,7 +17,8 @@
 /**
  * @brief Low-level SSD1306 OLED controller driver over I2C.
  * Implements the SSD1306 command protocol directly, eliminating external display libraries.
- * Supports 128x64 and 128x32 monochrome OLED displays with page addressing mode.
+ * Supports 128x64 and 128x32 monochrome OLED displays with page addressing mode. The legacy
+ * constructor uses global @c Wire; the injected constructor uses a shared @ref I2cBus.
  * @ingroup actuators_module
  */
 class Ssd1306Driver {
@@ -78,15 +79,39 @@ private:
     static I2cStatus mapWireStatus(uint8_t status);
 
 public:
+    /**
+     * @brief Configures the legacy global-@c Wire transport and display dimensions.
+     * @param i2cAddress 7-bit SSD1306 I2C address (typically 0x3C or 0x3D).
+     * @param width Display width in pixels.
+     * @param height Display height in pixels.
+     * @note Construction does not initialize the controller; call @ref initialize
+     *       or @ref start before sending display data.
+     */
     explicit Ssd1306Driver(uint8_t i2cAddress = 0x3C, uint8_t width = 128, uint8_t height = 64);
+
+    /**
+     * @brief Configures the driver to use a caller-owned shared I2C bus.
+     * @param bus Non-owning bus reference; it must outlive this driver.
+     * @param i2cAddress 7-bit SSD1306 I2C address (typically 0x3C or 0x3D).
+     * @param width Display width in pixels.
+     * @param height Display height in pixels.
+     * @note Performs no hardware I/O. Start @p bus before calling @ref start.
+     */
     Ssd1306Driver(I2cBus& bus, uint8_t i2cAddress = 0x3C, uint8_t width = 128, uint8_t height = 64);
 
-    /** Initializes the display through the configured transport. */
+    /**
+     * @brief Initializes the display through its configured transport.
+     * @return @c true if the full controller initialization sequence succeeded.
+     * @note The injected bus must already be started. Inspect
+     *       @ref getLastI2cResult when this returns @c false.
+     */
     [[nodiscard]] bool start();
 
     /**
      * @brief Initializes SSD1306 hardware registers via I2C.
      * Configures display clock, multiplex ratio, contrast, charge pump, and memory addressing mode.
+     * @note For the injected path, start the bus first. Use @ref start when the
+     *       initialization result is needed directly.
      */
     void initialize();
 
@@ -134,10 +159,16 @@ public:
     /** @brief Returns the display height in pixels. */
     [[nodiscard]] uint8_t getHeight() const;
 
-    /** @brief Returns the most recent I2C operation result. */
+    /**
+     * @brief Returns the result of the most recent low-level I2C operation.
+     * @return Status and transferred-versus-expected byte counts for the last operation.
+     */
     [[nodiscard]] I2cResult getLastI2cResult() const;
 
-    /** @brief Reports whether initialization completed successfully. */
+    /**
+     * @brief Reports whether the most recent initialization completed successfully.
+     * @return @c true if all initialization transfers succeeded.
+     */
     [[nodiscard]] bool isInitialized() const;
 };
 
