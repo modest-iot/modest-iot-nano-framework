@@ -9,7 +9,7 @@
 
 ## Overview
 
-The Modest IoT Nano Framework uses **gcov** and **lcov** to measure test coverage across all 53 host test suites. The coverage report shows which lines of source code are exercised by the test suite, providing evidence of test quality and identifying untested code paths.
+The current host test suite contains **54 suites**. The coverage runner still explicitly lists 53 suites and does not include the newer `I2cBus` suite. The 91.2% line and 83.6% function figures below are a historical 53-suite snapshot, not coverage results for the current host suite.
 
 ## Running Coverage Locally
 
@@ -41,7 +41,7 @@ Generate a coverage report:
 ./tests/run_coverage.sh
 ```
 
-This compiles all 53 test suites with coverage instrumentation (`-fprofile-arcs -ftest-coverage`), runs them, and generates an HTML report in `build/coverage/index.html`.
+This compiles the 53 suites currently enumerated in `tests/run_coverage.sh` with coverage instrumentation (`-fprofile-arcs -ftest-coverage`), runs them, and generates an HTML report in `build/coverage/index.html`. The coverage runner must be extended and rerun before reporting coverage for all 54 host suites.
 
 Set a custom minimum coverage threshold (default: 80%):
 ```bash
@@ -164,7 +164,7 @@ The coverage script ensures these exclusions are visible in the final HTML repor
 |-------|---------------|-----------|  
 | **Testable code (filtered)** | **91.2%** | **83.6%** |
 
-The filtered coverage (91.2% line, 83.6% function) is the most meaningful metric, as it excludes test code, GCC standard library headers, and the 7 platform-specific files listed above. These results were measured with GCC 16 and all 53 host test suites on 2026-11-24. The `lcov --capture` step uses `--exclude` patterns to filter out system include paths (Homebrew GCC, Xcode SDK, Linux system headers) so only project source files appear in the report. The genhtml HTML report reflects only this filtered set — the excluded files do not appear.
+The filtered coverage (91.2% line, 83.6% function) is the most meaningful metric, as it excludes test code, GCC standard library headers, and the 7 platform-specific files listed above. These results were measured with GCC 16 and 53 suites on 2026-11-24; they predate the current 54-suite host inventory and omit `I2cBus`. Do not present these figures as current coverage until the coverage runner includes all host suites and is rerun. The `lcov --capture` step uses `--exclude` patterns to filter out system include paths (Homebrew GCC, Xcode SDK, Linux system headers) so only project source files appear in the report. The genhtml HTML report reflects only this filtered set — the excluded files do not appear.
 
 ## Adding Coverage to New Tests
 
