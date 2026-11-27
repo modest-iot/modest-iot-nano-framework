@@ -9,8 +9,10 @@
  */
 
 #include "Sensor.h"
+#include "I2cBus.h"
 #include <Arduino.h>
 #include <Wire.h>
+#include <cstddef>
 #include <cstdint>
 
 /**
@@ -24,9 +26,8 @@
  * raw data reading (register addresses, byte counts), and optional extra values
  * (e.g., gas resistance in BME680).
  *
- * @note The constructor calls Wire.begin(), which initializes the shared Arduino
- *       I2C interface. Subclasses should call initialize() to verify connectivity
- *       and read calibration coefficients.
+ * @note Legacy constructors initialize the shared Arduino I2C interface.
+ *       Injected-bus constructors are configuration-only.
  * @see PthSensor
  * @see EnvironmentalGasSensor
  */
@@ -41,7 +42,13 @@ protected:
      */
     explicit BmeEnvironmentalSensor(int signalGpioPin, uint8_t i2cAddress,
                                     EventHandler* parentHandler = nullptr);
+    explicit BmeEnvironmentalSensor(I2cBus& bus, int signalGpioPin, uint8_t i2cAddress,
+                                    EventHandler* parentHandler = nullptr);
+    explicit BmeEnvironmentalSensor(I2cBus* bus, int signalGpioPin, uint8_t i2cAddress,
+                                    EventHandler* parentHandler = nullptr);
 
+    I2cBus* bus; ///< Non-owning bus for the explicit injection path; null selects legacy Wire access.
+    mutable I2cResult lastI2cResult; ///< Result of the most recent low-level transaction.
     uint8_t i2cAddress; ///< Configured BME 7-bit I2C address.
 
     /** @name BME Factory Calibration Coefficients */
@@ -171,6 +178,9 @@ protected:
      * @return 16-bit value read from the sensor.
      */
     [[nodiscard]] int16_t readRegister16(uint8_t registerAddress) const;
+    [[nodiscard]] bool readRegister8(uint8_t registerAddress, uint8_t& value) const;
+    [[nodiscard]] I2cResult readBytes(uint8_t registerAddress, uint8_t* bytes, std::size_t length) const;
+    [[nodiscard]] I2cResult writeBytes(const uint8_t* bytes, std::size_t length) const;
 
     /**
      * @brief Reads the shared factory calibration coefficients (digT1-3, digP1-9, digH1-6).
@@ -228,6 +238,12 @@ public:
      * @return @c true if calibration data was read successfully.
      */
     [[nodiscard]] bool isInitialized() const;
+
+    /**
+     * @brief Returns the result of the most recent bus transaction.
+     * @return The low-level I2C status and transferred/expected byte counts.
+     */
+    [[nodiscard]] I2cResult getLastI2cResult() const;
 
     /**
      * @brief Returns the temperature from the most recent successful sample.
