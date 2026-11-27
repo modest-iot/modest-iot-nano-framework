@@ -37,6 +37,7 @@ static const unsigned long BUTTON_DEBOUNCE_IN_MILLISECONDS = 150;
 
 /** @brief Sampler event queue length. */
 static const int ASYNC_ENGINE_QUEUE_DEPTH = 8;
+static const I2cBusConfiguration AIR_CONDITIONING_I2C_CONFIGURATION{-1, -1, 100000};
 
 /** @brief Default target temperature (°C). */
 static const int DEFAULT_TARGET_TEMPERATURE = 22;
@@ -56,6 +57,7 @@ static const int AIR_HANDLER_PIN                        = 13;
 
 class AirConditioningDevice : public Device {
     private:
+    ArduinoI2cBus i2cBus;
     // Inputs (Sensors)
     DhtSensor humidityAndTemperatureSensor;
     Button targetTemperatureUpButton;
@@ -118,15 +120,30 @@ class AirConditioningDevice : public Device {
      */
     AirConditioningDevice(int dhtPin, int upPin, int downPin, uint8_t lcdAddr, int servoPin)
         : Device(SAMPLING_INTERVAL_IN_MILLISECONDS, 0),
+        i2cBus(),
         humidityAndTemperatureSensor(dhtPin, DhtSensor::SENSOR_MODEL_DHT22),
         targetTemperatureUpButton(upPin, BUTTON_DEBOUNCE_IN_MILLISECONDS, this),
         targetTemperatureDownButton(downPin, BUTTON_DEBOUNCE_IN_MILLISECONDS, this),
-        statusDisplay(lcdAddr, 16, 2, this),
+        statusDisplay(i2cBus, lcdAddr, 16, 2, true, this),
         airHandler(servoPin, 0, this),
         currentTemperature(0.0f),
         currentHumidity(0.0f),
         targetTemperature(DEFAULT_TARGET_TEMPERATURE)
-    {
+    {}
+
+    bool start() {
+        const I2cStatus busStatus = i2cBus.start(AIR_CONDITIONING_I2C_CONFIGURATION);
+        if (busStatus != I2cStatus::Ok) {
+            Serial.printf("[AC Device] I2C bus startup failed (status %u).\n",
+                          static_cast<unsigned int>(busStatus));
+            return false;
+        }
+        if (!statusDisplay.start()) {
+            Serial.printf("[AC Device] LCD startup failed (status %u).\n",
+                          static_cast<unsigned int>(statusDisplay.getLastI2cResult().status));
+            return false;
+        }
+
         // 1. Register the DHT sensor using the baseline scheduler ticker token
         // IMPORTANT: Registration must occur before initializeAsynchronousEngine(), because
         // the engine start guard rejects any registration after the engine is running.
@@ -140,12 +157,22 @@ class AirConditioningDevice : public Device {
                                           Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
                                           FALLING);
 
-        // 3. Launch FreeRTOS execution background engines
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
-
         // 4. Initial rendering pass to populate both display lines
         updateCurrentMeasureDisplay();
+        if (statusDisplay.getLastI2cResult().isInvalidOrIncomplete()) {
+            Serial.printf("[AC Device] Initial display update failed (status %u).\n",
+                          static_cast<unsigned int>(statusDisplay.getLastI2cResult().status));
+            return false;
+        }
         updateTargetMeasureDisplay();
+        if (statusDisplay.getLastI2cResult().isInvalidOrIncomplete()) {
+            Serial.printf("[AC Device] Initial target display update failed (status %u).\n",
+                          static_cast<unsigned int>(statusDisplay.getLastI2cResult().status));
+            return false;
+        }
+
+        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
+        return true;
     }
 
     /**
@@ -201,7 +228,11 @@ void setup() {
         AIR_HANDLER_PIN
     );
 
-    Serial.println("[System Boot] Loop-less Air Conditioning Orchestrator active.");
+    if (airConditioningController->start()) {
+        Serial.println("[System Boot] Loop-less Air Conditioning Orchestrator active.");
+    } else {
+        Serial.println("[AC Device] Startup failed; control engine was not started.");
+    }
 }
 
 void loop() {
