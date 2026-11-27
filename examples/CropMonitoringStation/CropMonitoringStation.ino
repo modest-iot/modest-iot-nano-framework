@@ -42,6 +42,8 @@ static const uint8_t DEFAULT_TIMER_CHANNEL = 0;
 
 /** @brief Sampler event queue length for battery operation. */
 static const int SAMPLER_QUEUE_LENGTH = 5;
+/** @brief Shared I2C bus configuration for the BH1750 light sensor. */
+static const I2cBusConfiguration CROP_MONITORING_I2C_CONFIGURATION{-1, -1, 100000};
 //@} // Default Configuration Constants
 
 /** @name Telemetry JSON Keys */
@@ -114,6 +116,10 @@ class CropMonitoringTelemetryPackage : public TelemetryPackage {
  */
 class CropMonitoringStation : public Device {
     private:
+    ArduinoI2cBus i2cBus;
+    const unsigned long soilSamplingIntervalInMilliseconds;
+    const unsigned long airSamplingIntervalInMilliseconds;
+    const unsigned long lightSamplingIntervalInMilliseconds;
     /**
      * @brief Soil moisture sensor for reading soil moisture levels.
      */
@@ -211,9 +217,13 @@ class CropMonitoringStation : public Device {
         unsigned long lightSamplingIntervalInMilliseconds = DEFAULT_LIGHT_SAMPLING_INTERVAL_IN_MILLISECONDS,
         uint8_t timerChannel = DEFAULT_TIMER_CHANNEL)
     : Device(soilSamplingIntervalInMilliseconds, timerChannel),
+    i2cBus(),
+    soilSamplingIntervalInMilliseconds(soilSamplingIntervalInMilliseconds),
+    airSamplingIntervalInMilliseconds(airSamplingIntervalInMilliseconds),
+    lightSamplingIntervalInMilliseconds(lightSamplingIntervalInMilliseconds),
     soilSensor(soilSensorPin, this),
     airSensor(dhtSensorPin, DhtSensor::SENSOR_MODEL_DHT22, this),
-    lightSensor(0, DigitalLightIntensitySensor::DEFAULT_I2C_ADDRESS,
+    lightSensor(i2cBus, 0, DigitalLightIntensitySensor::DEFAULT_I2C_ADDRESS,
                 DigitalLightIntensitySensor::DEFAULT_LIGHT_DETECTED_THRESHOLD_IN_LUX, this),
     gatewayClient(client)
     {
@@ -226,6 +236,21 @@ class CropMonitoringStation : public Device {
         soilSensor.setSamplingIntervalInMilliseconds(soilSamplingIntervalInMilliseconds);
         airSensor.setSamplingIntervalInMilliseconds(airSamplingIntervalInMilliseconds);
         lightSensor.setSamplingIntervalInMilliseconds(lightSamplingIntervalInMilliseconds);
+
+    }
+
+    bool start() {
+        const I2cStatus busStatus = i2cBus.start(CROP_MONITORING_I2C_CONFIGURATION);
+        if (busStatus != I2cStatus::Ok) {
+            Serial.printf("[CropMonitoringStation] I2C bus startup failed (status %u).\n",
+                          static_cast<unsigned int>(busStatus));
+            return false;
+        }
+        if (!lightSensor.start()) {
+            Serial.printf("[CropMonitoringStation] BH1750 startup failed (status %u).\n",
+                          static_cast<unsigned int>(lightSensor.getLastI2cResult().status));
+            return false;
+        }
 
         // Register sensors
         // IMPORTANT: Registration must occur before initializeAsynchronousEngine(), because
@@ -241,6 +266,7 @@ class CropMonitoringStation : public Device {
 
         // Launch internal background task workers with a small queue for battery operation
         initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
+        return true;
     }
 
     /**
@@ -405,6 +431,9 @@ void setup() {
         LIGHT_SAMPLING_INTERVAL_IN_MILLISECONDS,
         TIMER_CHANNEL
     );
+    if (!cropMonitoringApplication->start()) {
+        Serial.println("[CropMonitoringStation] Startup failed; sampling and telemetry engine were not started.");
+    }
 }
 
 /**
