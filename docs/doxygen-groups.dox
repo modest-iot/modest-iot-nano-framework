@@ -20,6 +20,24 @@
  */
 
 /**
+ * @defgroup hardware_io_module Hardware I/O
+ * @ingroup framework_modules
+ * @brief Shared hardware transport contracts and platform-specific backends.
+ *
+ * This module includes the transport-neutral `I2cBus` contract and the
+ * Arduino-ESP32 `ArduinoI2cBus` backend. Concrete peripherals borrow a bus;
+ * composed devices own it and control its startup order.
+ */
+
+/**
+ * @name Hardware I/O: Shared I²C Bus
+ * @ingroup hardware_io_module
+ * @{
+ */
+// I2cBus and ArduinoI2cBus are the shared transaction contract and Arduino backend.
+/** @} */
+
+/**
  * @name Core: Base Contracts & Interfaces
  * @ingroup core_module
  * @{
@@ -313,4 +331,3 @@
  */
 // HTTP, MQTT, and BLE NUS gateway clients defined here
 /** @} */
-
