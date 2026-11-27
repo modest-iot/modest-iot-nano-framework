@@ -5,6 +5,13 @@
 #include <Wire.h>
 #include <mutex>
 
+/**
+ * @brief Arduino-ESP32 `TwoWire` implementation of `I2cBus`.
+ *
+ * Transfer failures are returned to the caller without automatic restart or retry.
+ * `TwoWire::end()`/`begin()` reinitializes the driver but does not pulse SCL to clear a
+ * device holding the physical bus low.
+ */
 class ArduinoI2cBus final : public I2cBus {
 public:
     explicit ArduinoI2cBus(TwoWire& wire = Wire);

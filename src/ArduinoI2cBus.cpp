@@ -14,7 +14,8 @@ I2cStatus ArduinoI2cBus::start(const I2cBusConfiguration& configuration) {
     if (started) {
         return configuration.sdaPin == activeConfiguration.sdaPin &&
                        configuration.sclPin == activeConfiguration.sclPin &&
-                       configuration.frequencyInHertz == activeConfiguration.frequencyInHertz
+                       configuration.frequencyInHertz == activeConfiguration.frequencyInHertz &&
+                       configuration.timeoutInMilliseconds == activeConfiguration.timeoutInMilliseconds
                    ? I2cStatus::Ok
                    : I2cStatus::InvalidArgument;
     }
@@ -23,6 +24,7 @@ I2cStatus ArduinoI2cBus::start(const I2cBusConfiguration& configuration) {
         return I2cStatus::BusError;
     }
 
+    wire.setTimeOut(configuration.timeoutInMilliseconds);
     activeConfiguration = configuration;
     started = true;
     return I2cStatus::Ok;
@@ -94,6 +96,8 @@ I2cResult ArduinoI2cBus::writeRead(const std::uint8_t address,
         rxBytes[receivedBytes++] = static_cast<std::uint8_t>(value);
     }
 
+    // TwoWire::requestFrom() exposes only a byte count, so incomplete reads cannot distinguish
+    // a timeout from a short response on the supported ESP32 Arduino cores.
     if (reportedBytes != rxLength || receivedBytes != rxLength) {
         return makeResult(I2cStatus::ShortRead, receivedBytes, expectedTransferred);
     }
@@ -104,7 +108,8 @@ bool ArduinoI2cBus::isValidConfiguration(const I2cBusConfiguration& configuratio
     const bool usesDefaultPins = configuration.sdaPin == -1 && configuration.sclPin == -1;
     const bool usesExplicitPins = configuration.sdaPin >= 0 && configuration.sclPin >= 0 &&
                                   configuration.sdaPin != configuration.sclPin;
-    return (usesDefaultPins || usesExplicitPins) && configuration.frequencyInHertz > 0;
+    return (usesDefaultPins || usesExplicitPins) && configuration.frequencyInHertz > 0 &&
+           configuration.timeoutInMilliseconds > 0;
 }
 
 bool ArduinoI2cBus::isValidAddress(const std::uint8_t address) {
