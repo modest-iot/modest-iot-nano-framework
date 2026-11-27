@@ -15,8 +15,9 @@
 
 /**
  * @brief Actuator adapter for HD44780-compatible character Liquid Crystal displays over I2C.
- * Composes Hd44780Driver for native I2C communication via Wire with PCF8574 I/O expander backpack,
- * implementing the HD44780 4-bit mode protocol (no external library).
+ * Composes Hd44780Driver for native I2C communication with a PCF8574 I/O expander backpack,
+ * implementing the HD44780 4-bit mode protocol (no external library). The legacy constructor
+ * uses global @c Wire; the injected constructor uses the supplied shared @ref I2cBus.
  * @ingroup actuators_module
  */
 class CharacterLcdDisplay : public Actuator {
@@ -57,24 +58,48 @@ public:
     static const Command TURN_BACKLIGHT_OFF_COMMAND;
 
     /**
+     * @brief Constructs the legacy global-@c Wire character display.
      * @param i2cAddress I2C address of the PCF8574 backpack (e.g., 0x27, 0x3E).
      * @param columnCount Total number of columns (e.g., 16, 20, 40).
      * @param rowCount Total number of rows (e.g., 2, 4).
      * @param backlightInitialState Backlight state configuration upon physical initialization.
      * @param parentHandler Base framework coordinator pointer connection.
+     * @note This compatibility constructor initializes the legacy display path.
      */
     CharacterLcdDisplay(uint8_t i2cAddress, uint8_t columnCount, uint8_t rowCount,
                         bool backlightInitialState = true, CommandHandler* parentHandler = nullptr);
+
+    /**
+     * @brief Constructs a configuration-only character display using a shared bus.
+     * @param bus Non-owning I2C bus reference; it must outlive this display.
+     * @param i2cAddress I2C address of the PCF8574 backpack (e.g., 0x27, 0x3E).
+     * @param columnCount Total number of columns (e.g., 16, 20, 40).
+     * @param rowCount Total number of rows (e.g., 2, 4).
+     * @param backlightInitialState Backlight state configuration for initialization.
+     * @param parentHandler Base framework coordinator pointer connection.
+     * @note Performs no hardware I/O. Start @p bus before calling @ref start.
+     */
     CharacterLcdDisplay(I2cBus& bus, uint8_t i2cAddress, uint8_t columnCount, uint8_t rowCount,
                         bool backlightInitialState = true, CommandHandler* parentHandler = nullptr);
 
-    /** Initializes the display through its configured I2C bus. */
+    /**
+     * @brief Initializes the character display through its configured transport.
+     * @return @c true if the complete controller initialization succeeded.
+     * @note The injected bus must already be started. Use @ref getLastI2cResult
+     *       to inspect the failed transfer if initialization returns @c false.
+     */
     [[nodiscard]] bool start();
 
-    /** @brief Returns the most recent I2C operation result. */
+    /**
+     * @brief Returns the result of the most recent display I2C operation.
+     * @return Status and transferred-versus-expected byte counts for the last operation.
+     */
     [[nodiscard]] I2cResult getLastI2cResult() const;
 
-    /** @brief Reports whether initialization completed successfully. */
+    /**
+     * @brief Reports whether display initialization completed successfully.
+     * @return @c true if the most recent initialization sequence succeeded.
+     */
     [[nodiscard]] bool isInitialized() const;
 
     ~CharacterLcdDisplay() override;
