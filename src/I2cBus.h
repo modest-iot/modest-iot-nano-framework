@@ -4,7 +4,7 @@
 /**
  * @file I2cBus.h
  * @brief Declares the platform-neutral I2C bus configuration, result, and transaction contract.
- * @ingroup core_module
+ * @ingroup hardware_io_module
  */
 
 #include <cstddef>
@@ -16,6 +16,7 @@
  * Set both pins to -1 to request the platform defaults; otherwise use non-negative,
  * distinct SDA and SCL pins. The timeout applies to an individual
  * backend transfer; it does not define a bound for waiting to acquire a bus lock.
+ * @ingroup hardware_io_module
  */
 struct I2cBusConfiguration {
     int sdaPin; ///< SDA GPIO; set both pin fields to -1 to use platform defaults.
@@ -26,6 +27,7 @@ struct I2cBusConfiguration {
 
 /**
  * @brief Status reported by an I2C bus operation.
+ * @ingroup hardware_io_module
  */
 enum class I2cStatus : std::uint8_t {
     Ok, ///< The requested transfer completed successfully.
@@ -45,6 +47,7 @@ enum class I2cStatus : std::uint8_t {
  * @ref I2cBus::writeRead, counts describe received bytes only; transmitted
  * register/address bytes are not included. A short read may therefore have a
  * non-zero @c transferred count while its status is @ref I2cStatus::ShortRead.
+ * @ingroup hardware_io_module
  */
 struct I2cResult {
     I2cStatus status; ///< Status of the operation.
@@ -73,6 +76,7 @@ struct I2cResult {
  * write/read keeps its transmitted prefix and receive phase within one bus
  * operation; implementations should not interleave another transaction between
  * those phases.
+ * @ingroup hardware_io_module
  */
 class I2cBus {
 public:
