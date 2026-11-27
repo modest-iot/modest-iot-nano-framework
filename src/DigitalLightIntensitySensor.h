@@ -125,6 +125,17 @@ public:
     explicit DigitalLightIntensitySensor(int signalGpioPin, uint8_t i2cAddress = DEFAULT_I2C_ADDRESS,
                                          float lightDetectedThresholdInLux = DEFAULT_LIGHT_DETECTED_THRESHOLD_IN_LUX,
                                          EventHandler* parentHandler = nullptr);
+
+    /**
+     * @brief Constructs a configuration-only BH1750 adapter using a shared bus.
+     * @param bus Non-owning I2C bus reference; it must outlive this sensor.
+     * @param signalGpioPin Framework source identifier attached to emitted events;
+     *                       this is not used as a GPIO pin by the I2C sensor.
+     * @param i2cAddress Sensor's 7-bit I2C address.
+     * @param lightDetectedThresholdInLux Inclusive illuminance threshold, in lux.
+     * @param parentHandler Optional handler that receives emitted transition events.
+     * @note Performs no hardware I/O. Start @p bus before calling @ref start.
+     */
     explicit DigitalLightIntensitySensor(I2cBus& bus, int signalGpioPin,
                                          uint8_t i2cAddress = DEFAULT_I2C_ADDRESS,
                                          float lightDetectedThresholdInLux = DEFAULT_LIGHT_DETECTED_THRESHOLD_IN_LUX,
@@ -142,7 +153,12 @@ public:
      */
     bool initialize();
 
-    /** Starts the sensor on the injected bus; equivalent to initialize(). */
+    /**
+     * @brief Starts the sensor on its configured transport.
+     * @return @c true if the power-on, reset, and measurement-mode commands succeed.
+     * @note For the injected path, the bus must already be started. Inspect
+     *       @ref getLastI2cResult when this method returns @c false.
+     */
     bool start();
 
     /**
@@ -152,7 +168,11 @@ public:
      */
     [[nodiscard]] bool isInitialized() const;
 
-    /** Returns the most recent I2C status and transfer counts. */
+    /**
+     * @brief Returns the most recent low-level I2C operation result.
+     * @return Status and transferred-versus-expected byte counts; a failed sample
+     *         or initialization command remains observable here.
+     */
     [[nodiscard]] I2cResult getLastI2cResult() const;
 
     /**
