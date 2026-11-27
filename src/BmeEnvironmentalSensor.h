@@ -42,8 +42,28 @@ protected:
      */
     explicit BmeEnvironmentalSensor(int signalGpioPin, uint8_t i2cAddress,
                                     EventHandler* parentHandler = nullptr);
+
+    /**
+     * @brief Constructs a configuration-only BME adapter using a shared bus.
+     * @param bus Non-owning bus reference; it must outlive this sensor.
+     * @param signalGpioPin Framework source identifier attached to emitted events.
+     * @param i2cAddress Sensor's 7-bit I2C address.
+     * @param parentHandler Optional handler that receives emitted events.
+     * @note Performs no hardware I/O. The owning device must start @p bus before
+     *       invoking the concrete sensor's @c start() method.
+     */
     explicit BmeEnvironmentalSensor(I2cBus& bus, int signalGpioPin, uint8_t i2cAddress,
                                     EventHandler* parentHandler = nullptr);
+
+    /**
+     * @brief Constructs a BME adapter with an optional shared bus pointer.
+     * @param bus Non-owning bus pointer; null selects the legacy global @c Wire path.
+     * @param signalGpioPin Framework source identifier attached to emitted events.
+     * @param i2cAddress Sensor's 7-bit I2C address.
+     * @param parentHandler Optional handler that receives emitted events.
+     * @note A non-null bus is stored without performing hardware I/O; start it
+     *       before invoking the concrete sensor's @c start() method.
+     */
     explicit BmeEnvironmentalSensor(I2cBus* bus, int signalGpioPin, uint8_t i2cAddress,
                                     EventHandler* parentHandler = nullptr);
 
