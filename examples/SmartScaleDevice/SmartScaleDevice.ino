@@ -52,6 +52,7 @@ static const int            ASYNC_ENGINE_QUEUE_DEPTH        = 16;
 static const unsigned long  SAMPLING_INTERVAL_IN_MILLISECONDS            = 500;
 static const unsigned long  MAIN_LOOP_DELAY_IN_MILLISECONDS              = 60000;
 static const int            TIMER_GROUP_INDEX               = 0;
+/** @brief Shared I2C bus configuration: board-default pins, 100 kHz, and 50 ms per transfer. */
 static const I2cBusConfiguration SMART_SCALE_I2C_CONFIGURATION{-1, -1, 100000};
 
 static const char*          STATUS_DISPLAY_TITLE            = "Smart Scale";
