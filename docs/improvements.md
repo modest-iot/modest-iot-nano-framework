@@ -48,7 +48,7 @@ Improvements are grouped by theme. Target versions indicate when each improvemen
 
 ### Hardware & Platform Readiness
 
-Improve reliability on physical ESP32 devices while preparing incrementally for a native ESP-IDF component without destabilizing the existing Arduino library. Readiness work covers runtime and peripheral lifecycles, bounded I²C failure handling, sensor and actuator behavior, networking and OTA safety, preserved CI support, and validation on physical hardware where simulation is insufficient. See the [detailed hardware platform readiness plan](../.junie/plans/hardware-platform-readiness.md) for implementation gates and acceptance criteria.
+Improve reliability on physical ESP32 devices while preparing incrementally for a native ESP-IDF component without destabilizing the existing Arduino library. Readiness work covers runtime and peripheral lifecycles, bounded I²C failure handling, sensor and actuator behavior, networking and OTA safety, preserved CI support, and validation on physical hardware where simulation is insufficient. Internal implementation gates and acceptance criteria are maintained in `.junie/plans/hardware-platform-readiness.md`.
 
 ### ArduinoJson Removal (W46) ✓
 
