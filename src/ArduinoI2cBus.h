@@ -4,7 +4,7 @@
 /**
  * @file ArduinoI2cBus.h
  * @brief Declares the Arduino-ESP32 implementation of the shared I2C bus contract.
- * @ingroup core_module
+ * @ingroup hardware_io_module
  */
 
 #include "I2cBus.h"
@@ -22,6 +22,7 @@
  * the supported API exposes a byte count rather than a distinct read-timeout result.
  * Starting again with the same configuration is idempotent; a different configuration
  * is rejected after startup rather than silently reconfiguring the active bus.
+ * @ingroup hardware_io_module
  */
 class ArduinoI2cBus final : public I2cBus {
 public:
