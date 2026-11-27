@@ -23,8 +23,8 @@
  * registers. Check isInitialized() before relying on readings.
  *
  * @note The BME280 ADDR pin selects @ref DEFAULT_I2C_ADDRESS (low) or
- *       @ref ALTERNATE_I2C_ADDRESS (high). The constructor calls Wire.begin(),
- *       which initializes the shared Arduino I2C interface.
+ *       @ref ALTERNATE_I2C_ADDRESS (high). The legacy constructor initializes
+ *       the shared Arduino I2C interface; the injected-bus constructor is silent.
  * @see BmeEnvironmentalSensor
  */
 class PthSensor : public BmeEnvironmentalSensor {
@@ -67,6 +67,9 @@ public:
      */
     explicit PthSensor(int signalGpioPin, uint8_t i2cAddress = DEFAULT_I2C_ADDRESS,
                        EventHandler* parentHandler = nullptr);
+    explicit PthSensor(I2cBus& bus, int signalGpioPin,
+                       uint8_t i2cAddress = DEFAULT_I2C_ADDRESS,
+                       EventHandler* parentHandler = nullptr);
 
     /// Releases the adapter; the shared Wire interface is not shut down.
     ~PthSensor() override = default;
@@ -78,6 +81,9 @@ public:
      *          coefficients. On success, configures the sensor for normal mode.
      */
     bool initialize();
+
+    /** Starts the sensor on the injected bus; equivalent to initialize(). */
+    bool start();
 };
 
 #endif // PTH_SENSOR_H
