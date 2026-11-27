@@ -1,6 +1,10 @@
 #pragma once
+#include <chrono>
+#include <condition_variable>
 #include <cstdint>
 #include <cstddef>
+#include <memory>
+#include <mutex>
 
 class FakeWire {
 public:
@@ -17,6 +21,8 @@ public:
     int readBufferSize = 0; ///< Size of readBuffer.
     bool useReadBuffer = false; ///< If true, read() returns from readBuffer instead of raw.
     bool beginResult = true;
+    std::uint16_t timeOutMilliseconds = 0;
+    int timeOutSetCount = 0;
     int transmissionResult = 0;
     int writeLimit = -1;
     int beginCount = 0;
@@ -36,6 +42,29 @@ public:
     void clearCommands() { commandCount = 0; }
     void clearReadBuffer() { readBufferSize = 0; }
 
+    void blockNextOperation(const char operation) {
+        std::lock_guard<std::mutex> lock(blockingState->mutex);
+        blockingState->blockedOperation = operation;
+        blockingState->operationBlocked = false;
+        blockingState->operationReleased = false;
+        blockingState->shouldBlockOperation = true;
+    }
+
+    bool waitUntilBlocked(const std::chrono::milliseconds timeout) {
+        std::unique_lock<std::mutex> lock(blockingState->mutex);
+        return blockingState->condition.wait_for(lock, timeout, [this] {
+            return blockingState->operationBlocked;
+        });
+    }
+
+    void releaseOperation() {
+        {
+            std::lock_guard<std::mutex> lock(blockingState->mutex);
+            blockingState->operationReleased = true;
+        }
+        blockingState->condition.notify_all();
+    }
+
     bool begin() {
         ++beginCount;
         recordOperation('B');
@@ -49,6 +78,11 @@ public:
         lastFrequency = frequencyHz;
         recordOperation('B');
         return beginResult;
+    }
+
+    void setTimeOut(const std::uint16_t timeoutMilliseconds) {
+        timeOutMilliseconds = timeoutMilliseconds;
+        ++timeOutSetCount;
     }
 
     void beginTransmission(const uint8_t address) {
@@ -78,6 +112,7 @@ public:
         lastStop = stop;
         lastEndTransmissionStop = stop;
         recordOperation('E');
+        waitAtOperation('E');
         if (commandCount == failureAt) return 1;
         return transmissionResult;
     }
@@ -118,10 +153,33 @@ public:
     }
 
 private:
+    struct BlockingState {
+        std::mutex mutex;
+        std::condition_variable condition;
+        char blockedOperation = '\0';
+        bool shouldBlockOperation = false;
+        bool operationBlocked = false;
+        bool operationReleased = false;
+    };
+
+    std::shared_ptr<BlockingState> blockingState = std::make_shared<BlockingState>();
+
     void recordOperation(const char operation) {
         if (operationCount < static_cast<int>(sizeof(operations))) {
             operations[operationCount++] = operation;
         }
+    }
+
+    void waitAtOperation(const char operation) {
+        std::unique_lock<std::mutex> lock(blockingState->mutex);
+        if (!blockingState->shouldBlockOperation || blockingState->blockedOperation != operation) {
+            return;
+        }
+
+        blockingState->shouldBlockOperation = false;
+        blockingState->operationBlocked = true;
+        blockingState->condition.notify_all();
+        blockingState->condition.wait(lock, [this] { return blockingState->operationReleased; });
     }
 };
 
