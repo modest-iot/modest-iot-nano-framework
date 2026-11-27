@@ -17,8 +17,10 @@
 
 /**
  * @brief Actuator adapter for SSD1306-compatible OLED displays over I2C.
- * Composes Ssd1306Driver for native I2C communication via Wire, with a 1KB frame buffer
- * for 128x64 monochrome displays. Supports text rendering, drawing primitives, and display control.
+ * Composes Ssd1306Driver for native I2C communication, with a 1KB frame buffer for
+ * 128x64 monochrome displays. Supports text rendering, drawing primitives, and display control.
+ * The legacy constructor uses global @c Wire; the injected constructor uses the supplied
+ * shared @ref I2cBus.
  * @ingroup actuators_module
  */
 class OledDisplay : public Actuator {
@@ -65,19 +67,40 @@ public:
     //@} // Display Commands
 
     /**
+     * @brief Constructs the legacy global-@c Wire OLED display.
      * @param i2cAddress I2C address of the SSD1306 controller (0x3C or 0x3D).
      * @param parentHandler Base framework coordinator pointer connection.
+     * @note This compatibility constructor initializes the legacy display path.
      */
     explicit OledDisplay(uint8_t i2cAddress = 0x3C, CommandHandler* parentHandler = nullptr);
+
+    /**
+     * @brief Constructs a configuration-only OLED display using a shared bus.
+     * @param bus Non-owning I2C bus reference; it must outlive this display.
+     * @param i2cAddress I2C address of the SSD1306 controller (0x3C or 0x3D).
+     * @param parentHandler Base framework coordinator pointer connection.
+     * @note Performs no hardware I/O. Start @p bus before calling @ref start.
+     */
     OledDisplay(I2cBus& bus, uint8_t i2cAddress = 0x3C, CommandHandler* parentHandler = nullptr);
 
-    /** Initializes the display through its configured I2C bus. */
+    /**
+     * @brief Initializes the OLED display through its configured transport.
+     * @return @c true if the complete controller initialization succeeded.
+     * @note The injected bus must already be started. Use @ref getLastI2cResult
+     *       to inspect the failed transfer if initialization returns @c false.
+     */
     [[nodiscard]] bool start();
 
-    /** @brief Returns the most recent I2C operation result. */
+    /**
+     * @brief Returns the result of the most recent display I2C operation.
+     * @return Status and transferred-versus-expected byte counts for the last operation.
+     */
     [[nodiscard]] I2cResult getLastI2cResult() const;
 
-    /** @brief Reports whether initialization completed successfully. */
+    /**
+     * @brief Reports whether display initialization completed successfully.
+     * @return @c true if the most recent initialization sequence succeeded.
+     */
     [[nodiscard]] bool isInitialized() const;
 
     /**
