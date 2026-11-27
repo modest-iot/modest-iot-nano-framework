@@ -8,6 +8,7 @@
 #include "PthSensor.h"
 #include "Event.h"
 #include "Sensor.h"
+#include "FakeI2cBus.h"
 #include <cassert>
 #include <time.h>
 #include <cmath>
@@ -61,6 +62,48 @@ public:
         : PthSensor(signalGpioPin, i2cAddress, parentHandler) {}
 };
 
+class TestableInjectedPthSensor : public PthSensor {
+public:
+    TestableInjectedPthSensor(I2cBus& bus, const int pin)
+        : PthSensor(bus, pin) {}
+    using PthSensor::processEvent;
+};
+
+void testInjectedBusStartupAndReadFailure() {
+    FakeI2cBus bus;
+    TestableInjectedPthSensor sensor(bus, 23);
+    assert(bus.writeCount == 0);
+    assert(bus.writeReadCount == 0);
+    assert(!sensor.isInitialized());
+
+    assert(bus.start({21, 22, 400000}) == I2cStatus::Ok);
+    bus.queueRead({0x60});
+    bus.queueRead(std::vector<std::uint8_t>(26, 0));
+    bus.queueRead(std::vector<std::uint8_t>(7, 0));
+    assert(sensor.start());
+    assert(sensor.isInitialized());
+    assert(bus.writeReadCount == 3);
+    assert(bus.writeCount == 1);
+
+    bus.queueRead(std::vector<std::uint8_t>(8, 0));
+    Event successfulSample(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+    sensor.processEvent(successfulSample);
+    assert(successfulSample.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER);
+    const float temperature = sensor.getTemperatureInCelsius();
+    const float humidity = sensor.getHumidityInPercentage();
+    const float pressure = sensor.getPressureInHectopascals();
+
+    bus.queueRead({0}, I2cStatus::ShortRead);
+    sensor.setFaultThreshold(1);
+    Event failedSample(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+    sensor.processEvent(failedSample);
+    assert(failedSample.identifier == Sensor::SENSOR_FAULT_EVENT_IDENTIFIER);
+    assert(sensor.getTemperatureInCelsius() == temperature);
+    assert(sensor.getHumidityInPercentage() == humidity);
+    assert(sensor.getPressureInHectopascals() == pressure);
+    assert(sensor.getLastI2cResult().status == I2cStatus::ShortRead);
+}
+
 void testConstructorInitializesState() {
     std::cout << "Test: Constructor initializes state correctly... ";
     Wire.clearReadBuffer();
@@ -69,9 +112,9 @@ void testConstructorInitializesState() {
     Wire.byteCount = 1;
     Wire.pushReadBuffer(0x60); // chip ID
     Wire.useReadBuffer = true;
-    
+
     TestablePthSensor sensor(23);
-    
+
     assert(sensor.cachedTemperatureInCelsius == 0.0f);
     assert(sensor.cachedHumidityInPercentage == 0.0f);
     assert(sensor.cachedPressureInHectopascals == 0.0f);
@@ -89,7 +132,7 @@ void testInitializeReadsCalibrationData() {
     Wire.raw = 0;
     Wire.byteCount = 1;
     Wire.clearCommands();
-    
+
     // Chip ID for constructor's initialize() call
     Wire.pushReadBuffer(0x60);
     // Calibration data: 26 bytes (temp/pressure) + 7 bytes (humidity)
@@ -99,9 +142,9 @@ void testInitializeReadsCalibrationData() {
     for (int i = 0; i < 7; i++) {
         Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
-    
+
     TestablePthSensor sensor(23);
-    
+
     assert(sensor.isInitialized() == true);
     std::cout << "PASSED" << std::endl;
 }
@@ -113,10 +156,10 @@ void testInitializeFailsOnBadChipId() {
     Wire.raw = 0;
     Wire.byteCount = 1;
     Wire.pushReadBuffer(0x00); // bad chip ID
-    
+
     TestablePthSensor sensor(23);
     Wire.clearCommands();
-    
+
     bool result = sensor.initialize();
     assert(result == false);
     assert(sensor.isInitialized() == false);
@@ -130,13 +173,13 @@ void testProcessEventSuppressesWhenUninitialized() {
     Wire.raw = 0;
     Wire.byteCount = 1;
     Wire.pushReadBuffer(0x00); // bad chip ID
-    
+
     TestablePthSensor sensor(23);
     assert(sensor.isInitialized() == false);
-    
+
     Event event(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
     sensor.processEvent(event);
-    
+
     assert(event.identifier == -1); // propagation suppression
     std::cout << "PASSED" << std::endl;
 }
@@ -148,7 +191,7 @@ void testFirstReadingEmitsDataReadEvent() {
     Wire.raw = 0;
     Wire.byteCount = 1;
     Wire.clearCommands();
-    
+
     // Chip ID for constructor's initialize() call
     Wire.pushReadBuffer(0x60);
     // Calibration data: 26 bytes (temp/pressure) + 7 bytes (humidity)
@@ -162,13 +205,13 @@ void testFirstReadingEmitsDataReadEvent() {
     Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
     Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
     Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00);
-    
+
     TestablePthSensor sensor(23);
     assert(sensor.isInitialized() == true);
-    
+
     Event event(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
     sensor.processEvent(event);
-    
+
     assert(event.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER);
     assert(event.sourceId == 23);
     std::cout << "PASSED" << std::endl;
@@ -181,7 +224,7 @@ void testUnchangedValuesSuppressPropagation() {
     Wire.raw = 0;
     Wire.byteCount = 1;
     Wire.clearCommands();
-    
+
     // Chip ID for constructor's initialize() call
     Wire.pushReadBuffer(0x60);
     // Realistic BME280 calibration data
@@ -204,36 +247,36 @@ void testUnchangedValuesSuppressPropagation() {
     Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
     Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
     Wire.pushReadBuffer(0x00);
-    
+
     // First reading raw data
     Wire.pushReadBuffer(0x57); Wire.pushReadBuffer(0x85); Wire.pushReadBuffer(0x00);
     Wire.pushReadBuffer(0x6A); Wire.pushReadBuffer(0x46); Wire.pushReadBuffer(0x40);
     Wire.pushReadBuffer(0x5B); Wire.pushReadBuffer(0x30);
-    
+
     // Second reading raw data (same values, appended for second processEvent)
     Wire.pushReadBuffer(0x57); Wire.pushReadBuffer(0x85); Wire.pushReadBuffer(0x00);
     Wire.pushReadBuffer(0x6A); Wire.pushReadBuffer(0x46); Wire.pushReadBuffer(0x40);
     Wire.pushReadBuffer(0x5B); Wire.pushReadBuffer(0x30);
-    
+
     TestablePthSensor sensor(23);
     assert(sensor.isInitialized() == true);
-    
+
     Event event1(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
     sensor.processEvent(event1);
     assert(event1.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER);
-    
+
     float temp1 = sensor.getTemperatureInCelsius();
     float humidity1 = sensor.getHumidityInPercentage();
     float pressure1 = sensor.getPressureInHectopascals();
-    
+
     // Second reading - reads from the appended raw data
     Event event2(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
     sensor.processEvent(event2);
-    
+
     float temp2 = sensor.getTemperatureInCelsius();
     float humidity2 = sensor.getHumidityInPercentage();
     float pressure2 = sensor.getPressureInHectopascals();
-    
+
     assert(std::fabs(temp1 - temp2) < 0.001f);
     assert(std::fabs(humidity1 - humidity2) < 0.001f);
     assert(std::fabs(pressure1 - pressure2) < 0.001f);
@@ -248,7 +291,7 @@ void testValueChangedEmitsDataReadEvent() {
     Wire.raw = 0;
     Wire.byteCount = 1;
     Wire.clearCommands();
-    
+
     // Chip ID for constructor's initialize() call
     Wire.pushReadBuffer(0x60);
     // Calibration data: 26 bytes (temp/pressure) + 7 bytes (humidity)
@@ -262,23 +305,23 @@ void testValueChangedEmitsDataReadEvent() {
     Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
     Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
     Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00);
-    
+
     TestablePthSensor sensor(23);
     assert(sensor.isInitialized() == true);
-    
+
     Event event1(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
     sensor.processEvent(event1);
     assert(event1.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER);
-    
+
     // Second reading with different temperature
     Wire.clearReadBuffer();
     Wire.pushReadBuffer(0x90); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00); // different temp
     Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
     Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00);
-    
+
     Event event2(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
     sensor.processEvent(event2);
-    
+
     assert(event2.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER);
     std::cout << "PASSED" << std::endl;
 }
@@ -290,7 +333,7 @@ void testGettersReturnCachedValues() {
     Wire.raw = 0;
     Wire.byteCount = 1;
     Wire.clearCommands();
-    
+
     // Chip ID for constructor's initialize() call
     Wire.pushReadBuffer(0x60);
     // Calibration data: 26 bytes (temp/pressure) + 7 bytes (humidity)
@@ -304,18 +347,18 @@ void testGettersReturnCachedValues() {
     Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
     Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
     Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00);
-    
+
     TestablePthSensor sensor(23);
     assert(sensor.isInitialized() == true);
-    
+
     Event event(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
     sensor.processEvent(event);
-    
+
     // Getters should return the cached values (not zero after a successful read)
     float temp = sensor.getTemperatureInCelsius();
     float humidity = sensor.getHumidityInPercentage();
     float pressure = sensor.getPressureInHectopascals();
-    
+
     // Values depend on calibration coefficients, but should not be zero
     assert(std::fabs(temp) > 0.0f || std::fabs(humidity) > 0.0f || std::fabs(pressure) > 0.0f);
     std::cout << "PASSED" << std::endl;
@@ -328,7 +371,7 @@ void testSamplingIntervalDefaults() {
     Wire.raw = 0;
     Wire.byteCount = 1;
     Wire.clearCommands();
-    
+
     // Chip ID for constructor's initialize() call
     Wire.pushReadBuffer(0x60);
     // Calibration data: 26 bytes (temp/pressure) + 7 bytes (humidity)
@@ -338,9 +381,9 @@ void testSamplingIntervalDefaults() {
     for (int i = 0; i < 7; i++) {
         Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
-    
+
     TestablePthSensor sensor(23);
-    
+
     assert(sensor.getDefaultSamplingIntervalInMilliseconds() == 2000);
     assert(sensor.getMinimalSamplingIntervalInMilliseconds() == 250);
     std::cout << "PASSED" << std::endl;
@@ -353,7 +396,7 @@ void testAltitudeCalculation() {
     Wire.raw = 0;
     Wire.byteCount = 1;
     Wire.clearCommands();
-    
+
     // Chip ID for constructor's initialize() call
     Wire.pushReadBuffer(0x60);
     // Realistic BME280 calibration data
@@ -376,21 +419,21 @@ void testAltitudeCalculation() {
     Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
     Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
     Wire.pushReadBuffer(0x00);
-    
+
     // Raw data that produces ~1013.25 hPa (sea level pressure)
     Wire.pushReadBuffer(0x57); Wire.pushReadBuffer(0x85); Wire.pushReadBuffer(0x00);
     Wire.pushReadBuffer(0x6A); Wire.pushReadBuffer(0x46); Wire.pushReadBuffer(0x40);
     Wire.pushReadBuffer(0x5B); Wire.pushReadBuffer(0x30);
-    
+
     TestablePthSensor sensor(23);
     assert(sensor.isInitialized() == true);
-    
+
     Event event(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
     sensor.processEvent(event);
-    
+
     float pressure = sensor.getPressureInHectopascals();
     float altitude = sensor.getAltitudeInMeters(pressure);
-    
+
     // When sea level pressure equals measured pressure, altitude should be ~0
     assert(std::fabs(altitude) < 0.01f);
     std::cout << "PASSED" << std::endl;
@@ -403,7 +446,7 @@ void testAltitudeWithStandardSeaLevelPressure() {
     Wire.raw = 0;
     Wire.byteCount = 1;
     Wire.clearCommands();
-    
+
     // Chip ID for constructor's initialize() call
     Wire.pushReadBuffer(0x60);
     // Calibration data: 26 bytes (temp/pressure) + 7 bytes (humidity)
@@ -417,17 +460,17 @@ void testAltitudeWithStandardSeaLevelPressure() {
     Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
     Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00); Wire.pushReadBuffer(0x00);
     Wire.pushReadBuffer(0x80); Wire.pushReadBuffer(0x00);
-    
+
     TestablePthSensor sensor(23);
     assert(sensor.isInitialized() == true);
-    
+
     Event event(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
     sensor.processEvent(event);
-    
+
     float pressure = sensor.getPressureInHectopascals();
     const float standardSeaLevelPressure = 1013.25f;
     float altitude = sensor.getAltitudeInMeters(standardSeaLevelPressure);
-    
+
     // Altitude should be positive if pressure < sea level, negative if pressure > sea level
     if (pressure < standardSeaLevelPressure) {
         assert(altitude > 0.0f);
@@ -444,7 +487,7 @@ void testAltitudeWithInvalidSeaLevelPressure() {
     Wire.raw = 0;
     Wire.byteCount = 1;
     Wire.clearCommands();
-    
+
     // Chip ID for constructor's initialize() call
     Wire.pushReadBuffer(0x60);
     // Calibration data: 26 bytes (temp/pressure) + 7 bytes (humidity)
@@ -454,12 +497,12 @@ void testAltitudeWithInvalidSeaLevelPressure() {
     for (int i = 0; i < 7; i++) {
         Wire.pushReadBuffer(static_cast<uint8_t>(i));
     }
-    
+
     TestablePthSensor sensor(23);
-    
+
     // Before any reading, cached pressure is 0, so altitude should be 0
     assert(sensor.getAltitudeInMeters(1013.25f) == 0.0f);
-    
+
     // Invalid sea level pressure should return 0
     assert(sensor.getAltitudeInMeters(0.0f) == 0.0f);
     assert(sensor.getAltitudeInMeters(-100.0f) == 0.0f);
@@ -468,7 +511,7 @@ void testAltitudeWithInvalidSeaLevelPressure() {
 
 int main() {
     std::cout << "=== PthSensor Test Suite ===" << std::endl;
-    
+
     testConstructorInitializesState();
     testInitializeReadsCalibrationData();
     testInitializeFailsOnBadChipId();
@@ -481,7 +524,8 @@ int main() {
     testAltitudeCalculation();
     testAltitudeWithStandardSeaLevelPressure();
     testAltitudeWithInvalidSeaLevelPressure();
-    
+    testInjectedBusStartupAndReadFailure();
+
     std::cout << "=== All 12 PthSensor tests PASSED ===" << std::endl;
     return 0;
 }
