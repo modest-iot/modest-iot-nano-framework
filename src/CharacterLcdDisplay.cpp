@@ -19,8 +19,28 @@ CharacterLcdDisplay::CharacterLcdDisplay(const uint8_t i2cAddress, const uint8_t
     : Actuator(static_cast<int>(i2cAddress), parentHandler),
       driver(i2cAddress, backlightInitialState),
       maximumRowCount(rowCount),
-      maximumColumnCount(columnCount)
+      maximumColumnCount(columnCount),
+      characterScreenMatrixBuffer(nullptr),
+      initialized(false)
 {
+    initializeScreenBuffer();
+    driver.initialize();
+    initialized = driver.isInitialized();
+}
+
+CharacterLcdDisplay::CharacterLcdDisplay(I2cBus& bus, const uint8_t i2cAddress,
+                                         const uint8_t columnCount, const uint8_t rowCount,
+                                         const bool backlightInitialState, CommandHandler* parentHandler)
+    : Actuator(static_cast<int>(i2cAddress), parentHandler),
+      driver(bus, i2cAddress, backlightInitialState),
+      maximumRowCount(rowCount),
+      maximumColumnCount(columnCount),
+      characterScreenMatrixBuffer(nullptr),
+      initialized(false) {
+    initializeScreenBuffer();
+}
+
+void CharacterLcdDisplay::initializeScreenBuffer() {
     const size_t absoluteAllocationSize = static_cast<size_t>(maximumRowCount) * (maximumColumnCount + 1);
     characterScreenMatrixBuffer = new char[absoluteAllocationSize];
 
@@ -29,8 +49,6 @@ CharacterLcdDisplay::CharacterLcdDisplay(const uint8_t i2cAddress, const uint8_t
         memset(rowHeadPointer, ' ', maximumColumnCount);
         rowHeadPointer[maximumColumnCount] = '\0';
     }
-
-    driver.initialize();
 }
 
 CharacterLcdDisplay::~CharacterLcdDisplay() {
@@ -85,13 +103,32 @@ void CharacterLcdDisplay::commitBuffersToPhysicalScreen() const {
                                      (rowIndex == 2) ? HD44780_DDRAM_ADDRESS_ROW_2 :
                                                         HD44780_DDRAM_ADDRESS_ROW_3;
         driver.sendCommand(ddramAddress);
+        if (driver.getLastI2cResult().isInvalidOrIncomplete()) {
+            return;
+        }
 
         const char* rowHeadPointer = characterScreenMatrixBuffer + (rowIndex * (maximumColumnCount + 1));
         const uint8_t stringLength = strlen(rowHeadPointer);
         for (uint8_t i = 0; i < stringLength; i++) {
             driver.sendData(static_cast<uint8_t>(rowHeadPointer[i]));
+            if (driver.getLastI2cResult().isInvalidOrIncomplete()) {
+                return;
+            }
         }
     }
+}
+
+bool CharacterLcdDisplay::start() {
+    initialized = driver.start();
+    return initialized;
+}
+
+I2cResult CharacterLcdDisplay::getLastI2cResult() const {
+    return driver.getLastI2cResult();
+}
+
+bool CharacterLcdDisplay::isInitialized() const {
+    return initialized;
 }
 
 // Method performs an active query function over the state

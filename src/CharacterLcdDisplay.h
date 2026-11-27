@@ -29,6 +29,7 @@ private:
 
     // Contiguous memory allocation buffer tracking absolute dimensions safely
     char* characterScreenMatrixBuffer; ///< Buffer for storing characters to be displayed.
+    bool initialized;
 
     // HD44780 DDRAM address constants for cursor positioning
     static constexpr uint8_t HD44780_DDRAM_ADDRESS_ROW_0 = 0x80; ///< DDRAM address for row 0, column 0.
@@ -38,6 +39,7 @@ private:
 
     // Private encapsulated layout routines to elevate code clarity
     void commitBuffersToPhysicalScreen() const; ///< Writes buffered data to the physical screen.
+    void initializeScreenBuffer();
 
 protected:
     /**
@@ -63,6 +65,17 @@ public:
      */
     CharacterLcdDisplay(uint8_t i2cAddress, uint8_t columnCount, uint8_t rowCount,
                         bool backlightInitialState = true, CommandHandler* parentHandler = nullptr);
+    CharacterLcdDisplay(I2cBus& bus, uint8_t i2cAddress, uint8_t columnCount, uint8_t rowCount,
+                        bool backlightInitialState = true, CommandHandler* parentHandler = nullptr);
+
+    /** Initializes the display through its configured I2C bus. */
+    [[nodiscard]] bool start();
+
+    /** @brief Returns the most recent I2C operation result. */
+    [[nodiscard]] I2cResult getLastI2cResult() const;
+
+    /** @brief Reports whether initialization completed successfully. */
+    [[nodiscard]] bool isInitialized() const;
 
     ~CharacterLcdDisplay() override;
 
