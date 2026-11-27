@@ -141,6 +141,16 @@ public:
      */
     explicit EnvironmentalGasSensor(int signalGpioPin, uint8_t i2cAddress = DEFAULT_I2C_ADDRESS,
                                     EventHandler* parentHandler = nullptr);
+
+    /**
+     * @brief Constructs a configuration-only BME680 adapter using a shared bus.
+     * @param bus Non-owning I2C bus reference; it must outlive this sensor.
+     * @param signalGpioPin Framework source identifier attached to emitted events.
+     * @param i2cAddress Sensor's 7-bit I2C address; use @ref DEFAULT_I2C_ADDRESS
+     *                   or @ref ALTERNATE_I2C_ADDRESS.
+     * @param parentHandler Optional handler that receives emitted events.
+     * @note Performs no hardware I/O. Start @p bus before calling @ref start.
+     */
     explicit EnvironmentalGasSensor(I2cBus& bus, int signalGpioPin,
                                     uint8_t i2cAddress = DEFAULT_I2C_ADDRESS,
                                     EventHandler* parentHandler = nullptr);
@@ -156,7 +166,12 @@ public:
      */
     bool initialize();
 
-    /** Starts the sensor on the injected bus; equivalent to initialize(). */
+    /**
+     * @brief Starts the sensor on its configured transport.
+     * @return @c true if the chip ID, calibration data, and mode setup succeeded.
+     * @note For the injected path, the bus must already be started. The last
+     *       transaction detail is available through @ref getLastI2cResult.
+     */
     bool start();
 
     /**
