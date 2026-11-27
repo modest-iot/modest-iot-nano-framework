@@ -149,7 +149,7 @@ The framework runs on two FreeRTOS tasks plus a hardware timer ISR. Understandin
 | **Timer ISR** | `Device::handleHardwareTimerInterrupt`: signals the sampler task via `vTaskNotifyGiveFromISR`. |
 | **Sampler Task** (default: priority 3, 4096 bytes, core 1) | `SamplingScheduler` dispatch, `Sensor::on()` and `processEvent()`, mediator `Device::on()`, actuator `handle(Command)`, `TelemetryPackage` creation, and `enqueueTelemetryPayload()`. |
 | **Network Task** (default: priority 1, 8192 bytes, core 1) | `processQueuedTelemetryData()`, gateway `sendTelemetryRecord()`, JSON serialization, and packet deletion. Also runs `maintainNetworkServices()` during idle periods. |
-| **Arduino `loop()`** | `setup()` constructs the device composition; injected I²C devices explicitly start the bus and peripherals before registering sampling and starting the engine. The user `loop()` typically calls `vTaskDelay`. |
+| **Arduino `setup()`/`loop()`** | `setup()` constructs the device composition; injected I²C devices explicitly start the bus and peripherals before registering sampling and starting the engine. The user `loop()` typically calls `vTaskDelay`. |
 
 For injected I²C peripherals, constructors store configuration and a non-owning bus reference without performing hardware I/O. The concrete `Device` owns one `ArduinoI2cBus` declared before its I²C members, then starts the bus and required peripherals before activating sampling and starting the asynchronous engine. If a required startup fails, the engine remains stopped. Existing Arduino constructor overloads using the legacy `Wire` path remain available for compatibility.
 
