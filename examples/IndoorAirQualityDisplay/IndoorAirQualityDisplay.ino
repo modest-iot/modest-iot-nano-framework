@@ -56,7 +56,7 @@ static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
 static const char* INDOOR_AIR_QUALITY_LOG_PREFIX = "[IndoorAirQualityDisplay]";
 //@} // Serial Output Configuration
 
-/** @brief Shared I2C bus configuration for the BME680 sensor and SSD1306 display. */
+/** @brief Shared I2C bus configuration: board-default pins, 100 kHz, and 50 ms per transfer. */
 static const I2cBusConfiguration INDOOR_AIR_QUALITY_I2C_CONFIGURATION{-1, -1, 100000};
 
 /** @name Application Mediator Implementation */
@@ -191,6 +191,11 @@ public:
         }
     }
 
+    /**
+     * @brief Ignores commands because this example defines no external command behavior.
+     * @param command Command delivered to the device.
+     * @runs_on{sampler}
+     */
     void handle(Command command) override {
         // This device does not process external commands.
         (void)command;
