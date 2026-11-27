@@ -512,6 +512,36 @@ void loop() {
 
 ---
 
+## Migrating I²C Peripheral Startup
+
+For new I²C compositions, declare one `ArduinoI2cBus` before the peripherals that borrow it, and perform hardware startup explicitly. The injected constructors are configuration-only; start the bus, start every required peripheral, register sensors, and start the asynchronous engine last:
+
+```cpp
+// Members of a concrete Device subclass, in declaration order:
+ArduinoI2cBus i2cBus;
+EnvironmentalGasSensor airQualitySensor;
+OledDisplay statusDisplay;
+
+// In the Device constructor initializer list:
+// i2cBus(),
+// airQualitySensor(i2cBus, sensorSourceId,
+//     EnvironmentalGasSensor::DEFAULT_I2C_ADDRESS, this),
+// statusDisplay(i2cBus, displayAddress, this)
+
+bool start() {
+    const I2cBusConfiguration busConfiguration{-1, -1, 100000};
+    if (i2cBus.start(busConfiguration) != I2cStatus::Ok) return false;
+    if (!airQualitySensor.start() || !statusDisplay.start()) return false;
+
+    appendSensorToScheduler(&airQualitySensor,
+                            Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+    initializeAsynchronousEngine(10);
+    return true;
+}
+```
+
+Propagate startup failure to the application and do not start the engine after a failed bus or peripheral. Legacy Arduino constructors remain available for existing sketches; see `IndoorAirQualityDisplay` for a complete shared-bus composition.
+
 ## Migration Checklist
 
 Use this checklist when migrating a sketch:
