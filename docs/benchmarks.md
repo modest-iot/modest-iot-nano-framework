@@ -1,7 +1,7 @@
 # Modest IoT Nano Framework — Benchmark Table
 
 **Version**: 1.3.0<br>
-**Date**: 2026-11-24<br>
+**Date**: 2026-11-27<br>
 **Platform**: ESP32 (Arduino core 4.0.0)  
 **Methodology**: Source code analysis, static configuration values, framework claims from positioning.md, and CI-measured sketch sizes from the compile-examples workflow. Hardware-measured values are marked with estimates based on the framework's architectural design.
 
@@ -293,12 +293,12 @@ Run the same three reference applications on the same ESP32 board, once per vari
 
 ### CI Validation
 
-The release checklist (`docs/release.md`) defines the CI matrix. This review verified the host suite and coverage locally; release-branch CI and example compilation remain separate checklist items.
+The release checklist (`docs/release.md`) defines the CI matrix. The following validation evidence supplements the v1.3.0 resource estimates; it does not establish physical-device behavior.
 
-- **Host tests**: All 53 suites passed locally on macOS with AddressSanitizer and UndefinedBehaviorSanitizer; the release matrix also targets Ubuntu.
-- **Example compilation**: The checklist targets all 28 examples on ESP32 and ESP32-S3 with ESP32 Arduino core 3.3.13 and 4.0.0, using the `huge_app` partition scheme (3 MB Flash); this was not run locally in this review.
+- **Host tests**: 54/54 host suites passed in the recorded migration validation. The earlier 53-suite sanitizer result is a separate historical run; sanitizer validation of the added suite is not claimed here.
+- **Example compilation**: All 28 sketches compiled for ESP32 and ESP32-S3 with ESP32 Arduino core 4.0.0, using the `huge_app` partition scheme (3 MB Flash). The 3.3.13 matrix was unavailable during that validation.
 - **Lint**: Arduino Library Manager compliance via `arduino-lint`; the release checklist result remains to be confirmed.
-- **Coverage**: The local GCC 16/gcov/lcov run covered all 53 suites and measured 91.2% line and 83.6% function coverage on testable code, above the 80% line threshold.
+- **Coverage**: The 2026-11-24 GCC 16/gcov/lcov snapshot covered 53 suites and measured 91.2% line and 83.6% function coverage on testable code. It predates the 54-suite host inventory and is not current coverage evidence.
 
 ---
 
@@ -315,10 +315,10 @@ The release checklist (`docs/release.md`) defines the CI matrix. This review ver
 | **~73% Flash reduction** | ESP-IDF variant: ~180 KB vs ~680 KB | ✓ Planned |
 | **~40 KB RAM saved** | ESP-IDF variant: ~270 KB vs ~230 KB free heap | ✓ Planned |
 | **140 ms faster boot** | ESP-IDF variant: ~180 ms vs ~320 ms | ✓ Planned |
-| **53 test suites** | `tests/` directory count (excluding fakes/) | ✓ Verified |
+| **54 test suites** | Current host-suite count (excluding `fakes/`) | ✓ Verified |
 | **28 examples** | `examples/` directory count | ✓ Verified |
 | **62 headers** | `src/*.h` file count | ✓ Verified |
-| **91.2% line coverage** | Local GCC 16/gcov/lcov run on testable code | ✓ Verified |
+| **91.2% line coverage** | GCC 16/gcov/lcov snapshot from 2026-11-24, covering 53 suites | Historical |
 | **BLE core compatibility** | `BleHal` supports ESP32 Arduino core 3.x and 4.x; CI matrix verification remains on release checklist | ✓ Implemented |
 
 ### Competitive Positioning
@@ -329,7 +329,7 @@ The Modest IoT Nano Framework v1.3.0 is the **leanest architecturally discipline
 - **Zero heap allocation** in the critical path (all stack/static buffers).
 - **Comprehensive diagnostics** with 16 fields in `DiagnosticsSnapshot`.
 - **Production-grade architecture** via Arduino Library Manager installation.
-- **53 host test suites**; all passed locally on macOS with sanitizers, and the latest local coverage is 91.2% line / 83.6% function.
+- **54 host test suites**; 54/54 passed in the recorded migration validation. The 91.2% line / 83.6% function coverage figures are a historical 53-suite snapshot, not current coverage.
 - **28 grounded examples** covering diverse use cases.
 - **ESP32 Arduino core 3.x and 4.x BLE support** through the core-agnostic `BleHal` adapter.
 
