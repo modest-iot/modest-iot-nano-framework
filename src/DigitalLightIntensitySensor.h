@@ -9,7 +9,9 @@
  */
 
 #include "Sensor.h"
+#include "I2cBus.h"
 #include <Arduino.h>
+#include <Wire.h>
 
 /**
  * @brief Event-driven adapter for a GY-302 / BH1750 digital illuminance sensor.
@@ -23,17 +25,17 @@
  * below it is considered absent. Failed reads do not alter the last successful
  * reading or state. Check hasValidSample() before using the cached accessors.
  *
- * Initialization is attempted by the constructor and can be retried with
- * initialize(). isInitialized() reports whether the most recent initialization
- * commands succeeded; it does not continuously verify device connectivity.
+ * Legacy initialization is attempted by the constructor. Injected-bus instances
+ * remain configuration-only until start() or initialize() is called.
  *
  * @note The GY-302 ADDR pin selects @ref DEFAULT_I2C_ADDRESS (low/open) or
- *       @ref ALTERNATE_I2C_ADDRESS (high). The constructor calls Wire.begin(),
- *       which initializes the shared Arduino I2C interface.
+ *       @ref ALTERNATE_I2C_ADDRESS (high). Only the legacy constructor calls Wire.begin().
  * @see Sensor
  */
 class DigitalLightIntensitySensor : public Sensor {
 private:
+    I2cBus* bus; ///< Non-owning explicit bus; null selects the legacy Wire path.
+    mutable I2cResult lastI2cResult; ///< Result of the most recent low-level transaction.
     uint8_t i2cAddress; ///< Configured BH1750 7-bit I2C address.
     float lightDetectedThresholdInLux; ///< Inclusive lux threshold for the light-detected state.
     float cachedIlluminanceInLux; ///< Illuminance from the most recent successful sample, in lux.
@@ -109,7 +111,7 @@ public:
     static constexpr int PROPAGATION_SUPPRESSION_IDENTIFIER = -1;
 
     /**
-     * @brief Constructs and initializes a GY-302 / BH1750 adapter.
+     * @brief Constructs and initializes a GY-302 / BH1750 adapter using legacy Wire access.
      * @param signalGpioPin Framework source identifier attached to emitted events;
      *                       this sensor communicates over I2C and does not use it
      *                       as a GPIO pin.
@@ -121,6 +123,10 @@ public:
      *       to determine whether initialization succeeded.
      */
     explicit DigitalLightIntensitySensor(int signalGpioPin, uint8_t i2cAddress = DEFAULT_I2C_ADDRESS,
+                                         float lightDetectedThresholdInLux = DEFAULT_LIGHT_DETECTED_THRESHOLD_IN_LUX,
+                                         EventHandler* parentHandler = nullptr);
+    explicit DigitalLightIntensitySensor(I2cBus& bus, int signalGpioPin,
+                                         uint8_t i2cAddress = DEFAULT_I2C_ADDRESS,
                                          float lightDetectedThresholdInLux = DEFAULT_LIGHT_DETECTED_THRESHOLD_IN_LUX,
                                          EventHandler* parentHandler = nullptr);
 
@@ -136,12 +142,18 @@ public:
      */
     bool initialize();
 
+    /** Starts the sensor on the injected bus; equivalent to initialize(). */
+    bool start();
+
     /**
      * @brief Reports the result of the most recent initialization attempt.
      * @return @c true if its initialization commands all succeeded.
      * @note Does not indicate whether the sensor remains connected after initialization.
      */
     [[nodiscard]] bool isInitialized() const;
+
+    /** Returns the most recent I2C status and transfer counts. */
+    [[nodiscard]] I2cResult getLastI2cResult() const;
 
     /**
      * @brief Reports whether a successful sample is available.

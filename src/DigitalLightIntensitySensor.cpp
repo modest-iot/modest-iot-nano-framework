@@ -10,12 +10,27 @@
 const Event DigitalLightIntensitySensor::LIGHT_DETECTED_EVENT = Event(LIGHT_DETECTED_EVENT_IDENTIFIER);
 const Event DigitalLightIntensitySensor::LIGHT_ABSENT_EVENT = Event(LIGHT_ABSENT_EVENT_IDENTIFIER);
 
+namespace {
+I2cStatus mapWireStatus(const uint8_t status) {
+    switch (status) {
+        case 0: return I2cStatus::Ok;
+        case 1: return I2cStatus::InvalidArgument;
+        case 2: return I2cStatus::AddressNack;
+        case 3: return I2cStatus::DataNack;
+        case 5: return I2cStatus::Timeout;
+        default: return I2cStatus::BusError;
+    }
+}
+}
+
 DigitalLightIntensitySensor::DigitalLightIntensitySensor(
     const int signalGpioPin,
     const uint8_t i2cAddress,
     const float lightDetectedThresholdInLux,
     EventHandler *parentHandler)
     : Sensor(signalGpioPin, parentHandler),
+      bus(nullptr),
+      lastI2cResult{I2cStatus::Ok, 0, 0},
       i2cAddress(i2cAddress),
       lightDetectedThresholdInLux(lightDetectedThresholdInLux),
       cachedIlluminanceInLux(0.0f),
@@ -26,6 +41,23 @@ DigitalLightIntensitySensor::DigitalLightIntensitySensor(
     Wire.begin();
     initialize();
 }
+
+DigitalLightIntensitySensor::DigitalLightIntensitySensor(
+    I2cBus& bus,
+    const int signalGpioPin,
+    const uint8_t i2cAddress,
+    const float lightDetectedThresholdInLux,
+    EventHandler* parentHandler)
+    : Sensor(signalGpioPin, parentHandler),
+      bus(&bus),
+      lastI2cResult{I2cStatus::Ok, 0, 0},
+      i2cAddress(i2cAddress),
+      lightDetectedThresholdInLux(lightDetectedThresholdInLux),
+      cachedIlluminanceInLux(0.0f),
+      lastState(false),
+      initialized(false),
+      validSample(false),
+      conversionStartedAt(0) {}
 
 /**
  * @details Each attempt clears the valid-sample flag. The conversion timer is
@@ -44,10 +76,22 @@ bool DigitalLightIntensitySensor::initialize() {
     return true;
 }
 
+bool DigitalLightIntensitySensor::start() {
+    return initialize();
+}
+
 bool DigitalLightIntensitySensor::writeInstruction(const uint8_t instruction) const {
+    if (bus != nullptr) {
+        lastI2cResult = bus->write(i2cAddress, &instruction, 1);
+        return !lastI2cResult.isInvalidOrIncomplete();
+    }
+
     Wire.beginTransmission(i2cAddress);
-    Wire.write(instruction);
-    return Wire.endTransmission() == 0;
+    const std::size_t written = Wire.write(instruction);
+    const I2cStatus status = written == 1 ? mapWireStatus(Wire.endTransmission())
+                                          : I2cStatus::InvalidArgument;
+    lastI2cResult = {status, status == I2cStatus::Ok ? 1U : 0U, 1};
+    return status == I2cStatus::Ok;
 }
 
 /**
@@ -55,19 +99,34 @@ bool DigitalLightIntensitySensor::writeInstruction(const uint8_t instruction) co
  *          incomplete reads leave the output argument unchanged.
  */
 bool DigitalLightIntensitySensor::readIlluminanceInLux(float &illuminanceInLux) const {
-    if (constexpr uint8_t requestedByteCount = 2;
-        Wire.requestFrom(i2cAddress, requestedByteCount) != requestedByteCount) {
+    uint8_t data[2]{};
+    if (bus != nullptr) {
+        lastI2cResult = bus->writeRead(i2cAddress, nullptr, 0, data, sizeof(data));
+        if (lastI2cResult.isInvalidOrIncomplete()) {
+            return false;
+        }
+    } else {
+        if (Wire.requestFrom(i2cAddress, static_cast<uint8_t>(sizeof(data))) != sizeof(data)) {
+            lastI2cResult = {I2cStatus::ShortRead, 0, sizeof(data)};
+            return false;
+        }
+
+        const int highByte = Wire.read();
+        const int lowByte = Wire.read();
+        if (highByte < 0 || lowByte < 0) {
+            lastI2cResult = {I2cStatus::ShortRead, highByte < 0 ? 0U : 1U, sizeof(data)};
+            return false;
+        }
+        data[0] = static_cast<uint8_t>(highByte);
+        data[1] = static_cast<uint8_t>(lowByte);
+        lastI2cResult = {I2cStatus::Ok, sizeof(data), sizeof(data)};
+    }
+
+    if (lastI2cResult.isInvalidOrIncomplete()) {
         return false;
     }
 
-    const int highByte = Wire.read();
-    const int lowByte = Wire.read();
-    if (highByte < 0 || lowByte < 0) {
-        return false;
-    }
-
-    const uint16_t rawMeasurement = (static_cast<uint16_t>(highByte) << 8) |
-                                    static_cast<uint16_t>(lowByte);
+    const uint16_t rawMeasurement = (static_cast<uint16_t>(data[0]) << 8) | data[1];
     illuminanceInLux = static_cast<float>(rawMeasurement) / BH1750_RAW_TO_LUX_DIVISOR;
     return true;
 }
@@ -118,6 +177,10 @@ void DigitalLightIntensitySensor::processEvent(Event &event) {
 
 bool DigitalLightIntensitySensor::isInitialized() const {
     return initialized;
+}
+
+I2cResult DigitalLightIntensitySensor::getLastI2cResult() const {
+    return lastI2cResult;
 }
 
 bool DigitalLightIntensitySensor::hasValidSample() const {
