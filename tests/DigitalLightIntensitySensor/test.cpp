@@ -1,5 +1,6 @@
 #include <time.h>
 #include "DigitalLightIntensitySensor.h"
+#include "FakeI2cBus.h"
 #include <Arduino.h>
 #include <Wire.h>
 #include <cassert>
@@ -22,7 +23,48 @@ public:
 };
 } // namespace
 
+void testInjectedBusStartupSamplingAndFailure() {
+    Recorder recorder;
+    FakeI2cBus bus;
+    DigitalLightIntensitySensor sensor(bus, 21, 0x23, 10.0f, &recorder);
+    assert(bus.writeCount == 0);
+    assert(bus.writeReadCount == 0);
+    assert(!sensor.isInitialized());
+
+    assert(bus.start({21, 22, 400000}) == I2cStatus::Ok);
+    bus.nextWriteStatus = I2cStatus::AddressNack;
+    assert(!sensor.start());
+    assert(!sensor.isInitialized());
+    assert(sensor.getLastI2cResult().status == I2cStatus::AddressNack);
+
+    assert(sensor.start());
+    assert(sensor.isInitialized());
+    assert(bus.writeCount == 4);
+
+    fakeMillis = 180;
+    bus.queueRead({0, 120});
+    sensor.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
+    assert(sensor.hasValidSample());
+    assert(sensor.isLightDetected());
+    assert(std::fabs(sensor.getIlluminanceInLux() - 100.0f) < 0.01f);
+    assert(recorder.count == 1);
+    assert(recorder.eventIds[0] == DigitalLightIntensitySensor::LIGHT_DETECTED_EVENT_IDENTIFIER);
+
+    sensor.setFaultThreshold(1);
+    bus.queueRead({0}, I2cStatus::ShortRead);
+    sensor.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
+    assert(recorder.count == 2);
+    assert(recorder.eventIds[1] == Sensor::SENSOR_FAULT_EVENT_IDENTIFIER);
+    assert(sensor.getLastI2cResult().status == I2cStatus::ShortRead);
+    assert(sensor.hasValidSample());
+    assert(sensor.isLightDetected());
+    assert(std::fabs(sensor.getIlluminanceInLux() - 100.0f) < 0.01f);
+    fakeMillis = 0;
+}
+
 [[nodiscard]] int main() {
+    testInjectedBusStartupSamplingAndFailure();
+
     Recorder recorder;
     DigitalLightIntensitySensor sensor(21, 0x23, 10.0f, &recorder);
     assert(sensor.isInitialized());
