@@ -93,8 +93,11 @@ public:
 
     std::size_t write(const uint8_t command) {
         recordOperation('W');
-        if (commandCount >= 64 || (writeLimit >= 0 && commandCount >= writeLimit)) return 0;
-        commands[commandCount++] = command;
+        if (writeLimit >= 0 && commandCount >= writeLimit) return 0;
+        if (commandCount < static_cast<int>(sizeof(commands))) {
+            commands[commandCount] = command;
+        }
+        ++commandCount;
         return 1;
     }
 
