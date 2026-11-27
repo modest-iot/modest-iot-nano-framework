@@ -244,7 +244,7 @@ Serial.printf("Free heap: %lu bytes\n", ESP.getFreeHeap());
 |---|---|
 | **Wrong GPIO pin** | Verify the pin number matches your wiring. Check the pin is not reserved for other functions. |
 | **I2C bus conflict** | If multiple I2C devices share the bus, ensure each has a unique address. |
-| **Sensor not initialized** | The framework initializes sensors in the `Device` constructor. Ensure the sensor is registered with `appendSensorToScheduler()`. |
+| **Sensor not initialized** | For bus-injected I²C peripherals, start the device-owned bus and each peripheral explicitly before scheduler registration and asynchronous engine startup. Their injected constructors only store configuration; legacy Arduino constructors retain their compatibility behavior. |
 | **Power issues** | Some sensors require 3.3V, not 5V. Check the sensor's voltage requirements. |
 
 ### Sensor fault events
