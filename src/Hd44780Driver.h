@@ -70,15 +70,37 @@ private:
     bool write4Bit(uint8_t value) const; ///< Sends a 4-bit nibble to the LCD with enable pulse.
 
 public:
+    /**
+     * @brief Configures the legacy global-@c Wire transport.
+     * @param i2cAddress 7-bit I2C address of the PCF8574 backpack.
+     * @param backlightInitialState Initial backlight state used during initialization.
+     * @note Construction does not initialize the controller; call @ref initialize
+     *       or @ref start before sending display data.
+     */
     explicit Hd44780Driver(uint8_t i2cAddress, bool backlightInitialState = true);
+
+    /**
+     * @brief Configures the driver to use a caller-owned shared I2C bus.
+     * @param bus Non-owning bus reference; it must outlive this driver.
+     * @param i2cAddress 7-bit I2C address of the PCF8574 backpack.
+     * @param backlightInitialState Initial backlight state used during initialization.
+     * @note Performs no hardware I/O. Start @p bus before calling @ref start.
+     */
     Hd44780Driver(I2cBus& bus, uint8_t i2cAddress, bool backlightInitialState = true);
 
-    /** Initializes the display through the configured transport. */
+    /**
+     * @brief Initializes the controller using the configured transport.
+     * @return @c true if the full initialization sequence completed.
+     * @note The injected bus must already be started. Inspect
+     *       @ref getLastI2cResult for the failed transfer when this returns @c false.
+     */
     [[nodiscard]] bool start();
 
     /**
      * @brief Initializes HD44780 hardware registers via I2C.
      * Transitions from 8-bit to 4-bit mode, configures 2-line display, and clears the screen.
+     * @note For the injected path, the bus must be started first. Use @ref start
+     *       when the initialization result is needed directly.
      */
     void initialize() const;
 
@@ -106,10 +128,16 @@ public:
      */
     [[nodiscard]] bool isBacklightOn() const;
 
-    /** @brief Returns the most recent I2C operation result. */
+    /**
+     * @brief Returns the result of the most recent low-level I2C operation.
+     * @return Status and transferred-versus-expected byte counts for the last operation.
+     */
     [[nodiscard]] I2cResult getLastI2cResult() const;
 
-    /** @brief Reports whether initialization completed successfully. */
+    /**
+     * @brief Reports whether the most recent initialization completed successfully.
+     * @return @c true if all initialization transfers succeeded.
+     */
     [[nodiscard]] bool isInitialized() const;
 };
 
