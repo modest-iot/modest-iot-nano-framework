@@ -7,11 +7,42 @@
  */
 
 #include "Hd44780Driver.h"
+#include "FakeI2cBus.h"
 #include <cassert>
 #include <cstdio>
 
+void testInjectedBusStartupAndFailures() {
+    Wire.transmissionCount = 0;
+    FakeI2cBus bus;
+    Hd44780Driver driver(bus, 0x27, true);
+
+    assert(bus.writeCount == 0);
+    assert(Wire.transmissionCount == 0);
+    assert(!driver.isInitialized());
+    assert(!driver.start());
+    assert(driver.getLastI2cResult().status == I2cStatus::NotStarted);
+    assert(bus.writeCount == 0);
+
+    const I2cBusConfiguration config{21, 22, 400000};
+    assert(bus.start(config) == I2cStatus::Ok);
+    assert(driver.start());
+    assert(driver.isInitialized());
+    assert(bus.writeCount > 0);
+    assert(Wire.transmissionCount == 0);
+
+    const int writesBeforeFailure = bus.writeCount;
+    bus.nextWriteStatus = I2cStatus::AddressNack;
+    driver.sendCommand(0x01);
+    assert(bus.writeCount == writesBeforeFailure + 1);
+    assert(driver.getLastI2cResult().status == I2cStatus::AddressNack);
+
+    driver.setBacklight(false);
+    assert(!driver.isBacklightOn());
+}
+
 int main() {
     std::printf("Running Hd44780Driver tests...\n");
+    testInjectedBusStartupAndFailures();
 
     // Test 1: Constructor initializes state
     {
