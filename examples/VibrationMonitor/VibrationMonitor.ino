@@ -51,6 +51,8 @@ static const int BUZZER_GPIO_PIN = 13;
 static const unsigned long VIBRATION_SAMPLE_INTERVAL_IN_MILLISECONDS = 1000;
 /** @brief Delay in the main loop when no work is pending. */
 static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
+/** @brief Shared I2C bus configuration for the MPU6050 accelerometer. */
+static const I2cBusConfiguration VIBRATION_MONITOR_I2C_CONFIGURATION{-1, -1, 100000};
 //@} // Timing Configuration
 
 /** @name Framework Configuration */
@@ -96,6 +98,7 @@ static const char* VIBRATION_MONITOR_LOG_PREFIX = "[VibrationMonitor]";
  */
 class VibrationMonitor : public Device {
 private:
+    ArduinoI2cBus i2cBus;
     ImuSensor accelerometer;
     Buzzer alertBuzzer;
     EmlearnController mlController;
@@ -123,22 +126,32 @@ private:
 public:
     VibrationMonitor()
         : Device(VIBRATION_SAMPLE_INTERVAL_IN_MILLISECONDS, DEFAULT_TIMER_CHANNEL)
-        , accelerometer(ACCELEROMETER_I2C_ADDRESS, ImuSensor::DEFAULT_I2C_ADDRESS,
+        , i2cBus()
+        , accelerometer(i2cBus, ACCELEROMETER_I2C_ADDRESS, ImuSensor::DEFAULT_I2C_ADDRESS,
                         ImuSensor::IMU_ACCEL_FS_8G,
                         ImuSensor::IMU_GYRO_FS_2000, this)
         , alertBuzzer(BUZZER_GPIO_PIN, this)
     {
     }
 
-    void start() {
+    bool start() {
         setFirmwareVersion("1.0.0");
 
-        // Initialize the MPU6050 accelerometer
-        if (!accelerometer.initialize()) {
-            Serial.printf("%s ERROR: MPU6050 not found!\n", VIBRATION_MONITOR_LOG_PREFIX);
-        } else {
-            Serial.printf("%s MPU6050 initialized successfully\n", VIBRATION_MONITOR_LOG_PREFIX);
+        const I2cStatus busStatus = i2cBus.start(VIBRATION_MONITOR_I2C_CONFIGURATION);
+        if (busStatus != I2cStatus::Ok) {
+            Serial.printf("%s I2C bus startup failed (status %u).\n",
+                          VIBRATION_MONITOR_LOG_PREFIX, static_cast<unsigned int>(busStatus));
+            return false;
         }
+
+        // Initialize the MPU6050 accelerometer
+        if (!accelerometer.start()) {
+            Serial.printf("%s ERROR: MPU6050 initialization failed (status %u).\n",
+                          VIBRATION_MONITOR_LOG_PREFIX,
+                          static_cast<unsigned int>(accelerometer.getLastI2cResult().status));
+            return false;
+        }
+        Serial.printf("%s MPU6050 initialized successfully\n", VIBRATION_MONITOR_LOG_PREFIX);
 
         // Load the emlearn-generated model into EmlearnController.
         // The generated vibration_predict() function is wrapped behind the
@@ -156,6 +169,7 @@ public:
         Serial.printf("%s ML inference ready\n", VIBRATION_MONITOR_LOG_PREFIX);
 
         initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
+        return true;
 
         // Register MPU6050 accelerometer with the scheduler.
         // The accelerometer samples at 1 Hz (1000 ms interval) for vibration analysis.
@@ -200,7 +214,9 @@ VibrationMonitor vibrationMonitor;
 
 void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
-    vibrationMonitor.start();
+    if (!vibrationMonitor.start()) {
+        Serial.println("[VibrationMonitor] Startup failed; sampling and inference were not started.");
+    }
 }
 
 void loop() {
