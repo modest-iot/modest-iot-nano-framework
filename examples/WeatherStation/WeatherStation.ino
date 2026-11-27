@@ -62,6 +62,9 @@ static const char* WEATHER_STATION_TIMEZONE = "UTC";
 static const char* WEATHER_STATION_NTP_SERVER = "pool.ntp.org";
 //@} // NTP Configuration
 
+/** @brief Shared I2C bus configuration for the BME280 and BH1750 sensors. */
+static const I2cBusConfiguration WEATHER_STATION_I2C_CONFIGURATION{-1, -1, 100000};
+
 /** @name PowerManager Configuration */
 //@{
 /** @brief Voltage divider ratio for the battery monitoring circuit (2:1 divider). */
@@ -103,6 +106,7 @@ RTC_DATA_ATTR bool rtcLowBatteryDetected = false;
  */
 class WeatherStation : public Device {
 private:
+    ArduinoI2cBus i2cBus;
     DhtSensor dhtSensor;
     PthSensor pthSensor;
     DigitalLightIntensitySensor lightSensor;
@@ -173,9 +177,10 @@ public:
         unsigned long deepSleepIntervalInMilliseconds = DEFAULT_DEEP_SLEEP_INTERVAL_IN_MILLISECONDS,
         uint8_t timerChannel = DEFAULT_TIMER_CHANNEL)
         : Device(deepSleepIntervalInMilliseconds, timerChannel),
+          i2cBus(),
           dhtSensor(dhtSensorPin, DhtSensor::SENSOR_MODEL_DHT22, this),
-          pthSensor(0, PthSensor::DEFAULT_I2C_ADDRESS, this),
-          lightSensor(0, DigitalLightIntensitySensor::DEFAULT_I2C_ADDRESS,
+          pthSensor(i2cBus, 0, PthSensor::DEFAULT_I2C_ADDRESS, this),
+          lightSensor(i2cBus, 0, DigitalLightIntensitySensor::DEFAULT_I2C_ADDRESS,
                       DigitalLightIntensitySensor::DEFAULT_LIGHT_DETECTED_THRESHOLD_IN_LUX, this)
     {
         // Start in Periodic mode; switch to DeepSleep when low battery is detected
@@ -208,7 +213,26 @@ public:
      * This method encapsulates all setup logic so the sketch's setup()
      * is only responsible for instance creation.
      */
-    void start() {
+    bool start() {
+        const I2cStatus busStatus = i2cBus.start(WEATHER_STATION_I2C_CONFIGURATION);
+        if (busStatus != I2cStatus::Ok) {
+            Serial.printf("%s I2C bus startup failed (status %u).\n",
+                          WEATHER_STATION_LOG_PREFIX, static_cast<unsigned int>(busStatus));
+            return false;
+        }
+        if (!pthSensor.start()) {
+            Serial.printf("%s BME280 startup failed (status %u).\n",
+                          WEATHER_STATION_LOG_PREFIX,
+                          static_cast<unsigned int>(pthSensor.getLastI2cResult().status));
+            return false;
+        }
+        if (!lightSensor.start()) {
+            Serial.printf("%s BH1750 startup failed (status %u).\n",
+                          WEATHER_STATION_LOG_PREFIX,
+                          static_cast<unsigned int>(lightSensor.getLastI2cResult().status));
+            return false;
+        }
+
         // Increment boot count (survives deep sleep via RTC_DATA_ATTR)
         ++rtcBootCount;
 
@@ -238,6 +262,7 @@ public:
 
         // Launch internal background task workers with a small queue for battery operation
         initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
+        return true;
     }
 
     /**
@@ -245,7 +270,7 @@ public:
      * Initializes framework-level services (firmware version, NTP, PowerManager)
      * and then starts the device behavior.
      */
-    void initializeAndStart() {
+    bool initializeAndStart() {
         // Set firmware version for fleet management in telemetry
         Device::setFirmwareVersion("WS-3200 FW 1.1.0");
 
@@ -263,7 +288,7 @@ public:
         }
 
         // Start the device behavior
-        start();
+        return start();
     }
 };
 
@@ -278,7 +303,9 @@ void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
 
     weatherStationApplication = new WeatherStation(DHT_SENSOR_PIN);
-    weatherStationApplication->initializeAndStart();
+    if (!weatherStationApplication->initializeAndStart()) {
+        Serial.println("[WeatherStation] Device startup failed; asynchronous sampling was not started.");
+    }
 }
 
 /**
