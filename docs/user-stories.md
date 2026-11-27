@@ -512,6 +512,7 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
     - **Given** an MPU6050 is connected over I²C, **when** `ImuSensor` initializes successfully, **then** it provides cached acceleration, angular-rate, and temperature readings.
     - **Given** samples are collected, **when** the configured sample window advances, **then** per-axis RMS and peak-to-peak statistics are available.
     - **Given** the sensor is not initialized or a read fails, **when** readings are requested, **then** the documented failure/default behavior is returned and no invalid sample is added.
+    - **Given** at least one valid reading is cached, **when** a later I²C read fails or is incomplete, **then** the last completed readings remain unchanged and no successful measurement is emitted.
 - **Status**: ✓ Implemented (v1.3.0). See `ImuSensor.h`, `tests/ImuSensor/test.cpp`, and `examples/VibrationMonitor/`.
 
 ### TS50: Run Optional On-Device Inference
@@ -541,7 +542,20 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
     - **Given** the BLE driver is used by an application, **when** data is sent or received, **then** its NUS behavior remains independent of the underlying core API differences.
 - **Status**: ✓ Implemented (v1.3.0). See `BleHal.h`, `BleHal.cpp`, `BleConnectivityDriver.h`, and `tests/BleConnectivityDriver/test.cpp`.
 
+### TS53: Compose I²C Peripherals on a Device-Owned Shared Bus
+
+- **As an** IoT Developer, **I want** I²C sensors and displays in one composed device to share an explicitly started bus, **so that** hardware initialization is ordered and transfer failures remain observable.
+- **Acceptance Criteria**:
+    - **Given** an I²C peripheral is constructed with an injected `I2cBus`, **when** construction completes, **then** no hardware I/O has occurred and the peripheral borrows a bus that outlives it.
+    - **Given** a concrete device composes multiple I²C peripherals, **when** its members are declared, **then** it owns one `ArduinoI2cBus` before those peripheral members and injects the same bus instance into each; generic `Device`, `Sensor`, and `Actuator` bases remain transport-neutral.
+    - **Given** a composed device starts, **when** startup proceeds, **then** it starts the bus, initializes all required I²C peripherals, registers sampling, and starts the asynchronous engine in that order.
+    - **Given** bus or peripheral startup fails, **when** the device reports the failure, **then** startup is observable and the asynchronous engine remains stopped.
+    - **Given** an I²C transaction reports address NACK, data NACK, timeout, bus error, or a short read, **when** the operation completes, **then** its `I2cResult` preserves the status and transferred-versus-expected byte counts.
+    - **Given** an I²C transaction fails or returns an incomplete read, **when** a sensor handles the sample, **then** its last completed value is preserved and no successful measurement is emitted; display adapters expose their last transfer result without changing the generic actuator command contract.
+    - **Given** existing Arduino code uses a legacy constructor, **when** the library is migrated to the injected path, **then** that constructor remains source-compatible.
+- **Status**: ✓ Implemented. See `I2cBus.h`, `ArduinoI2cBus.h`, the I²C sensor/display headers, `examples/WeatherStation/`, `examples/IndoorAirQualityDisplay/`, and the focused I²C tests.
+
 ---
 
 *Created: March 23, 2025.*
-*Last Updated: November 24, 2026.*
+*Last Updated: November 27, 2026.*
