@@ -40,6 +40,7 @@ static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS     = 200;
 static const unsigned long DEVICE_EVENT_DELAY_IN_MILLISECONDS    = 0;
 static const int           ASYNC_ENGINE_QUEUE_DEPTH = 8;
 static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS       = 1000;
+static const I2cBusConfiguration OUTDOOR_SECURITY_I2C_CONFIGURATION{-1, -1, 100000};
 
 // Initial state: bright, no motion -> light off
 static const bool SECURITY_LED_INITIAL_STATE   = false;
@@ -51,6 +52,7 @@ static const bool INITIAL_IS_MOTION_PRESENT    = false;
  */
 class OutdoorSecurityLightController : public Device {
 private:
+    ArduinoI2cBus i2cBus;
     DigitalLightIntensitySensor lightSensor;
     PassiveInfraredSensor motionSensor;
     Led securityLight;
@@ -75,12 +77,28 @@ private:
 public:
     OutdoorSecurityLightController()
         : Device(SAMPLING_INTERVAL_IN_MILLISECONDS, DEVICE_EVENT_DELAY_IN_MILLISECONDS),
-          lightSensor(LIGHT_SENSOR_SOURCE_ID, LIGHT_SENSOR_I2C_ADDRESS, DARKNESS_THRESHOLD_IN_LUX, this),
+          i2cBus(),
+          lightSensor(i2cBus, LIGHT_SENSOR_SOURCE_ID, LIGHT_SENSOR_I2C_ADDRESS, DARKNESS_THRESHOLD_IN_LUX, this),
           motionSensor(MOTION_SENSOR_PIN, this),
           securityLight(SECURITY_LED_PIN, SECURITY_LED_INITIAL_STATE, this),
           isDark(INITIAL_IS_DARK),
           isMotionPresent(INITIAL_IS_MOTION_PRESENT)
     {
+    }
+
+    bool start() {
+        const I2cStatus busStatus = i2cBus.start(OUTDOOR_SECURITY_I2C_CONFIGURATION);
+        if (busStatus != I2cStatus::Ok) {
+            Serial.printf("[OutdoorSecurityLightController] I2C bus startup failed (status %u).\n",
+                          static_cast<unsigned int>(busStatus));
+            return false;
+        }
+        if (!lightSensor.start()) {
+            Serial.printf("[OutdoorSecurityLightController] BH1750 startup failed (status %u).\n",
+                          static_cast<unsigned int>(lightSensor.getLastI2cResult().status));
+            return false;
+        }
+
         // Enable fault detection on both sensors
         lightSensor.setFaultThreshold(SENSOR_FAULT_THRESHOLD);
         motionSensor.setFaultThreshold(SENSOR_FAULT_THRESHOLD);
@@ -94,6 +112,7 @@ public:
                                           CHANGE);
 
         initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
+        return true;
     }
 
     /**
@@ -143,6 +162,9 @@ static OutdoorSecurityLightController* outdoorSecurityApplication = nullptr;
 void setup() {
     Device::setFirmwareVersion("OSL-101 FW 1.0.0");
     outdoorSecurityApplication = new OutdoorSecurityLightController();
+    if (!outdoorSecurityApplication->start()) {
+        Serial.println("[OutdoorSecurityLightController] Startup failed; asynchronous control was not started.");
+    }
 }
 
 void loop() {
