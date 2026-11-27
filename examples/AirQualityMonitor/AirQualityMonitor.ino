@@ -34,6 +34,8 @@ static const unsigned long SERIAL_TIMEOUT_IN_MILLISECONDS = 5000;
 
 /** @brief Sampler event queue length. */
 static const int ASYNC_ENGINE_QUEUE_DEPTH = 10;
+/** @brief Shared I2C bus configuration for the character LCD. */
+static const I2cBusConfiguration AIR_QUALITY_MONITOR_I2C_CONFIGURATION{-1, -1, 100000};
 
 /** @brief Buzzer tone frequency (Hz). */
 static const unsigned long BUZZER_TONE_FREQ = 2000;
@@ -96,6 +98,7 @@ public:
  */
 class AirQualityMonitorDevice : public Device {
 private:
+    ArduinoI2cBus i2cBus;
     /// @brief The gas sensor instance.
     GasSensor gasSensor;
     /// @brief The buzzer instance for alarms.
@@ -190,11 +193,26 @@ public:
                             MqttGatewayClient& client,
                             unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupIndex = 0)
         : Device(samplingIntervalInMilliseconds, timerGroupIndex),
+          i2cBus(),
           gasSensor(gasAnalogPin, gasDigitalPin, this, GasSensor::OperatingMode::RawMode), // Start in RawMode
           alarmBuzzer(buzzerPin, this),
-          statusDisplay(lcdI2CAddress, lcdColumns, lcdRows, true, this), // Backlight on initially
+          statusDisplay(i2cBus, lcdI2CAddress, lcdColumns, lcdRows, true, this), // Backlight on initially
           gatewayClient(client)
-    {
+    {}
+
+    bool start() {
+        const I2cStatus busStatus = i2cBus.start(AIR_QUALITY_MONITOR_I2C_CONFIGURATION);
+        if (busStatus != I2cStatus::Ok) {
+            Serial.printf("[AirQualityMonitor] I2C bus startup failed (status %u).\n",
+                          static_cast<unsigned int>(busStatus));
+            return false;
+        }
+        if (!statusDisplay.start()) {
+            Serial.printf("[AirQualityMonitor] LCD startup failed (status %u).\n",
+                          static_cast<unsigned int>(statusDisplay.getLastI2cResult().status));
+            return false;
+        }
+
         // Set handlers for sensors (this device acts as the EventHandler)
         gasSensor.setHandler(this);
 
@@ -205,6 +223,7 @@ public:
 
         // Initialize asynchronous engine
         initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
+        return true;
     }
 
     /**
@@ -350,7 +369,11 @@ void setup() {
     airQualityApplication->startGasSensorCalibration();
     airQualityApplication->setGasSensorTargetGas(GasSensor::GasType::LPG); // Example: Target LPG for PPM calculation
 
-    Serial.println((String(AIR_QUALITY_MONITOR_LOG_PREFIX) + " Setup complete. Monitoring started.").c_str());
+    if (airQualityApplication->start()) {
+        Serial.println((String(AIR_QUALITY_MONITOR_LOG_PREFIX) + " Setup complete. Monitoring started.").c_str());
+    } else {
+        Serial.println("[AirQualityMonitor] Startup failed; monitoring and telemetry were not started.");
+    }
 }
 
 /**
