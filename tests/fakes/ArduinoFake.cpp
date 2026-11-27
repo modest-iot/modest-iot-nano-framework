@@ -7,6 +7,41 @@
 
 #include "Arduino.h"
 
+FakeFreeRtosState fakeFreeRtosState = {};
+FakeQueueHandle fakeQueueHandles[64] = {};
+FakeTaskHandle fakeTaskHandles[64] = {};
+thread_local FakeTaskHandle* currentFakeTaskHandle = nullptr;
+std::mutex fakeTaskStateMutex;
+hw_timer_s fakeTimerObjects[64] = {};
+hw_timer_t fakeTimerHandles[64] = {};
+
+void joinFakeTasks() {
+    for (auto& handle : fakeTaskHandles) {
+        if (handle.worker.joinable()) {
+            handle.worker.join();
+        }
+    }
+}
+
+void resetFakeFreeRtosState() {
+    joinFakeTasks();
+    fakeFreeRtosState = {};
+    fakeFreeRtosState.failQueueCreateAtCall = -1;
+    fakeFreeRtosState.failTaskCreateAtCall = -1;
+    for (auto& handle : fakeQueueHandles) {
+        handle.active = false;
+    }
+    for (auto& handle : fakeTaskHandles) {
+        handle.active.store(false);
+        std::lock_guard<std::mutex> lock(handle.notificationMutex);
+        handle.notificationValue = 0;
+    }
+    for (std::size_t index = 0; index < std::size(fakeTimerObjects); ++index) {
+        fakeTimerObjects[index].active = false;
+        fakeTimerHandles[index] = nullptr;
+    }
+}
+
 // Mock timing and clock simulation
 unsigned long fakeMillis = 0;
 unsigned long fakeMicros = 0;

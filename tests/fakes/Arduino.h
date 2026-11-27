@@ -3,10 +3,14 @@
 
 #include <time.h>
 #include <atomic>
+#include <chrono>
+#include <condition_variable>
 #include <cstdint>
 #include <cstring>
 #include <iterator>
+#include <mutex>
 #include <string>
+#include <thread>
 
 typedef std::uint8_t byte;
 typedef bool boolean;
@@ -17,6 +21,37 @@ typedef std::int32_t UBaseType_t;
 typedef void* TaskHandle_t;
 typedef void* QueueHandle_t;
 typedef std::uint32_t TickType_t;
+struct FakeQueueHandle { bool active = false; };
+struct FakeTaskHandle {
+    std::atomic<bool> active{false};
+    std::thread worker;
+    std::mutex notificationMutex;
+    std::condition_variable notificationCondition;
+    std::uint32_t notificationValue = 0;
+};
+struct FakeFreeRtosState {
+    int queueCreateCalls = 0;
+    int queueDeleteCalls = 0;
+    int taskCreateCalls = 0;
+    int taskDeleteCalls = 0;
+    int timerBeginCalls = 0;
+    int timerEndCalls = 0;
+    int timerAttachCalls = 0;
+    int timerAlarmCalls = 0;
+    int isrNotificationCalls = 0;
+    TaskHandle_t isrNotificationTargets[64] = {};
+    int failQueueCreateAtCall = -1;
+    int failTaskCreateAtCall = -1;
+    bool failTimerBegin = false;
+};
+extern FakeFreeRtosState fakeFreeRtosState;
+extern FakeQueueHandle fakeQueueHandles[64];
+extern FakeTaskHandle fakeTaskHandles[64];
+extern thread_local FakeTaskHandle* currentFakeTaskHandle;
+extern std::mutex fakeTaskStateMutex;
+void resetFakeFreeRtosState();
+void joinFakeTasks();
+
 #define pdTRUE ((BaseType_t)1)
 #define pdFALSE ((BaseType_t)0)
 #define pdPASS ((BaseType_t)1)
@@ -26,24 +61,153 @@ typedef std::uint32_t TickType_t;
 #define eSetValueWithOverwrite 1
 #define eSetBits 2
 #define IRAM_ATTR
-struct hw_timer_s;
+struct hw_timer_s { bool active = false; };
 typedef hw_timer_s* hw_timer_t;
+extern hw_timer_s fakeTimerObjects[64];
+extern hw_timer_t fakeTimerHandles[64];
 
-// Mock FreeRTOS task/queue APIs (no-ops for host testing)
+// Mock FreeRTOS task/queue APIs
 inline TaskHandle_t xTaskCreateStatic(void*, const char*, std::uint32_t, void*, std::uint8_t, TaskHandle_t*) { return nullptr; }
-inline void xTaskCreatePinnedToCore(void (*)(void*), const char*, std::uint32_t, void*, std::uint8_t, TaskHandle_t*, BaseType_t) {}
-inline void vTaskDelete(TaskHandle_t) {}
-inline void vTaskDelay(TickType_t) {}
+inline BaseType_t xTaskCreatePinnedToCore(void (*taskFunction)(void*), const char* name,
+                                          std::uint32_t stackSize, void* taskParameters,
+                                          std::uint8_t priority, TaskHandle_t* taskHandle,
+                                          BaseType_t core) {
+    (void)name;
+    (void)stackSize;
+    (void)taskParameters;
+    (void)priority;
+    (void)core;
+    const int call = ++fakeFreeRtosState.taskCreateCalls;
+    if (call == fakeFreeRtosState.failTaskCreateAtCall) {
+        if (taskHandle != nullptr) {
+            *taskHandle = nullptr;
+        }
+        return pdFAIL;
+    }
+    for (auto& handle : fakeTaskHandles) {
+        if (!handle.active.load() && !handle.worker.joinable()) {
+            auto* taskHandlePointer = &handle;
+            {
+                std::lock_guard<std::mutex> lock(handle.notificationMutex);
+                handle.notificationValue = 0;
+            }
+            handle.active.store(true);
+            if (taskHandle != nullptr) {
+                *taskHandle = &handle;
+            }
+            try {
+                handle.worker = std::thread([taskHandlePointer, taskFunction, taskParameters]() {
+                    currentFakeTaskHandle = taskHandlePointer;
+                    taskFunction(taskParameters);
+                    taskHandlePointer->active.store(false);
+                    currentFakeTaskHandle = nullptr;
+                });
+            } catch (...) {
+                handle.active.store(false);
+                if (taskHandle != nullptr) {
+                    *taskHandle = nullptr;
+                }
+                return pdFAIL;
+            }
+            return pdPASS;
+        }
+    }
+    return pdFAIL;
+}
+inline void vTaskDelete(TaskHandle_t task) {
+    auto* handle = task == nullptr ? currentFakeTaskHandle : static_cast<FakeTaskHandle*>(task);
+    if (handle == nullptr) {
+        return;
+    }
+    if (handle->active.exchange(false)) {
+        std::lock_guard<std::mutex> lock(fakeTaskStateMutex);
+        ++fakeFreeRtosState.taskDeleteCalls;
+    }
+}
+inline void vTaskDelay(TickType_t ticks) {
+    if (ticks == 0) {
+        std::this_thread::yield();
+    } else {
+        std::this_thread::sleep_for(std::chrono::milliseconds(ticks));
+    }
+}
 inline uint32_t ulTaskNotifyTake(BaseType_t, TickType_t) { return 0; }
 inline BaseType_t xTaskNotifyGive(TaskHandle_t) { return pdPASS; }
 inline void vTaskNotifyGive(TaskHandle_t) {}
-inline BaseType_t xTaskNotify(TaskHandle_t, uint32_t, int) { return pdPASS; }
-inline BaseType_t xTaskNotifyFromISR(TaskHandle_t, uint32_t, int, BaseType_t*) { return pdPASS; }
-inline BaseType_t xTaskNotifyWait(BaseType_t, BaseType_t, uint32_t*, TickType_t) { return pdFALSE; }
-inline QueueHandle_t xQueueCreate(std::uint32_t, std::uint32_t) { return nullptr; }
+inline BaseType_t fakeNotifyTask(TaskHandle_t task, uint32_t value) {
+    if (task == nullptr) {
+        return pdFAIL;
+    }
+    auto* handle = static_cast<FakeTaskHandle*>(task);
+    {
+        std::lock_guard<std::mutex> lock(handle->notificationMutex);
+        handle->notificationValue |= value;
+    }
+    handle->notificationCondition.notify_one();
+    return pdPASS;
+}
+inline BaseType_t xTaskNotify(TaskHandle_t task, uint32_t value, int) {
+    return fakeNotifyTask(task, value);
+}
+inline BaseType_t xTaskNotifyFromISR(TaskHandle_t task, uint32_t value, int, BaseType_t*) {
+    const int call = fakeFreeRtosState.isrNotificationCalls++;
+    if (call < static_cast<int>(std::size(fakeFreeRtosState.isrNotificationTargets))) {
+        fakeFreeRtosState.isrNotificationTargets[call] = task;
+    }
+    return fakeNotifyTask(task, value);
+}
+inline BaseType_t xTaskNotifyWait(BaseType_t clearOnEntry, BaseType_t clearOnExit,
+                                  uint32_t* notificationValue, TickType_t ticksToWait) {
+    auto* handle = currentFakeTaskHandle;
+    if (handle == nullptr) {
+        return pdFALSE;
+    }
+    std::unique_lock<std::mutex> lock(handle->notificationMutex);
+    handle->notificationValue &= ~static_cast<uint32_t>(clearOnEntry);
+    if (handle->notificationValue == 0 && ticksToWait != 0) {
+        const auto notificationAvailable = [&handle]() { return handle->notificationValue != 0; };
+        if (ticksToWait == portMAX_DELAY) {
+            handle->notificationCondition.wait(lock, notificationAvailable);
+        } else {
+            handle->notificationCondition.wait_for(lock, std::chrono::milliseconds(ticksToWait),
+                                                   notificationAvailable);
+        }
+    }
+    if (handle->notificationValue == 0) {
+        return pdFALSE;
+    }
+    if (notificationValue != nullptr) {
+        *notificationValue = handle->notificationValue;
+    }
+    handle->notificationValue &= ~static_cast<uint32_t>(clearOnExit);
+    return pdTRUE;
+}
+inline QueueHandle_t xQueueCreate(std::uint32_t queueLength, std::uint32_t itemSize) {
+    (void)itemSize;
+    const int call = ++fakeFreeRtosState.queueCreateCalls;
+    if (queueLength == 0 || call == fakeFreeRtosState.failQueueCreateAtCall) {
+        return nullptr;
+    }
+    for (auto& handle : fakeQueueHandles) {
+        if (!handle.active) {
+            handle.active = true;
+            return &handle;
+        }
+    }
+    return nullptr;
+}
 inline BaseType_t xQueueSend(QueueHandle_t, const void*, TickType_t) { return pdFAIL; }
 inline BaseType_t xQueueReceive(QueueHandle_t, void*, TickType_t) { return pdFAIL; }
-inline void vQueueDelete(QueueHandle_t) {}
+inline void vQueueDelete(QueueHandle_t queue) {
+    if (queue == nullptr) {
+        return;
+    }
+    auto* handle = static_cast<FakeQueueHandle*>(queue);
+    if (handle->active) {
+        handle->active = false;
+        ++fakeFreeRtosState.queueDeleteCalls;
+    }
+}
 inline UBaseType_t uxQueueMessagesWaiting(QueueHandle_t) { return 0; }
 inline UBaseType_t uxTaskGetStackHighWaterMark(TaskHandle_t) { return 0; }
 inline TickType_t pdMS_TO_TICKS(std::uint32_t ms) { return ms; }
@@ -57,11 +221,46 @@ public:
 inline EspClass ESP;
 
 // Mock timer APIs
-inline hw_timer_t* timerBegin(std::uint32_t) { return nullptr; }
-inline void timerEnd(hw_timer_t*) {}
-inline void timerAttachInterruptArg(hw_timer_t*, void (*)(void*), void*) {}
+inline hw_timer_t* timerBegin(std::uint32_t frequency) {
+    (void)frequency;
+    ++fakeFreeRtosState.timerBeginCalls;
+    if (fakeFreeRtosState.failTimerBegin) {
+        return nullptr;
+    }
+    for (std::size_t index = 0; index < std::size(fakeTimerObjects); ++index) {
+        if (!fakeTimerObjects[index].active) {
+            fakeTimerObjects[index].active = true;
+            fakeTimerHandles[index] = &fakeTimerObjects[index];
+            return &fakeTimerHandles[index];
+        }
+    }
+    return nullptr;
+}
+inline void timerEnd(hw_timer_t* timer) {
+    if (timer == nullptr || *timer == nullptr) {
+        return;
+    }
+    (*timer)->active = false;
+    *timer = nullptr;
+    ++fakeFreeRtosState.timerEndCalls;
+}
+inline void timerAttachInterruptArg(hw_timer_t* timer, void (*handler)(void*), void* argument) {
+    (void)handler;
+    (void)argument;
+    if (timer != nullptr) {
+        ++fakeFreeRtosState.timerAttachCalls;
+    }
+}
 inline void timerDetachInterrupt(hw_timer_t*) {}
-inline void timerAlarm(hw_timer_t*, std::uint64_t, BaseType_t, std::uint32_t) {}
+inline void timerAlarm(hw_timer_t* timer, std::uint64_t alarm, BaseType_t autoReload,
+                       std::uint32_t reloadCount) {
+    (void)alarm;
+    (void)autoReload;
+    (void)reloadCount;
+    if (timer != nullptr) {
+        ++fakeFreeRtosState.timerAlarmCalls;
+    }
+}
 
 class String : public std::string {
 public:
