@@ -10,47 +10,30 @@
 #include <Wire.h>
 #include <cmath>
 
+namespace {
+I2cStatus mapWireStatus(const uint8_t status) {
+    switch (status) {
+        case 0: return I2cStatus::Ok;
+        case 1: return I2cStatus::InvalidArgument;
+        case 2: return I2cStatus::AddressNack;
+        case 3: return I2cStatus::DataNack;
+        case 5: return I2cStatus::Timeout;
+        default: return I2cStatus::BusError;
+    }
+}
+}
+
 ImuSensor::ImuSensor(const int signalGpioPin, const uint8_t i2cAddress,
                      EventHandler* parentHandler)
-    : Sensor(signalGpioPin, parentHandler)
-    , i2cAddress(i2cAddress)
-    , accelerationOffsetX(0)
-    , accelerationOffsetY(0)
-    , accelerationOffsetZ(0)
-    , gyroscopeOffsetX(0)
-    , gyroscopeOffsetY(0)
-    , gyroscopeOffsetZ(0)
-    , cachedAccelerationXInGForce(INITIAL_CACHED_ACCELERATION_IN_GFORCE)
-    , cachedAccelerationYInGForce(INITIAL_CACHED_ACCELERATION_IN_GFORCE)
-    , cachedAccelerationZInGForce(INITIAL_CACHED_ACCELERATION_IN_GFORCE)
-    , cachedGyroscopeXInDegreesPerSecond(INITIAL_CACHED_GYROSCOPE_IN_DEGREES_PER_SECOND)
-    , cachedGyroscopeYInDegreesPerSecond(INITIAL_CACHED_GYROSCOPE_IN_DEGREES_PER_SECOND)
-    , cachedGyroscopeZInDegreesPerSecond(INITIAL_CACHED_GYROSCOPE_IN_DEGREES_PER_SECOND)
-    , cachedInternalTemperatureInCelsius(INITIAL_CACHED_TEMPERATURE_IN_CELSIUS)
-    , sampleBufferX{}
-    , sampleBufferY{}
-    , sampleBufferZ{}
-    , sampleWindowIndex(0)
-    , sampleWindowCount(0)
-    , sampleWindowSize(DEFAULT_SAMPLE_WINDOW_SIZE)
-    , lastNotifiedAccelerationXInGForce(INITIAL_LAST_NOTIFIED_ACCELERATION_IN_GFORCE)
-    , lastNotifiedAccelerationYInGForce(INITIAL_LAST_NOTIFIED_ACCELERATION_IN_GFORCE)
-    , lastNotifiedAccelerationZInGForce(INITIAL_LAST_NOTIFIED_ACCELERATION_IN_GFORCE)
-    , lastNotifiedGyroscopeXInDegreesPerSecond(INITIAL_LAST_NOTIFIED_GYROSCOPE_IN_DEGREES_PER_SECOND)
-    , lastNotifiedGyroscopeYInDegreesPerSecond(INITIAL_LAST_NOTIFIED_GYROSCOPE_IN_DEGREES_PER_SECOND)
-    , lastNotifiedGyroscopeZInDegreesPerSecond(INITIAL_LAST_NOTIFIED_GYROSCOPE_IN_DEGREES_PER_SECOND)
-    , initialized(false)
-    , accelerationFullScale(IMU_ACCEL_FS_2G)
-    , gyroscopeFullScale(IMU_GYRO_FS_250)
-{
-    Wire.begin();
-}
+    : ImuSensor(signalGpioPin, i2cAddress, IMU_ACCEL_FS_2G, IMU_GYRO_FS_250, parentHandler) {}
 
 ImuSensor::ImuSensor(const int signalGpioPin, const uint8_t i2cAddress,
                       const uint8_t accelerationFullScale,
                       const uint8_t gyroscopeFullScale,
                       EventHandler* parentHandler)
     : Sensor(signalGpioPin, parentHandler)
+    , bus(nullptr)
+    , lastI2cResult{I2cStatus::Ok, 0, 0}
     , i2cAddress(i2cAddress)
     , accelerationOffsetX(0)
     , accelerationOffsetY(0)
@@ -84,29 +67,124 @@ ImuSensor::ImuSensor(const int signalGpioPin, const uint8_t i2cAddress,
     Wire.begin();
 }
 
+ImuSensor::ImuSensor(I2cBus& bus, const int signalGpioPin, const uint8_t i2cAddress,
+                     const uint8_t accelerationFullScale, const uint8_t gyroscopeFullScale,
+                     EventHandler* parentHandler)
+    : Sensor(signalGpioPin, parentHandler)
+    , bus(&bus)
+    , lastI2cResult{I2cStatus::Ok, 0, 0}
+    , i2cAddress(i2cAddress)
+    , accelerationOffsetX(0)
+    , accelerationOffsetY(0)
+    , accelerationOffsetZ(0)
+    , gyroscopeOffsetX(0)
+    , gyroscopeOffsetY(0)
+    , gyroscopeOffsetZ(0)
+    , cachedAccelerationXInGForce(INITIAL_CACHED_ACCELERATION_IN_GFORCE)
+    , cachedAccelerationYInGForce(INITIAL_CACHED_ACCELERATION_IN_GFORCE)
+    , cachedAccelerationZInGForce(INITIAL_CACHED_ACCELERATION_IN_GFORCE)
+    , cachedGyroscopeXInDegreesPerSecond(INITIAL_CACHED_GYROSCOPE_IN_DEGREES_PER_SECOND)
+    , cachedGyroscopeYInDegreesPerSecond(INITIAL_CACHED_GYROSCOPE_IN_DEGREES_PER_SECOND)
+    , cachedGyroscopeZInDegreesPerSecond(INITIAL_CACHED_GYROSCOPE_IN_DEGREES_PER_SECOND)
+    , cachedInternalTemperatureInCelsius(INITIAL_CACHED_TEMPERATURE_IN_CELSIUS)
+    , sampleBufferX{}
+    , sampleBufferY{}
+    , sampleBufferZ{}
+    , sampleWindowIndex(0)
+    , sampleWindowCount(0)
+    , sampleWindowSize(DEFAULT_SAMPLE_WINDOW_SIZE)
+    , lastNotifiedAccelerationXInGForce(INITIAL_LAST_NOTIFIED_ACCELERATION_IN_GFORCE)
+    , lastNotifiedAccelerationYInGForce(INITIAL_LAST_NOTIFIED_ACCELERATION_IN_GFORCE)
+    , lastNotifiedAccelerationZInGForce(INITIAL_LAST_NOTIFIED_ACCELERATION_IN_GFORCE)
+    , lastNotifiedGyroscopeXInDegreesPerSecond(INITIAL_LAST_NOTIFIED_GYROSCOPE_IN_DEGREES_PER_SECOND)
+    , lastNotifiedGyroscopeYInDegreesPerSecond(INITIAL_LAST_NOTIFIED_GYROSCOPE_IN_DEGREES_PER_SECOND)
+    , lastNotifiedGyroscopeZInDegreesPerSecond(INITIAL_LAST_NOTIFIED_GYROSCOPE_IN_DEGREES_PER_SECOND)
+    , initialized(false)
+    , accelerationFullScale(accelerationFullScale)
+    , gyroscopeFullScale(gyroscopeFullScale) {}
+
 bool ImuSensor::writeRegister(const uint8_t registerAddress, const uint8_t data) const {
+    if (bus != nullptr) {
+        const uint8_t bytes[] = {registerAddress, data};
+        lastI2cResult = bus->write(i2cAddress, bytes, sizeof(bytes));
+        return !lastI2cResult.isInvalidOrIncomplete();
+    }
+
     Wire.beginTransmission(i2cAddress);
-    Wire.write(registerAddress);
-    Wire.write(data);
-    return Wire.endTransmission() == 0;
+    const std::size_t writtenRegister = Wire.write(registerAddress);
+    const std::size_t writtenData = Wire.write(data);
+    const uint8_t wireStatus = Wire.endTransmission();
+    const I2cStatus status = writtenRegister == 1 && writtenData == 1
+                                 ? mapWireStatus(wireStatus)
+                                 : I2cStatus::InvalidArgument;
+    lastI2cResult = {status, status == I2cStatus::Ok ? 2U : 0U, 2};
+    return status == I2cStatus::Ok;
 }
 
 uint8_t ImuSensor::readRegister(const uint8_t registerAddress) const {
+    uint8_t value = 0;
+    (void)readRegisterChecked(registerAddress, value);
+    return value;
+}
+
+bool ImuSensor::readRegisterChecked(const uint8_t registerAddress, uint8_t& value) const {
+    if (bus != nullptr) {
+        uint8_t received = 0;
+        lastI2cResult = bus->writeRead(i2cAddress, &registerAddress, 1, &received, 1);
+        if (lastI2cResult.isInvalidOrIncomplete()) {
+            return false;
+        }
+        value = received;
+        return true;
+    }
+
     Wire.beginTransmission(i2cAddress);
-    Wire.write(registerAddress);
-    (void)Wire.endTransmission(false);
-    Wire.requestFrom(i2cAddress, (uint8_t)1);
-    return Wire.read();
+    const std::size_t written = Wire.write(registerAddress);
+    const uint8_t wireStatus = Wire.endTransmission(false);
+    if (written != 1 || wireStatus != 0) {
+        const I2cStatus status = written == 1 ? mapWireStatus(wireStatus) : I2cStatus::InvalidArgument;
+        lastI2cResult = {status, 0, 1};
+        return false;
+    }
+
+    if (Wire.requestFrom(i2cAddress, static_cast<uint8_t>(1)) != 1) {
+        lastI2cResult = {I2cStatus::ShortRead, 0, 1};
+        return false;
+    }
+
+    const int received = Wire.read();
+    if (received < 0) {
+        lastI2cResult = {I2cStatus::ShortRead, 0, 1};
+        return false;
+    }
+    value = static_cast<uint8_t>(received);
+    lastI2cResult = {I2cStatus::Ok, 1, 1};
+    return true;
 }
 
 bool ImuSensor::readCalibrationData() {
+    uint8_t gyroX = 0;
+    uint8_t gyroY = 0;
+    uint8_t gyroZ = 0;
+    uint8_t accelX = 0;
+    if (!readRegisterChecked(IMU_REGISTER_SELF_TEST_X, gyroX) ||
+        !readRegisterChecked(IMU_REGISTER_SELF_TEST_Y, gyroY) ||
+        !readRegisterChecked(IMU_REGISTER_SELF_TEST_Z, gyroZ) ||
+        !readRegisterChecked(IMU_REGISTER_SELF_TEST_A, accelX)) {
+        return false;
+    }
+
     // Read gyroscope factory trim offsets (registers 0x0D-0x0F)
-    gyroscopeOffsetX = static_cast<int16_t>(readRegister(IMU_REGISTER_SELF_TEST_X) << 3);
-    gyroscopeOffsetY = static_cast<int16_t>(readRegister(IMU_REGISTER_SELF_TEST_Y) << 3);
-    gyroscopeOffsetZ = static_cast<int16_t>(readRegister(IMU_REGISTER_SELF_TEST_Z) << 3);
+    const int16_t newGyroscopeOffsetX = static_cast<int16_t>(gyroX << 3);
+    const int16_t newGyroscopeOffsetY = static_cast<int16_t>(gyroY << 3);
+    const int16_t newGyroscopeOffsetZ = static_cast<int16_t>(gyroZ << 3);
 
     // Read accelerometer factory trim offset (register 0x10)
-    accelerationOffsetX = static_cast<int16_t>(readRegister(IMU_REGISTER_SELF_TEST_A));
+    const int16_t newAccelerationOffsetX = static_cast<int16_t>(accelX);
+    gyroscopeOffsetX = newGyroscopeOffsetX;
+    gyroscopeOffsetY = newGyroscopeOffsetY;
+    gyroscopeOffsetZ = newGyroscopeOffsetZ;
+    accelerationOffsetX = newAccelerationOffsetX;
     accelerationOffsetY = 0; // MPU6050 does not expose Y/Z acceleration trim separately
     accelerationOffsetZ = 0;
 
@@ -114,21 +192,43 @@ bool ImuSensor::readCalibrationData() {
 }
 
 bool ImuSensor::readRawData(int16_t& rawAccelerationX, int16_t& rawAccelerationY, int16_t& rawAccelerationZ,
-                                       int16_t& rawTemperature, int16_t& rawGyroscopeX, int16_t& rawGyroscopeY,
-                                       int16_t& rawGyroscopeZ) const {
-    Wire.beginTransmission(i2cAddress);
-    Wire.write(IMU_REGISTER_ACCEL_XOUT_H);
-    if (Wire.endTransmission(false) != 0) {
-        return false;
+                                        int16_t& rawTemperature, int16_t& rawGyroscopeX, int16_t& rawGyroscopeY,
+                                        int16_t& rawGyroscopeZ) const {
+    uint8_t buffer[IMU_RAW_DATA_BYTE_COUNT]{};
+    if (bus != nullptr) {
+        const uint8_t registerAddress = IMU_REGISTER_ACCEL_XOUT_H;
+        lastI2cResult = bus->writeRead(i2cAddress, &registerAddress, 1, buffer, sizeof(buffer));
+        if (lastI2cResult.isInvalidOrIncomplete()) {
+            return false;
+        }
+    } else {
+        Wire.beginTransmission(i2cAddress);
+        const std::size_t written = Wire.write(IMU_REGISTER_ACCEL_XOUT_H);
+        const uint8_t wireStatus = Wire.endTransmission(false);
+        if (written != 1 || wireStatus != 0) {
+            const I2cStatus status = written == 1 ? mapWireStatus(wireStatus) : I2cStatus::InvalidArgument;
+            lastI2cResult = {status, 0, IMU_RAW_DATA_BYTE_COUNT};
+            return false;
+        }
+
+        if (Wire.requestFrom(i2cAddress, IMU_RAW_DATA_BYTE_COUNT) != IMU_RAW_DATA_BYTE_COUNT) {
+            lastI2cResult = {I2cStatus::ShortRead, 0, IMU_RAW_DATA_BYTE_COUNT};
+            return false;
+        }
+
+        for (uint8_t i = 0; i < IMU_RAW_DATA_BYTE_COUNT; i++) {
+            const int received = Wire.read();
+            if (received < 0) {
+                lastI2cResult = {I2cStatus::ShortRead, i, IMU_RAW_DATA_BYTE_COUNT};
+                return false;
+            }
+            buffer[i] = static_cast<uint8_t>(received);
+        }
+        lastI2cResult = {I2cStatus::Ok, IMU_RAW_DATA_BYTE_COUNT, IMU_RAW_DATA_BYTE_COUNT};
     }
 
-    if (Wire.requestFrom(i2cAddress, IMU_RAW_DATA_BYTE_COUNT) != IMU_RAW_DATA_BYTE_COUNT) {
+    if (lastI2cResult.isInvalidOrIncomplete()) {
         return false;
-    }
-
-    uint8_t buffer[IMU_RAW_DATA_BYTE_COUNT];
-    for (uint8_t i = 0; i < IMU_RAW_DATA_BYTE_COUNT; i++) {
-        buffer[i] = Wire.read();
     }
 
     // Accelerometer (bytes 0-5)
@@ -257,9 +357,10 @@ uint32_t ImuSensor::getMinimalSamplingIntervalInMilliseconds() const {
 }
 
 bool ImuSensor::initialize() {
+    initialized = false;
+
     // Wake up the IMU (clear sleep bit)
     if (!writeRegister(IMU_REGISTER_PWR_MGMT_1, 0x00)) {
-        initialized = false;
         return false;
     }
     // Datasheet specifies 30ms gyroscope ZRO settling time from power-on.
@@ -267,36 +368,30 @@ bool ImuSensor::initialize() {
     delay(IMU_WAKE_UP_DELAY_IN_MILLISECONDS);
 
     // Verify chip ID
-    if (const uint8_t chipId = readRegister(IMU_REGISTER_CHIP_ID); chipId != IMU_CHIP_ID_INTERNAL) {
-        initialized = false;
+    uint8_t chipId = 0;
+    if (!readRegisterChecked(IMU_REGISTER_CHIP_ID, chipId) || chipId != IMU_CHIP_ID_INTERNAL) {
         return false;
     }
 
     // Configure sample rate, DLPF, full-scale ranges, and clock source
     if (!writeRegister(IMU_REGISTER_SMPLRT_DIV, 0x07)) {
-        initialized = false;
         return false;
     }
     if (!writeRegister(IMU_REGISTER_CONFIG, IMU_DLPF_CFG_184HZ)) {
-        initialized = false;
         return false;
     }
     if (!writeRegister(IMU_REGISTER_GYRO_CONFIG, gyroscopeFullScale)) {
-        initialized = false;
         return false;
     }
     if (!writeRegister(IMU_REGISTER_ACCEL_CONFIG, accelerationFullScale)) {
-        initialized = false;
         return false;
     }
     if (!writeRegister(IMU_REGISTER_PWR_MGMT_1, IMU_CLOCK_SRC_PLL)) {
-        initialized = false;
         return false;
     }
 
     // Read factory calibration data
     if (!readCalibrationData()) {
-        initialized = false;
         return false;
     }
 
@@ -306,6 +401,14 @@ bool ImuSensor::initialize() {
 
 bool ImuSensor::isInitialized() const {
     return initialized;
+}
+
+bool ImuSensor::start() {
+    return initialize();
+}
+
+I2cResult ImuSensor::getLastI2cResult() const {
+    return lastI2cResult;
 }
 
 float ImuSensor::getAccelerationXInGForce() const {

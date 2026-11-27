@@ -10,6 +10,7 @@
  */
 
 #include "Sensor.h"
+#include "I2cBus.h"
 #include <Arduino.h>
 
 /**
@@ -24,9 +25,8 @@
  * inertial measurement applications. It supports configurable full-scale ranges
  * for both accelerometer (±2/4/8/16 g) and gyroscope (±250/500/1000/2000 °/s).
  *
- * @note The constructor calls Wire.begin() to initialize the shared Arduino I²C
- *       interface. Call initialize() to verify connectivity and read calibration
- *       data.
+ * @note Legacy constructors call Wire.begin(). Injected-bus constructors are
+ *       configuration-only; call start() to verify connectivity and read calibration.
  * @see BmeEnvironmentalSensor
  * @ingroup sensors_module
  */
@@ -37,11 +37,13 @@ protected:
      * @param signalGpioPin Framework source identifier attached to emitted events.
      * @param i2cAddress Sensor's 7-bit I²C address (0x68 or 0x69).
      * @param parentHandler Optional handler that receives emitted events.
-     * @note Calls Wire.begin() and initializes all calibration offsets to zero.
+     * @note The legacy constructor calls Wire.begin(); the injected constructor is silent.
      */
     explicit ImuSensor(int signalGpioPin, uint8_t i2cAddress,
                         EventHandler* parentHandler = nullptr);
 
+    I2cBus* bus; ///< Non-owning explicit bus; null selects the legacy Wire path.
+    mutable I2cResult lastI2cResult; ///< Result of the most recent low-level transaction.
     uint8_t i2cAddress; ///< Configured MPU6050 7-bit I²C address.
 
     /** @name MPU6050 Factory Calibration Offsets */
@@ -173,6 +175,9 @@ protected:
      */
     bool writeRegister(uint8_t registerAddress, uint8_t data) const;
 
+    /** Reads one register and reports transport failure separately from its byte value. */
+    [[nodiscard]] bool readRegisterChecked(uint8_t registerAddress, uint8_t& value) const;
+
     /**
      * @brief Reads a single byte from an MPU6050 register.
      * @param registerAddress MPU6050 register address.
@@ -294,6 +299,13 @@ public:
                         uint8_t gyroscopeFullScale = IMU_GYRO_FS_250,
                         EventHandler* parentHandler = nullptr);
 
+    /** Constructs a configuration-only sensor that uses the supplied shared bus. */
+    explicit ImuSensor(I2cBus& bus, int signalGpioPin,
+                       uint8_t i2cAddress = DEFAULT_I2C_ADDRESS,
+                       uint8_t accelerationFullScale = IMU_ACCEL_FS_2G,
+                       uint8_t gyroscopeFullScale = IMU_GYRO_FS_250,
+                       EventHandler* parentHandler = nullptr);
+
     /**
      * @brief Initializes the sensor by verifying chip ID and reading calibration data.
      * @return @c true if chip ID matched and calibration data was read.
@@ -302,11 +314,17 @@ public:
      */
     [[nodiscard]] bool initialize();
 
+    /** Starts the sensor on the injected bus; equivalent to initialize(). */
+    [[nodiscard]] bool start();
+
     /**
      * @brief Reports the result of the most recent initialization attempt.
      * @return @c true if chip ID was verified and calibration data was read.
      */
     [[nodiscard]] bool isInitialized() const;
+
+    /** Returns the most recent I2C status and transfer counts. */
+    [[nodiscard]] I2cResult getLastI2cResult() const;
 
     /** @name Accelerometer Readings */
     //@{
