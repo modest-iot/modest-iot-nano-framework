@@ -512,5 +512,6 @@ void fireInterrupt(const int pin) {
     }
 
     std::printf("All TriggeringScheduler tests passed successfully!\n");
+    joinFakeTasks();
     return 0;
 }
