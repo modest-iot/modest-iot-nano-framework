@@ -12,6 +12,7 @@
 
 
 #include <Wire.h>
+#include "I2cBus.h"
 
 /**
  * @brief Low-level HD44780 LCD controller driver over I2C with PCF8574 I/O expander.
@@ -22,8 +23,12 @@
  */
 class Hd44780Driver {
 private:
+    I2cBus* bus; ///< Shared I2C bus, or null for the legacy global Wire path.
     uint8_t i2cAddress; ///< I2C address of the PCF8574 backpack.
     bool backlightEnabled; ///< Current backlight state.
+    mutable bool initialized;
+    mutable bool initializing;
+    mutable I2cResult lastI2cResult;
 
     // PCF8574 pin mapping constants for HD44780 4-bit mode
     static constexpr uint8_t PCF8574_BACKLIGHT_BIT = 0x08; ///< Bit 3: Backlight enable.
@@ -54,14 +59,22 @@ private:
     static constexpr int HD44780_ENABLE_PULSE_WIDTH_IN_MICROSECONDS = 1; ///< Minimum enable pulse high time.
     static constexpr int HD44780_ENABLE_RECOVERY_TIME_IN_MICROSECONDS = 37; ///< Minimum enable pulse recovery time.
 
+    I2cResult writePortValue(uint8_t value, bool stop = true) const;
+    bool initializeSequence() const;
+    static I2cStatus mapWireStatus(uint8_t status);
+
     /**
      * @brief Sends a 4-bit nibble to the LCD with enable pulse.
      * @param value The 4-bit value to send.
      */
-    void write4Bit(uint8_t value) const; ///< Sends a 4-bit nibble to the LCD with enable pulse.
+    bool write4Bit(uint8_t value) const; ///< Sends a 4-bit nibble to the LCD with enable pulse.
 
 public:
     explicit Hd44780Driver(uint8_t i2cAddress, bool backlightInitialState = true);
+    Hd44780Driver(I2cBus& bus, uint8_t i2cAddress, bool backlightInitialState = true);
+
+    /** Initializes the display through the configured transport. */
+    [[nodiscard]] bool start();
 
     /**
      * @brief Initializes HD44780 hardware registers via I2C.
@@ -92,6 +105,12 @@ public:
      * @return `true` when backlight is on, otherwise `false`.
      */
     [[nodiscard]] bool isBacklightOn() const;
+
+    /** @brief Returns the most recent I2C operation result. */
+    [[nodiscard]] I2cResult getLastI2cResult() const;
+
+    /** @brief Reports whether initialization completed successfully. */
+    [[nodiscard]] bool isInitialized() const;
 };
 
 #endif // HD44780_DRIVER_H
