@@ -35,6 +35,7 @@ adapters, gateway clients, and 19 built-in sensors plus 7 actuators.
 ## Module Navigation
 
 - @ref core_module — Device, Sensor, Actuator, Event, Command, TelemetryPackage, SamplingScheduler, EventAggregator, RulesEngine, ChangeFilter, and ML inference
+- @ref hardware_io_module — Shared `I2cBus` contract and Arduino-ESP32 `ArduinoI2cBus` backend
 - @ref sensors_module — 19 sensor implementations (environmental, security, biometric, etc.)
 - @ref actuators_module — 7 actuator implementations (LED, display, servo, buzzer, etc.)
 - @ref connectivity_module — Wi-Fi and BLE transport drivers
@@ -50,7 +51,7 @@ adapters, gateway clients, and 19 built-in sensors plus 7 actuators.
 - **Diagnostics**: `Device::collectDiagnostics()` reports 16 stack, heap, queue, send, and timing metrics; `worstCaseWakeMicros` is currently a placeholder emitted as `0` because measurement is not implemented.
 - **Automation and filtering**: Time-windowed event aggregation, fixed-capacity rules, and per-slot deadband-based telemetry suppression.
 - **On-device sensing and inference**: MPU6050 accelerometer/gyroscope statistics with an optional emlearn-backed inference adapter.
-- **Host testing**: Platform-independent core compiles natively for unit testing (53 test suites).
+- **Host testing**: Platform-independent core compiles natively for unit testing (54 test suites in the current host suite).
 
 ## Documentation Conventions
 
