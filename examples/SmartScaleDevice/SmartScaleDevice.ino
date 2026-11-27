@@ -52,6 +52,7 @@ static const int            ASYNC_ENGINE_QUEUE_DEPTH        = 16;
 static const unsigned long  SAMPLING_INTERVAL_IN_MILLISECONDS            = 500;
 static const unsigned long  MAIN_LOOP_DELAY_IN_MILLISECONDS              = 60000;
 static const int            TIMER_GROUP_INDEX               = 0;
+static const I2cBusConfiguration SMART_SCALE_I2C_CONFIGURATION{-1, -1, 100000};
 
 static const char*          STATUS_DISPLAY_TITLE            = "Smart Scale";
 static const char*          STATUS_DISPLAY_CALIBRATING      = "Calibrating...";
@@ -64,6 +65,7 @@ static const char*          SYSTEM_BOOT_MESSAGE             = "[System Boot] Sma
  */
 class SmartScaleDevice : public Device {
 private:
+    ArduinoI2cBus i2cBus;
     LoadCellAmplifier frontLeftLoadCell;
     LoadCellAmplifier frontRightLoadCell;
     LoadCellAmplifier rearLeftLoadCell;
@@ -109,6 +111,7 @@ public:
                         int rearRightDataPin,   int rearRightClockPin,
                         uint8_t lcdI2cAddress)
         : Device(SAMPLING_INTERVAL_IN_MILLISECONDS, TIMER_GROUP_INDEX),
+          i2cBus(),
           frontLeftLoadCell(frontLeftDataPin,   frontLeftClockPin,  MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS,
                             MINIMUM_RAW_VALUE,  MAXIMUM_RAW_VALUE, LOAD_CELL_FILTER_DEPTH, this),
           frontRightLoadCell(frontRightDataPin, frontRightClockPin, MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS,
@@ -117,10 +120,24 @@ public:
                             MINIMUM_RAW_VALUE, MAXIMUM_RAW_VALUE, LOAD_CELL_FILTER_DEPTH, this),
           rearRightLoadCell(rearRightDataPin,   rearRightClockPin,  MINIMUM_WEIGHT_IN_GRAMS, MAXIMUM_WEIGHT_IN_GRAMS,
                             MINIMUM_RAW_VALUE, MAXIMUM_RAW_VALUE, LOAD_CELL_FILTER_DEPTH, this),
-          statusDisplay(lcdI2cAddress, LCD_COLUMNS, LCD_ROWS, this),
+          statusDisplay(i2cBus, lcdI2cAddress, LCD_COLUMNS, LCD_ROWS, true, this),
           totalWeightInGrams(0.0f),
           isCalibrated(false)
-    {
+    {}
+
+    bool start() {
+        const I2cStatus busStatus = i2cBus.start(SMART_SCALE_I2C_CONFIGURATION);
+        if (busStatus != I2cStatus::Ok) {
+            Serial.printf("[SmartScale] I2C bus startup failed (status %u).\n",
+                          static_cast<unsigned int>(busStatus));
+            return false;
+        }
+        if (!statusDisplay.start()) {
+            Serial.printf("[SmartScale] LCD startup failed (status %u).\n",
+                          static_cast<unsigned int>(statusDisplay.getLastI2cResult().status));
+            return false;
+        }
+
         // Hybrid scheduling: interrupt-driven data-ready detection eliminates the 100 ms busy-wait.
         // Periodic sampling performs the 24-bit read (~1.2 ms) and change detection.
         // IMPORTANT: Registration must occur before initializeAsynchronousEngine(), because
@@ -130,10 +147,16 @@ public:
         appendToBothSchedulers(&rearLeftLoadCell,      Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER, FALLING);
         appendToBothSchedulers(&rearRightLoadCell,     Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER, FALLING);
 
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
-
         updateStatusDisplay();
+        if (statusDisplay.getLastI2cResult().isInvalidOrIncomplete()) {
+            Serial.printf("[SmartScale] Initial display update failed (status %u).\n",
+                          static_cast<unsigned int>(statusDisplay.getLastI2cResult().status));
+            return false;
+        }
         calibrate();
+
+        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
+        return true;
     }
 
     /**
@@ -180,7 +203,11 @@ void setup() {
         REAR_RIGHT_LOAD_CELL_DATA_PIN, REAR_RIGHT_LOAD_CELL_CLOCK_PIN,
         LCD_I2C_ADDRESS
     );
-    Serial.println(SYSTEM_BOOT_MESSAGE);
+    if (smartScaleApplication->start()) {
+        Serial.println(SYSTEM_BOOT_MESSAGE);
+    } else {
+        Serial.println("[SmartScale] Startup failed; weighing engine was not started.");
+    }
 }
 
 void loop() {
