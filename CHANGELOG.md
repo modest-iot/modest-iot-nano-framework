@@ -7,7 +7,7 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 ### Added
 
 #### Shared I²C Bus Backend
-- **src/I2cBus.h** and **src/ArduinoI2cBus.h/.cpp**: Added a shared I²C transaction contract and Arduino `Wire` backend with a configurable finite transfer timeout (50 ms default), whole-transaction serialization, combined register reads, and observable transfer results.
+- **src/I2cBus.h** and **src/ArduinoI2cBus.h/.cpp**: Added a shared I²C transaction contract and Arduino `Wire` backend with a configurable per-transfer timeout (50 ms default), whole-transaction serialization, combined register reads, and observable transfer results. The timeout does not bound time waiting for the transaction lock; incomplete reads report `ShortRead`, and the backend does not automatically retry or recover a physically stuck bus.
 
 ### Changed
 
