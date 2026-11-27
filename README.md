@@ -20,7 +20,7 @@
 **Version**: 1.3.0<br>
 **Author**: Angel Velasquez  
 **Date created**: 2025-03-23  
-**Last updated**: 2026-11-24
+**Last updated**: 2026-11-27
 
 > **Git Flow**: This project uses Git Flow. `main` holds release versions (tagged `v1.0.0`, etc.), `develop` is the integration branch, and feature branches (e.g., `feature/W27-firmware-version`) merge into `develop`.
 
@@ -57,6 +57,7 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 | `Command` | Lightweight command container with identifier and optional `int32_t` payload for parameterized commands. |
 | `CommandHandler` | Base interface for command-driven components (`handle(Command)`). |
 | `Device` | Base class combining event and command handling; orchestrates the asynchronous engine, scheduler, and telemetry pipeline. |
+| `I2cBus` / `ArduinoI2cBus` | Shared I²C transaction contract and Arduino `Wire` backend with transfer results and configurable timeout. |
 | `EngineConfiguration` | Configuration struct for FreeRTOS task stack sizes, priorities, core pinning, and queue depth. |
 | `ConfigurationStore` | Persistent key-value configuration using ESP32 NVS with namespace isolation, type-safe access, and schema validation. |
 | `TimeSynchronizationDriver` | NTP-based time synchronization with RTC fallback for deep-sleep devices; replaces `millis()` timestamps with Unix epoch seconds. |
@@ -148,12 +149,14 @@ The framework runs on two FreeRTOS tasks plus a hardware timer ISR. Understandin
 | **Timer ISR** | `Device::handleHardwareTimerInterrupt`: signals the sampler task via `vTaskNotifyGiveFromISR`. |
 | **Sampler Task** (default: priority 3, 4096 bytes, core 1) | `SamplingScheduler` dispatch, `Sensor::on()` and `processEvent()`, mediator `Device::on()`, actuator `handle(Command)`, `TelemetryPackage` creation, and `enqueueTelemetryPayload()`. |
 | **Network Task** (default: priority 1, 8192 bytes, core 1) | `processQueuedTelemetryData()`, gateway `sendTelemetryRecord()`, JSON serialization, and packet deletion. Also runs `maintainNetworkServices()` during idle periods. |
-| **Arduino `loop()`** | `setup()` (all constructors, `pinMode`, `Wire.begin`, `Device` construction, `initializeAsynchronousEngine()`), then user `loop()` (examples typically call `vTaskDelay`). |
+| **Arduino `loop()`** | `setup()` constructs the device composition; injected I²C devices explicitly start the bus and peripherals before registering sampling and starting the engine. The user `loop()` typically calls `vTaskDelay`. |
+
+For injected I²C peripherals, constructors store configuration and a non-owning bus reference without performing hardware I/O. The concrete `Device` owns one `ArduinoI2cBus` declared before its I²C members, then starts the bus and required peripherals before activating sampling and starting the asynchronous engine. If a required startup fails, the engine remains stopped. Existing Arduino constructor overloads using the legacy `Wire` path remain available for compatibility.
 
 ### Threading Rules
 
 1. **Sensor, mediator, and actuator code runs on the sampler task** and must not block for long periods. Slow actuators (e.g., I²C LCD updates) consume the sensor tick budget.
-2. **Do not call actuators, sensors, or `Wire` from `loop()` or other tasks.** Use the mediator pattern: let the sampler task drive all hardware interactions.
+2. **Do not call sensors, actuators, or perform I²C operations from `loop()` or unrelated tasks.** Use the mediator pattern so the sampler task drives runtime hardware interactions; legacy paths using `Wire` follow the same restriction.
 3. **Telemetry packets are immutable snapshots** passed by ownership transfer through the queue. The network task owns the packet after enqueue succeeds.
 4. **Interrupts only set flags** and signal the sampler task; they do not access hardware directly.
 5. **The two workers share no mutable framework state** except the queue, so no locks are needed in the core framework.
@@ -408,7 +411,7 @@ HttpGatewayClient httpGateway(wifiDriver, "https://api.example.com/device/teleme
 
 ## Examples
 
-The framework ships with 27 example sketches demonstrating various use cases:
+The framework ships with 28 example sketches demonstrating various use cases:
 
 | Example | Description |
 |---|---|
@@ -443,11 +446,12 @@ The framework ships with 27 example sketches demonstrating various use cases:
 
 ## Testing
 
-The framework includes 53 host unit test suites that run natively without hardware:
+The framework includes 54 host unit test suites that run natively without hardware:
 
 | Suite | What It Tests |
 |---|---|
-| `tests/DigitalLightIntensitySensor/` | I²C sensor polling, Wire mock, event emission |
+| `tests/DigitalLightIntensitySensor/` | I²C sensor polling, injected and legacy bus paths, event emission |
+| `tests/I2cBus/` | Bus startup/configuration, transaction results, combined reads, timeout and serialization behavior |
 | `tests/RgbLed/` | PWM output, color mixing, analogWrite mock |
 | `tests/RfidSensor/` | CRC calculation, SPI mock, card communication |
 | `tests/BleConnectivityDriver/` | BLE NUS GATT service, notifications, RX callbacks |
@@ -520,11 +524,11 @@ Documentation is split between architecture artifacts in `docs/` and code-level 
 | [`docs/quick-start.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/quick-start.md) | Step-by-step guide to go from zero to a working device in under 10 minutes. |
 | [`docs/troubleshooting.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/troubleshooting.md) | Common issues and solutions: serial output, board detection, Wi-Fi, BLE, MQTT, memory, and sensors. |
 | [`docs/migration.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/migration.md) | How to convert traditional `loop()` sketches to the framework's event-driven pattern with before/after examples. |
-| [`docs/adrs.md`](docs/adrs.md) | 30 Architecture Decision Records with rationale, trade-offs, and consequences. |
-| [`docs/user-stories.md`](docs/user-stories.md) | 19 user stories covering functional and non-functional requirements. |
+| [`docs/adrs.md`](docs/adrs.md) | 34 Architecture Decision Records with rationale, trade-offs, and consequences. |
+| [`docs/user-stories.md`](docs/user-stories.md) | 53 user stories covering functional and non-functional requirements. |
 | [`docs/improvements.md`](docs/improvements.md) | Active work items, comparison tables, and future work. |
-| [`docs/evolution.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/evolution.md) | Historical record of completed work items W1–W28 with implementation details. |
-| [`docs/class-diagram.puml`](docs/class-diagram.puml) | PlantUML class diagram covering all 62 source headers. |
+| [`docs/evolution.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/evolution.md) | Historical record of completed work items through W47 with implementation details. |
+| [`docs/class-diagram.puml`](docs/class-diagram.puml) | PlantUML class diagram of framework classes and their relationships. |
 | [`docs/doxygen-mainpage.md`](docs/doxygen-mainpage.md) | Doxygen API reference main page with module navigation and generation instructions. |
 | [`docs/benchmarks.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/benchmarks.md) | Performance comparison table with 9 metrics: Flash, RAM, latency, throughput, queue depth, stack, heap, serialization, and power. |
 | [`docs/coverage.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/coverage.md) | Code coverage guide: local execution with gcov/lcov, CI integration, threshold configuration, and report interpretation. |
