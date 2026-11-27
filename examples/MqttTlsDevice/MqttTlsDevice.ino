@@ -28,6 +28,7 @@
 
 /** @brief Sampler event queue length for MQTT TLS telemetry. */
 static const int MQTT_TLS_SAMPLER_QUEUE_LENGTH = 10;
+static const I2cBusConfiguration MQTT_TLS_I2C_CONFIGURATION{-1, -1, 100000};
 
 /** @name Telemetry JSON Keys */
 //@{
@@ -69,6 +70,7 @@ class EnvironmentalTelemetryPackage : public TelemetryPackage {
 
 class MqttTlsDevice : public Device {
     private:
+    ArduinoI2cBus i2cBus;
     PthSensor environmentalSensor;
     MqttGatewayClient& gatewayClient;
 
@@ -96,14 +98,30 @@ class MqttTlsDevice : public Device {
     MqttTlsDevice(int sensorPin, MqttGatewayClient& client,
                   unsigned long samplingIntervalInMilliseconds, uint8_t timerGroupIndex = 0)
         : Device(samplingIntervalInMilliseconds, timerGroupIndex),
-          environmentalSensor(sensorPin, PthSensor::DEFAULT_I2C_ADDRESS, this),
+          i2cBus(),
+          environmentalSensor(i2cBus, sensorPin, PthSensor::DEFAULT_I2C_ADDRESS, this),
           gatewayClient(client)
-    {
+    {}
+
+    bool start() {
+        const I2cStatus busStatus = i2cBus.start(MQTT_TLS_I2C_CONFIGURATION);
+        if (busStatus != I2cStatus::Ok) {
+            Serial.printf("[MqttTlsDevice] I2C bus startup failed (status %u).\n",
+                          static_cast<unsigned int>(busStatus));
+            return false;
+        }
+        if (!environmentalSensor.start()) {
+            Serial.printf("[MqttTlsDevice] BME280 startup failed (status %u).\n",
+                          static_cast<unsigned int>(environmentalSensor.getLastI2cResult().status));
+            return false;
+        }
+
         // IMPORTANT: Registration must occur before initializeAsynchronousEngine(), because
         // the engine start guard rejects any registration after the engine is running.
         appendSensorToScheduler(&environmentalSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
         initializeAsynchronousEngine(MQTT_TLS_SAMPLER_QUEUE_LENGTH);
+        return true;
     }
 
     ~MqttTlsDevice() override {
@@ -200,7 +218,11 @@ void setup() {
         HARDWARE_TIMER_CHANNEL_INDEX
     );
 
-    Serial.println((String(MQTT_TLS_DEVICE_LOG_PREFIX) + " TLS-encrypted MQTT environmental monitor online.").c_str());
+    if (tlsApplication->start()) {
+        Serial.println((String(MQTT_TLS_DEVICE_LOG_PREFIX) + " TLS-encrypted MQTT environmental monitor online.").c_str());
+    } else {
+        Serial.println("[MqttTlsDevice] Startup failed; telemetry sampling was not started.");
+    }
 }
 
 void loop() {
