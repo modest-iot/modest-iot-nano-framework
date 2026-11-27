@@ -43,12 +43,14 @@ static const int LCD_ROWS                       = 2;
 static const unsigned long SAMPLING_INTERVAL_IN_MILLISECONDS = 100;
 static const int ASYNC_ENGINE_QUEUE_DEPTH = 32;
 static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 1000;
+static const I2cBusConfiguration PERIMETER_MONITOR_I2C_CONFIGURATION{-1, -1, 100000};
 
 /**
  * @brief Perimeter Monitor Device.
  */
 class PerimeterMonitor : public Device {
 private:
+    ArduinoI2cBus i2cBus;
     PassiveInfraredSensor northCornerPir;
     PassiveInfraredSensor eastCornerPir;
     PassiveInfraredSensor southCornerPir;
@@ -78,6 +80,7 @@ private:
 public:
     PerimeterMonitor()
         : Device(SAMPLING_INTERVAL_IN_MILLISECONDS, 0),
+          i2cBus(),
           northCornerPir(NORTH_CORNER_PIR_PIN, this),
           eastCornerPir(EAST_CORNER_PIR_PIN, this),
           southCornerPir(SOUTH_CORNER_PIR_PIN, this),
@@ -86,8 +89,21 @@ public:
           eastCornerLed(EAST_CORNER_LED_PIN, false, this),
           southCornerLed(SOUTH_CORNER_LED_PIN, false, this),
           westCornerLed(WEST_CORNER_LED_PIN, false, this),
-          statusDisplay(LCD_I2C_ADDRESS, LCD_COLUMNS, LCD_ROWS, true, this)
-    {
+          statusDisplay(i2cBus, LCD_I2C_ADDRESS, LCD_COLUMNS, LCD_ROWS, true, this) {}
+
+    bool start() {
+        const I2cStatus busStatus = i2cBus.start(PERIMETER_MONITOR_I2C_CONFIGURATION);
+        if (busStatus != I2cStatus::Ok) {
+            Serial.printf("[PerimeterMonitor] I2C bus startup failed (status %u).\n",
+                          static_cast<unsigned int>(busStatus));
+            return false;
+        }
+        if (!statusDisplay.start()) {
+            Serial.printf("[PerimeterMonitor] LCD startup failed (status %u).\n",
+                          static_cast<unsigned int>(statusDisplay.getLastI2cResult().status));
+            return false;
+        }
+
         // Register PIR sensors for interrupt-driven operation (CHANGE edge)
         // Motion detected (RISING) and motion stopped (FALLING) are both captured
         // IMPORTANT: Registration must occur before initializeAsynchronousEngine(), because
@@ -105,13 +121,19 @@ public:
                                           Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
                                           CHANGE);
 
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
-
         static const char* TITLE_MESSAGE = "Perimeter Status";
         static const char* INITIALIZING_MESSAGE = "Initializing...";
         statusDisplay.setLineBuffer(0, TITLE_MESSAGE);
         statusDisplay.setLineBuffer(1, INITIALIZING_MESSAGE);
         statusDisplay.handle(CharacterLcdDisplay::UPDATE_TEXT_COMMAND);
+        if (statusDisplay.getLastI2cResult().isInvalidOrIncomplete()) {
+            Serial.printf("[PerimeterMonitor] Startup display update failed (status %u).\n",
+                          static_cast<unsigned int>(statusDisplay.getLastI2cResult().status));
+            return false;
+        }
+
+        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
+        return true;
     }
 
     /**
@@ -142,6 +164,9 @@ static PerimeterMonitor* perimeterMonitorApplication = nullptr;
 void setup() {
     Device::setFirmwareVersion("PMN-202 FW 1.0.0");
     perimeterMonitorApplication = new PerimeterMonitor();
+    if (!perimeterMonitorApplication->start()) {
+        Serial.println("[PerimeterMonitor] Startup failed; monitoring was not started.");
+    }
 }
 
 void loop() {
