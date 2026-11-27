@@ -24,8 +24,8 @@
  * registers. Check isInitialized() before relying on readings.
  *
  * @note The BME680 ADDR pin selects @ref DEFAULT_I2C_ADDRESS (low) or
- *       @ref ALTERNATE_I2C_ADDRESS (high). The constructor calls Wire.begin(),
- *       which initializes the shared Arduino I2C interface.
+ *       @ref ALTERNATE_I2C_ADDRESS (high). Legacy constructors initialize
+ *       Wire; the injected-bus constructor performs no hardware I/O.
  * @see BmeEnvironmentalSensor
  */
 class EnvironmentalGasSensor : public BmeEnvironmentalSensor {
@@ -129,7 +129,7 @@ public:
     static constexpr uint32_t MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS = 500;
 
     /**
-     * @brief Constructs and initializes a BME680-compatible sensor adapter.
+     * @brief Constructs and initializes a BME680-compatible sensor adapter using legacy Wire access.
      * @param signalGpioPin Framework source identifier attached to emitted events;
      *                       this sensor communicates over I2C and does not use it
      *                       as a GPIO pin.
@@ -140,6 +140,9 @@ public:
      *       to determine whether initialization succeeded.
      */
     explicit EnvironmentalGasSensor(int signalGpioPin, uint8_t i2cAddress = DEFAULT_I2C_ADDRESS,
+                                    EventHandler* parentHandler = nullptr);
+    explicit EnvironmentalGasSensor(I2cBus& bus, int signalGpioPin,
+                                    uint8_t i2cAddress = DEFAULT_I2C_ADDRESS,
                                     EventHandler* parentHandler = nullptr);
 
     /// Releases the adapter; the shared Wire interface is not shut down.
@@ -152,6 +155,9 @@ public:
      *          coefficients. On success, configures the sensor for forced mode.
      */
     bool initialize();
+
+    /** Starts the sensor on the injected bus; equivalent to initialize(). */
+    bool start();
 
     /**
      * @brief Returns the gas resistance from the most recent successful sample.
