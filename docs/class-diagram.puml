@@ -5,7 +5,7 @@ skinparam classFontStyle bold
 skinparam packageStyle rectangle
 skinparam linetype ortho
 skinparam shadowing false
-title Modest IoT Nano Framework — Class Diagram (v1.3.0, 62 headers, W29 Rules Engine)
+title Modest IoT Nano Framework — Class Diagram (v1.3.0, shared I²C composition)
 
 ' ─────────────────────────────────────────────
 '  CORE
@@ -372,6 +372,57 @@ package "Core" #FAFAFA {
 }
 
 ' ─────────────────────────────────────────────
+'  I2C TRANSPORT
+' ─────────────────────────────────────────────
+package "I2C Transport" #F4F4F4 {
+
+  class I2cBusConfiguration <<struct>> {
+    +sdaPin : int
+    +sclPin : int
+    +frequencyInHertz : uint32_t
+    +timeoutInMilliseconds : uint16_t = 50
+  }
+
+  enum I2cStatus {
+    Ok
+    NotStarted
+    InvalidArgument
+    AddressNack
+    DataNack
+    Timeout
+    BusError
+    ShortRead
+  }
+
+  class I2cResult <<struct>> {
+    +status : I2cStatus
+    +transferred : size_t
+    +expectedTransferred : size_t
+    +ok() const : bool
+    +isInvalidOrIncomplete() const : bool
+  }
+
+  interface I2cBus {
+    +start(configuration : const I2cBusConfiguration&) : I2cStatus
+    +isReady() const : bool
+    +write(address : uint8_t, bytes : const uint8_t*, length : size_t) : I2cResult
+    +writeRead(address : uint8_t, txBytes : const uint8_t*, txLength : size_t, rxBytes : uint8_t*, rxLength : size_t) : I2cResult
+  }
+
+  class ArduinoI2cBus {
+    -wire : TwoWire&
+    -transactionMutex : mutex
+    +ArduinoI2cBus(wire : TwoWire& = Wire)
+    +start(configuration : const I2cBusConfiguration&) : I2cStatus
+    +isReady() const : bool
+    +write(address : uint8_t, bytes : const uint8_t*, length : size_t) : I2cResult
+    +writeRead(address : uint8_t, txBytes : const uint8_t*, txLength : size_t, rxBytes : uint8_t*, rxLength : size_t) : I2cResult
+  }
+
+  ArduinoI2cBus ..|> I2cBus : implements
+}
+
+' ─────────────────────────────────────────────
 '  SENSORS
 ' ─────────────────────────────────────────────
 package "Sensors" #EEF6EE {
@@ -449,6 +500,7 @@ package "Sensors" #EEF6EE {
   }
 
   abstract class BmeEnvironmentalSensor {
+    -bus : I2cBus* (non-owning; null selects legacy Wire)
     -i2cAddress : uint8_t
     -cachedTemperatureInCelsius : float
     -cachedHumidityInPercentage : float
@@ -463,6 +515,7 @@ package "Sensors" #EEF6EE {
     +getHumidityInPercentage() const : float
     +getPressureInHectopascals() const : float
     +getAltitudeInMeters(seaLevelPressureInHectopascals : float) const : float
+    +getLastI2cResult() const : I2cResult
     #readRegister16(registerAddress : uint8_t) const : int16_t
     #readCalibrationData() : bool
     #readRawData(rawTemperature, rawPressure, rawHumidity) const : bool
@@ -472,8 +525,10 @@ package "Sensors" #EEF6EE {
   }
 
   class PthSensor {
-    +PthSensor(signalGpioPin : int, i2cAddress : uint8_t, parentHandler : EventHandler* = nullptr)
+    +PthSensor(signalGpioPin : int, i2cAddress : uint8_t = DEFAULT_I2C_ADDRESS, parentHandler : EventHandler* = nullptr)
+    +PthSensor(bus : I2cBus&, signalGpioPin : int, i2cAddress : uint8_t = DEFAULT_I2C_ADDRESS, parentHandler : EventHandler* = nullptr)
     +initialize() : bool
+    +start() : bool
     #processEvent(event : Event&) : void
   }
 
@@ -512,8 +567,10 @@ package "Sensors" #EEF6EE {
     -cachedGasResistanceInKOhms : float
     -lastNotifiedGasResistanceInKOhms : float
     -gas calibration coefficients
-    +EnvironmentalGasSensor(signalGpioPin : int, i2cAddress : uint8_t, parentHandler : EventHandler* = nullptr)
+    +EnvironmentalGasSensor(signalGpioPin : int, i2cAddress : uint8_t = DEFAULT_I2C_ADDRESS, parentHandler : EventHandler* = nullptr)
+    +EnvironmentalGasSensor(bus : I2cBus&, signalGpioPin : int, i2cAddress : uint8_t = DEFAULT_I2C_ADDRESS, parentHandler : EventHandler* = nullptr)
     +initialize() : bool
+    +start() : bool
     +getGasResistanceInKOhms() const : float
     #processEvent(event : Event&) : void
   }
@@ -521,6 +578,7 @@ package "Sensors" #EEF6EE {
   BmeEnvironmentalSensor <|-- EnvironmentalGasSensor
 
   class ImuSensor {
+    -bus : I2cBus* (non-owning; null selects legacy Wire)
     -i2cAddress : uint8_t
     -accelerationOffsetX : int16_t
     -accelerationOffsetY : int16_t
@@ -555,9 +613,12 @@ package "Sensors" #EEF6EE {
     +{static} IMU_GYRO_FS_500 : uint8_t
     +{static} IMU_GYRO_FS_1000 : uint8_t
     +{static} IMU_GYRO_FS_2000 : uint8_t
-    +ImuSensor(signalGpioPin : int, i2cAddress : uint8_t, accelerationFullScale : uint8_t, gyroscopeFullScale : uint8_t, parentHandler : EventHandler* = nullptr)
+    +ImuSensor(signalGpioPin : int, i2cAddress : uint8_t = DEFAULT_I2C_ADDRESS, accelerationFullScale : uint8_t = IMU_ACCEL_FS_2G, gyroscopeFullScale : uint8_t = IMU_GYRO_FS_250, parentHandler : EventHandler* = nullptr)
+    +ImuSensor(bus : I2cBus&, signalGpioPin : int, i2cAddress : uint8_t = DEFAULT_I2C_ADDRESS, accelerationFullScale : uint8_t = IMU_ACCEL_FS_2G, gyroscopeFullScale : uint8_t = IMU_GYRO_FS_250, parentHandler : EventHandler* = nullptr)
     +initialize() : bool
+    +start() : bool
     +isInitialized() const : bool
+    +getLastI2cResult() const : I2cResult
     +getAccelerationXInGForce() const : float
     +getAccelerationYInGForce() const : float
     +getAccelerationZInGForce() const : float
@@ -599,16 +660,21 @@ package "Sensors" #EEF6EE {
   }
 
   class DigitalLightIntensitySensor {
+    -bus : I2cBus* (non-owning; null selects legacy Wire)
     -i2cAddress : uint8_t
+    -lightDetectedThresholdInLux : float
     -cachedIlluminanceInLux : float
     -lastState : bool
     +{static} DEFAULT_I2C_ADDRESS : uint8_t = 0x23
     +{static} ALTERNATE_I2C_ADDRESS : uint8_t = 0x5C
     +{static} LIGHT_DETECTED_EVENT_IDENTIFIER : int = 50
     +{static} LIGHT_ABSENT_EVENT_IDENTIFIER : int = 51
-    +DigitalLightIntensitySensor(signalGpioPin : int, i2cAddress : uint8_t = DEFAULT_I2C_ADDRESS, parentHandler : EventHandler* = nullptr)
+    +DigitalLightIntensitySensor(signalGpioPin : int, i2cAddress : uint8_t = DEFAULT_I2C_ADDRESS, lightDetectedThresholdInLux : float = DEFAULT_LIGHT_DETECTED_THRESHOLD_IN_LUX, parentHandler : EventHandler* = nullptr)
+    +DigitalLightIntensitySensor(bus : I2cBus&, signalGpioPin : int, i2cAddress : uint8_t = DEFAULT_I2C_ADDRESS, lightDetectedThresholdInLux : float = DEFAULT_LIGHT_DETECTED_THRESHOLD_IN_LUX, parentHandler : EventHandler* = nullptr)
     +initialize() : bool
+    +start() : bool
     +isInitialized() const : bool
+    +getLastI2cResult() const : I2cResult
     +hasValidSample() const : bool
     +isLightDetected() const : bool
     +getIlluminanceInLux() const : float
@@ -779,14 +845,18 @@ package "Actuators" #EEF0FF {
   }
 
   class Hd44780Driver {
+    -bus : I2cBus* (non-owning; null selects legacy Wire)
     -i2cAddress : uint8_t
     -backlightEnabled : bool
+    +Hd44780Driver(bus : I2cBus&, i2cAddress : uint8_t, backlightInitialState : bool = true)
     +Hd44780Driver(i2cAddress : uint8_t, backlightInitialState : bool = true)
+    +start() : bool
     +initialize() : void
     +sendCommand(command : uint8_t) : void
     +sendData(data : uint8_t) : void
     +setBacklight(enable : bool) : void
     +isBacklightOn() const : bool
+    +getLastI2cResult() const : I2cResult
   }
 
   class CharacterLcdDisplay {
@@ -798,6 +868,9 @@ package "Actuators" #EEF0FF {
     +{static} TURN_BACKLIGHT_ON_COMMAND_IDENTIFIER : int = 201
     +{static} TURN_BACKLIGHT_OFF_COMMAND_IDENTIFIER : int = 202
     +CharacterLcdDisplay(i2cAddress : uint8_t, columnCount : uint8_t, rowCount : uint8_t, backlightInitialState : bool = true, parentHandler : CommandHandler* = nullptr)
+    +CharacterLcdDisplay(bus : I2cBus&, i2cAddress : uint8_t, columnCount : uint8_t, rowCount : uint8_t, backlightInitialState : bool = true, parentHandler : CommandHandler* = nullptr)
+    +start() : bool
+    +getLastI2cResult() const : I2cResult
     +setLineBuffer(rowIndex : uint8_t, nullTerminatedString : const char*) : void
     +isBacklightOn() const : bool
     #executeCommand(command : Command) : void
@@ -833,22 +906,29 @@ package "Actuators" #EEF0FF {
   }
 
   class Ssd1306Driver {
+    -bus : I2cBus* (non-owning; null selects legacy Wire)
     -i2cAddress : uint8_t
     -displayWidth : uint8_t
     -displayHeight : uint8_t
-    +Ssd1306Driver(i2cAddress : uint8_t, displayWidth : uint8_t, displayHeight : uint8_t)
+    +Ssd1306Driver(bus : I2cBus&, i2cAddress : uint8_t = 0x3C, width : uint8_t = 128, height : uint8_t = 64)
+    +Ssd1306Driver(i2cAddress : uint8_t = 0x3C, width : uint8_t = 128, height : uint8_t = 64)
+    +start() : bool
     +initialize() : void
     +sendCommand(command : uint8_t) : void
     +sendData(data : const uint8_t*, length : size_t) : void
     +setContrast(contrast : uint8_t) : void
     +setInvert(invert : bool) : void
     +setBacklight(enable : bool) : void
+    +getLastI2cResult() const : I2cResult
   }
 
   class OledDisplay {
     -driver : Ssd1306Driver
     -frameBuffer[1024] : uint8_t
     +OledDisplay(i2cAddress : uint8_t, parentHandler : CommandHandler* = nullptr)
+    +OledDisplay(bus : I2cBus&, i2cAddress : uint8_t = 0x3C, parentHandler : CommandHandler* = nullptr)
+    +start() : bool
+    +getLastI2cResult() const : I2cResult
     +setText(text : const char*, x : uint8_t, y : uint8_t) : void
     +clear() : void
     +setBacklight(enable : bool) : void
@@ -1071,6 +1151,13 @@ package "User Application (Sketch)" #FFFDF3 {
     +handle(command : Command) : void
     #processQueuedTelemetryData(rawQueueItemPayload : const TelemetryPackage*) : void
   }
+
+  class IndoorAirQualityDisplay <<example Device>> {
+    -i2cBus : ArduinoI2cBus
+    -airQualitySensor : EnvironmentalGasSensor
+    -statusDisplay : OledDisplay
+    +start() : bool
+  }
 }
 
 ' ─────────────────────────────────────────────
@@ -1119,6 +1206,7 @@ GatewayClient <|-- MqttGatewayClient
 GatewayClient <|-- BleGatewayClient
 
 Device <|-- CustomDevice
+Device <|-- IndoorAirQualityDisplay
 
 ' ─────────────────────────────────────────────
 '  ASSOCIATIONS
@@ -1127,6 +1215,21 @@ Sensor   "0..1" o--> EventHandler   : eventHandler
 Actuator "0..1" o--> CommandHandler : commandHandler
 Device   *-- "1" SamplingScheduler : owns scheduler
 Device   "0..4" o--> Sensor : triggerTable
+
+IndoorAirQualityDisplay *-- "1" ArduinoI2cBus : owns; starts before peripherals
+IndoorAirQualityDisplay *-- EnvironmentalGasSensor : owns
+IndoorAirQualityDisplay *-- OledDisplay : owns
+BmeEnvironmentalSensor ..> I2cBus : borrows on injected path
+ImuSensor ..> I2cBus : borrows on injected path
+DigitalLightIntensitySensor ..> I2cBus : borrows on injected path
+Hd44780Driver ..> I2cBus : borrows on injected path
+Ssd1306Driver ..> I2cBus : borrows on injected path
+IndoorAirQualityDisplay ..> I2cBus : injects same instance
+
+note right of IndoorAirQualityDisplay
+  Injected constructors perform no hardware I/O.
+  start(): bus, peripherals, registrations, then asynchronous engine.
+end note
 
 GatewayClient     --> ConnectivityDriver : uses
 GatewayClient     ..> TelemetryPackage   : serializes
