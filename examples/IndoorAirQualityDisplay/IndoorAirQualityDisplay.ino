@@ -56,6 +56,9 @@ static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
 static const char* INDOOR_AIR_QUALITY_LOG_PREFIX = "[IndoorAirQualityDisplay]";
 //@} // Serial Output Configuration
 
+/** @brief Shared I2C bus configuration for the BME680 sensor and SSD1306 display. */
+static const I2cBusConfiguration INDOOR_AIR_QUALITY_I2C_CONFIGURATION{-1, -1, 100000};
+
 /** @name Application Mediator Implementation */
 //@{
 
@@ -68,6 +71,7 @@ static const char* INDOOR_AIR_QUALITY_LOG_PREFIX = "[IndoorAirQualityDisplay]";
  */
 class IndoorAirQualityDisplay : public Device {
 private:
+    ArduinoI2cBus i2cBus;
     EnvironmentalGasSensor airQualitySensor;
     OledDisplay statusDisplay;
 
@@ -159,14 +163,9 @@ public:
                             unsigned long samplingIntervalInMilliseconds,
                             uint8_t timerGroupIndex = 0)
         : Device(samplingIntervalInMilliseconds, timerGroupIndex),
-          airQualitySensor(sensorPin, EnvironmentalGasSensor::DEFAULT_I2C_ADDRESS, this),
-          statusDisplay(displayI2cAddress, this)
-    {
-        // IMPORTANT: Registration must occur before initializeAsynchronousEngine(), because
-        // the engine start guard rejects any registration after the engine is running.
-        appendSensorToScheduler(&airQualitySensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
-
-        initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
+          i2cBus(),
+          airQualitySensor(i2cBus, sensorPin, EnvironmentalGasSensor::DEFAULT_I2C_ADDRESS, this),
+          statusDisplay(i2cBus, displayI2cAddress, this) {
     }
 
     ~IndoorAirQualityDisplay() override {
@@ -199,12 +198,26 @@ public:
 
     /**
      * @brief Initializes the display and shows a startup message.
-     * @return True if the sensor initialized successfully.
+     * @return True if the bus, sensor, display, and asynchronous engine started successfully.
      */
     bool start() {
         Device::setFirmwareVersion("IAQ-800 FW 1.0.0");
-        if (!airQualitySensor.isInitialized()) {
-            Serial.println((String(INDOOR_AIR_QUALITY_LOG_PREFIX) + " BME680 sensor not found on I2C bus").c_str());
+        const I2cStatus busStatus = i2cBus.start(INDOOR_AIR_QUALITY_I2C_CONFIGURATION);
+        if (busStatus != I2cStatus::Ok) {
+            Serial.printf("%s I2C bus startup failed (status %u).\n",
+                          INDOOR_AIR_QUALITY_LOG_PREFIX, static_cast<unsigned int>(busStatus));
+            return false;
+        }
+        if (!airQualitySensor.start()) {
+            Serial.printf("%s BME680 startup failed (status %u).\n",
+                          INDOOR_AIR_QUALITY_LOG_PREFIX,
+                          static_cast<unsigned int>(airQualitySensor.getLastI2cResult().status));
+            return false;
+        }
+        if (!statusDisplay.start()) {
+            Serial.printf("%s SSD1306 startup failed (status %u).\n",
+                          INDOOR_AIR_QUALITY_LOG_PREFIX,
+                          static_cast<unsigned int>(statusDisplay.getLastI2cResult().status));
             return false;
         }
 
@@ -214,8 +227,18 @@ public:
         statusDisplay.setText(F("Monitor"), 0, 8);
         statusDisplay.setText(F("Starting..."), 0, 24);
         statusDisplay.handle(OledDisplay::UPDATE_DISPLAY_COMMAND);
+        if (statusDisplay.getLastI2cResult().isInvalidOrIncomplete()) {
+            Serial.printf("%s SSD1306 startup display update failed (status %u).\n",
+                          INDOOR_AIR_QUALITY_LOG_PREFIX,
+                          static_cast<unsigned int>(statusDisplay.getLastI2cResult().status));
+            return false;
+        }
+
+        // Register sensors only after all required I2C peripherals are ready.
+        appendSensorToScheduler(&airQualitySensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
         Serial.println((String(INDOOR_AIR_QUALITY_LOG_PREFIX) + " Indoor air quality monitor online.").c_str());
+        initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
         return true;
     }
 };
