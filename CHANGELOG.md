@@ -2,6 +2,20 @@
 
 All notable changes to the Modest IoT Nano Framework will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+#### Shared I²C Bus Backend
+- **src/I2cBus.h** and **src/ArduinoI2cBus.h/.cpp**: Added a shared I²C transaction contract and Arduino `Wire` backend with a configurable finite transfer timeout (50 ms default), whole-transaction serialization, combined register reads, and observable transfer results.
+
+### Changed
+
+#### I²C Peripheral Startup and Example Compositions
+- **I²C sensor and display drivers**: Added bus-injected, configuration-only construction for the BME-family, BH1750, MPU6050, HD44780, and SSD1306 paths. Hardware initialization now occurs through explicit startup, while legacy Arduino constructor overloads remain available.
+- **Example compositions**: Migrated all twelve I²C examples to a device-owned shared bus and ordered startup, initializing the bus and required peripherals before sampling registration and asynchronous-engine startup.
+- **I²C failure handling**: Sensor reads reject failed or incomplete transfers without replacing the last completed readings; display operations retain their transfer result for the owning composition to query.
+
 ## [1.3.0] - 2026-11-24
 
 ### Added
