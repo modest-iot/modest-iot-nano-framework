@@ -94,6 +94,8 @@ static const int ASYNC_ENGINE_QUEUE_DEPTH = 5;
 //@{
 /** @brief GPIO pin for the PthSensor (BME280) pressure/temperature sensor (I2C). */
 static const int PTH_SENSOR_PIN = 8;
+/** @brief Shared I2C bus configuration for the BME280 pressure sensor. */
+static const I2cBusConfiguration PHARMA_CLEAN_ROOM_I2C_CONFIGURATION{-1, -1, 100000};
 /** @brief GPIO pin for the DHT temperature/humidity sensor. */
 static const int DHT_SENSOR_PIN = 17;
 /** @brief GPIO pin for the gas sensor (VOC/particle detection). */
@@ -187,6 +189,7 @@ static const uint32_t QUARANTINE_TIME_WINDOW_SECONDS = 10;
  */
 class PharmaceuticalCleanRoom : public Device {
 private:
+    ArduinoI2cBus i2cBus;
     PthSensor pressureSensor;
     DhtSensor tempSensor;
     GasSensor gasSensor;
@@ -315,14 +318,31 @@ public:
         int buzzerPin,
         int ledPin)
         : Device(SAMPLING_INTERVAL_IN_MILLISECONDS, 0)
-        , pressureSensor(pthPin, PthSensor::DEFAULT_I2C_ADDRESS, &aggregatorLevel1)
+        , i2cBus()
+        , pressureSensor(i2cBus, pthPin, PthSensor::DEFAULT_I2C_ADDRESS, &aggregatorLevel1)
         , tempSensor(dhtPin, DhtSensor::SENSOR_MODEL_DHT11, &aggregatorLevel1)
         , gasSensor(gasPin, -1, &aggregatorLevel1)
         , doorSensor(doorPin, &aggregatorLevel1)
         , hvacRelay(relayPin, this)
         , buzzer(buzzerPin, this)
         , statusLed(ledPin, false, this)
-    {
+    {}
+
+    bool start() {
+        Device::setFirmwareVersion(PHARMA_CLEAN_ROOM_FIRMWARE_VERSION);
+        const I2cStatus busStatus = i2cBus.start(PHARMA_CLEAN_ROOM_I2C_CONFIGURATION);
+        if (busStatus != I2cStatus::Ok) {
+            Serial.printf("%s I2C bus startup failed (status %u).\n",
+                          PHARMA_CLEAN_ROOM_LOG_PREFIX, static_cast<unsigned int>(busStatus));
+            return false;
+        }
+        if (!pressureSensor.start()) {
+            Serial.printf("%s BME280 startup failed (status %u).\n",
+                          PHARMA_CLEAN_ROOM_LOG_PREFIX,
+                          static_cast<unsigned int>(pressureSensor.getLastI2cResult().status));
+            return false;
+        }
+
         // Register interrupt-driven sensors (CHANGE edge)
         // IMPORTANT: Registration must occur before initializeAsynchronousEngine(), because
         // the engine start guard rejects any registration after the engine is running.
@@ -350,13 +370,7 @@ public:
 
         // Launch internal background task workers
         initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
-    }
-
-    /**
-     * @brief Post-construction startup hook.
-     */
-    void start() {
-        Device::setFirmwareVersion(PHARMA_CLEAN_ROOM_FIRMWARE_VERSION);
+        return true;
     }
 
     ~PharmaceuticalCleanRoom() override {
@@ -421,10 +435,12 @@ void setup() {
         BUZZER_PIN,
         STATUS_LED_PIN
     );
-    pharmaCleanRoomDevice->start();
-
-    Serial.println((String(PHARMA_CLEAN_ROOM_LOG_PREFIX) +
-        " Clean room monitoring active — nested aggregator chain initialized.").c_str());
+    if (pharmaCleanRoomDevice->start()) {
+        Serial.println((String(PHARMA_CLEAN_ROOM_LOG_PREFIX) +
+            " Clean room monitoring active — nested aggregator chain initialized.").c_str());
+    } else {
+        Serial.println("[PharmaceuticalCleanRoom] Startup failed; monitoring engine was not started.");
+    }
 }
 
 void loop() {
