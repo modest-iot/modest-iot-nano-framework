@@ -117,9 +117,18 @@ static constexpr uint8_t FONT_BITMAP[][5] = {
 
 OledDisplay::OledDisplay(const uint8_t i2cAddress, CommandHandler* parentHandler)
     : Actuator(static_cast<int>(i2cAddress), parentHandler),
-      driver(i2cAddress, DISPLAY_WIDTH_IN_PIXELS, DISPLAY_HEIGHT_IN_PIXELS) {
+      driver(i2cAddress, DISPLAY_WIDTH_IN_PIXELS, DISPLAY_HEIGHT_IN_PIXELS),
+      initialized(false) {
     clearFrameBuffer();
     driver.initialize();
+    initialized = driver.isInitialized();
+}
+
+OledDisplay::OledDisplay(I2cBus& bus, const uint8_t i2cAddress, CommandHandler* parentHandler)
+    : Actuator(static_cast<int>(i2cAddress), parentHandler),
+      driver(bus, i2cAddress, DISPLAY_WIDTH_IN_PIXELS, DISPLAY_HEIGHT_IN_PIXELS),
+      initialized(false) {
+    clearFrameBuffer();
 }
 
 void OledDisplay::executeCommand(const Command command) {
@@ -227,4 +236,17 @@ void OledDisplay::fillRectangle(const uint8_t x, const uint8_t y, const uint8_t 
 
 bool OledDisplay::isBacklightOn() const {
     return driver.isDisplayOn();
+}
+
+bool OledDisplay::start() {
+    initialized = driver.start();
+    return initialized;
+}
+
+I2cResult OledDisplay::getLastI2cResult() const {
+    return driver.getLastI2cResult();
+}
+
+bool OledDisplay::isInitialized() const {
+    return initialized;
 }

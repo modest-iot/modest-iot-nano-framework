@@ -24,6 +24,7 @@
 class OledDisplay : public Actuator {
 private:
     Ssd1306Driver driver; ///< SSD1306 protocol driver for I2C communication.
+    bool initialized;
 
     // Display dimensions
     static constexpr uint8_t DISPLAY_WIDTH_IN_PIXELS = 128; ///< Display width in pixels.
@@ -68,6 +69,16 @@ public:
      * @param parentHandler Base framework coordinator pointer connection.
      */
     explicit OledDisplay(uint8_t i2cAddress = 0x3C, CommandHandler* parentHandler = nullptr);
+    OledDisplay(I2cBus& bus, uint8_t i2cAddress = 0x3C, CommandHandler* parentHandler = nullptr);
+
+    /** Initializes the display through its configured I2C bus. */
+    [[nodiscard]] bool start();
+
+    /** @brief Returns the most recent I2C operation result. */
+    [[nodiscard]] I2cResult getLastI2cResult() const;
+
+    /** @brief Reports whether initialization completed successfully. */
+    [[nodiscard]] bool isInitialized() const;
 
     /**
      * @brief Renders a string at the specified position.
