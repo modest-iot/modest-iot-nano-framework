@@ -299,7 +299,16 @@ public:
                         uint8_t gyroscopeFullScale = IMU_GYRO_FS_250,
                         EventHandler* parentHandler = nullptr);
 
-    /** Constructs a configuration-only sensor that uses the supplied shared bus. */
+    /**
+     * @brief Constructs a configuration-only MPU6050 sensor using a shared bus.
+     * @param bus Non-owning I2C bus reference; it must outlive this sensor.
+     * @param signalGpioPin Framework source identifier attached to emitted events.
+     * @param i2cAddress Sensor's 7-bit I2C address (default: 0x68).
+     * @param accelerationFullScale Accelerometer full-scale range (default: ±2 g-force).
+     * @param gyroscopeFullScale Gyroscope full-scale range (default: ±250 °/s).
+     * @param parentHandler Optional handler that receives emitted events.
+     * @note Performs no hardware I/O. Start @p bus before calling @ref start.
+     */
     explicit ImuSensor(I2cBus& bus, int signalGpioPin,
                        uint8_t i2cAddress = DEFAULT_I2C_ADDRESS,
                        uint8_t accelerationFullScale = IMU_ACCEL_FS_2G,
@@ -314,7 +323,12 @@ public:
      */
     [[nodiscard]] bool initialize();
 
-    /** Starts the sensor on the injected bus; equivalent to initialize(). */
+    /**
+     * @brief Starts the sensor on its configured transport.
+     * @return @c true if the chip ID was verified and initialization completed.
+     * @note For the injected path, the bus must already be started. Inspect
+     *       @ref getLastI2cResult when this method returns @c false.
+     */
     [[nodiscard]] bool start();
 
     /**
@@ -323,7 +337,10 @@ public:
      */
     [[nodiscard]] bool isInitialized() const;
 
-    /** Returns the most recent I2C status and transfer counts. */
+    /**
+     * @brief Returns the most recent low-level I2C operation result.
+     * @return Status and transferred-versus-expected byte counts for the last operation.
+     */
     [[nodiscard]] I2cResult getLastI2cResult() const;
 
     /** @name Accelerometer Readings */
