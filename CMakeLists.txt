@@ -644,6 +644,7 @@ add_executable(test_Device
 )
 target_include_directories(test_Device PRIVATE tests/fakes src)
 target_compile_options(test_Device PRIVATE -Wall -Wextra -Werror)
+target_link_libraries(test_Device PRIVATE Threads::Threads)
 
 add_executable(test_UltrasonicSensor
         tests/UltrasonicSensor/test.cpp
