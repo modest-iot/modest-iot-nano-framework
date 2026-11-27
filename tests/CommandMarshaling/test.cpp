@@ -102,7 +102,8 @@ public:
     {
         // xQueueSend mock returns pdFAIL, simulating a full queue
         TestDevice device;
-        device.commandQueueHandle = reinterpret_cast<QueueHandle_t>(0x1); // Non-null fake handle
+        device.commandQueueHandle = xQueueCreate(1, sizeof(Device::CommandEntry));
+        assert(device.commandQueueHandle != nullptr);
         CommandRecorder recorder;
         bool result = device.enqueueCommand(&recorder, Command(1));
         assert(result == false);
