@@ -65,7 +65,9 @@ public:
             return false;
         }
         startupOrder.push_back(3);
-        initializeAsynchronousEngine();
+        if (!initializeAsynchronousEngine()) {
+            return false;
+        }
         startupOrder.push_back(4);
         return true;
     }
@@ -84,6 +86,188 @@ private:
     std::vector<int>& startupOrder;
 };
 
+class EngineLifecycleDevice final : public Device {
+public:
+    EngineLifecycleDevice() : Device(100) {}
+
+    void on(Event) override {}
+    void handle(Command) override {}
+
+    bool registerSensor(Sensor* sensor) {
+        return appendSensorToScheduler(sensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER, 1000, 250);
+    }
+
+    bool startEngine(const uint8_t queueLength = 10) {
+        return initializeAsynchronousEngine(queueLength);
+    }
+
+    void stopEngine() {
+        stopAsynchronousEngine();
+    }
+};
+
+class BlockingNetworkDevice final : public Device {
+public:
+    BlockingNetworkDevice() : Device(100) {}
+
+    void on(Event) override {}
+    void handle(Command) override {}
+
+    bool startEngine() {
+        return initializeAsynchronousEngine();
+    }
+
+    void stopEngine() {
+        stopAsynchronousEngine();
+    }
+
+    mutable std::atomic<bool> callbackEntered{false};
+    mutable std::atomic<bool> releaseCallback{false};
+
+protected:
+    void maintainNetworkServices() const override {
+        callbackEntered.store(true, std::memory_order_release);
+        while (!releaseCallback.load(std::memory_order_acquire)) {
+            vTaskDelay(pdMS_TO_TICKS(1));
+        }
+    }
+};
+
+void assertNoAllocatedEngineResources() {
+    joinFakeTasks();
+    for (const auto& queue : fakeQueueHandles) {
+        assert(!queue.active);
+    }
+    for (const auto& task : fakeTaskHandles) {
+        assert(!task.active);
+    }
+    for (const auto& timer : fakeTimerObjects) {
+        assert(!timer.active);
+    }
+}
+
+void testEngineStartupRollbackAndRetry() {
+    resetFakeFreeRtosState();
+    {
+        EngineLifecycleDevice device;
+        assert(!device.startEngine(0));
+        assert(fakeFreeRtosState.queueCreateCalls == 0);
+        assert(!device.isAsynchronousEngineStarted());
+        assert(device.startEngine());
+        assert(device.isAsynchronousEngineStarted());
+    }
+    assertNoAllocatedEngineResources();
+
+    for (int failAtCall = 1; failAtCall <= 3; ++failAtCall) {
+        resetFakeFreeRtosState();
+        {
+            EngineLifecycleDevice device;
+            CompositionSensor sensor;
+            assert(device.registerSensor(&sensor));
+            fakeFreeRtosState.failQueueCreateAtCall = failAtCall;
+
+            assert(!device.startEngine());
+            assert(!device.isAsynchronousEngineStarted());
+            assert(fakeFreeRtosState.queueCreateCalls == failAtCall);
+            assert(fakeFreeRtosState.queueDeleteCalls == failAtCall - 1);
+            assert(fakeFreeRtosState.taskCreateCalls == 0);
+            assert(fakeFreeRtosState.timerBeginCalls == 0);
+            assert(device.registerSensor(&sensor));
+            assertNoAllocatedEngineResources();
+
+            assert(device.startEngine());
+            assert(device.isAsynchronousEngineStarted());
+            assert(!device.registerSensor(&sensor));
+            assert(fakeFreeRtosState.queueCreateCalls == failAtCall + 3);
+            assert(fakeFreeRtosState.timerAttachCalls == 1);
+            assert(fakeFreeRtosState.timerAlarmCalls == 1);
+        }
+        assertNoAllocatedEngineResources();
+    }
+
+    resetFakeFreeRtosState();
+    {
+        EngineLifecycleDevice device;
+        CompositionSensor sensor;
+        assert(device.registerSensor(&sensor));
+        fakeFreeRtosState.failTimerBegin = true;
+
+        assert(!device.startEngine());
+        assert(!device.isAsynchronousEngineStarted());
+        assert(fakeFreeRtosState.queueDeleteCalls == 3);
+        assert(fakeFreeRtosState.timerBeginCalls == 1);
+        assert(fakeFreeRtosState.taskCreateCalls == 0);
+        assert(device.registerSensor(&sensor));
+        assertNoAllocatedEngineResources();
+
+        fakeFreeRtosState.failTimerBegin = false;
+        assert(device.startEngine());
+        assert(device.isAsynchronousEngineStarted());
+        assert(fakeFreeRtosState.timerBeginCalls == 2);
+        assert(fakeFreeRtosState.timerAttachCalls == 1);
+        assert(fakeFreeRtosState.timerAlarmCalls == 1);
+    }
+    assertNoAllocatedEngineResources();
+
+    for (int failAtCall = 1; failAtCall <= 2; ++failAtCall) {
+        resetFakeFreeRtosState();
+        {
+            EngineLifecycleDevice device;
+            CompositionSensor sensor;
+            assert(device.registerSensor(&sensor));
+            fakeFreeRtosState.failTaskCreateAtCall = failAtCall;
+
+            assert(!device.startEngine());
+            assert(!device.isAsynchronousEngineStarted());
+            assert(fakeFreeRtosState.taskCreateCalls == failAtCall);
+            assert(fakeFreeRtosState.taskDeleteCalls == failAtCall - 1);
+            assert(fakeFreeRtosState.queueDeleteCalls == 3);
+            assert(fakeFreeRtosState.timerEndCalls == 1);
+            assert(device.registerSensor(&sensor));
+            assertNoAllocatedEngineResources();
+
+            assert(device.startEngine());
+            assert(device.isAsynchronousEngineStarted());
+            assert(!device.registerSensor(&sensor));
+            assert(fakeFreeRtosState.taskCreateCalls == failAtCall + 2);
+        }
+        assertNoAllocatedEngineResources();
+    }
+}
+
+void testShutdownWaitsForNetworkCallback() {
+    resetFakeFreeRtosState();
+    {
+        BlockingNetworkDevice device;
+        assert(device.startEngine());
+        while (!device.callbackEntered.load(std::memory_order_acquire)) {
+            vTaskDelay(pdMS_TO_TICKS(1));
+        }
+
+        std::atomic<bool> stopReturned{false};
+        std::thread releaseCallback([&]() {
+            vTaskDelay(pdMS_TO_TICKS(10));
+            assert(!stopReturned.load(std::memory_order_acquire));
+            device.releaseCallback.store(true, std::memory_order_release);
+        });
+
+        device.stopEngine();
+        stopReturned.store(true, std::memory_order_release);
+        releaseCallback.join();
+        assertNoAllocatedEngineResources();
+
+        assert(stopReturned.load(std::memory_order_acquire));
+        assert(fakeFreeRtosState.taskDeleteCalls == 2);
+        assert(fakeFreeRtosState.queueDeleteCalls == 3);
+
+        device.stopEngine();
+        assert(!device.startEngine());
+        assert(fakeFreeRtosState.taskDeleteCalls == 2);
+        assert(fakeFreeRtosState.queueDeleteCalls == 3);
+    }
+    assertNoAllocatedEngineResources();
+}
+
 void testComposedDeviceStartupOrderAndPeripheralFailure() {
     std::vector<int> startupOrder;
     {
@@ -96,6 +280,7 @@ void testComposedDeviceStartupOrderAndPeripheralFailure() {
         assert(startupOrder == std::vector<int>({1, 2}));
         assert(device.canRegisterSensor());
     }
+    assertNoAllocatedEngineResources();
 
     startupOrder.clear();
     {
@@ -108,13 +293,17 @@ void testComposedDeviceStartupOrderAndPeripheralFailure() {
         assert(startupOrder == std::vector<int>({1, 2, 3, 4}));
         assert(!device.canRegisterSensor());
     }
+    assertNoAllocatedEngineResources();
 }
 
 } // namespace
 
 int main() {
     std::printf("Running Device tests...\n");
+    testEngineStartupRollbackAndRetry();
+    testShutdownWaitsForNetworkCallback();
     testComposedDeviceStartupOrderAndPeripheralFailure();
+    joinFakeTasks();
 
     // Test 1: Default telemetry schema version is nullptr
     {
