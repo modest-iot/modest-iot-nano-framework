@@ -177,6 +177,7 @@ add_custom_target(arduino_upload
 
 # 7. Native Host Unit Tests Target
 enable_testing()
+find_package(Threads REQUIRED)
 
 file(GLOB TEST_FAKES "tests/fakes/*.h")
 file(GLOB TEST_FAKES_SRC "tests/fakes/*.cpp")
@@ -588,6 +589,7 @@ add_executable(test_I2cBus
 )
 target_include_directories(test_I2cBus PRIVATE tests/fakes src)
 target_compile_options(test_I2cBus PRIVATE -Wall -Wextra -Werror)
+target_link_libraries(test_I2cBus PRIVATE Threads::Threads)
 
 add_executable(test_Ssd1306Driver
         tests/Ssd1306Driver/test.cpp
