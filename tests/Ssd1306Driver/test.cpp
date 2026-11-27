@@ -7,12 +7,60 @@
  */
 
 #include "Ssd1306Driver.h"
+#include "FakeI2cBus.h"
 #include <cassert>
 #include <cstdio>
 #include <cstring>
 
+void testInjectedBusStartupAndFailures() {
+    Wire.transmissionCount = 0;
+    FakeI2cBus bus;
+    Ssd1306Driver driver(bus);
+
+    assert(bus.writeCount == 0);
+    assert(Wire.transmissionCount == 0);
+    assert(!driver.isInitialized());
+    assert(!driver.start());
+    assert(driver.getLastI2cResult().status == I2cStatus::NotStarted);
+    assert(bus.writeCount == 0);
+
+    const I2cBusConfiguration config{21, 22, 400000};
+    assert(bus.start(config) == I2cStatus::Ok);
+    bus.nextWriteStatus = I2cStatus::AddressNack;
+    assert(!driver.start());
+    assert(bus.writeCount == 1);
+    assert(!driver.isInitialized());
+    assert(!driver.isDisplayOn());
+    assert(driver.getLastI2cResult().status == I2cStatus::AddressNack);
+
+    assert(driver.start());
+    assert(driver.isInitialized());
+    assert(driver.isDisplayOn());
+    assert(Wire.transmissionCount == 0);
+
+    const uint8_t page[128]{};
+    const int writesBeforePage = bus.writeCount;
+    driver.sendData(page, sizeof(page));
+    assert(bus.writeCount == writesBeforePage + 2);
+    assert(bus.lastWrite.size() == 2);
+    assert(bus.lastWrite[0] == 0x40);
+
+    const int writesBeforePageFailure = bus.writeCount;
+    bus.nextWriteStatus = I2cStatus::AddressNack;
+    driver.sendData(page, sizeof(page));
+    assert(bus.writeCount == writesBeforePageFailure + 1);
+    assert(driver.getLastI2cResult().status == I2cStatus::AddressNack);
+
+    const int writesBeforeFailure = bus.writeCount;
+    bus.nextWriteStatus = I2cStatus::BusError;
+    driver.setContrast(0x55);
+    assert(bus.writeCount == writesBeforeFailure + 1);
+    assert(driver.getLastI2cResult().status == I2cStatus::BusError);
+}
+
 int main() {
     std::printf("Running Ssd1306Driver tests...\n");
+    testInjectedBusStartupAndFailures();
 
     // Test 1: Constructor initializes state
     {
