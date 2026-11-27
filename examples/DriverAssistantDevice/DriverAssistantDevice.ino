@@ -45,6 +45,7 @@ static const int LCD_ROWS       = 2;
 
 static constexpr float KNOTS_TO_KPH_CONVERSION_FACTOR = 1.852f;
 static constexpr float CENTIMETER_TO_METER_CONVERSION_FACTOR = 0.01f;
+static const I2cBusConfiguration DRIVER_ASSISTANT_I2C_CONFIGURATION{-1, -1, 100000};
 
 // Timing constants
 
@@ -64,6 +65,7 @@ static const int            TIMER_GROUP_INDEX           = 0;
  */
 class DriverAssistantDevice : public Device {
 private:
+    ArduinoI2cBus i2cBus;
     GeolocationSensor gpsSensor;
     UltrasonicSensor frontSensor;
     UltrasonicSensor rearSensor;
@@ -122,14 +124,29 @@ public:
     DriverAssistantDevice(HardwareSerial& gpsSerialPort, int gpsReceivePin, int gpsTransmitPin, int frontTriggerPin,
         int frontEchoPin, int rearTriggerPin, int rearEchoPin, uint8_t lcdI2cAddress)
         : Device(SAMPLING_INTERVAL_IN_MILLISECONDS, TIMER_GROUP_INDEX),
+          i2cBus(),
           gpsSensor(gpsSerialPort, gpsReceivePin, gpsTransmitPin, GPS_BAUD_RATE, this),
           frontSensor(frontTriggerPin, frontEchoPin, this),
           rearSensor(rearTriggerPin, rearEchoPin, this),
-          statusDisplay(lcdI2cAddress, LCD_COLUMNS, LCD_ROWS, this),
+          statusDisplay(i2cBus, lcdI2cAddress, LCD_COLUMNS, LCD_ROWS, true, this),
           lastLocation(),
           frontDistanceInMeters(0.0f),
           rearDistanceInMeters(0.0f)
-    {
+    {}
+
+    bool start() {
+        const I2cStatus busStatus = i2cBus.start(DRIVER_ASSISTANT_I2C_CONFIGURATION);
+        if (busStatus != I2cStatus::Ok) {
+            Serial.printf("[DriverAssistant] I2C bus startup failed (status %u).\n",
+                          static_cast<unsigned int>(busStatus));
+            return false;
+        }
+        if (!statusDisplay.start()) {
+            Serial.printf("[DriverAssistant] LCD startup failed (status %u).\n",
+                          static_cast<unsigned int>(statusDisplay.getLastI2cResult().status));
+            return false;
+        }
+
         // IMPORTANT: Registration must occur before initializeAsynchronousEngine(), because
         // the engine start guard rejects any registration after the engine is running.
         appendSensorToScheduler(&gpsSensor,     Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
@@ -137,6 +154,7 @@ public:
         appendSensorToScheduler(&rearSensor,    Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
         initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
+        return true;
     }
 
     /**
@@ -171,7 +189,11 @@ void setup() {
         REAR_TRIGGER_PIN, REAR_ECHO_PIN,
         LCD_I2C_ADDRESS
     );
-    Serial.println("[System Boot] Driver Assistant active.");
+    if (driverAssistantApplication->start()) {
+        Serial.println("[System Boot] Driver Assistant active.");
+    } else {
+        Serial.println("[DriverAssistant] Startup failed; monitoring was not started.");
+    }
 }
 
 void loop() {
