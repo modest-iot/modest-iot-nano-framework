@@ -5,6 +5,8 @@ Comparison tables and future work for the Modest IoT Nano Framework.
 > **Disclaimer**: This roadmap reflects current priorities and may change based on community feedback and technical discoveries.
 >
 > **Internal planning**: A full internal planning document with detailed prioritization, cost/impact analysis, interdependency graphs, and implementation paths is maintained separately for framework maintainers.
+>
+> **Status snapshot**: Updated 2026-11-27. Tier completion describes the scoped work recorded for those tiers; it does not mean all platform-readiness or release gates are closed. v1.3.0 is the latest release; the I²C migration is unreleased work and still has validation limitations.
 
 ## Document Map
 
@@ -23,16 +25,12 @@ Comparison tables and future work for the Modest IoT Nano Framework.
 
 ## Status Overview
 
-| Tier                                    | Status       |
-|-----------------------------------------|--------------|
-| 0: Make it correct and shippable        | **Complete** |
-| 1: Safety net and visibility            | **Complete** |
-| 2: Reliability, diagnostics & footprint | **Complete** |
-| 3: Core performance and DX              | **Complete** |
-| 4: Capabilities                         | **Complete** |
-| 5: Optimization and power               | **Complete** |
-| Pre-Release Prerequisites (W20–W24)     | **Complete** |
-| v1.3.0 Release Features (W29, W43, W47) | **Complete** |
+| Work area | Status |
+|-----------|--------|
+| Tiers 0–5 and pre-release work (scoped items) | **Complete for the recorded scope** |
+| v1.3.0 release features (W29, W43, W47 and listed release items) | **Released** |
+| Hardware & Platform Readiness | **Active** — I²C backend/peripheral implementation is present; Arduino 3.3.13 and physical-board validation remain open |
+| Other planned improvements below | **Open unless explicitly marked implemented or released** |
 
 ## v1.3.0 Release Summary
 
@@ -49,6 +47,8 @@ Improvements are grouped by theme. Target versions indicate when each improvemen
 ### Hardware & Platform Readiness
 
 Improve reliability on physical ESP32 devices while preparing incrementally for a native ESP-IDF component without destabilizing the existing Arduino library. Readiness work covers runtime and peripheral lifecycles, bounded I²C failure handling, sensor and actuator behavior, networking and OTA safety, preserved CI support, and validation on physical hardware where simulation is insufficient. Internal implementation gates and acceptance criteria are maintained in `.junie/plans/hardware-platform-readiness.md`.
+
+The shared I²C backend hardening and injected peripheral/device-owned bus migration are implemented in the current checkout and recorded under `[Unreleased]` in `CHANGELOG.md`. Host validation and ESP32/ESP32-S3 builds with Arduino-ESP32 4.0.0 passed; the configured 3.3.13 build and physical electrical/stuck-line checks remain outstanding. This does not close the broader runtime, safety, OTA, or hardware-readiness gates.
 
 ### ArduinoJson Removal (W46) ✓
 
@@ -77,7 +77,7 @@ Improve reliability on physical ESP32 devices while preparing incrementally for 
 
 ESP-NOW or MQTT-based device-to-device messaging for relay nodes and distributed sensing.
 
-**Target**: v1.3.0–v1.4.0
+**Target**: Future; no release target committed.
 
 ### Telemetry Enhancements (W32–W34, W41–W43)
 
@@ -95,13 +95,13 @@ ESP-NOW or MQTT-based device-to-device messaging for relay nodes and distributed
 - **Adaptive Sampling** (W37): Automatically adjust sampling based on battery level.
 - **Sleep Schedule** (W38): Time-aware sleep scheduling with wake windows.
 
-**Target**: v1.3.0
+**Target**: Future; no release target committed.
 
 ### Security & Fleet Management (W39)
 
 - **Secure Element** (W39): Hardware-backed credential storage via ESP32 eFuse or external secure elements.
 
-**Target**: v1.4.0
+**Target**: Future; no release target committed.
 
 ### Developer Experience
 
@@ -111,29 +111,29 @@ ESP-NOW or MQTT-based device-to-device messaging for relay nodes and distributed
 - **Migration Guide** (✓ v1.1.2): Converting traditional `loop()` code to Modest IoT patterns with before/after examples. See [migration.md](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/migration.md).
 - **Example Template Generator**: CLI tool to generate skeleton device projects.
 
-**Target**: v1.2.0+ (PlatformIO, Quick Start, Troubleshooting, and Migration complete in v1.1.2)
+**Status**: PlatformIO, Quick Start, Troubleshooting, and Migration are complete; the example template generator remains planned without a release target.
 
 ### Sensor/Actuator Expansion
 
-Expand the component library (currently 22 sensors, 9 actuators) with additional IoT components: BMP280, INA219, SGP30/SGP40, BMA4000/LIS2DH12, VL53L0X, CAP1188, DC Motor Controller, Stepper Motor, Multi-channel Relay Board.
+Expand the component library (22 sensors and 9 actuators in the current README inventory) with additional IoT components: BMP280, INA219, SGP30/SGP40, BMA4000/LIS2DH12, VL53L0X, CAP1188, DC Motor Controller, Stepper Motor, and Multi-channel Relay Board.
 
-**Target**: v1.2.0+
+**Target**: Future; no release target committed.
 
 ### Component Enhancements
 
 - **ConfigurationStore**: Schema migration, configuration profiles, backup/restore.
 - **PowerManager**: Fuel gauge integration, charging status, power budget tracking.
 
-**Target**: v1.3.0
+**Target**: Future; no release target committed.
 
 ### Process & Release
 
-- **Automated Release Workflow**: Full test suite, example compilation, Doxygen generation, and registry publishing on tag push.
-- **Code Coverage Reporting**: gcov/lcov integration with minimum threshold.
-- **Dependency Update Monitoring**: Monitor MQTT library and ESP32 Arduino core updates.
-- **Benchmark Table**: Publish measurable evidence of framework performance claims.
+- **✓ Automated Release Workflow**: Release validation and artifact generation are documented in `docs/release.md` and implemented in the release workflows.
+- **✓ Code Coverage Reporting**: gcov/lcov reporting is integrated in CI. The latest published coverage figures are a historical 53-suite snapshot; the current 54-suite inventory has not yet been measured as a whole.
+- **✓ Dependency Update Monitoring**: GitHub Actions and dependency status workflows are present; the supported Arduino core compile matrix is explicitly pinned.
+- **✓ Benchmark Table**: `docs/benchmarks.md` publishes estimates and a validation methodology; physical measurements remain distinct from source/build estimates.
 
-**Target**: v1.2.0+
+**Status**: Process and reporting infrastructure implemented; refreshing measured coverage and completing hardware benchmarks remain follow-up validation work.
 
 ---
 
@@ -142,21 +142,21 @@ Expand the component library (currently 22 sensors, 9 actuators) with additional
 - TLS/SSL implementation in the framework (use ESP32's built-in `WiFiClientSecure`; W22 examples are complete).
 - Targeted (per-instance) commands until a use case appears.
 - Switchable sensor power rails and ADC/DMA sampling.
-- Non-ESP32 targets. The ESP32 family (WROOM, S3, C3, C6, H2) covers the framework's target use cases: Wi-Fi + BLE + FreeRTOS + deep sleep + ample RAM/Flash. A hardware abstraction layer would require ~2,900 lines of new code for uncertain community demand. Re-evaluate if community demand emerges; STM32WB series is the most viable non-ESP32 target.
+- Non-ESP32 targets remain deferred. The separate Hardware & Platform Readiness initiative explores a native ESP-IDF component for supported ESP32 devices; this is not a commitment to non-ESP32 portability. Re-evaluate additional MCU families if concrete community demand and a support/validation plan emerge.
 
 ### Microcontroller Coverage Expansion
 
 **Status**: Deferred — ESP32-only remains the strategic choice.
 
-**Rationale**: The ESP32 family provides sufficient variety across price points and capabilities. Edge Framework dual-framework vision provides more value than multi-platform Nano support.
+**Rationale**: The current product scope is ESP32-focused. Native ESP-IDF support for ESP32, if pursued, is a platform-backend change rather than cross-vendor MCU support.
 
-**Re-evaluation trigger**: If community demand for non-ESP32 support emerges (e.g., GitHub issues, forum requests), re-evaluate via a phased approach. STM32WB series (Wi-Fi + BLE + FreeRTOS) is the most viable non-ESP32 target. RP2040 requires external Wi-Fi/BLE modules. ESP8266 lacks BLE and has tight RAM/Flash constraints.
+**Re-evaluation trigger**: If community demand for non-ESP32 support emerges (e.g., GitHub issues or forum requests), assess a specific MCU family and its available connectivity, memory, toolchain, and hardware-validation requirements before changing the support scope.
 
 ---
 
 ## Comparison with traditional development
 
-Compares three points: a traditional Arduino `loop()` app, Modest IoT v1.2.1 (previous), and Modest IoT v1.3.0 (current).
+Compares three points: a traditional Arduino `loop()` app, Modest IoT v1.2.1 (previous), and Modest IoT v1.3.0 (current release). Features recorded under `[Unreleased]` are not attributed to v1.3.0.
 
 > **Note**: Comparison tables are replaced with each release — past comparisons are not archived. Hardware resource and performance figures remain estimates until the validation methodology below is run on physical boards.
 
@@ -164,7 +164,7 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT v1.2.1 (pr
 
 | Aspect          | Traditional `loop()`                         | Modest IoT v1.2.1 (previous)                                                | Modest IoT v1.3.0 (current)                                 |
 |-----------------|----------------------------------------------|-------------------------------------------------------------------------------|----------------------------------------------------------------------|
-| First build     | Works with the board package                 | 26 examples; 1 required Arduino library (MQTT)                                 | 28 examples; release checklist targets ESP32/ESP32-S3 with core 3.3.13 and 4.0.0 |
+| First build     | Works with the board package                 | 27 examples; 1 required external Arduino library (MQTT)                         | 28 examples; CI matrix targets ESP32/ESP32-S3 with core 3.3.13 and 4.0.0 |
 | Structure       | One growing `loop()` with `millis()` flags   | Sensors emit events, a `Device` mediates, actuators take commands             | Same, with event aggregation and rules engine for automated actions (W29 + W31)    |
 | Adding a sensor | New globals, new timing variable, new branch | Subclass or reuse, register in the scheduler; per-sensor default periods; `PowerManager` for battery-aware sensors | Same, with event aggregation and rules engine for automated actions (W29 + W31)                  |
 | Sampling rates  | Hand-written per-sensor timers               | Per-slot periods, minimums enforced, staggering handled                       | Same, with event aggregation and rules engine for automated actions (W29 + W31)                |
@@ -176,8 +176,8 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT v1.2.1 (pr
 | Cloud-to-device | Hand-rolled callback                         | `Device::enqueueCommand` with `int32_t` payload for parameterized commands                   | Same, with event aggregation and rules engine for automated actions (W29 + W31)   |
 | Offline data    | Lost when network unavailable                | `TelemetryBuffer` with LittleFS persistence for offline replay                                      | Same, with event aggregation and rules engine for automated actions (W29 + W31)       |
 | Updates         | Manual reflashing required                   | OTA updates via `OtaUpdateHandler` component                                                    | Same                                                     |
-| Testing         | Rarely possible off-device                   | 51 host test suites                                                           | 54 host test suites; 54/54 passed in the recorded host run; 91.2% line coverage is a historical 53-suite snapshot |
-| Documentation   | README or inline comments                    | 30 ADRs with rationale, user stories with ADR cross-references, PlantUML class diagram, Doxygen API reference, versioned CHANGELOG, and cross-linked doc ecosystem | Same                                                |
+| Testing         | Rarely possible off-device                   | 53 host test suites                                                           | 54 host test suites; 54/54 passed in the recorded host run; 91.2% line coverage is a historical 53-suite snapshot |
+| Documentation   | README or inline comments                    | 30 ADRs, 19 user stories, PlantUML class diagram, Doxygen API reference, versioned CHANGELOG, and cross-linked docs | 34 ADRs, 53 user stories, PlantUML class diagram, Doxygen API reference, versioned CHANGELOG, and cross-linked docs |
 | v1.3.0 additions | N/A                                           | N/A                                                                           | BLE core 3.x/4.x HAL, `RulesEngine`, `ChangeFilter<T>`, `ImuSensor`, and optional on-device ML |
 
 ### Performance
