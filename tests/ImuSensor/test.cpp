@@ -14,6 +14,7 @@
 #include "Event.h"
 #include "Sensor.h"
 #include "ImuSensor.h"
+#include "FakeI2cBus.h"
 #include <cassert>
 #include <cstdio>
 #include <cmath>
@@ -55,6 +56,65 @@ public:
     uint32_t getDefaultSamplingIntervalInMilliseconds() const { return ImuSensor::getDefaultSamplingIntervalInMilliseconds(); }
     uint32_t getMinimalSamplingIntervalInMilliseconds() const { return ImuSensor::getMinimalSamplingIntervalInMilliseconds(); }
 };
+
+class TestableInjectedImuSensor : public ImuSensor {
+public:
+    TestableInjectedImuSensor(I2cBus& bus, const int pin, const uint8_t address)
+        : ImuSensor(bus, pin, address) {}
+    using ImuSensor::IMU_CHIP_ID_INTERNAL;
+    using ImuSensor::IMU_RAW_DATA_BYTE_COUNT;
+    using ImuSensor::processEvent;
+};
+
+void queueSuccessfulImuInitialization(FakeI2cBus& bus) {
+    bus.queueRead({TestableInjectedImuSensor::IMU_CHIP_ID_INTERNAL});
+    bus.queueRead({0});
+    bus.queueRead({0});
+    bus.queueRead({0});
+    bus.queueRead({0});
+}
+
+void testInjectedBusStartupAndReadFailures() {
+    FakeI2cBus bus;
+    TestableInjectedImuSensor sensor(bus, 4, ImuSensor::DEFAULT_I2C_ADDRESS);
+    assert(bus.startCount == 0);
+    assert(bus.writeCount == 0);
+    assert(bus.writeReadCount == 0);
+    assert(!sensor.isInitialized());
+
+    assert(bus.start({21, 22, 400000}) == I2cStatus::Ok);
+    queueSuccessfulImuInitialization(bus);
+    assert(sensor.start());
+    assert(sensor.isInitialized());
+    assert(bus.writeCount == 6);
+    assert(bus.writeReadCount == 5);
+    assert(sensor.getLastI2cResult().ok());
+
+    std::vector<std::uint8_t> sample(TestableInjectedImuSensor::IMU_RAW_DATA_BYTE_COUNT, 0);
+    sample[0] = 0x40;
+    bus.queueRead(sample);
+    Event successfulSample(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+    sensor.processEvent(successfulSample);
+    assert(successfulSample.identifier == Sensor::DATA_READ_EVENT_IDENTIFIER);
+    assert(sensor.getAccelerationXInGForce() == 1.0f);
+
+    bus.queueRead({}, I2cStatus::ShortRead);
+    Event failedSample(Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
+    sensor.processEvent(failedSample);
+    assert(failedSample.identifier != Sensor::DATA_READ_EVENT_IDENTIFIER);
+    assert(sensor.getAccelerationXInGForce() == 1.0f);
+    assert(sensor.getLastI2cResult().status == I2cStatus::ShortRead);
+}
+
+void testInjectedBusRejectsFailedChipIdRead() {
+    FakeI2cBus bus;
+    assert(bus.start({21, 22, 400000}) == I2cStatus::Ok);
+    bus.queueRead({}, I2cStatus::AddressNack);
+    TestableInjectedImuSensor sensor(bus, 4, ImuSensor::DEFAULT_I2C_ADDRESS);
+    assert(!sensor.start());
+    assert(!sensor.isInitialized());
+    assert(sensor.getLastI2cResult().status == I2cStatus::AddressNack);
+}
 
 void testConstructorInitializesState() {
     Wire.clearReadBuffer();
@@ -710,6 +770,8 @@ int main() {
     
     testConstructorInitializesState();
     testConstructorWithFullScaleRanges();
+    testInjectedBusStartupAndReadFailures();
+    testInjectedBusRejectsFailedChipIdRead();
     testI2cAddresses();
     testSamplingIntervals();
     testCompensateAccelerationAt2G();
