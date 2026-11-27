@@ -45,6 +45,7 @@ static const int LCD_ROWS       = 2;
 
 static constexpr float KNOTS_TO_KPH_CONVERSION_FACTOR = 1.852f;
 static constexpr float CENTIMETER_TO_METER_CONVERSION_FACTOR = 0.01f;
+/** @brief Shared I2C bus configuration: board-default pins, 100 kHz, and 50 ms per transfer. */
 static const I2cBusConfiguration DRIVER_ASSISTANT_I2C_CONFIGURATION{-1, -1, 100000};
 
 // Timing constants
