@@ -73,7 +73,7 @@ struct DiagnosticsSnapshot {
  * dispatch hooks implemented by subclasses.
  */
 // Named constants to avoid magic numbers and strings.
-// MAX_GPIO_INTERRUPTS is at namespace scope because it's used by the file-level isrHandleTable in Device.cpp.
+// Maximum GPIO interrupt indices accepted by the ESP32 Arduino backend.
 namespace DeviceConstants {
     constexpr uint8_t MAX_GPIO_INTERRUPTS = 64; ///< Maximum GPIO interrupt lines on ESP32.
 }
@@ -84,7 +84,6 @@ private:
     static constexpr uint32_t   TIMER_FREQUENCY_IN_HERTZ                        = 1000000; ///< Hardware timer frequency (1 MHz).
     static constexpr uint32_t   MILLISECONDS_PER_MICROSECOND                    = 1000; ///< Milliseconds to microseconds conversion.
     static constexpr uint32_t   NETWORK_QUEUE_RECEIVE_TIMEOUT_IN_MILLISECONDS   = 100; ///< Network dispatch queue poll timeout.
-    static constexpr uint32_t   TASK_TERMINATION_WAIT_IN_MILLISECONDS           = 100; ///< Wait time for task termination.
     static constexpr int        INVALID_EVENT_IDENTIFIER                        = -1; ///< Sentinel for invalid event identifier.
     static constexpr int        INVALID_COMMAND_IDENTIFIER                      = -1; ///< Sentinel for invalid command identifier.
     static constexpr int        DIAGNOSTICS_COMMAND_IDENTIFIER                  = 300; ///< Framework diagnostics command (300+ range reserved).
@@ -93,7 +92,11 @@ private:
     static constexpr auto       DEVICE_COMPONENT_NAME                           = "Device"; ///< Log component name.
 
     SamplingScheduler scheduler; ///< Per-slot sampling scheduler.
-    bool engineStarted; ///< Guards against registration after engine start.
+    std::atomic<bool> engineStarted; ///< Guards against registration after engine start and releases workers after startup commit.
+    std::atomic<bool> engineStopping{false}; ///< Releases workers during rollback or final shutdown.
+    std::atomic<bool> engineShutdownComplete{false}; ///< Makes repeated shutdown calls safe.
+    std::atomic<bool> hardwareSamplingWorkerExited{true}; ///< Acknowledges sampler exit before resource cleanup.
+    std::atomic<bool> networkDispatcherWorkerExited{true}; ///< Acknowledges network worker exit before resource cleanup.
 
     TaskHandle_t hardwareSamplingTaskHandle; ///< Handle for the hardware sampling task.
     TaskHandle_t networkDispatcherTaskHandle; ///< Handle for the network dispatcher task.
@@ -124,11 +127,16 @@ private:
      * not by Sensor. This keeps Sensor as a pure sensor abstraction.
      */
     struct TriggerEntry {
-        Sensor* sensor          = nullptr;          ///< Pointer to the registered sensor.
-        int     eventIdentifier = -1;          ///< Event identifier to emit on trigger.
-        int     interruptMode   = CHANGE;        ///< GPIO interrupt mode (Arduino core: RISING, FALLING, CHANGE).
-        bool    wasTriggered    = false;         ///< True if this sensor was triggered since last poll.
-        uint8_t slotIndex       = 0;             ///< Index in the trigger table (also the trigger handle).
+        Sensor* sensor = nullptr; ///< Pointer to the registered sensor.
+        Device* owner = nullptr; ///< Device that owns this registration.
+        int eventIdentifier = -1; ///< Event identifier to emit on trigger.
+        int interruptMode = CHANGE; ///< GPIO interrupt mode.
+        int pin = -1; ///< Source GPIO pin.
+        int interruptNumber = -1; ///< Arduino interrupt index for the source pin.
+        std::atomic<bool> registrationActive{false}; ///< Whether this entry is a live registration.
+        std::atomic<bool> wasTriggered{false}; ///< ISR-safe pending trigger flag.
+        bool interruptAttached = false; ///< Whether the GPIO callback is currently attached.
+        uint8_t slotIndex = 0; ///< Index in the trigger table (also the trigger handle).
     };
 
     hw_timer_t* hardwareTimer; ///< Pointer to the hardware timer.
@@ -156,6 +164,12 @@ private:
      * @param deviceInstance Pointer to the owning `Device` instance.
      */
     static void IRAM_ATTR handleHardwareTimerInterrupt(void* deviceInstance);
+
+    /**
+     * @brief Routes a GPIO interrupt to the trigger entry passed as callback context.
+     * @param triggerContext Stable pointer to the owning trigger-table entry.
+     */
+    static void IRAM_ATTR handleSensorTrigger(void* triggerContext);
 
     /**
      * @brief Re-arms the hardware timer for the next due sensor sample.
@@ -205,6 +219,12 @@ private:
 
 public:
     /**
+     * @brief Reports whether the asynchronous engine is currently running.
+     * @return `true` after successful engine startup and until shutdown begins.
+     */
+    bool isAsynchronousEngineStarted() const;
+
+    /**
      * @brief Power mode for the hardware timer.
      */
     enum class PowerMode : uint8_t {
@@ -227,28 +247,12 @@ public:
     static void reportWakeReason();
 
     /**
-     * @brief Static ISR handler for interrupt-driven sensor triggers.
-     * @param handle Trigger handle (slot index in trigger table).
-     *
-     * Called from the GPIO ISR when an interrupt-driven sensor fires.
-     * Marks the sensor as triggered and wakes the sampler task.
-     * Declared public so host tests can simulate ISR triggers.
-     */
-    static void IRAM_ATTR onSensorTrigger(uint32_t handle);
-
-    /**
      * @brief Processes all triggered sensors in the sampler task context.
      *
      * Iterates the trigger table, and for each sensor that was triggered,
      * clears the flag and calls on() (which internally invokes processEvent()).
      */
     void processTriggeredSensors();
-
-    /**
-     * @brief Static pointer for ISR access to the active Device instance.
-     * @note Declared public so host tests can set it to simulate ISR scenarios.
-     */
-    static Device* activeDevice; ///< Static pointer for ISR access to the active Device instance.
 
     /**
      * @brief Maximum number of interrupt-driven sensors.
@@ -306,14 +310,20 @@ protected:
     /**
      * @brief Allocates queue/task infrastructure and starts asynchronous workers.
      * @param maximumQueueLength Capacity of the telemetry queue.
+     * @return `true` when the engine is running (or already started), `false` if a required resource could not be created.
+     *
+     * Failed startup releases partial resources, leaves scheduler registrations intact, and can be retried.
      */
-    void initializeAsynchronousEngine(uint8_t maximumQueueLength = 10);
+    bool initializeAsynchronousEngine(uint8_t maximumQueueLength = 10);
 
     /**
      * @brief Allocates queue/task infrastructure with full engine configuration.
      * @param engineConfiguration Stack sizes, priorities, core pinning, and queue depth.
+     * @return `true` when the engine is running (or already started), `false` if a required resource could not be created.
+     *
+     * Failed startup releases partial resources, leaves scheduler registrations intact, and can be retried.
      */
-    void initializeAsynchronousEngine(const EngineConfiguration& engineConfiguration);
+    bool initializeAsynchronousEngine(const EngineConfiguration& engineConfiguration);
 
     /**
      * @brief Pushes a telemetry payload pointer into the internal queue.
@@ -545,13 +555,15 @@ protected:
     /**
      * @brief Gracefully stops the asynchronous engine and releases all resources.
      *
-     * Stops the hardware timer, signals both FreeRTOS tasks to exit cooperatively,
-     * waits for them to terminate, drains and deletes any pending telemetry packets
-     * and commands, and deletes the queues. After calling this method, the engine cannot be restarted.
+     * Stops the hardware timer, disables trigger registrations, signals both
+     * FreeRTOS tasks to exit cooperatively, and waits for their exit acknowledgements
+     * before draining queues. This may block until an in-flight user callback returns.
+     * After calling this method, the engine cannot be restarted; call it from a
+     * context other than either engine worker.
      *
-     * Derived classes must call this method in their destructor **before** their own
-     * destructor body runs, because sensor/actuator members are destroyed before
-     * ~Device() executes, and a running task could access freed memory.
+     * Derived classes must call this method at the start of their destructor body,
+     * before performing member cleanup, because sensor/actuator members are destroyed
+     * before `~Device()` executes and a running task could otherwise access freed memory.
      */
     void stopAsynchronousEngine();
 
@@ -586,15 +598,6 @@ public:
         SensorTrigger       = 0x4, ///< Interrupt-driven sensor event.
         CommandAvailable    = 0x8  ///< Command marshaled from network task.
     };
-
-    /**
-     * @brief Static C function pointer wrapper for the GPIO ISR.
-     *
-     * Arduino's attachInterrupt requires a plain function pointer (not a lambda).
-     * This static member scans the trigger table and delegates to onSensorTrigger.
-     * Declared public so the free C adapter function can call it.
-     */
-    static void IRAM_ATTR onSensorTriggerWrapper();
 
     /**
      * @brief Collects a snapshot of runtime health and diagnostic counters.

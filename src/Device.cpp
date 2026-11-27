@@ -81,42 +81,142 @@ void IRAM_ATTR Device::handleHardwareTimerInterrupt(void *deviceInstance) {
     }
 }
 
-void Device::initializeAsynchronousEngine(const uint8_t maximumQueueLength) {
+bool Device::initializeAsynchronousEngine(const uint8_t maximumQueueLength) {
     EngineConfiguration engineConfiguration;
     engineConfiguration.queueLength = maximumQueueLength;
-    initializeAsynchronousEngine(engineConfiguration);
+    return initializeAsynchronousEngine(engineConfiguration);
 }
 
-void Device::initializeAsynchronousEngine(const EngineConfiguration &engineConfiguration) {
-    // Resolve legacy (two-argument) slots before starting the engine
-    // Legacy slots get periodInTicks = total legacy slot count, reproducing the old round-robin
-    // This is handled internally: legacy slots are marked with period 0 and resolved here
-    engineStarted = true;
+bool Device::initializeAsynchronousEngine(const EngineConfiguration &engineConfiguration) {
+    if (engineStarted.load(std::memory_order_acquire)) {
+        return true;
+    }
+    if (engineStopping.load(std::memory_order_acquire) ||
+        engineShutdownComplete.load(std::memory_order_acquire)) {
+        return false;
+    }
+    if (engineConfiguration.queueLength == 0) {
+        return false;
+    }
 
-    telemetryQueueHandle = xQueueCreate(engineConfiguration.queueLength, sizeof(TelemetryPackage*));
-    highPriorityQueueHandle = xQueueCreate(4, sizeof(TelemetryPackage*));
-    commandQueueHandle = xQueueCreate(engineConfiguration.queueLength, sizeof(CommandEntry));
+    QueueHandle_t newTelemetryQueue = xQueueCreate(engineConfiguration.queueLength, sizeof(TelemetryPackage*));
+    QueueHandle_t newHighPriorityQueue = nullptr;
+    QueueHandle_t newCommandQueue = nullptr;
+    hw_timer_t* newHardwareTimer = nullptr;
+    TaskHandle_t newSamplingTask = nullptr;
+    TaskHandle_t newNetworkTask = nullptr;
 
-    xTaskCreatePinnedToCore(
+    const auto releasePartialResources = [&]() {
+        engineStarted.store(false, std::memory_order_release);
+        engineStopping.store(true, std::memory_order_release);
+        if (newHardwareTimer != nullptr) {
+            timerEnd(newHardwareTimer);
+            newHardwareTimer = nullptr;
+        }
+        if (newNetworkTask != nullptr) {
+            xTaskNotify(newNetworkTask,
+                        static_cast<uint32_t>(NotificationBitFlag::TerminationSignal), eSetBits);
+        }
+        if (newSamplingTask != nullptr) {
+            xTaskNotify(newSamplingTask,
+                        static_cast<uint32_t>(NotificationBitFlag::TerminationSignal), eSetBits);
+        }
+        while (!hardwareSamplingWorkerExited.load(std::memory_order_acquire) ||
+               !networkDispatcherWorkerExited.load(std::memory_order_acquire)) {
+            vTaskDelay(pdMS_TO_TICKS(1));
+        }
+        newNetworkTask = nullptr;
+        newSamplingTask = nullptr;
+        if (newCommandQueue != nullptr) {
+            vQueueDelete(newCommandQueue);
+            newCommandQueue = nullptr;
+        }
+        if (newHighPriorityQueue != nullptr) {
+            vQueueDelete(newHighPriorityQueue);
+            newHighPriorityQueue = nullptr;
+        }
+        if (newTelemetryQueue != nullptr) {
+            vQueueDelete(newTelemetryQueue);
+            newTelemetryQueue = nullptr;
+        }
+        engineStopping.store(false, std::memory_order_release);
+    };
+
+    if (newTelemetryQueue == nullptr) {
+        return false;
+    }
+    newHighPriorityQueue = xQueueCreate(4, sizeof(TelemetryPackage*));
+    if (newHighPriorityQueue == nullptr) {
+        releasePartialResources();
+        return false;
+    }
+    newCommandQueue = xQueueCreate(engineConfiguration.queueLength, sizeof(CommandEntry));
+    if (newCommandQueue == nullptr) {
+        releasePartialResources();
+        return false;
+    }
+
+    newHardwareTimer = timerBegin(TIMER_FREQUENCY_IN_HERTZ);
+    if (newHardwareTimer == nullptr) {
+        releasePartialResources();
+        return false;
+    }
+
+    hardwareSamplingWorkerExited.store(false, std::memory_order_release);
+    const BaseType_t samplingTaskResult = xTaskCreatePinnedToCore(
         &executeHardwareSamplingContext, SAMPLER_TASK_NAME,
         engineConfiguration.samplerStackBytes, this, engineConfiguration.samplerPriority,
-        &hardwareSamplingTaskHandle, engineConfiguration.samplerCore
+        &newSamplingTask, engineConfiguration.samplerCore
     );
-    xTaskCreatePinnedToCore(
+    if (samplingTaskResult != pdPASS || newSamplingTask == nullptr) {
+        if (newSamplingTask == nullptr) {
+            hardwareSamplingWorkerExited.store(true, std::memory_order_release);
+        }
+        releasePartialResources();
+        return false;
+    }
+
+    networkDispatcherWorkerExited.store(false, std::memory_order_release);
+    const BaseType_t networkTaskResult = xTaskCreatePinnedToCore(
         &executeNetworkDispatchContext, NETWORK_TASK_NAME,
         engineConfiguration.networkStackBytes, this, engineConfiguration.networkPriority,
-        &networkDispatcherTaskHandle, engineConfiguration.networkCore
+        &newNetworkTask, engineConfiguration.networkCore
     );
+    if (networkTaskResult != pdPASS || newNetworkTask == nullptr) {
+        if (newNetworkTask == nullptr) {
+            networkDispatcherWorkerExited.store(true, std::memory_order_release);
+        }
+        releasePartialResources();
+        return false;
+    }
 
-    hardwareTimer = timerBegin(TIMER_FREQUENCY_IN_HERTZ);
+    telemetryQueueHandle = newTelemetryQueue;
+    highPriorityQueueHandle = newHighPriorityQueue;
+    commandQueueHandle = newCommandQueue;
+    hardwareSamplingTaskHandle = newSamplingTask;
+    networkDispatcherTaskHandle = newNetworkTask;
+    hardwareTimer = newHardwareTimer;
+
     timerAttachInterruptArg(hardwareTimer, &handleHardwareTimerInterrupt, this);
-
     const auto alarmIntervalInMicroseconds = static_cast<uint64_t>(pollingIntervalInMilliseconds) *
                                              MILLISECONDS_PER_MICROSECOND;
     const bool autoReload = powerMode == PowerMode::Periodic;
     timerAlarm(hardwareTimer, alarmIntervalInMicroseconds, autoReload, 0);
+
+    engineStarted.store(true, std::memory_order_release);
+    for (auto& entry : triggerTable) {
+        if (entry.registrationActive.load(std::memory_order_acquire)) {
+            attachInterruptArg(entry.interruptNumber, &handleSensorTrigger, &entry, entry.interruptMode);
+            entry.interruptAttached = true;
+        }
+    }
+    return true;
 }
 // LCOV_EXCL_END
+
+bool Device::isAsynchronousEngineStarted() const {
+    return engineStarted.load(std::memory_order_acquire);
+}
 
 bool Device::appendSensorToScheduler(EventHandler *targetSensorInstance, const int requestedEventIdentifier) {
     if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == INVALID_EVENT_IDENTIFIER)
@@ -329,7 +429,11 @@ bool Device::enqueueHighPriorityPayload(std::unique_ptr<TelemetryPackage> highPr
 // LCOV_EXCL_START — FreeRTOS task context, cannot run in host tests
 void Device::executeHardwareSamplingContext(void *taskParameters) {
     auto *self = static_cast<Device *>(taskParameters);
-    while (true) {
+    while (!self->engineStarted.load(std::memory_order_acquire) &&
+           !self->engineStopping.load(std::memory_order_acquire)) {
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+    while (!self->engineStopping.load(std::memory_order_acquire)) {
         // Wait for any notification bit to be set, then clear all bits
         uint32_t notificationValue = 0;
         xTaskNotifyWait(pdFALSE, pdTRUE, &notificationValue, portMAX_DELAY);
@@ -372,14 +476,20 @@ void Device::executeHardwareSamplingContext(void *taskParameters) {
             self->processPendingCommands();
         }
     }
+    self->hardwareSamplingWorkerExited.store(true, std::memory_order_release);
     vTaskDelete(nullptr);
 }
 
 void Device::executeNetworkDispatchContext(void *taskParameters) {
-    const auto *self = static_cast<Device *>(taskParameters);
+    auto *self = static_cast<Device *>(taskParameters);
     TelemetryPackage *incomingPolymorphicPacketPointer = nullptr;
 
-    while (true) {
+    while (!self->engineStarted.load(std::memory_order_acquire) &&
+           !self->engineStopping.load(std::memory_order_acquire)) {
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+
+    while (!self->engineStopping.load(std::memory_order_acquire)) {
         // Check for termination signal without clearing the notification
         uint32_t notificationValue;
         if (xTaskNotifyWait(pdFALSE, pdTRUE, &notificationValue, 0) == pdTRUE) {
@@ -409,6 +519,7 @@ void Device::executeNetworkDispatchContext(void *taskParameters) {
         }
         self->maintainNetworkServices();
     }
+    self->networkDispatcherWorkerExited.store(true, std::memory_order_release);
     vTaskDelete(nullptr);
 }
 // LCOV_EXCL_END
@@ -476,54 +587,38 @@ void Device::maintainNetworkServices() const {
  */
 
 // LCOV_EXCL_START — GPIO ISR and trigger scheduler, cannot run in host tests
-Device *Device::activeDevice = nullptr;
-
-// ISR handle table: maps GPIO interrupt number to trigger handle (slot index + 1)
-static uint32_t isrHandleTable[DeviceConstants::MAX_GPIO_INTERRUPTS] = {};
-
-/**
- * @brief Static C function pointer wrapper for the GPIO ISR.
- *
- * Arduino's attachInterrupt requires a plain function pointer (not a lambda).
- * This static member scans the trigger table and delegates to onSensorTrigger.
- */
-void IRAM_ATTR Device::onSensorTriggerWrapper() {
-    if (activeDevice != nullptr) {
-        for (uint8_t i = 0; i < MAX_TRIGGERED_SENSORS; i++) {
-            if (activeDevice->triggerTable[i].sensor != nullptr) {
-                onSensorTrigger(static_cast<uint32_t>(i + 1));
-            }
-        }
-    }
-}
-
-/**
- * @brief C adapter function for attachInterrupt compatibility.
- *
- * attachInterrupt requires a plain C function pointer, not a C++ member function.
- * This free function delegates to the static member Device::onSensorTriggerWrapper().
- */
-extern "C" {
-static void c_interrupt_adapter(void) {
-    Device::onSensorTriggerWrapper();
-}
-}
-
 /**
  * @brief Static ISR handler for interrupt-driven sensor triggers.
  *
  * Called from the GPIO ISR when an interrupt-driven sensor fires.
- * Marks the sensor as triggered and wakes the sampler task.
+ * Marks only the originating registration as triggered and wakes its sampler.
  */
-void IRAM_ATTR Device::onSensorTrigger(const uint32_t handle) {
-    if (activeDevice != nullptr && handle > 0 && handle <= MAX_TRIGGERED_SENSORS) {
-        const auto index = static_cast<uint8_t>(handle - 1);
-        activeDevice->triggerTable[index].wasTriggered = true;
-        BaseType_t higherPriorityTaskWoken = pdFALSE;
-        xTaskNotifyFromISR(activeDevice->hardwareSamplingTaskHandle,
-                           static_cast<uint32_t>(NotificationBitFlag::SensorTrigger),
-                           eSetBits, &higherPriorityTaskWoken);
-        if (higherPriorityTaskWoken)
+void IRAM_ATTR Device::handleSensorTrigger(void* const triggerContext) {
+    if (triggerContext == nullptr) {
+        return;
+    }
+
+    auto* entry = static_cast<TriggerEntry*>(triggerContext);
+    if (!entry->registrationActive.load(std::memory_order_acquire)) {
+        return;
+    }
+
+    Device* const owner = entry->owner;
+    if (owner == nullptr || !owner->engineStarted.load(std::memory_order_acquire)) {
+        return;
+    }
+
+    TaskHandle_t const samplerTask = owner->hardwareSamplingTaskHandle;
+    if (samplerTask == nullptr) {
+        return;
+    }
+
+    entry->wasTriggered.store(true, std::memory_order_release);
+    BaseType_t higherPriorityTaskWoken = pdFALSE;
+    xTaskNotifyFromISR(samplerTask,
+                       static_cast<uint32_t>(NotificationBitFlag::SensorTrigger),
+                       eSetBits, &higherPriorityTaskWoken);
+    if (higherPriorityTaskWoken) {
         portYIELD_FROM_ISR();
     }
 }
@@ -537,10 +632,10 @@ void IRAM_ATTR Device::onSensorTrigger(const uint32_t handle) {
  */
 void Device::processTriggeredSensors() {
     for (auto &i: triggerTable) {
-        if (i.sensor != nullptr && i.wasTriggered) {
-            i.wasTriggered = false;
+        if (i.sensor != nullptr && i.registrationActive.load(std::memory_order_acquire) &&
+            i.wasTriggered.exchange(false, std::memory_order_acq_rel)) {
             Event event(i.eventIdentifier);
-            event.sourceId = i.sensor->getPin();
+            event.sourceId = i.pin;
             // Call on() which internally calls processEvent() — no friend access needed.
             i.sensor->on(event);
         }
@@ -557,27 +652,37 @@ uint32_t Device::appendSensorToTriggeringScheduler(Sensor *targetSensorInstance,
         return 0;
     }
 
+    const int pin = targetSensorInstance->getPin();
+    if (pin < 0 || pin >= DeviceConstants::MAX_GPIO_INTERRUPTS) {
+        return 0;
+    }
+    const int interruptNumber = digitalPinToInterrupt(static_cast<uint8_t>(pin));
+    if (interruptNumber < 0 || interruptNumber >= DeviceConstants::MAX_GPIO_INTERRUPTS) {
+        return 0;
+    }
+
+    for (const auto& entry : triggerTable) {
+        if (entry.sensor != nullptr && (entry.sensor == targetSensorInstance || entry.pin == pin)) {
+            return 0;
+        }
+    }
+
     // Find an empty slot in the trigger table
     for (uint8_t i = 0; i < MAX_TRIGGERED_SENSORS; i++) {
-        if (triggerTable[i].sensor == nullptr) {
-            triggerTable[i].sensor = targetSensorInstance;
-            triggerTable[i].eventIdentifier = requestedEventIdentifier;
-            triggerTable[i].interruptMode = interruptMode;
-            triggerTable[i].wasTriggered = false;
-            triggerTable[i].slotIndex = i;
+        auto& entry = triggerTable[i];
+        if (entry.sensor == nullptr) {
+            entry.sensor = targetSensorInstance;
+            entry.owner = this;
+            entry.eventIdentifier = requestedEventIdentifier;
+            entry.interruptMode = interruptMode;
+            entry.pin = pin;
+            entry.interruptNumber = interruptNumber;
+            entry.wasTriggered.store(false, std::memory_order_relaxed);
+            entry.interruptAttached = false;
+            entry.slotIndex = i;
+            entry.registrationActive.store(true, std::memory_order_release);
 
-            // Set the static active device pointer for ISR access
-            activeDevice = this;
-
-            // Attach the GPIO interrupt using the C adapter function
-            // (Arduino's attachInterrupt requires a plain C function pointer)
-            const uint32_t handle = static_cast<uint32_t>(i + 1);
-            const int interruptNumber = digitalPinToInterrupt(targetSensorInstance->getPin());
-            isrHandleTable[interruptNumber] = handle;
-            attachInterrupt(interruptNumber, c_interrupt_adapter, interruptMode);
-
-            // Return handle (slot index + 1, so 0 is invalid)
-            return handle;
+            return static_cast<uint32_t>(i + 1);
         }
     }
 
@@ -592,15 +697,20 @@ void Device::removeSensorFromTriggeringScheduler(const uint32_t triggerHandle) {
     if (triggerHandle == 0 || triggerHandle > MAX_TRIGGERED_SENSORS)
         return;
 
-    if (const uint8_t index = static_cast<uint8_t>(triggerHandle - 1); triggerTable[index].sensor != nullptr) {
-        // Detach the GPIO interrupt
-        detachInterrupt(digitalPinToInterrupt(triggerTable[index].sensor->getPin()));
+    auto& entry = triggerTable[triggerHandle - 1];
+    if (entry.sensor != nullptr) {
+        entry.registrationActive.store(false, std::memory_order_release);
+        if (entry.interruptAttached) {
+            detachInterrupt(entry.interruptNumber);
+            entry.interruptAttached = false;
+        }
 
-        // Clear the trigger table entry (all state is in Device, not Sensor)
-        triggerTable[index].sensor = nullptr;
-        triggerTable[index].eventIdentifier = INVALID_EVENT_IDENTIFIER;
-        triggerTable[index].interruptMode = CHANGE;
-        triggerTable[index].wasTriggered = false;
+        entry.sensor = nullptr;
+        entry.eventIdentifier = INVALID_EVENT_IDENTIFIER;
+        entry.interruptMode = CHANGE;
+        entry.pin = -1;
+        entry.interruptNumber = -1;
+        entry.wasTriggered.store(false, std::memory_order_relaxed);
     }
 }
 
@@ -613,12 +723,19 @@ bool Device::appendToBothSchedulers(Sensor *targetSensorInstance,
     if (engineStarted || targetSensorInstance == nullptr || requestedEventIdentifier == INVALID_EVENT_IDENTIFIER)
         return false;
 
-    const bool samplingOk = appendSensorToScheduler(targetSensorInstance, requestedEventIdentifier);
     const uint32_t triggerHandle = appendSensorToTriggeringScheduler(targetSensorInstance,
                                                                      requestedEventIdentifier,
                                                                      interruptMode);
+    if (triggerHandle == 0) {
+        return false;
+    }
 
-    return samplingOk && triggerHandle != 0;
+    if (!appendSensorToScheduler(targetSensorInstance, requestedEventIdentifier)) {
+        removeSensorFromTriggeringScheduler(triggerHandle);
+        return false;
+    }
+
+    return true;
 }
 /** @} */
 // LCOV_EXCL_END
@@ -874,15 +991,45 @@ void Device::setFirmwareVersion(const char* version) {
 
 // LCOV_EXCL_START — FreeRTOS task management, cannot run in host tests
 void Device::stopAsynchronousEngine() {
-    // Guard against double-stop
-    if (hardwareSamplingTaskHandle == nullptr && networkDispatcherTaskHandle == nullptr) {
+    if (engineShutdownComplete.load(std::memory_order_acquire)) {
         return;
+    }
+
+    bool hasActiveTriggerRegistration = false;
+    for (const auto& entry : triggerTable) {
+        if (entry.registrationActive.load(std::memory_order_acquire)) {
+            hasActiveTriggerRegistration = true;
+            break;
+        }
+    }
+    if (hardwareSamplingTaskHandle == nullptr && networkDispatcherTaskHandle == nullptr &&
+        hardwareTimer == nullptr && telemetryQueueHandle == nullptr &&
+        highPriorityQueueHandle == nullptr && commandQueueHandle == nullptr &&
+        !hasActiveTriggerRegistration) {
+        return;
+    }
+
+    bool expectedStopping = false;
+    while (!engineStopping.compare_exchange_weak(expectedStopping, true,
+                                                  std::memory_order_acq_rel)) {
+        if (engineShutdownComplete.load(std::memory_order_acquire)) {
+            return;
+        }
+        expectedStopping = false;
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
+    engineStarted.store(false, std::memory_order_release);
+
+    for (auto& entry : triggerTable) {
+        if (entry.registrationActive.exchange(false, std::memory_order_acq_rel)) {
+            detachInterrupt(entry.interruptNumber);
+        }
     }
 
     // Stop the hardware timer to prevent new sampler ticks
     if (hardwareTimer != nullptr) {
-        timerEnd(hardwareTimer);
         timerDetachInterrupt(hardwareTimer);
+        timerEnd(hardwareTimer);
         hardwareTimer = nullptr;
     }
 
@@ -896,16 +1043,25 @@ void Device::stopAsynchronousEngine() {
                     static_cast<uint32_t>(NotificationBitFlag::TerminationSignal), eSetBits);
     }
 
-    // Wait for tasks to terminate — they call vTaskDelete(nullptr) at loop exit
-    vTaskDelay(pdMS_TO_TICKS(TASK_TERMINATION_WAIT_IN_MILLISECONDS));
+    while (!hardwareSamplingWorkerExited.load(std::memory_order_acquire) ||
+           !networkDispatcherWorkerExited.load(std::memory_order_acquire)) {
+        vTaskDelay(pdMS_TO_TICKS(1));
+    }
 
-    // Clean up task handles after tasks have deleted themselves
     hardwareSamplingTaskHandle = nullptr;
     networkDispatcherTaskHandle = nullptr;
 
     // Drain and delete any pending packets in all queues
     Device::drainTelemetryQueue(highPriorityQueueHandle);
     Device::drainTelemetryQueue(telemetryQueueHandle);
+    if (highPriorityQueueHandle != nullptr) {
+        vQueueDelete(highPriorityQueueHandle);
+        highPriorityQueueHandle = nullptr;
+    }
+    if (telemetryQueueHandle != nullptr) {
+        vQueueDelete(telemetryQueueHandle);
+        telemetryQueueHandle = nullptr;
+    }
 
     // Drain and delete the command queue
     if (commandQueueHandle != nullptr) {
@@ -916,5 +1072,6 @@ void Device::stopAsynchronousEngine() {
         vQueueDelete(commandQueueHandle);
         commandQueueHandle = nullptr;
     }
+    engineShutdownComplete.store(true, std::memory_order_release);
 }
 // LCOV_EXCL_END
