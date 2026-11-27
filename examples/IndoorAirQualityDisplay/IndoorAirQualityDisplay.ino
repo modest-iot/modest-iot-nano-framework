@@ -242,8 +242,11 @@ public:
         // Register sensors only after all required I2C peripherals are ready.
         appendSensorToScheduler(&airQualitySensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
+        if (!initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH)) {
+            Serial.println((String(INDOOR_AIR_QUALITY_LOG_PREFIX) + " Engine startup failed.").c_str());
+            return false;
+        }
         Serial.println((String(INDOOR_AIR_QUALITY_LOG_PREFIX) + " Indoor air quality monitor online.").c_str());
-        initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
         return true;
     }
 };

@@ -51,6 +51,9 @@ static const char* RFID_ACCESS_CONTROL_PREFIX = "[Access]";
  * @brief Access Control Device managing an RFID reader, feedback LED, and buzzer.
  */
 class RfidAccessController : public Device {
+public:
+    ~RfidAccessController() override { stopAsynchronousEngine(); }
+
 private:
     RfidSensor rfidReader;
     Led accessLed;
@@ -67,7 +70,9 @@ public:
         // the engine start guard rejects any registration after the engine is running.
         appendSensorToScheduler(&rfidReader, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
+        if (!initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH)) {
+            return;
+        }
     }
 
     /**
@@ -104,6 +109,10 @@ void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
     Device::setFirmwareVersion("RAC-505 FW 1.0.0");
     rfidAccessApplication = new RfidAccessController(RFID_CS_PIN, RFID_RST_PIN, ACCESS_LED_PIN, BUZZER_PIN);
+    if (!rfidAccessApplication->isAsynchronousEngineStarted()) {
+        Serial.println("[RfidAccessController] Engine startup failed; access control was not started.");
+        return;
+    }
     Serial.println((String(RFID_ACCESS_LOG_PREFIX) + " Access Controller active.").c_str());
 }
 

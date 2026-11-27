@@ -52,6 +52,9 @@ static const bool INITIAL_IS_MOTION_PRESENT    = false;
  * @brief Outdoor Security Light Controller Device.
  */
 class OutdoorSecurityLightController : public Device {
+public:
+    ~OutdoorSecurityLightController() override { stopAsynchronousEngine(); }
+
 private:
     ArduinoI2cBus i2cBus;
     DigitalLightIntensitySensor lightSensor;
@@ -112,8 +115,7 @@ public:
                                           Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
                                           CHANGE);
 
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
-        return true;
+        return initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
     }
 
     /**

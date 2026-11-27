@@ -36,6 +36,9 @@ static const char* TOGGLABLE_LED_DEVICE_LOG_PREFIX = "[TogglableLedDevice]";
 //@{
 
 class TogglableLedDevice : public Device {
+public:
+    ~TogglableLedDevice() override { stopAsynchronousEngine(); }
+
     private:
     Button toggleLedButton; // Purpose-driven semantic member name
     Led statusLed;          // Purpose-driven semantic member name
@@ -61,7 +64,9 @@ class TogglableLedDevice : public Device {
                                           FALLING);
 
         // 2. Launch internal background task workers with a safe queue boundary depth of 5
-        initializeAsynchronousEngine(5);
+        if (!initializeAsynchronousEngine(5)) {
+            return;
+        }
     }
 
     /**
@@ -102,6 +107,10 @@ void setup() {
     // Background execution queues, FreeRTOS tasks, and hardware alarm vectors launch automatically!
     togglableLedApplication = new TogglableLedDevice(TOGGLE_BUTTON_PIN, STATUS_LED_PIN, CORE_TIMER_CHANNEL);
 
+    if (!togglableLedApplication->isAsynchronousEngineStarted()) {
+        Serial.println("[TogglableLedDevice] Engine startup failed; toggle control was not started.");
+        return;
+    }
     Serial.println((String(TOGGLABLE_LED_DEVICE_LOG_PREFIX) + " Loop-less interactive toggle node active.").c_str());
 }
 

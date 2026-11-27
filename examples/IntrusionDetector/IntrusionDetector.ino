@@ -205,20 +205,26 @@ public:
         setupPatternForLeakNearEntry();
 
         // Launch internal background task workers
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
+        if (!initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH)) {
+            return;
+        }
     }
 
     /**
      * @brief Post-construction startup hook.
      */
-    void start() {
+    bool start() {
+        if (!isAsynchronousEngineStarted()) {
+            return false;
+        }
         Device::setFirmwareVersion(INTRUSION_DETECTOR_FIRMWARE_VERSION);
+        return true;
     }
 
     ~IntrusionDetector() override {
-        // Remove all registered patterns before stopping the engine.
-        aggregator.cleanupPatterns();
         stopAsynchronousEngine();
+        // Remove all registered patterns after stopping the engine.
+        aggregator.cleanupPatterns();
     }
 
     /**
@@ -270,7 +276,10 @@ void setup() {
         BUZZER_PIN,
         ALERT_LED_PIN
     );
-    intrusionDetectorDevice->start();
+    if (!intrusionDetectorDevice->start()) {
+        Serial.println("[IntrusionDetector] Engine startup failed; monitoring was not started.");
+        return;
+    }
 
     Serial.println((String(INTRUSION_DETECTOR_LOG_PREFIX) + " Composite event monitoring active.").c_str());
 }

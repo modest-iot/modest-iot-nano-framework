@@ -121,8 +121,7 @@ class MqttTlsDevice : public Device {
         // the engine start guard rejects any registration after the engine is running.
         appendSensorToScheduler(&environmentalSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
-        initializeAsynchronousEngine(MQTT_TLS_SAMPLER_QUEUE_LENGTH);
-        return true;
+        return initializeAsynchronousEngine(MQTT_TLS_SAMPLER_QUEUE_LENGTH);
     }
 
     ~MqttTlsDevice() override {

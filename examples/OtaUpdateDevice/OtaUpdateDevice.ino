@@ -116,7 +116,9 @@ public:
         // the engine start guard rejects any registration after the engine is running.
         appendSensorToScheduler(&dhtSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
-        initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
+        if (!initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH)) {
+            return;
+        }
     }
 
     ~OtaUpdateDevice() override {
@@ -193,6 +195,9 @@ public:
                 const char* password,
                 unsigned long connectionTimeoutInMilliseconds)
     {
+        if (!isAsynchronousEngineStarted()) {
+            return false;
+        }
         // Set firmware version for fleet management in telemetry
         Device::setFirmwareVersion("MOD-OTA-01 FW 1.0.0");
 

@@ -41,6 +41,9 @@ static const char*          FLOW_RATE_FORMAT                = "Flow rate: %.2f L
  * interrupt-driven pulse counting and periodic flow rate computation.
  */
 class WaterFlowMonitor : public Device {
+public:
+    ~WaterFlowMonitor() override { stopAsynchronousEngine(); }
+
 private:
     WaterFlowSensor flowSensor;
 
@@ -64,7 +67,9 @@ public:
         // the engine start guard rejects any registration after the engine is running.
         appendToBothSchedulers(&flowSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER, CHANGE);
 
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
+        if (!initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH)) {
+            return;
+        }
     }
 
     /**
@@ -85,6 +90,10 @@ void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
     Device::setFirmwareVersion("WFM-211 FW 1.0.0");
     waterFlowApplication = new WaterFlowMonitor(WATER_FLOW_SIGNAL_PIN);
+    if (!waterFlowApplication->isAsynchronousEngineStarted()) {
+        Serial.println("[WaterFlowMonitor] Engine startup failed; monitoring was not started.");
+        return;
+    }
     Serial.println(SYSTEM_BOOT_MESSAGE);
 }
 

@@ -105,6 +105,9 @@ RTC_DATA_ATTR bool rtcLowBatteryDetected = false;
  * is only responsible for instance creation and calling start().
  */
 class WeatherStation : public Device {
+public:
+    ~WeatherStation() override { stopAsynchronousEngine(); }
+
 private:
     ArduinoI2cBus i2cBus;
     DhtSensor dhtSensor;
@@ -261,8 +264,7 @@ public:
         appendSensorToScheduler(&lightSensor, DigitalLightIntensitySensor::LIGHT_DETECTED_EVENT_IDENTIFIER);
 
         // Launch internal background task workers with a small queue for battery operation
-        initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
-        return true;
+        return initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
     }
 
     /**

@@ -63,6 +63,9 @@ static const char*          VENT_OFF_MESSAGE            = "[Ventilation] Vent CL
  * a water pump (relay) and ventilation (servo motor).
  */
 class SmartGreenhouseDevice : public Device {
+public:
+    ~SmartGreenhouseDevice() override { stopAsynchronousEngine(); }
+
 private:
     SoilMoistureSensor soilSensor;
     DhtSensor          temperatureSensor;
@@ -90,7 +93,9 @@ public:
         appendSensorToScheduler(&soilSensor,        Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
         appendSensorToScheduler(&temperatureSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
+        if (!initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH)) {
+            return;
+        }
     }
 
     /**
@@ -131,6 +136,10 @@ void setup() {
     Serial.begin(SERIAL_BAUD_RATE);
     Device::setFirmwareVersion("SGD-707 FW 1.0.0");
     smartGreenhouseApplication = new SmartGreenhouseDevice();
+    if (!smartGreenhouseApplication->isAsynchronousEngineStarted()) {
+        Serial.println("[SmartGreenhouseDevice] Engine startup failed; control loop was not started.");
+        return;
+    }
     Serial.println(SYSTEM_BOOT_MESSAGE);
 }
 

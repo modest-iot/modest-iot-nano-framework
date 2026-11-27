@@ -89,11 +89,15 @@ public:
         eventAggregator.setOutputHandler(this);
 
         // Launch internal background task workers
-        initializeAsynchronousEngine();
+        if (!initializeAsynchronousEngine()) {
+            return;
+        }
     }
 
-    void start() {
-        Serial.begin(SERIAL_BAUD_RATE);
+    bool start() {
+        if (!isAsynchronousEngineStarted()) {
+            return false;
+        }
         Serial.println((String(LOG_PREFIX) + " starting...").c_str());
 
         // --- EventAggregator: composite event pattern ---
@@ -117,12 +121,13 @@ public:
                                     RelayActuator::RELAY_ON_COMMAND_IDENTIFIER);
 
         Serial.println((String(LOG_PREFIX) + " ready. Monitoring for water leak + door intrusion.").c_str());
+        return true;
     }
 
     ~SmartFactoryAlarm() override {
+        stopAsynchronousEngine();
         rulesEngine.cleanupRules();
         eventAggregator.cleanupPatterns();
-        stopAsynchronousEngine();
     }
 
     /**
@@ -177,9 +182,13 @@ public:
 static SmartFactoryAlarm* smartFactoryAlarmApplication = nullptr;
 
 void setup() {
+    Serial.begin(SERIAL_BAUD_RATE);
     smartFactoryAlarmApplication = new SmartFactoryAlarm(
         WATER_LEAK_PIN, DOOR_WINDOW_PIN, BUZZER_PIN, EMERGENCY_VENTILATION_PIN);
-    smartFactoryAlarmApplication->start();
+    if (!smartFactoryAlarmApplication->start()) {
+        Serial.println("[SmartFactoryAlarm] Engine startup failed; monitoring was not started.");
+        return;
+    }
 }
 
 void loop() {

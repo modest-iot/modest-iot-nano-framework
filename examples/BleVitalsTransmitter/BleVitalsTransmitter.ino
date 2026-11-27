@@ -136,7 +136,9 @@ public:
         appendSensorToScheduler(&heartRateSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
         appendSensorToScheduler(&skinTempSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
-        initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
+        if (!initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH)) {
+            return;
+        }
     }
 
     ~BleVitalsTransmitter() override {
@@ -156,6 +158,9 @@ public:
      * @return True if BLE initialization succeeded.
      */
     bool start() {
+        if (!isAsynchronousEngineStarted()) {
+            return false;
+        }
         Device::setFirmwareVersion("BVT-100 FW 1.0.0");
         Serial.println((String(BLE_VITALS_TRANSMITTER_LOG_PREFIX) + " Starting BLE advertising...").c_str());
         gatewayClient.service();

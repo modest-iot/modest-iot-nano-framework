@@ -110,7 +110,9 @@ public:
         : Device(samplingIntervalInMilliseconds, timerGroupIndex),
           smartLamp(redPin, greenPin, bluePin, false, this)
     {
-        initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
+        if (!initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH)) {
+            return;
+        }
     }
 
     ~RemoteLedController() override {
@@ -200,6 +202,9 @@ public:
     bool start(WiFiConnectivityDriver& transport,
                unsigned long connectionTimeoutMs)
     {
+        if (!isAsynchronousEngineStarted()) {
+            return false;
+        }
         Device::setFirmwareVersion("RLC-404 FW 1.0.0");
         // Connect to WiFi with timeout
         Serial.println((String(REMOTE_LED_CONTROLLER_LOG_PREFIX) + " Connecting to WiFi...").c_str());

@@ -166,7 +166,9 @@ public:
         appendToBothSchedulers(&vibrationSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER, FALLING);
         appendSensorToScheduler(&tempSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
-        initializeAsynchronousEngine(config);
+        if (!initializeAsynchronousEngine(config)) {
+            return;
+        }
 
         MIOT_LOG_I(EQUIP_HEALTH_LOG_TAG, "Engine configured: sampler stack %lu bytes, queue length %u",
                    config.samplerStackBytes, config.queueLength);
@@ -215,6 +217,9 @@ public:
      * @return True if sensors are responding.
      */
     bool start() {
+        if (!isAsynchronousEngineStarted()) {
+            return false;
+        }
         Device::setFirmwareVersion("EHM-600 FW 1.0.0");
         MIOT_LOG_I(EQUIP_HEALTH_LOG_TAG, "Equipment health monitor starting...");
 

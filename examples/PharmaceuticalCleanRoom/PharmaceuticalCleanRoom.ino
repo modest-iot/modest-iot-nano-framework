@@ -369,11 +369,11 @@ public:
         setupLevel3QuarantineBatchPattern();
 
         // Launch internal background task workers
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
-        return true;
+        return initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
     }
 
     ~PharmaceuticalCleanRoom() override {
+        stopAsynchronousEngine();
         // Demonstrate removePattern() by explicitly removing one pattern before cleanup.
         // In a real system, this could be used to dynamically disable patterns
         // when certain conditions change (e.g., maintenance mode).
@@ -384,7 +384,6 @@ public:
         aggregatorLevel2.cleanupPatterns();
         aggregatorLevel3.cleanupPatterns();
 
-        stopAsynchronousEngine();
     }
 
     /**

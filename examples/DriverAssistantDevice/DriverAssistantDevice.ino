@@ -65,6 +65,9 @@ static const int            TIMER_GROUP_INDEX           = 0;
  * and parking assistance on an LCD display.
  */
 class DriverAssistantDevice : public Device {
+public:
+    ~DriverAssistantDevice() override { stopAsynchronousEngine(); }
+
 private:
     ArduinoI2cBus i2cBus;
     GeolocationSensor gpsSensor;
@@ -154,8 +157,7 @@ public:
         appendSensorToScheduler(&frontSensor,   Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
         appendSensorToScheduler(&rearSensor,    Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
-        return true;
+        return initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
     }
 
     /**

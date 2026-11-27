@@ -65,6 +65,9 @@ static const char*          SYSTEM_BOOT_MESSAGE             = "[System Boot] Sma
  * Coordinates 4 LoadCellAmplifiers to calculate total weight and display it on an LCD.
  */
 class SmartScaleDevice : public Device {
+public:
+    ~SmartScaleDevice() override { stopAsynchronousEngine(); }
+
 private:
     ArduinoI2cBus i2cBus;
     LoadCellAmplifier frontLeftLoadCell;
@@ -156,8 +159,7 @@ public:
         }
         calibrate();
 
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
-        return true;
+        return initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
     }
 
     /**

@@ -251,7 +251,9 @@ public:
             &pirSensor, PassiveInfraredSensor::MOTION_DETECTED_EVENT_IDENTIFIER, CHANGE);
 
         // Launch internal background task workers
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
+        if (!initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH)) {
+            return;
+        }
     }
 
     /**
@@ -261,7 +263,10 @@ public:
      * firmware version, serial logging, Wi-Fi transport, and MQTT broker
      * setup. Called from `setup()` after construction.
      */
-    void start() {
+    bool start() {
+        if (!isAsynchronousEngineStarted()) {
+            return false;
+        }
         Device::setFirmwareVersion(HOME_SECURITY_FIRMWARE_VERSION);
         Serial.println((String(HOME_SECURITY_LOG_PREFIX) + " Initializing home security system...").c_str());
 
@@ -275,6 +280,7 @@ public:
             MQTT_PUBLISH_TOPIC,
             MQTT_CLIENT_ID
         );
+        return true;
     }
 
     ~HomeSecurityDevice() override {
@@ -353,7 +359,10 @@ void setup() {
         PIR_SENSOR_PIN,
         BUZZER_PIN
     );
-    homeSecurityApplication->start();
+    if (!homeSecurityApplication->start()) {
+        Serial.println("[HomeSecurityDevice] Startup failed; monitoring was not started.");
+        return;
+    }
 
     Serial.println((String(HOME_SECURITY_LOG_PREFIX) + " System armed. Monitoring...").c_str());
 }

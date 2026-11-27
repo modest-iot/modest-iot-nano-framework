@@ -50,6 +50,9 @@ static const I2cBusConfiguration PERIMETER_MONITOR_I2C_CONFIGURATION{-1, -1, 100
  * @brief Perimeter Monitor Device.
  */
 class PerimeterMonitor : public Device {
+public:
+    ~PerimeterMonitor() override { stopAsynchronousEngine(); }
+
 private:
     ArduinoI2cBus i2cBus;
     PassiveInfraredSensor northCornerPir;
@@ -133,8 +136,7 @@ public:
             return false;
         }
 
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
-        return true;
+        return initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
     }
 
     /**

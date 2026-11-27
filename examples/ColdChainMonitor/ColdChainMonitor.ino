@@ -348,22 +348,28 @@ public:
         setupPatternForActiveCargoOperation();
 
         // Launch internal background task workers
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
+        if (!initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH)) {
+            return;
+        }
     }
 
     /**
      * @brief Post-construction startup hook.
      */
-    void start() {
+    bool start() {
+        if (!isAsynchronousEngineStarted()) {
+            return false;
+        }
         Device::setFirmwareVersion(COLD_CHAIN_MONITOR_FIRMWARE_VERSION);
+        return true;
     }
 
     ~ColdChainMonitor() override {
+        stopAsynchronousEngine();
         // Clear the static pointer so the condition function cannot access a destroyed instance.
         coldChainLoadCell = nullptr;
-        // Remove all registered patterns before stopping the engine.
+        // Remove all registered patterns after stopping the engine.
         aggregator.cleanupPatterns();
-        stopAsynchronousEngine();
     }
 
     /**
@@ -449,7 +455,10 @@ void setup() {
         BUZZER_PIN,
         STATUS_LED_PIN
     );
-    coldChainMonitorDevice->start();
+    if (!coldChainMonitorDevice->start()) {
+        Serial.println("[ColdChainMonitor] Engine startup failed; monitoring was not started.");
+        return;
+    }
 
     Serial.println((String(COLD_CHAIN_MONITOR_LOG_PREFIX) +
         " Cold chain monitoring active.").c_str());

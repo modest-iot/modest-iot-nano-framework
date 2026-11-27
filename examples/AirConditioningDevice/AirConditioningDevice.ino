@@ -57,6 +57,9 @@ static const int AIR_HANDLER_PIN                        = 13;
 //@{
 
 class AirConditioningDevice : public Device {
+public:
+    ~AirConditioningDevice() override { stopAsynchronousEngine(); }
+
     private:
     ArduinoI2cBus i2cBus;
     // Inputs (Sensors)
@@ -172,8 +175,7 @@ class AirConditioningDevice : public Device {
             return false;
         }
 
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
-        return true;
+        return initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
     }
 
     /**

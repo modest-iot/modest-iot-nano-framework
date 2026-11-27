@@ -298,7 +298,9 @@ public:
         // the engine start guard rejects any registration after the engine is running.
         appendSensorToScheduler(&climateSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
-        initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
+        if (!initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH)) {
+            return;
+        }
     }
 
     ~ClimateDataUploader() override {
@@ -336,6 +338,9 @@ public:
                 const char* telemetryEndpointUrl,
                 unsigned long connectionTimeoutInMilliseconds)
     {
+        if (!isAsynchronousEngineStarted()) {
+            return false;
+        }
         // Set firmware version for fleet management in telemetry
         Device::setFirmwareVersion("CLD-100 FW 1.1.0");
 

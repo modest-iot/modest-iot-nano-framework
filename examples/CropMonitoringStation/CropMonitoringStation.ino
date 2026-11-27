@@ -115,6 +115,9 @@ class CropMonitoringTelemetryPackage : public TelemetryPackage {
  * across all registered sensors.
  */
 class CropMonitoringStation : public Device {
+public:
+    ~CropMonitoringStation() override { stopAsynchronousEngine(); }
+
     private:
     ArduinoI2cBus i2cBus;
     const unsigned long soilSamplingIntervalInMilliseconds;
@@ -265,8 +268,7 @@ class CropMonitoringStation : public Device {
         appendSensorToScheduler(&lightSensor, LIGHT_INTENSITY_EVENT_IDENTIFIER, lightSamplingIntervalInMilliseconds, 0);
 
         // Launch internal background task workers with a small queue for battery operation
-        initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
-        return true;
+        return initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
     }
 
     /**

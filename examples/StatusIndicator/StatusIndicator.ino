@@ -100,7 +100,9 @@ class StatusIndicator : public Device {
         }
 
         // 2. Launch internal background task workers
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
+        if (!initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH)) {
+            return;
+        }
     }
 
     /**
@@ -172,6 +174,10 @@ void setup() {
         BLINK_RATE_IN_MILLISECONDS,
         CORE_TIMER_CHANNEL);
 
+    if (!statusIndicatorApplication->isAsynchronousEngineStarted()) {
+        Serial.println("[StatusIndicator] Engine startup failed; LED control was not started.");
+        return;
+    }
     statusIndicatorApplication->start();
 
     Serial.println((String(STATUS_INDICATOR_LOG_PREFIX) + " Loop-less, event-driven command routing active.").c_str());

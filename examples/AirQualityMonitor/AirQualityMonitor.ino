@@ -97,6 +97,9 @@ public:
  * an LCD with real-time data, and provides audible alerts via a buzzer.
  */
 class AirQualityMonitorDevice : public Device {
+public:
+    ~AirQualityMonitorDevice() override { stopAsynchronousEngine(); }
+
 private:
     ArduinoI2cBus i2cBus;
     /// @brief The gas sensor instance.
@@ -222,8 +225,7 @@ public:
         appendSensorToScheduler(&gasSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
         // Initialize asynchronous engine
-        initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
-        return true;
+        return initializeAsynchronousEngine(ASYNC_ENGINE_QUEUE_DEPTH);
     }
 
     /**

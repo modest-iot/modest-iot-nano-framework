@@ -116,7 +116,9 @@ class SmartBandDevice : public Device {
                                           Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
                                           FALLING);
 
-        initializeAsynchronousEngine(10);
+        if (!initializeAsynchronousEngine(10)) {
+            return;
+        }
     }
 
     ~SmartBandDevice() override {
@@ -195,6 +197,11 @@ void setup() {
         TELEMETRY_POLLING_INTERVAL_IN_MILLISECONDS,
         HARDWARE_TIMER_CHANNEL_INDEX
     );
+
+    if (!smartBandApplication->isAsynchronousEngineStarted()) {
+        Serial.println("[SmartBand] Engine startup failed; telemetry was not started.");
+        return;
+    }
 
     Serial.println("[SmartBand Core] Thread execution loop online. Architecture finalized.");
 }

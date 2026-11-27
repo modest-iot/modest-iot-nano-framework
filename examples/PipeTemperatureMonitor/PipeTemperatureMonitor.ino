@@ -150,7 +150,9 @@ public:
         // the engine start guard rejects any registration after the engine is running.
         appendSensorToScheduler(&pipeSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER);
 
-        initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
+        if (!initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH)) {
+            return;
+        }
     }
 
     ~PipeTemperatureMonitor() override {
@@ -192,6 +194,9 @@ public:
      * @return True if the sensor is responding.
      */
     bool start() {
+        if (!isAsynchronousEngineStarted()) {
+            return false;
+        }
         Device::setFirmwareVersion("PTM-303 FW 1.0.0");
         // Set initial LED to green (normal state)
         statusLed.setColor(RgbLed::GREEN);

@@ -97,6 +97,9 @@ static const char* VIBRATION_MONITOR_LOG_PREFIX = "[VibrationMonitor]";
  * through EmlearnController which handles quantization internally.
  */
 class VibrationMonitor : public Device {
+public:
+    ~VibrationMonitor() override { stopAsynchronousEngine(); }
+
 private:
     ArduinoI2cBus i2cBus;
     ImuSensor accelerometer;
@@ -168,9 +171,6 @@ public:
                       VIBRATION_MONITOR_LOG_PREFIX, BUZZER_GPIO_PIN);
         Serial.printf("%s ML inference ready\n", VIBRATION_MONITOR_LOG_PREFIX);
 
-        initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
-        return true;
-
         // Register MPU6050 accelerometer with the scheduler.
         // The accelerometer samples at 1 Hz (1000 ms interval) for vibration analysis.
         // Cast to EventHandler* to disambiguate the period-based overload from the
@@ -180,6 +180,8 @@ public:
             Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER,
             VIBRATION_SAMPLE_INTERVAL_IN_MILLISECONDS
         );
+
+        return initializeAsynchronousEngine(SAMPLER_QUEUE_LENGTH);
     }
 
     /**
