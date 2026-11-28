@@ -8,7 +8,7 @@ Each ADR documents **why** a decision was made, not just **what** was decided. T
 
 The Modest IoT Nano Framework is a lightweight, deterministic IoT framework for ESP32-based devices. It provides a Mediator design pattern for sensor-actuator wiring, a per-slot sampling scheduler, a telemetry pipeline with ownership safety and change-only filtering, event-driven rules and on-device inference, and connectivity drivers for Wi-Fi, BLE, and MQTT. The framework runs on FreeRTOS with two isolated tasks: a sampler task for all sensor/actuator I/O and a network task for asynchronous transmission.
 
-The 34 ADRs below span 12 categories that shaped the framework's architecture. Two are superseded by later decisions.
+The 35 ADRs below span 12 categories that shaped the framework's architecture. Two are superseded by later decisions.
 
 | #                                                                                          | Title                                                         | Status   | Category     |
 |--------------------------------------------------------------------------------------------|---------------------------------------------------------------|----------|--------------|
@@ -46,6 +46,7 @@ The 34 ADRs below span 12 categories that shaped the framework's architecture. T
 | [ADR-032](#adr-032-deadband-based-change-only-telemetry)                                   | Deadband-Based Change-Only Telemetry                          | Accepted | Telemetry    |
 | [ADR-033](#adr-033-runtime-independent-on-device-inference-interface)                     | Runtime-Independent On-Device Inference Interface              | Accepted | Architecture |
 | [ADR-034](#adr-034-device-owned-shared-i2c-bus-for-composed-devices)                       | Device-Owned Shared I²C Bus for Composed Devices               | Accepted | Architecture |
+| [ADR-035](#adr-035-additive-sensor-validity-event-delivery-and-checked-actuation)           | Additive Sensor Validity, Event Delivery, and Checked Actuation | Accepted | API Design |
 
 ### Status Legend
 
@@ -63,7 +64,7 @@ The 34 ADRs below span 12 categories that shaped the framework's architecture. T
 | **Telemetry**    | 5     | `unique_ptr` ownership; drop-oldest policy; bounded buffer; envelope metadata; change-only deadband  |
 | **Diagnostics**  | 2     | Sensor fault events with debounced threshold; on-demand `DiagnosticsSnapshot`                        |
 | **Threading**    | 5     | Single-context sampler model; `EngineConfiguration`; cooperative shutdown; notification redesign; command marshaling |
-| **API Design**   | 2     | `serialize` overload rename; identifier registry with reserved ranges                                |
+| **API Design**   | 3     | `serialize` overload rename; identifier registry; additive sensor and command outcomes               |
 | **Dependencies** | 3     | ArduinoJson removed (W46); five hygiene principles for dependency decisions; native servo and LCD drivers |
 | **Testing**      | 2     | Shared mock harness (BLE.h consolidated); golden host tests migrated to native JSON (W46)            |
 | **Architecture** | 4     | DDD bounded contexts; fixed-capacity event rules; runtime-independent inference; device-owned I²C bus |
@@ -1277,6 +1278,34 @@ Each concrete composed device that uses I²C owns one `ArduinoI2cBus` member, de
 
 ---
 
+<a id="adr-035-additive-sensor-validity-event-delivery-and-checked-actuation"></a>
+## ADR-035: Additive Sensor Validity, Event Delivery, and Checked Actuation
+
+**Status**: Accepted | **Date**: 2026-11-27 | **Supersedes**: N/A
+
+### Context
+
+The framework's event and command interfaces are used by existing sketches, so replacing mutable `Event` delivery or `void` command handlers would cause a broad source migration. At the same time, cached sensor values and fault notifications did not expose a uniform freshness/read-fault contract, `EventAggregator` could hide raw events and repeat stale matches, and command dispatch could not report what a hardware driver accepted. Synchronous sensor and rule work could also cause coalesced scheduler ticks without a measured duration diagnostic.
+
+### Decision
+
+Keep `Sensor::on(Event)`, event identifiers, `CommandHandler::handle(Command)`, and existing actuator entry points. Add validity, successful-read age, and read-fault accessors for drivers that report read outcomes; failed reads must preserve their last valid cached reading, and fault/recovery notifications remain independent of mutable data events. Recovery is forwarded before fresh data, even when unchanged data is suppressed. `EventAggregator` forwards each input once before any derived composite and emits a match only when the newly received event contributes to a source-filtered pattern. Add checked command results with `Succeeded`, `Failed`, and `Unknown`; legacy handlers default to `Unknown` unless they provide driver evidence, and an optional `RulesEngine` observer receives dispatched outcomes. Treat Servo LEDC acceptance as a driver result, not proof of physical movement. Measure synchronous sampler work and missed/coalesced ticks while preserving one-dispatch-per-due-slot scheduling; diagnostics do not imply a hard execution bound.
+
+### Consequences
+
+- **Positive**: Existing event and command call sites remain source-compatible while consumers can inspect validity, freshness, lifecycle events, and verified driver outcomes; raw plus composite routing and scheduler overruns have explicit tests and diagnostics.
+- **Negative**: Legacy and edge-triggered sensor implementations that cannot establish read success may not update validity; `Unknown` is an intentional result for handlers without evidence. Hardware output acceptance does not prove physical motion or safety, and synchronous work remains capable of delaying sampling.
+- **Rationale**: Additive contracts improve observability without changing the existing composition and callback model or manufacturing guarantees unsupported by drivers and host tests.
+
+### References
+
+- `src/Sensor.h`, `src/Sensor.cpp`, read-capable sensor drivers
+- `src/EventAggregator.h`, `src/EventAggregator.cpp`, `tests/EventAggregator/test.cpp`
+- `src/CommandHandler.h`, `src/Actuator.*`, `src/RulesEngine.*`, `src/ServoMotor.*`
+- `src/Device.*`, `src/SamplingScheduler.*`, `tests/Device/test.cpp`
+
+---
+
 ## Consolidated Improvements Document
 
 The 8 individual improvement documents and the roadmap have been consolidated into a single `docs/improvements.md` file, organized by tier. This eliminates cross-document maintenance overhead while keeping all information accessible through headings and search.
@@ -1324,4 +1353,4 @@ For future architecture decisions, use this template:
 
 ---
 
-*Last updated: 2026-11-27 (34 ADRs: 13 original + 9 from improvements.md review + 1 DDD adoption + 4 from W12-W16 + 1 from W17 + 1 from W19 + 1 BME base class + 3 from v1.3.0 + 1 I²C shared-bus ownership decision)*
+*Last updated: 2026-11-27 (35 ADRs: 13 original + 9 from improvements.md review + 1 DDD adoption + 4 from W12-W16 + 1 from W17 + 1 from W19 + 1 BME base class + 3 from v1.3.0 + 1 I²C shared-bus ownership decision + 1 additive sensor/event/actuator contract)*
