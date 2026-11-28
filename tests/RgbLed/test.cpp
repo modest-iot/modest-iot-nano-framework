@@ -33,6 +33,11 @@ struct Recorder : CommandHandler {
 
     assert(parent.count == 5);
 
+    const CommandExecutionResult legacyActuatorResult = led.handleChecked(RgbLed::TURN_OFF_COMMAND);
+    assert(legacyActuatorResult.status == CommandExecutionStatus::Unknown);
+    assert(!led.isActive());
+    assert(parent.count == 6);
+
     RgbLed anode(4, 5, 6, true);
     assert(fakePwm[4] == 255 && fakePwm[5] == 255 && fakePwm[6] == 255);
     anode.setColor(255, 0, 100);
