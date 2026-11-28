@@ -17,10 +17,12 @@
 [![MQTT](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/modest-iot/modest-iot-nano-framework/develop/.badges/mqtt.json)](https://github.com/256dpi/arduino-mqtt)
 [![ESP32](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/modest-iot/modest-iot-nano-framework/develop/.badges/esp32.json)](https://github.com/espressif/arduino-esp32)
 
-**Version**: 1.3.0<br>
+**Version**: 1.3.0 (latest released version)<br>
 **Author**: Angel Velasquez  
 **Date created**: 2025-03-23  
 **Last updated**: 2026-11-27
+
+> Changes in the `CHANGELOG.md` `Unreleased` section are present in this development checkout but are not part of the v1.3.0 release.
 
 > **Git Flow**: This project uses Git Flow. `main` holds release versions (tagged `v1.0.0`, etc.), `develop` is the integration branch, and feature branches (e.g., `feature/W27-firmware-version`) merge into `develop`.
 
@@ -42,8 +44,9 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 - **Asynchronous Engine**: Two FreeRTOS tasks (sampler and network worker) with configurable stack sizes, priorities, and core pinning via `EngineConfiguration`.
 - **Per-Slot Scheduling**: `SamplingScheduler` supports independent polling intervals per sensor, independent of slot count.
 - **Zero-Cost Logging**: `MODEST_LOG_*` macros with compile-time level filtering; `MIOT_LOG_*` shorthand aliases available.
-- **Runtime Diagnostics**: `DiagnosticsSnapshot` with 16 fields: stack high-water marks, heap stats, queue counters, send statistics, and uptime.
-- **Sensor Health**: Debounced fault and recovery events (IDs 22/23) with configurable failure thresholds.
+- **Runtime Diagnostics**: `DiagnosticsSnapshot` with 16 fields, including coalesced missed ticks and the highest observed synchronous sampler-work duration.
+- **Sensor Health**: Read-capable sensors expose sample validity/freshness and an active read-fault state; fault and recovery events (IDs 22/23) use configurable failure thresholds.
+- **Checked Actuation**: Additive command results distinguish driver-confirmed acceptance, failure, and unknown outcomes while preserving legacy `void` handlers.
 - **Telemetry Pipeline**: `unique_ptr` ownership, drop-oldest queue policy, bounded serialization buffer, and envelope metadata (timestamp/sequence).
 
 ## Components
@@ -55,20 +58,20 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 | `Event` | Lightweight event container with identifier and payload fields. |
 | `EventHandler` | Base interface for event-driven components (`on(Event)`). |
 | `Command` | Lightweight command container with identifier and optional `int32_t` payload for parameterized commands. |
-| `CommandHandler` | Base interface for command-driven components (`handle(Command)`). |
+| `CommandHandler` | Base interface for command-driven components; `handleChecked()` adds outcomes without changing legacy `handle(Command)`. |
 | `Device` | Base class combining event and command handling; orchestrates the asynchronous engine, scheduler, and telemetry pipeline. |
 | `I2cBus` / `ArduinoI2cBus` | Shared I²C transaction contract and Arduino `Wire` backend with transfer results and configurable timeout. |
 | `EngineConfiguration` | Configuration struct for FreeRTOS task stack sizes, priorities, core pinning, and queue depth. |
 | `ConfigurationStore` | Persistent key-value configuration using ESP32 NVS with namespace isolation, type-safe access, and schema validation. |
 | `TimeSynchronizationDriver` | NTP-based time synchronization with RTC fallback for deep-sleep devices; replaces `millis()` timestamps with Unix epoch seconds. |
-| `DiagnosticsSnapshot` | 16-field runtime health snapshot (stack, heap, queue, timing). |
-| `SamplingScheduler` | Per-slot countdown scheduler with phase-aligned re-arming and minimum period enforcement. |
+| `DiagnosticsSnapshot` | 16-field runtime health snapshot (stack, heap, queue, sends, missed ticks, and observed sampler work duration). |
+| `SamplingScheduler` | Per-slot countdown scheduler with phase-aligned re-arming, minimum period enforcement, and one dispatch per due slot when periods are missed. |
 | `TelemetryPackage` | Base class for telemetry payloads with envelope metadata (timestamp, sequence). |
 | `TelemetryBuffer` | Persistent telemetry buffer using LittleFS with monotonic indices for offline storage and FIFO replay — no file shifting overhead. |
 | `PowerManager` | Battery voltage sensing via ADC with configurable voltage divider, level calculation, and low-battery alerts. |
 | `OtaUpdateHandler` | Over-The-Air firmware update service with hostname configuration, password protection, and progress callbacks. |
-| `EventAggregator` | Composite event pattern matching with AND/OR logic, source-aware matching, conditional patterns, nested aggregators, and dynamic pattern management. |
-| `RulesEngine` | On-device automation rules. Maps composite events from EventAggregator to automated actuator Commands. Fixed-size rule array (4 rules, 4 actions per rule) — zero heap allocation. |
+| `EventAggregator` | Forwards each raw event once, then emits AND/OR composites only when the new event contributes to a source-aware match; supports conditions and nested aggregators. |
+| `RulesEngine` | Maps composite events to fixed-capacity actuator commands and can observe checked action outcomes; legacy handlers report `Unknown` unless they provide evidence. |
 | `ChangeFilter` | Template class for deadband-based telemetry suppression. Per-slot tracking with configurable thresholds, supporting float and int sensor values. |
 | `AiMicroModelController` | Abstract base class for ML inference on microcontrollers. Uniform interface for classification and regression. |
 | `EmlearnController` | Optional emlearn adapter for tree, neural-network, regression, and generated C models; generated-model use does not require the emlearn library. |
@@ -77,7 +80,7 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 
 | Class | Description |
 |---|---|
-| `Sensor` | Abstract base class with fault state machine, sampling interval attributes, and virtual getters. |
+| `Sensor` | Abstract base class with sampling intervals, fault state, and additive validity/freshness accessors for successful-read-reporting drivers. |
 | `Button` | GPIO button press detection with debounce. |
 | `DhtSensor` | Temperature and humidity from DHT11/DHT22/DHT21/AM2301 modules. |
 | `DigitalLightIntensitySensor` | I²C BH1750 light intensity sensor with threshold-based light/dark events. |
@@ -102,12 +105,12 @@ This repository contains the C++ edition of the framework. A MicroPython edition
 
 | Class | Description |
 |---|---|
-| `Actuator` | Abstract base class with command propagation. |
+| `Actuator` | Abstract base class with command propagation and a checked result path; propagation does not prove hardware acceptance. |
 | `Buzzer` | PWM-driven buzzer with tone frequency and duration. |
 | `Led` | Digital LED with on/off/toggle commands. |
 | `RgbLed` | PWM-driven RGB LED with color mixing, common-anode support, and predefined colors. |
 | `RelayActuator` | Digital relay with on/off/toggle commands for AC/DC load control. |
-| `ServoMotor` | PWM servo motor with angle positioning (native LEDC driver). |
+| `ServoMotor` | PWM servo motor with requested-target and LEDC-accepted output state; driver acceptance does not confirm physical movement. |
 | `CharacterLcdDisplay` | I²C 16x2 character LCD with text, cursor, and backlight control (native HD44780 driver). |
 | `OledDisplay` | I²C SSD1306 OLED display (128x64) with frame buffer, text rendering, and drawing primitives. |
 
@@ -215,7 +218,7 @@ appendSensorToScheduler(&dhtSensor, Sensor::MEASURE_DATA_REQUESTED_EVENT_IDENTIF
 appendSensorToScheduler(&button, Button::BUTTON_PRESSED_EVENT_IDENTIFIER, 100, 50);
 ```
 
-Sensors declare `DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS` and `MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS` constants. The scheduler enforces minimums and reports clamping via `MODEST_LOG_W`.
+Sensors declare `DEFAULT_SAMPLING_INTERVAL_IN_MILLISECONDS` and `MINIMUM_SAMPLING_INTERVAL_IN_MILLISECONDS` constants. The scheduler enforces minimums and reports clamping via `MODEST_LOG_W`. When work overruns multiple periods, a due slot is dispatched once and re-armed with phase alignment; missed periods are coalesced rather than replayed.
 
 ## Logging
 
@@ -231,7 +234,7 @@ Set `MODEST_LOG_LEVEL` in your build flags or sketch to control verbosity. At le
 
 ## Diagnostics
 
-Call `device.collectDiagnostics()` to get a `DiagnosticsSnapshot` with 16 runtime health fields:
+Call `device.collectDiagnostics()` to get a `DiagnosticsSnapshot` with 16 runtime health fields. `missedTicks` counts coalesced timer ticks and `worstCaseWakeMicros` is the highest observed synchronous sampler-work duration; neither value establishes a hard real-time bound.
 
 ```cpp
 DiagnosticsSnapshot health = device.collectDiagnostics();
@@ -249,6 +252,10 @@ dhtSensor.setFaultThreshold(3); // Emit fault event after 3 consecutive failures
 ```
 
 When a sensor faults, it emits event ID 22 (`SENSOR_FAULT_EVENT_IDENTIFIER`). When it recovers, it emits event ID 23 (`SENSOR_RECOVERED_EVENT_IDENTIFIER`). The mediator can react by turning on an alert LED, publishing health telemetry, or switching to a safe default state.
+
+For drivers that report read outcomes, `hasValidReading()`, `getLastSuccessfulReadAgeInMilliseconds()`, `getDataValidity(maximumAgeInMilliseconds)`, and `isReadFaultActive()` distinguish no sample, fresh/stale data, and an active fault. Failed reads retain the last cached value and do not refresh its age. Recovery is forwarded independently before a fresh data event, including when unchanged data is suppressed. These APIs do not imply that every legacy or edge-triggered sensor reports read outcomes.
+
+Checked commands return `CommandExecutionResult` with `Succeeded`, `Failed`, or `Unknown`. Legacy `CommandHandler` implementations remain source-compatible and default to `Unknown`; a successful actuator result is only the evidence available from its backend. For example, a successful LEDC write confirms an accepted PWM update, not physical servo movement.
 
 ### Firmware Version in Telemetry
 
@@ -446,7 +453,7 @@ The framework ships with 28 example sketches demonstrating various use cases:
 
 ## Testing
 
-The framework includes 54 host unit test suites that run natively without hardware:
+The host CMake/CTest configuration registers 54 cases; `tests/run_all.sh` (also used by the host CI workflow) and `tests/run_coverage.sh` currently enumerate 53 runners. The coverage runner omits `I2cBus`, so its results do not represent the full CTest inventory. These tests run natively without hardware:
 
 | Suite | What It Tests |
 |---|---|
@@ -524,14 +531,14 @@ Documentation is split between architecture artifacts in `docs/` and code-level 
 | [`docs/quick-start.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/quick-start.md) | Step-by-step guide to go from zero to a working device in under 10 minutes. |
 | [`docs/troubleshooting.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/troubleshooting.md) | Common issues and solutions: serial output, board detection, Wi-Fi, BLE, MQTT, memory, and sensors. |
 | [`docs/migration.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/migration.md) | How to convert traditional `loop()` sketches to the framework's event-driven pattern with before/after examples. |
-| [`docs/adrs.md`](docs/adrs.md) | 34 Architecture Decision Records with rationale, trade-offs, and consequences. |
-| [`docs/user-stories.md`](docs/user-stories.md) | 53 user stories covering functional and non-functional requirements. |
+| [`docs/adrs.md`](docs/adrs.md) | 35 Architecture Decision Records with rationale, trade-offs, and consequences. |
+| [`docs/user-stories.md`](docs/user-stories.md) | 54 user stories covering functional and non-functional requirements. |
 | [`docs/improvements.md`](docs/improvements.md) | Active work items, comparison tables, and future work. |
-| [`docs/evolution.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/evolution.md) | Historical record of completed work items through W47 with implementation details. |
+| [`docs/evolution.md`](docs/evolution.md) | Historical record of completed work items through W49 with implementation details. |
 | [`docs/class-diagram.puml`](docs/class-diagram.puml) | PlantUML class diagram of framework classes and their relationships. |
 | [`docs/doxygen-mainpage.md`](docs/doxygen-mainpage.md) | Doxygen API reference main page with module navigation and generation instructions. |
-| [`docs/benchmarks.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/benchmarks.md) | Performance comparison table with 9 metrics: Flash, RAM, latency, throughput, queue depth, stack, heap, serialization, and power. |
-| [`docs/coverage.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/coverage.md) | Code coverage guide: local execution with gcov/lcov, CI integration, threshold configuration, and report interpretation. |
+| [`docs/benchmarks.md`](docs/benchmarks.md) | Source estimates, CI evidence, and a methodology for physical performance measurements. |
+| [`docs/coverage.md`](docs/coverage.md) | Code coverage guide with latest scoped results, local execution, CI integration, and report interpretation. |
 | [`docs/dependencies.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/dependencies.md) | External dependencies list with update processes: Dependabot for GitHub Actions, weekly status badges for MQTT library and ESP32 core. |
 | [`docs/release.md`](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/release.md) | Complete release process: Git Flow Helper Plugin steps, automated release workflow, version bump, registry publishing, and troubleshooting. |
 
