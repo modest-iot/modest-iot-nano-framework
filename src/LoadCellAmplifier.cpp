@@ -33,7 +33,6 @@ void LoadCellAmplifier::processEvent(Event& event) {
         // Check if data is ready (set by interrupt when data pin goes LOW)
         if (!dataReady) {
             // Data not ready yet; suppress propagation to avoid stale reads
-            reportReadSuccess(event);
             event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
             return;
         }
