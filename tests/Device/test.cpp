@@ -26,6 +26,22 @@ protected:
     uint32_t getMinimalSamplingIntervalInMilliseconds() const override { return 250; }
 };
 
+class SlowSamplingSensor final : public Sensor {
+public:
+    SlowSamplingSensor() : Sensor(2, nullptr) {}
+
+    uint32_t callbackCount = 0;
+
+protected:
+    void processEvent(Event&) override {
+        ++callbackCount;
+        fakeMicros += 125;
+    }
+
+    uint32_t getDefaultSamplingIntervalInMilliseconds() const override { return 1000; }
+    uint32_t getMinimalSamplingIntervalInMilliseconds() const override { return 250; }
+};
+
 class CompositionPeripheral {
 public:
     CompositionPeripheral(I2cBus& bus, std::vector<int>& startupOrder, const int order)
@@ -103,6 +119,10 @@ public:
 
     void stopEngine() {
         stopAsynchronousEngine();
+    }
+
+    void advanceSamplerTicks(const uint32_t elapsedTicks) {
+        processSamplerNotification(static_cast<uint32_t>(NotificationBitFlag::TimerTickArrived), elapsedTicks);
     }
 };
 
@@ -235,6 +255,28 @@ void testEngineStartupRollbackAndRetry() {
     }
 }
 
+void testSamplerWorkDurationAndCoalescedTicks() {
+    fakeMicros = 0;
+    fakeMillis = 0;
+    EngineLifecycleDevice device;
+    SlowSamplingSensor sensor;
+    assert(device.registerSensor(&sensor));
+
+    device.advanceSamplerTicks(4);
+    assert(sensor.callbackCount == 1);
+    auto diagnostics = device.collectDiagnostics();
+    assert(diagnostics.missedTicks == 3);
+    assert(diagnostics.worstCaseWakeMicros == 125);
+
+    device.advanceSamplerTicks(6);
+    assert(sensor.callbackCount == 1);
+    device.advanceSamplerTicks(1);
+    assert(sensor.callbackCount == 2);
+    diagnostics = device.collectDiagnostics();
+    assert(diagnostics.missedTicks == 8);
+    assert(diagnostics.worstCaseWakeMicros == 125);
+}
+
 void testShutdownWaitsForNetworkCallback() {
     resetFakeFreeRtosState();
     {
@@ -300,6 +342,7 @@ void testComposedDeviceStartupOrderAndPeripheralFailure() {
 
 int main() {
     std::printf("Running Device tests...\n");
+    testSamplerWorkDurationAndCoalescedTicks();
     testEngineStartupRollbackAndRetry();
     testShutdownWaitsForNetworkCallback();
     testComposedDeviceStartupOrderAndPeripheralFailure();
