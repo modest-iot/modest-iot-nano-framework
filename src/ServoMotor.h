@@ -15,11 +15,17 @@
 /**
  * @brief Actuator adapter for hobby servo motors driven through ESP32 PWM.
  * @ingroup actuators_module
+ *
+ * A successful LEDC result confirms that the driver accepted a duty update; it does not
+ * measure or guarantee physical servo movement.
  */
 class ServoMotor : public Actuator {
 private:
-    int currentActiveAngleInDegrees; ///< Currently active angle in degrees.       
-    int bufferedTargetAngleInDegrees; ///< Buffered target angle in degrees.      
+    int currentActiveAngleInDegrees; ///< Last angle accepted by the PWM driver, or -1 if unknown.
+    int bufferedTargetAngleInDegrees; ///< Buffered target angle in degrees.
+    int requestedTargetAngleInDegrees; ///< Most recently requested angle, independent of driver acceptance.
+    bool pwmAttached; ///< Whether LEDC attachment succeeded.
+    CommandExecutionResult initializationResult; ///< Result of PWM attachment and initial output setup.
 
     static constexpr int MINIMUM_PHYSICAL_ANGLE_IN_DEGREES = 0; ///< Minimum physical angle.
     static constexpr int MAXIMUM_PHYSICAL_ANGLE_IN_DEGREES = 180; ///< Maximum physical angle.
@@ -33,9 +39,10 @@ private:
     /**
      * @brief Converts an angle to a duty cycle and writes it to the LEDC peripheral.
      * @param angleInDegrees Angle in degrees (clamped to 0-180).
+     * @return `true` when the LEDC driver accepts the duty update.
      * @runs_on{sampler}
      */
-    void writeAngle(int angleInDegrees) const;
+    [[nodiscard]] bool writeAngle(int angleInDegrees) const;
 
 protected:
     /**
@@ -43,6 +50,7 @@ protected:
      * @param command Command to execute.
      */
     void executeCommand(Command command) override;
+    CommandExecutionResult executeCommandChecked(Command command) override;
 
 public:
     /** @brief Command identifier for locking the servo to the minimum angle (0°). */
@@ -64,11 +72,23 @@ public:
     /**
      * @brief Constructs a servo actuator.
      * @param signalGpioPin PWM-capable output pin for the servo signal wire.
-     * @param initialAngleInDegrees Initial angle applied during setup.
+     * @param initialAngleInDegrees Initial PWM target requested during setup.
      * @param parentHandler Optional upstream handler for propagated commands.
      */
     explicit ServoMotor(int signalGpioPin, int initialAngleInDegrees = MINIMUM_PHYSICAL_ANGLE_IN_DEGREES, CommandHandler* parentHandler = nullptr);
     ~ServoMotor() override;
+
+    /**
+     * @brief Reports whether LEDC attachment and the initial duty write succeeded.
+     * @return `true` only when both driver setup operations were accepted.
+     */
+    [[nodiscard]] bool isInitialized() const;
+
+    /**
+     * @brief Returns the outcome of PWM attachment and initial output setup.
+     * @return Driver-level setup result; does not confirm physical servo movement.
+     */
+    [[nodiscard]] CommandExecutionResult getInitializationResult() const;
 
     /**
      * @brief Clamps a physical angle to the valid range (0–180°).
@@ -84,10 +104,16 @@ public:
     void setTargetAngleBufferInDegrees(int targetAngleInDegrees);
 
     /**
-     * @brief Returns the currently applied servo angle.
-     * @return Active servo angle in degrees.
+     * @brief Returns the last angle whose PWM duty update was accepted by LEDC.
+     * @return Accepted target angle in degrees, or -1 if no output has been accepted.
      */
     [[nodiscard]] int getCurrentActiveAngleInDegrees() const;
+
+    /**
+     * @brief Returns the most recently requested target angle.
+     * @return Clamped requested target angle in degrees; this is not measured position.
+     */
+    [[nodiscard]] int getRequestedTargetAngleInDegrees() const;
 };
 
 #endif // SERVO_MOTOR_H
