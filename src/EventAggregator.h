@@ -96,12 +96,13 @@ struct EventPattern {
  * @brief Matches composite event patterns with time-windowed detection.
  * @ingroup core_module
  *
- * Implements EventHandler to intercept events from sensors. Captures each event
- * with its timestamp and sourceId, then checks all registered patterns using AND
- * or OR logic. When a pattern matches, an optional condition function can further
- * filter based on sensor values. Composite events carry DEVICE_SOURCE_ID as their
- * sourceId, enabling nested aggregator chains where downstream aggregators
- * distinguish composite events from raw sensor events.
+ * Implements EventHandler to receive events from sensors. Forwards each input
+ * event exactly once before capturing and checking it against registered patterns
+ * using AND or OR logic. A composite is emitted only when the current input matches
+ * at least one source-filtered pattern term and the full pattern matches; unrelated
+ * later events cannot replay an earlier match. An optional condition can further
+ * filter matches based on sensor values. Composite events carry DEVICE_SOURCE_ID,
+ * enabling nested aggregators to distinguish them from raw sensor events.
  *
  * @par Zero Heap Allocation
  * Uses fixed-size circular buffer (32 captured events) and pattern array (4 patterns).
@@ -273,9 +274,10 @@ private:
      * @brief Checks all registered patterns for a match.
      * @param currentTimestamp The timestamp of the most recent event.
      * @note Iterates all active patterns. If a pattern matches, emits the
-     *       composite event via the output handler.
+     *       composite event via the output handler. The newly received event must
+     *       match at least one pattern term before a cached match can be emitted.
      */
-    void checkForEventPatternMatch(const uint32_t currentTimestamp) const;
+    void checkForEventPatternMatch(const uint32_t currentTimestamp, const Event& newEvent) const;
 
     /**
      * @brief Removes captured events older than the maximum pattern time window.

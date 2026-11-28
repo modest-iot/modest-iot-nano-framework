@@ -145,11 +145,16 @@ void EventAggregator::setOutputHandler(EventHandler* handler) {
 void EventAggregator::on(const Event event) {
     const uint32_t currentTimestamp = TimeSynchronizationDriver::getCurrentTimestamp();
 
+    // Forward the incoming event once before any composites derived from it.
+    if (outputHandler != nullptr) {
+        outputHandler->on(event);
+    }
+
     // Capture the event in the circular buffer
     captureEvent(event, currentTimestamp);
 
     // Check all patterns for a match
-    checkForEventPatternMatch(currentTimestamp);
+    checkForEventPatternMatch(currentTimestamp, event);
 
     // Remove expired captured events
     removeExpiredCapturedEvents(currentTimestamp);
@@ -159,7 +164,7 @@ void EventAggregator::on(const Event event) {
 
 // --- Pattern Matching ---
 
-void EventAggregator::checkForEventPatternMatch(const uint32_t currentTimestamp) const {
+void EventAggregator::checkForEventPatternMatch(const uint32_t currentTimestamp, const Event& newEvent) const {
     if (outputHandler == nullptr || patternCount == 0) {
         return;
     }
@@ -170,12 +175,23 @@ void EventAggregator::checkForEventPatternMatch(const uint32_t currentTimestamp)
             continue;
         }
 
+        bool newEventContributes = false;
+        for (uint8_t i = 0; i < pattern.identifierCount; ++i) {
+            if (newEvent.identifier == pattern.identifiers[i] &&
+                (pattern.sourceIds[i] == ANY_SOURCE || newEvent.sourceId == pattern.sourceIds[i])) {
+                newEventContributes = true;
+                break;
+            }
+        }
+        if (!newEventContributes) {
+            continue;
+        }
+
         bool matched = false;
 
         if (pattern.logic == PatternLogic::And) {
             // AND logic: all identifiers must be present within the time window
             bool allFound = true;
-            uint32_t oldestInPattern = currentTimestamp;
 
             for (uint8_t i = 0; i < pattern.identifierCount; i++) {
                 const int targetId = pattern.identifiers[i];
@@ -196,9 +212,6 @@ void EventAggregator::checkForEventPatternMatch(const uint32_t currentTimestamp)
                         // Check sourceId: ANY_SOURCE means "match any source"
                         if (targetSource == ANY_SOURCE || capturedEvent.sourceId == targetSource) {
                             found = true;
-                            if (capturedEvent.timestamp < oldestInPattern) {
-                                oldestInPattern = capturedEvent.timestamp;
-                            }
                             break;
                         }
                     }
