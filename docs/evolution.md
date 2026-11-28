@@ -1,6 +1,6 @@
 # Modest IoT Framework Evolution
 
-Historical record of completed work items through W47 with implementation details.
+Historical record of completed work items through W49 with implementation details. W48 and W49 are post-v1.3.0 development work and remain unreleased.
 
 > This document records completed work. For current status and planned improvements, see [improvements.md](improvements.md).
 
@@ -1098,10 +1098,20 @@ The v1.3.0 release adds `BleHal` to isolate the BLE API differences between ESP3
 
 ---
 
-## W48: Shared I²C Bus and Explicit Peripheral Startup
+## W48: Shared I²C Bus and Explicit Peripheral Startup (Unreleased; post-v1.3.0)
 
 I²C sensors and displays now support an injected shared `I2cBus`; each new-path constructor stores configuration without touching hardware. Concrete device compositions own one `ArduinoI2cBus`, start it before their peripherals, and only register sampling and start asynchronous work after required peripherals are ready. The legacy Arduino construction path remains available.
 
-**Validation**: 54/54 host suites passed, and all 28 sketches compiled for ESP32 and ESP32-S3 on Arduino-ESP32 4.0.0. The 3.3.13 matrix was unavailable during validation, and no physical hardware checks were performed; host tests and compilation do not establish electrical behavior.
+**Validation**: 54/54 host tests passed, and all 28 sketches compiled locally for ESP32 and ESP32-S3 on Arduino-ESP32 4.0.0. The repository owner subsequently reported that the pushed GitHub workflows completed without errors, covering the configured core/board matrix. No physical hardware checks were performed; host tests and compilation do not establish electrical behavior.
 
 **Source**: `src/I2cBus.h`, `src/ArduinoI2cBus.h`, `src/BmeEnvironmentalSensor.cpp`, `src/DigitalLightIntensitySensor.cpp`, `src/ImuSensor.cpp`, `src/Hd44780Driver.cpp`, `src/Ssd1306Driver.cpp`, `examples/WeatherStation/WeatherStation.ino`, `examples/IndoorAirQualityDisplay/IndoorAirQualityDisplay.ino`, `tests/I2cBus/test.cpp`
+
+---
+
+## W49: Sensor Validity, Event Delivery, Checked Actuation, and Sampler Diagnostics (Unreleased; post-v1.3.0)
+
+**Resolution**: Added a backward-compatible sensor lifecycle contract, corrected raw/composite event routing, and exposed driver-level command outcomes. `Sensor` now tracks successful-read validity and age independently of opt-in fault notifications; failed reads retain cached values, and recovery is delivered before a subsequent data event even when changed-value propagation is suppressed. `EventAggregator` forwards each incoming event once before composites and emits a match only when the new event contributes to the pattern, preventing unrelated later input from replaying stale matches. `CommandHandler::handle()` remains compatible while checked execution and an optional `RulesEngine` observer surface `Succeeded`, `Failed`, or `Unknown`; Servo state distinguishes requested targets from driver-accepted PWM without claiming physical movement. `Device` reports observed synchronous sampler-work duration and missed/coalesced ticks while preserving one-dispatch-per-due-slot phase-aligned scheduling.
+
+**Validation**: CMake/CTest passed 54/54; `tests/run_all.sh` and `tests/run_coverage.sh` each passed 53/53. The filtered coverage run reported 90.1% line and 83.6% function coverage. The repository owner reported all GitHub workflows completed without errors, including the configured ESP32/ESP32-S3 and Arduino-ESP32 3.3.13/4.0.0 example matrix. Physical sensor recovery, PWM response, load-safe-state, and electrical checks remain unperformed.
+
+**Source**: `src/Sensor.h`, `src/Sensor.cpp`, read-capable sensor drivers and their tests, `src/EventAggregator.cpp`, `src/CommandHandler.h`, `src/Actuator.*`, `src/RulesEngine.*`, `src/ServoMotor.*`, `src/Device.*`, `src/SamplingScheduler.*`, `tests/EventAggregator/test.cpp`, `tests/RulesEngine/test.cpp`, `tests/Device/test.cpp`
