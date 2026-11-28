@@ -184,8 +184,14 @@ file(GLOB TEST_FAKES_SRC "tests/fakes/*.cpp")
 
 add_executable(test_DigitalLightIntensitySensor
         tests/DigitalLightIntensitySensor/test.cpp
+        tests/DigitalLightIntensitySensor/MillisCLinkage.cpp
         src/Sensor.cpp
         src/DigitalLightIntensitySensor.cpp
+        src/EventAggregator.cpp
+        src/RulesEngine.cpp
+        src/Actuator.cpp
+        src/ServoMotor.cpp
+        src/TimeSynchronizationDriver.cpp
         ${TEST_FAKES}
         ${TEST_FAKES_SRC}
 )
@@ -669,8 +675,8 @@ target_compile_options(test_LoadCellAmplifier PRIVATE -Wall -Wextra -Werror)
 add_executable(test_EventAggregator
         tests/EventAggregator/test.cpp
         src/EventAggregator.cpp
+        src/RulesEngine.cpp
         src/TimeSynchronizationDriver.cpp
-        ${TEST_FAKES}
         ${TEST_FAKES_SRC}
 )
 target_include_directories(test_EventAggregator PRIVATE tests/fakes src)
