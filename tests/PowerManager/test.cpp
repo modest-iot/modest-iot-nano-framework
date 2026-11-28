@@ -9,9 +9,11 @@
 
 #include "Arduino.h"
 #include "PowerManager.h"
+#include "../../examples/WeatherStation/WeatherStationBatteryPolicy.h"
 #include <cassert>
 #include <cstdio>
 #include <cmath>
+#include <limits>
 
 namespace {
 
@@ -30,11 +32,26 @@ int main() {
     // =========================================================================
     {
         assert(PowerManager::isInitialized() == false);
+        assert(PowerManager::getBatteryMeasurement().valid == false);
+        assert(PowerManager::isLowBattery() == false);
         std::printf("  [PASS] PowerManager not initialized by default\n");
     }
 
     // =========================================================================
-    // Test 2: begin() initializes PowerManager
+    // Regression: Invalid configuration does not initialize battery monitoring
+    // =========================================================================
+    {
+        assert(PowerManager::begin(34, 0.0f, 3300) == false);
+        assert(PowerManager::begin(INVALID_BATTERY_ADC_PIN, 2.0f, 3300) == false);
+        assert(PowerManager::begin(34, 2.0f, 0) == false);
+        assert(PowerManager::begin(34, 2.0f, 3300, 0) == false);
+        assert(PowerManager::begin(34, std::numeric_limits<float>::quiet_NaN(), 3300) == false);
+        assert(PowerManager::isInitialized() == false);
+        std::printf("  [PASS] Invalid divider configuration is rejected\n");
+    }
+
+    // =========================================================================
+    // Test 3: begin() initializes PowerManager
     // =========================================================================
     {
         PowerManager::begin(34, 2.0f);
@@ -43,7 +60,7 @@ int main() {
     }
 
     // =========================================================================
-    // Test 3: Default values after initialization
+    // Test 4: Default values after initialization
     // =========================================================================
     {
         assert(PowerManager::getLowBatteryThresholdInMillivolts() == 3300);
@@ -155,7 +172,24 @@ int main() {
     }
 
     // =========================================================================
-    // Test 10: Not low battery above threshold
+    // Regression: Invalid ADC readings cannot trigger a low-battery decision
+    // =========================================================================
+    {
+        PowerManager::begin(34, 2.0f, 3300);
+        PowerManager::setLowBatteryThresholdInMillivolts(3300);
+        fakeAnalogRead[34] = -1;
+        assert(PowerManager::getBatteryMeasurement().valid == false);
+        assert(PowerManager::getBatteryVoltageInMillivolts() == 0);
+        assert(PowerManager::isLowBattery() == false);
+
+        fakeAnalogRead[34] = 4096;
+        assert(PowerManager::getBatteryMeasurement().valid == false);
+        assert(PowerManager::isLowBattery() == false);
+        std::printf("  [PASS] Invalid ADC reading is not treated as low battery\n");
+    }
+
+    // =========================================================================
+    // Test 12: Not low battery above threshold
     // =========================================================================
     {
         PowerManager::begin(34, 2.0f, 3300);
@@ -239,7 +273,10 @@ int main() {
     {
         PowerManager::begin(34, 2.0f, 3300);
         fakeAnalogRead[34] = 0;
+        const BatteryMeasurement measurement = PowerManager::getBatteryMeasurement();
         uint32_t voltage = PowerManager::getBatteryVoltageInMillivolts();
+        assert(measurement.valid);
+        assert(measurement.voltageInMillivolts == 0);
         assert(voltage == 0);
         std::printf("  [PASS] Zero ADC reading returns %u mV\n", voltage);
     }
@@ -250,9 +287,78 @@ int main() {
     {
         PowerManager::begin(34, 1.0f, 3300);
         fakeAnalogRead[34] = 4095;
-        uint32_t voltage = PowerManager::getBatteryVoltageInMillivolts();
+        const BatteryMeasurement measurement = PowerManager::getBatteryMeasurement();
+        uint32_t voltage = measurement.voltageInMillivolts;
+        assert(measurement.valid);
         assert(voltage == 3300);
         std::printf("  [PASS] Full ADC reading with 1:1 divider: %u mV\n", voltage);
+    }
+
+    // =========================================================================
+    // Regression: Configured ADC full-scale controls conversion and validation
+    // =========================================================================
+    {
+        assert(PowerManager::begin(35, 2.0f, 3300, 1023));
+        fakeAnalogRead[35] = 512;
+        const BatteryMeasurement measurement = PowerManager::getBatteryMeasurement();
+        assert(measurement.valid);
+        assert(measurement.voltageInMillivolts == 3303);
+        fakeAnalogRead[35] = 1024;
+        assert(PowerManager::getBatteryMeasurement().valid == false);
+        std::printf("  [PASS] Configured ADC full-scale is applied and range-checked\n");
+    }
+
+    // =========================================================================
+    // Regression: Invalid thresholds and voltage ranges are rejected
+    // =========================================================================
+    {
+        assert(PowerManager::setLowBatteryThresholdInMillivolts(3300));
+        assert(PowerManager::setLowBatteryThresholdInMillivolts(0) == false);
+        assert(PowerManager::setLowBatteryThresholdInMillivolts(5000) == false);
+        assert(PowerManager::getLowBatteryThresholdInMillivolts() == 3300);
+        assert(PowerManager::setBatteryVoltageRange(3000, 4200));
+        assert(PowerManager::setBatteryVoltageRange(4200, 3000) == false);
+        assert(PowerManager::setBatteryVoltageRange(3000, 3200) == false);
+        assert(PowerManager::getMinVoltageInMillivolts() == 3000);
+        assert(PowerManager::getMaxVoltageInMillivolts() == 4200);
+        std::printf("  [PASS] Invalid battery thresholds and ranges are rejected\n");
+    }
+
+    // =========================================================================
+    // Regression: WeatherStation low-battery latch requires valid recovery voltage
+    // =========================================================================
+    {
+        bool latched = false;
+        BatteryMeasurement measurement{false, 0};
+        using WeatherStationBatteryPolicy::LatchTransition;
+        using WeatherStationBatteryPolicy::updateLowBatteryLatch;
+
+        assert(updateLowBatteryLatch(latched, measurement, 3300, 3500) == LatchTransition::None);
+        assert(!latched);
+
+        measurement = {true, 3200};
+        assert(updateLowBatteryLatch(latched, measurement, 3300, 3500) ==
+               LatchTransition::LowBatteryDetected);
+        assert(latched);
+
+        measurement = {true, 3400};
+        assert(updateLowBatteryLatch(latched, measurement, 3300, 3500) == LatchTransition::None);
+        assert(latched);
+
+        measurement = {false, 4000};
+        assert(updateLowBatteryLatch(latched, measurement, 3300, 3500) == LatchTransition::None);
+        assert(latched);
+
+        measurement = {true, 3500};
+        assert(updateLowBatteryLatch(latched, measurement, 3300, 3500) ==
+               LatchTransition::BatteryRecovered);
+        assert(!latched);
+
+        measurement = {true, 3200};
+        assert(updateLowBatteryLatch(latched, measurement, 3300, 3500) ==
+               LatchTransition::LowBatteryDetected);
+        assert(latched);
+        std::printf("  [PASS] WeatherStation latch ignores invalid reads and recovers with hysteresis\n");
     }
 
     // =========================================================================
