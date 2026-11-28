@@ -9,6 +9,8 @@
  */
 
 #include <time.h>
+#include <cstddef>
+#include <cstdint>
 #include <string>
 #include <map>
 #include <cstring>
@@ -28,8 +30,35 @@ private:
     bool readOnly;
     bool open;
 
+    static bool& hasNextWriteResultOverride() {
+        static bool value = false;
+        return value;
+    }
+
+    static size_t& nextWriteResultOverride() {
+        static size_t value = 0;
+        return value;
+    }
+
+    static size_t takeWriteResult(const size_t successfulByteCount) {
+        if (!hasNextWriteResultOverride()) {
+            return successfulByteCount;
+        }
+        hasNextWriteResultOverride() = false;
+        return nextWriteResultOverride();
+    }
+
 public:
     Preferences() : readOnly(false), open(false) {}
+
+    static void setNextWriteResult(const size_t byteCount) {
+        nextWriteResultOverride() = byteCount;
+        hasNextWriteResultOverride() = true;
+    }
+
+    static void failNextWrite() {
+        setNextWriteResult(0);
+    }
     
     bool begin(const char* namespaceName, bool readOnly = false) {
         if (namespaceName == nullptr || strlen(namespaceName) == 0) {
@@ -59,10 +88,13 @@ public:
         return String(strIt->second.c_str());
     }
     
-    bool putString(const char* key, const char* value) {
-        if (!open || readOnly || value == nullptr) return false;
+    size_t putString(const char* key, const char* value) {
+        if (!open || readOnly || key == nullptr || value == nullptr) return 0;
+        const size_t byteCount = std::strlen(value);
+        const size_t writeResult = takeWriteResult(byteCount);
+        if (writeResult != byteCount) return writeResult;
         namespaces[currentNamespace].strings[key] = value;
-        return true;
+        return byteCount;
     }
     
     // Integer operations
@@ -75,10 +107,13 @@ public:
         return intIt->second;
     }
     
-    bool putInt(const char* key, int value) {
-        if (!open || readOnly) return false;
+    size_t putInt(const char* key, int value) {
+        if (!open || readOnly || key == nullptr) return 0;
+        const size_t byteCount = sizeof(int32_t);
+        const size_t writeResult = takeWriteResult(byteCount);
+        if (writeResult != byteCount) return writeResult;
         namespaces[currentNamespace].ints[key] = value;
-        return true;
+        return byteCount;
     }
     
     // Unsigned long operations
@@ -91,10 +126,13 @@ public:
         return ulIt->second;
     }
     
-    bool putULong(const char* key, unsigned long value) {
-        if (!open || readOnly) return false;
+    size_t putULong(const char* key, unsigned long value) {
+        if (!open || readOnly || key == nullptr) return 0;
+        const size_t byteCount = sizeof(uint32_t);
+        const size_t writeResult = takeWriteResult(byteCount);
+        if (writeResult != byteCount) return writeResult;
         namespaces[currentNamespace].unsignedLongs[key] = value;
-        return true;
+        return byteCount;
     }
     
     // Float operations
@@ -107,10 +145,13 @@ public:
         return flIt->second;
     }
     
-    bool putFloat(const char* key, float value) {
-        if (!open || readOnly) return false;
+    size_t putFloat(const char* key, float value) {
+        if (!open || readOnly || key == nullptr) return 0;
+        const size_t byteCount = sizeof(float);
+        const size_t writeResult = takeWriteResult(byteCount);
+        if (writeResult != byteCount) return writeResult;
         namespaces[currentNamespace].floats[key] = value;
-        return true;
+        return byteCount;
     }
     
     // Boolean operations
@@ -123,10 +164,13 @@ public:
         return boolIt->second;
     }
     
-    bool putBool(const char* key, bool value) {
-        if (!open || readOnly) return false;
+    size_t putBool(const char* key, bool value) {
+        if (!open || readOnly || key == nullptr) return 0;
+        const size_t byteCount = sizeof(uint8_t);
+        const size_t writeResult = takeWriteResult(byteCount);
+        if (writeResult != byteCount) return writeResult;
         namespaces[currentNamespace].bools[key] = value;
-        return true;
+        return byteCount;
     }
     
     // Schema validation

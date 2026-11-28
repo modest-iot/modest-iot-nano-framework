@@ -38,6 +38,7 @@ struct FakeFreeRtosState {
     int timerEndCalls = 0;
     int timerAttachCalls = 0;
     int timerAlarmCalls = 0;
+    bool lastTimerAlarmAutoReload = false;
     int isrNotificationCalls = 0;
     TaskHandle_t isrNotificationTargets[64] = {};
     int failQueueCreateAtCall = -1;
@@ -259,6 +260,7 @@ inline void timerAlarm(hw_timer_t* timer, std::uint64_t alarm, BaseType_t autoRe
     (void)reloadCount;
     if (timer != nullptr) {
         ++fakeFreeRtosState.timerAlarmCalls;
+        fakeFreeRtosState.lastTimerAlarmAutoReload = autoReload != pdFALSE;
     }
 }
 
@@ -267,6 +269,7 @@ public:
     using std::string::string;
     String(const std::string& s) : std::string(s) {}
     String(std::string&& s) noexcept : std::string(std::move(s)) {}
+    bool isEmpty() const { return empty(); }
     String& operator=(const std::string& s) {
         std::string::operator=(s);
         return *this;
