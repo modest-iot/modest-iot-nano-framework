@@ -112,7 +112,8 @@ private:
     mutable uint32_t highPriorityDroppedCount; ///< Total high-priority packets dropped due to full high-priority queue.
     mutable uint8_t highPriorityQueueHighWaterMarkCount; ///< Maximum high-priority queue depth observed.
     mutable bool firstHighPriorityDropLogged; ///< Tracks whether the first high-priority drop warning was emitted.
-    mutable uint32_t missedTickCount; ///< Ticks missed by the sampler.
+    mutable std::atomic<uint32_t> missedTickCount; ///< Ticks coalesced by the sampler.
+    mutable std::atomic<uint32_t> worstCaseWakeMicros; ///< Highest measured synchronous sampler work duration.
     mutable bool firstDropLogged; ///< Tracks whether the first drop warning was emitted.
     mutable uint32_t nextSequenceNumber; ///< Monotonically increasing sequence for telemetry envelope.
 
@@ -171,6 +172,18 @@ private:
      */
     static void IRAM_ATTR handleSensorTrigger(void* triggerContext);
 
+protected:
+    /**
+     * @brief Processes one sampler notification and records synchronous callback work.
+     * @param notificationValue Notification flags returned by the sampler task.
+     * @param elapsedTimerTicks Timer ticks coalesced into this notification, or 0 when none.
+     *
+     * Duration includes synchronous scheduled handlers, triggered sensor callbacks, and
+     * queued command handlers, but excludes task wait time and power-management sleep.
+     */
+    void processSamplerNotification(uint32_t notificationValue, uint32_t elapsedTimerTicks);
+
+private:
     /**
      * @brief Re-arms the hardware timer for the next due sensor sample.
      *

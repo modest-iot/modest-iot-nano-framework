@@ -46,6 +46,7 @@ Device::Device(const unsigned long samplingIntervalInMilliseconds, const uint8_t
       highPriorityQueueHighWaterMarkCount(0),
       firstHighPriorityDropLogged(false),
       missedTickCount(0),
+      worstCaseWakeMicros(0),
       firstDropLogged(false),
       nextSequenceNumber(0),
       pendingTicks(0),
@@ -443,41 +444,58 @@ void Device::executeHardwareSamplingContext(void *taskParameters) {
             break;
         }
 
-        // Timer tick: read and clear the atomic pending tick counter
+        uint32_t elapsedTimerTicks = 0;
         if (notificationValue & static_cast<uint32_t>(NotificationBitFlag::TimerTickArrived)) {
-            uint32_t elapsed = self->pendingTicks.exchange(0, std::memory_order_acq_rel);
-            if (elapsed == 0) {
-                // Should not happen, but treat as 1 tick for safety
-                elapsed = 1;
-            }
-            if (elapsed > 1) {
-                self->missedTickCount += elapsed - 1;
-            }
-            // Advance the scheduler by the elapsed tick count
-            self->scheduler.advance(elapsed);
-
-            // Power management: re-arm timer and enter sleep mode based on power mode
-            if (self->powerMode == PowerMode::Tickless) {
-                self->rearmTimerForNextDue();
-                self->enterLightSleep();
-            } else if (self->powerMode == PowerMode::DeepSleep) {
-                self->rearmTimerForNextDue();
-                self->enterDeepSleep();
-            }
+            elapsedTimerTicks = self->pendingTicks.exchange(0, std::memory_order_acq_rel);
         }
-
-        // Interrupt-driven sensor event
-        if (notificationValue & static_cast<uint32_t>(NotificationBitFlag::SensorTrigger)) {
-            self->processTriggeredSensors();
-        }
-
-        // Command available from network task
-        if (notificationValue & static_cast<uint32_t>(NotificationBitFlag::CommandAvailable)) {
-            self->processPendingCommands();
-        }
+        self->processSamplerNotification(notificationValue, elapsedTimerTicks);
     }
     self->hardwareSamplingWorkerExited.store(true, std::memory_order_release);
     vTaskDelete(nullptr);
+}
+
+void Device::processSamplerNotification(const uint32_t notificationValue, uint32_t elapsedTimerTicks) {
+    uint32_t synchronousWorkDurationMicros = 0;
+
+    if (notificationValue & static_cast<uint32_t>(NotificationBitFlag::TimerTickArrived)) {
+        if (elapsedTimerTicks == 0) {
+            elapsedTimerTicks = 1;
+        }
+        if (elapsedTimerTicks > 1) {
+            missedTickCount.fetch_add(elapsedTimerTicks - 1, std::memory_order_relaxed);
+        }
+
+        const uint32_t dispatchStartedAt = static_cast<uint32_t>(micros());
+        scheduler.advance(elapsedTimerTicks);
+        synchronousWorkDurationMicros += static_cast<uint32_t>(micros()) - dispatchStartedAt;
+
+        // Power-management sleep is intentionally excluded from measured work duration.
+        if (powerMode == PowerMode::Tickless) {
+            rearmTimerForNextDue();
+            enterLightSleep();
+        } else if (powerMode == PowerMode::DeepSleep) {
+            rearmTimerForNextDue();
+            enterDeepSleep();
+        }
+    }
+
+    if (notificationValue & static_cast<uint32_t>(NotificationBitFlag::SensorTrigger)) {
+        const uint32_t triggerStartedAt = static_cast<uint32_t>(micros());
+        processTriggeredSensors();
+        synchronousWorkDurationMicros += static_cast<uint32_t>(micros()) - triggerStartedAt;
+    }
+
+    if (notificationValue & static_cast<uint32_t>(NotificationBitFlag::CommandAvailable)) {
+        const uint32_t commandStartedAt = static_cast<uint32_t>(micros());
+        processPendingCommands();
+        synchronousWorkDurationMicros += static_cast<uint32_t>(micros()) - commandStartedAt;
+    }
+
+    uint32_t worstObservedDuration = worstCaseWakeMicros.load(std::memory_order_relaxed);
+    while (synchronousWorkDurationMicros > worstObservedDuration &&
+           !worstCaseWakeMicros.compare_exchange_weak(worstObservedDuration, synchronousWorkDurationMicros,
+                                                      std::memory_order_relaxed)) {
+    }
 }
 
 void Device::executeNetworkDispatchContext(void *taskParameters) {
@@ -800,8 +818,8 @@ void Device::processPendingCommands() const {
 // LCOV_EXCL_START — FreeRTOS stack high-water marks, cannot run in host tests
 DiagnosticsSnapshot Device::collectDiagnostics() const {
     DiagnosticsSnapshot snapshot;
-    snapshot.missedTicks = missedTickCount;
-    snapshot.worstCaseWakeMicros = 0; // Populated when handler timing measurement is added
+    snapshot.missedTicks = missedTickCount.load(std::memory_order_relaxed);
+    snapshot.worstCaseWakeMicros = worstCaseWakeMicros.load(std::memory_order_relaxed);
     snapshot.packetsEnqueued = packetsEnqueuedCount;
     snapshot.packetsDropped = packetsDroppedCount;
     snapshot.packetsDroppedOldest = packetsDroppedOldestCount;
