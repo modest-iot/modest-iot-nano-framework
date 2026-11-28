@@ -83,5 +83,44 @@ struct Recorder : CommandHandler {
     assert(ServoMotor::validateOrAdjustPhysicalAngle(90) == 90);
     assert(ServoMotor::validateOrAdjustPhysicalAngle(180) == 180);
 
+    // Test 16: Checked execution reports driver acceptance and retains applied state on failure
+    const CommandExecutionResult acceptedResult = servo.handleChecked(
+        Command{ServoMotor::DRIVE_TO_ANGLE_COMMAND_IDENTIFIER, 90});
+    assert(acceptedResult.status == CommandExecutionStatus::Succeeded);
+    assert(servo.getRequestedTargetAngleInDegrees() == 90);
+    assert(servo.getCurrentActiveAngleInDegrees() == 90);
+
+    fakeLedcWriteResult = false;
+    const CommandExecutionResult rejectedWriteResult = servo.handleChecked(
+        Command{ServoMotor::DRIVE_TO_ANGLE_COMMAND_IDENTIFIER, 120});
+    assert(rejectedWriteResult.status == CommandExecutionStatus::Failed);
+    assert(servo.getRequestedTargetAngleInDegrees() == 120);
+    assert(servo.getCurrentActiveAngleInDegrees() == 90);
+    assert(fakeLedcDuty[13] == 4095);
+    assert(parent.count == 11);
+    fakeLedcWriteResult = true;
+
+    // Test 17: Failed attachment and initial writes are observable without a false applied angle
+    fakeLedcAttachResult = false;
+    ServoMotor failedAttach(15, 45, &parent);
+    assert(!failedAttach.isInitialized());
+    assert(failedAttach.getInitializationResult().status == CommandExecutionStatus::Failed);
+    assert(failedAttach.getRequestedTargetAngleInDegrees() == 45);
+    assert(failedAttach.getCurrentActiveAngleInDegrees() == -1);
+    assert(failedAttach.handleChecked(Command{ServoMotor::DRIVE_TO_ANGLE_COMMAND_IDENTIFIER, 60}).status ==
+           CommandExecutionStatus::Failed);
+    assert(failedAttach.getCurrentActiveAngleInDegrees() == -1);
+    fakeLedcAttachResult = true;
+
+    fakeLedcWriteResult = false;
+    ServoMotor failedInitialWrite(16, 60);
+    assert(!failedInitialWrite.isInitialized());
+    assert(failedInitialWrite.getInitializationResult().status == CommandExecutionStatus::Failed);
+    assert(failedInitialWrite.getCurrentActiveAngleInDegrees() == -1);
+    fakeLedcWriteResult = true;
+
+    // Legacy handlers remain source-compatible and are reported as Unknown by default.
+    assert(parent.handleChecked(Command{999}).status == CommandExecutionStatus::Unknown);
+
     return 0;
 }
