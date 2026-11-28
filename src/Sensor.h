@@ -20,6 +20,7 @@
 
 #include "EventHandler.h"
 #include "Event.h"
+#include <atomic>
 #include <cstdint>
 
 class Sensor : public EventHandler {
@@ -65,9 +66,18 @@ protected:
 private:
     uint8_t consecutiveFailures; ///< Count of consecutive read failures.
     uint8_t faultThreshold; ///< Number of consecutive failures before fault event (0 = disabled).
-    bool isFaulted; ///< Whether the sensor is currently in a faulted state.
+    std::atomic<bool> isFaulted; ///< Whether the sensor is currently in a faulted state.
+    std::atomic<bool> hasSuccessfulRead{false}; ///< Whether any successful sample has been recorded.
+    std::atomic<uint32_t> lastSuccessfulReadAt{0}; ///< Millis timestamp of the last successful sample.
+    int pendingLifecycleEventIdentifier = 0; ///< Fault or recovery event raised during the current processing call.
 
 public:
+    /** @brief Validity of the latest sensor reading for a caller-supplied age limit. */
+    enum class DataValidity : uint8_t {
+        NoValidSample, ///< No successful sample has been recorded.
+        Fresh, ///< A successful sample exists and is not older than the requested age limit.
+        Stale ///< A successful sample exists but exceeds the requested age limit.
+    };
     /** @name Framework-Wide Unified Sensor Specification Events */
     //@{
     static constexpr int DATA_READ_EVENT_IDENTIFIER = 20; ///< Emitted when a new sensor reading is available.
@@ -84,6 +94,8 @@ public:
      * @param parentHandler Pointer to an EventHandler to receive events (default: nullptr).
      */
     Sensor(int signalGpioPin, EventHandler* parentHandler = nullptr);
+    Sensor(const Sensor& other);
+    Sensor& operator=(const Sensor& other);
     ~Sensor() override = default;
 
     /**
@@ -105,6 +117,31 @@ public:
      * @note Call this from the sketch to opt in to sensor fault detection.
      */
     void setFaultThreshold(uint8_t count);
+
+    /**
+     * @brief Reports whether this sensor has produced at least one successful sample.
+     * @return `true` after a successful read, otherwise `false`.
+     */
+    [[nodiscard]] bool hasValidReading() const;
+
+    /**
+     * @brief Returns the age of the most recent successful sample.
+     * @return Age in milliseconds, or `UINT32_MAX` when no successful sample exists.
+     */
+    [[nodiscard]] uint32_t getLastSuccessfulReadAgeInMilliseconds() const;
+
+    /**
+     * @brief Classifies the latest sample using a caller-supplied freshness limit.
+     * @param maximumAgeInMilliseconds Maximum age still considered fresh; equality is fresh.
+     * @return `NoValidSample`, `Fresh`, or `Stale`.
+     */
+    [[nodiscard]] DataValidity getDataValidity(uint32_t maximumAgeInMilliseconds) const;
+
+    /**
+     * @brief Reports whether a read fault is currently latched.
+     * @return `true` after the configured failure threshold until the next successful read.
+     */
+    [[nodiscard]] bool isReadFaultActive() const;
 
     /**
      * @brief Returns the effective sampling interval.
