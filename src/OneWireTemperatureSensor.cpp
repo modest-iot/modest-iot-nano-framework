@@ -135,11 +135,14 @@ uint8_t OneWireTemperatureSensor::readByte() const {
  *
  * @runs_on{sampler}
  */
-void OneWireTemperatureSensor::startTemperatureConversion() const {
-    (void)sendResetPulse();
+bool OneWireTemperatureSensor::startTemperatureConversion() const {
+    if (!sendResetPulse()) {
+        return false;
+    }
     writeByte(DS18B20_SKIP_ROM_COMMAND);
     writeByte(DS18B20_CONVERT_T_COMMAND);
     delay(DS18B20_CONVERSION_TIME_IN_MILLISECONDS);
+    return true;
 }
 
 /**
@@ -149,11 +152,14 @@ void OneWireTemperatureSensor::startTemperatureConversion() const {
  * (temperature LSB and MSB). Combines them into a 16-bit signed value and
  * converts to Celsius using the 0.0625°C per LSB resolution.
  *
- * @return Temperature in degrees Celsius.
+ * @param temperature Output temperature in degrees Celsius.
+ * @return true if the sensor responds to the scratchpad read.
  * @runs_on{sampler}
  */
-float OneWireTemperatureSensor::readTemperatureFromScratchpad() const {
-    (void)sendResetPulse();
+bool OneWireTemperatureSensor::readTemperatureFromScratchpad(float& temperature) const {
+    if (!sendResetPulse()) {
+        return false;
+    }
     writeByte(DS18B20_SKIP_ROM_COMMAND);
     writeByte(DS18B20_READ_SCRATCHPAD_COMMAND);
     const uint8_t tempLsb = readByte();
@@ -164,7 +170,8 @@ float OneWireTemperatureSensor::readTemperatureFromScratchpad() const {
     }
     // Combine into 16-bit signed integer (two's complement)
     int16_t rawTemperature = (static_cast<int16_t>(tempMsb) << 8) | tempLsb;
-    return static_cast<float>(rawTemperature) * DS18B20_TEMPERATURE_RESOLUTION;
+    temperature = static_cast<float>(rawTemperature) * DS18B20_TEMPERATURE_RESOLUTION;
+    return true;
 }
 
 /**
@@ -177,8 +184,16 @@ float OneWireTemperatureSensor::readTemperatureFromScratchpad() const {
  */
 void OneWireTemperatureSensor::processEvent(Event& event) {
     if (event.identifier == MEASURE_DATA_REQUESTED_EVENT_IDENTIFIER) {
-        startTemperatureConversion();
-        cachedTemperatureInCelsius = readTemperatureFromScratchpad();
+        float temperature = INITIAL_CACHED_TEMPERATURE_IN_CELSIUS;
+        if (!startTemperatureConversion() || !readTemperatureFromScratchpad(temperature)) {
+            reportReadFailure(event);
+            if (event.identifier != SENSOR_FAULT_EVENT_IDENTIFIER) {
+                event.identifier = PROPAGATION_SUPPRESSION_IDENTIFIER;
+            }
+            return;
+        }
+
+        cachedTemperatureInCelsius = temperature;
         reportReadSuccess(event);
 
         if (std::fabs(cachedTemperatureInCelsius - lastNotifiedTemperatureInCelsius)

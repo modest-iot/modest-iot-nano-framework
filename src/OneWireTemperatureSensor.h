@@ -113,14 +113,15 @@ private:
      * @brief Starts a temperature conversion and waits for completion.
      * @runs_on{sampler}
      */
-    void startTemperatureConversion() const;
+    [[nodiscard]] bool startTemperatureConversion() const;
 
     /**
      * @brief Reads the scratchpad and computes the temperature.
-     * @return Temperature in degrees Celsius.
+     * @param temperature Output temperature in degrees Celsius.
+     * @return `true` when the sensor responds to the scratchpad read.
      * @runs_on{sampler}
      */
-    float readTemperatureFromScratchpad() const;
+    [[nodiscard]] bool readTemperatureFromScratchpad(float& temperature) const;
 
 protected:
     /**
