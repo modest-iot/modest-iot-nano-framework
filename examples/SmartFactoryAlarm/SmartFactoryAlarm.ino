@@ -8,18 +8,17 @@
  *
  * Demonstrates the RulesEngine component (W29) for on-device automation.
  * Sensors dispatch events to EventAggregator, which matches composite patterns
- * and forwards events to this Device via setOutputHandler(this). Non-matching
- * individual sensor events are also forwarded by EventAggregator. When a water
- * leak AND door intrusion are detected within 10 seconds, EventAggregator emits
- * a composite event to this Device, which forwards it to RulesEngine to
- * automatically sound the buzzer and activate the emergency ventilation fan.
+ * and forwards each original sensor event once to this Device before any derived
+ * composite event. When water-leak AND door-intrusion events occur within 10 seconds,
+ * EventAggregator emits a composite event to this Device, which forwards it to
+ * RulesEngine to automatically sound the buzzer and activate the emergency ventilation fan.
  *
  * Event flow: sensors → EventAggregator → Device::on(Event) → RulesEngine → actuators
  *
  * Modest IoT Nano Framework aspects illustrated:
  * - EventAggregator: composite event pattern matching (AND logic)
  * - RulesEngine: automated rule-based action dispatch to multiple actuators
- * - EventAggregator forwards non-matching events to output handler (Device)
+ * - EventAggregator forwards every raw event once, before any matching composite
  * - Device::on(Event) as central event router for composite events
  * - Multiple sensors and actuators with per-slot scheduling
  *
