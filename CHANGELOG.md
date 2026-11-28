@@ -9,7 +9,20 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 #### Shared I²C Bus Backend
 - **src/I2cBus.h** and **src/ArduinoI2cBus.h/.cpp**: Added a shared I²C transaction contract and Arduino `Wire` backend with a configurable per-transfer timeout (50 ms default), whole-transaction serialization, combined register reads, and observable transfer results. The timeout does not bound time waiting for the transaction lock; incomplete reads report `ShortRead`, and the backend does not automatically retry or recover a physically stuck bus.
 
+#### Sensor Read Validity and Recovery
+- **src/Sensor.h/.cpp**: Added additive successful-read validity, age-based `Fresh`/`Stale` classification, and active fault state. Fault and recovery events are delivered independently from mutable or suppressed data events; failed reads retain the last valid cached reading.
+- **src/OneWireTemperatureSensor.cpp** and **src/LoadCellAmplifier.cpp**: Missing-device and not-ready conditions no longer refresh sensor validity or replace cached values.
+
+#### Checked Actuator Outcomes
+- **src/CommandHandler.h**, **src/Actuator.h/.cpp**, and **src/RulesEngine.h/.cpp**: Added a backward-compatible checked command result path and optional rule-action result observer. Legacy `void` handlers report `Unknown` unless a backend provides verifiable evidence.
+- **src/ServoMotor.h/.cpp**: Reports PWM setup and write outcomes, separates requested from driver-accepted angles, and leaves the applied angle unchanged when a write fails. Driver acceptance does not prove physical movement.
+
 ### Changed
+
+#### Event Delivery and Sampler Diagnostics
+- **src/EventAggregator.cpp**: Forwards every input event once before any derived composite and emits a match only when the current source-filtered event contributes to the pattern, preventing unrelated inputs from replaying stale captures.
+- **src/Device.h/.cpp**: Reports measured synchronous sampler work duration and coalesced missed ticks while preserving the scheduler’s phase-aligned, one-dispatch-per-due-slot policy.
+- **tests/run_coverage.sh**: Added the composed sensor/event/rule/actuator source dependencies so the coverage runner builds the same integration regression as the host test runner.
 
 #### I²C Peripheral Startup and Example Compositions
 - **I²C sensor and display drivers**: Added bus-injected, configuration-only construction for the BME-family, BH1750, MPU6050, HD44780, and SSD1306 paths. Hardware initialization now occurs through explicit startup, while legacy Arduino constructor overloads remain available.
