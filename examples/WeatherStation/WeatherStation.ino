@@ -5,8 +5,8 @@
  * Monitors air temperature, humidity, atmospheric pressure, and light intensity.
  * Starts in Periodic mode for normal operation, and automatically switches to
  * DeepSleep mode when low battery is detected. The low-battery flag persists
- * across reboots via RTC memory, so the device remains in DeepSleep mode until
- * the battery is replaced. NTP time synchronization provides absolute Unix
+ * across reboots via RTC memory and clears after a valid reading reaches the
+ * configured recovery voltage. NTP time synchronization provides absolute Unix
  * timestamps for server-side data correlation. PowerManager monitors the battery
  * voltage via ADC and triggers the power mode transition.
  *
@@ -27,6 +27,7 @@
 
 #include <Arduino.h>
 #include <ModestIoT.h>
+#include "WeatherStationBatteryPolicy.h"
 
 /** @name Hardware Configuration */
 //@{
@@ -69,6 +70,22 @@ static const I2cBusConfiguration WEATHER_STATION_I2C_CONFIGURATION{-1, -1, 10000
 //@{
 /** @brief Voltage divider ratio for the battery monitoring circuit (2:1 divider). */
 static const float BATTERY_DIVIDER_RATIO = 2.0f;
+/** @brief Assumed 11 dB ADC full-scale conversion; calibrate against a meter for each board. */
+static const uint32_t BATTERY_ADC_FULL_SCALE_IN_MILLIVOLTS = 3100;
+/** @brief Configured ADC full-scale raw value for 12-bit sampling. */
+static const uint16_t BATTERY_ADC_MAX_RAW_VALUE = ADC_MAX_VALUE;
+/** @brief Battery voltage below which the application latches low-battery mode. */
+static const uint32_t LOW_BATTERY_THRESHOLD_IN_MILLIVOLTS = 3300;
+/** @brief Healthy voltage required to clear the low-battery latch (hysteresis). */
+static const uint32_t BATTERY_RECOVERY_THRESHOLD_IN_MILLIVOLTS = 3500;
+/** @brief Empty-voltage endpoint for the configured battery chemistry. */
+static const uint32_t BATTERY_EMPTY_VOLTAGE_IN_MILLIVOLTS = 3000;
+/** @brief Full-voltage endpoint for the configured battery chemistry. */
+static const uint32_t BATTERY_FULL_VOLTAGE_IN_MILLIVOLTS = 4200;
+static_assert(LOW_BATTERY_THRESHOLD_IN_MILLIVOLTS > 0 &&
+              LOW_BATTERY_THRESHOLD_IN_MILLIVOLTS < BATTERY_RECOVERY_THRESHOLD_IN_MILLIVOLTS &&
+              BATTERY_RECOVERY_THRESHOLD_IN_MILLIVOLTS <= BATTERY_FULL_VOLTAGE_IN_MILLIVOLTS,
+              "WeatherStation battery thresholds must be ordered within the configured range");
 //@} // PowerManager Configuration
 
 /** @name Change-Only Mode Configuration */
@@ -100,7 +117,7 @@ RTC_DATA_ATTR bool rtcLowBatteryDetected = false;
  * Demonstrates adaptive power management: starts in Periodic mode for normal
  * operation, and automatically switches to DeepSleep mode when low battery
  * is detected. The low-battery flag persists across reboots via RTC memory,
- * so the device remains in DeepSleep mode until the battery is replaced.
+ * and clears after a valid reading reaches the configured recovery voltage.
  * All initialization and behavior is owned by this class; the sketch's setup()
  * is only responsible for instance creation and calling start().
  */
@@ -143,26 +160,45 @@ private:
     /**
      * @brief Displays the current battery status on Serial.
      * Checks for low battery and switches to DeepSleep mode if needed.
-     * The low-battery flag persists across reboots via RTC memory,
-     * so the device remains in DeepSleep mode until the battery is replaced.
+     * The low-battery flag persists across reboots via RTC memory and clears
+     * after a valid reading reaches the configured recovery voltage.
      */
     void displayBatteryStatus() {
-        uint32_t batteryVoltage = PowerManager::getBatteryVoltageInMillivolts();
-        float batteryLevel = PowerManager::getBatteryLevelInPercentage();
+        const BatteryMeasurement measurement = PowerManager::getBatteryMeasurement();
+        if (!measurement.valid) {
+            Serial.printf("%s Battery measurement unavailable; low-battery state unchanged.\n",
+                          WEATHER_STATION_LOG_PREFIX);
+            return;
+        }
+
+        const uint32_t batteryVoltage = measurement.voltageInMillivolts;
+        const float batteryLevel = PowerManager::getBatteryLevelInPercentage(measurement);
         char buffer[SERIAL_OUTPUT_BUFFER_SIZE];
         snprintf(buffer, sizeof(buffer),
                  "%s Battery: %lu mV (%.1f%%)",
                  WEATHER_STATION_LOG_PREFIX, batteryVoltage, batteryLevel);
         Serial.println(buffer);
 
-        if (PowerManager::isLowBattery()) {
-            rtcLowBatteryDetected = true;
+        const WeatherStationBatteryPolicy::LatchTransition transition =
+            WeatherStationBatteryPolicy::updateLowBatteryLatch(
+                rtcLowBatteryDetected, measurement,
+                PowerManager::getLowBatteryThresholdInMillivolts(),
+                BATTERY_RECOVERY_THRESHOLD_IN_MILLIVOLTS);
+        if (transition == WeatherStationBatteryPolicy::LatchTransition::LowBatteryDetected) {
             Serial.printf("%s WARNING: Low battery detected!\n",
                           WEATHER_STATION_LOG_PREFIX);
+        }
 
-            if (getPowerMode() != PowerMode::DeepSleep) {
-                setPowerMode(PowerMode::DeepSleep);
-                Serial.printf("%s Switched to DeepSleep mode to conserve power.\n",
+        if (rtcLowBatteryDetected && getPowerMode() != PowerMode::DeepSleep) {
+            setPowerMode(PowerMode::DeepSleep);
+            Serial.printf("%s Switched to DeepSleep mode to conserve power.\n",
+                          WEATHER_STATION_LOG_PREFIX);
+        } else if (transition == WeatherStationBatteryPolicy::LatchTransition::BatteryRecovered) {
+            Serial.printf("%s Battery recovered; low-battery latch cleared.\n",
+                          WEATHER_STATION_LOG_PREFIX);
+            if (getPowerMode() == PowerMode::DeepSleep) {
+                setPowerMode(PowerMode::Periodic);
+                Serial.printf("%s Resumed Periodic mode after battery recovery.\n",
                               WEATHER_STATION_LOG_PREFIX);
             }
         }
@@ -279,8 +315,21 @@ public:
         // Initialize NTP time synchronization for absolute timestamps
         TimeSynchronizationDriver::initialize(WEATHER_STATION_TIMEZONE, WEATHER_STATION_NTP_SERVER);
 
-        // Initialize battery monitoring on ADC pin 34 with 2:1 voltage divider
-        PowerManager::begin(BATTERY_ADC_PIN, BATTERY_DIVIDER_RATIO);
+        // Configure the board-specific ADC resolution and attenuation before
+        // applying the provisional linear scale; calibrate it against a meter.
+        analogReadResolution(12);
+        analogSetPinAttenuation(BATTERY_ADC_PIN, ADC_11db);
+        if (!PowerManager::begin(BATTERY_ADC_PIN, BATTERY_DIVIDER_RATIO,
+                                 BATTERY_ADC_FULL_SCALE_IN_MILLIVOLTS,
+                                 BATTERY_ADC_MAX_RAW_VALUE) ||
+            !PowerManager::setBatteryVoltageRange(BATTERY_EMPTY_VOLTAGE_IN_MILLIVOLTS,
+                                                  BATTERY_FULL_VOLTAGE_IN_MILLIVOLTS) ||
+            !PowerManager::setLowBatteryThresholdInMillivolts(
+                LOW_BATTERY_THRESHOLD_IN_MILLIVOLTS)) {
+            Serial.printf("%s Battery monitor configuration is invalid.\n",
+                          WEATHER_STATION_LOG_PREFIX);
+            return false;
+        }
 
         // Restore DeepSleep mode if low battery was detected in a previous cycle
         if (rtcLowBatteryDetected) {
