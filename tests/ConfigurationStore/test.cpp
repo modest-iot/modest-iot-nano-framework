@@ -481,6 +481,56 @@ void testSetValueNotInitializedFails() {
     ASSERT_FALSE(store.setValue("key", true));
 }
 
+void testBackendWriteFailuresAndReopen() {
+    ConfigurationStore store;
+    ASSERT_TRUE(store.begin("write_failures"));
+    ASSERT_TRUE(store.setString("string", "known-good"));
+    ASSERT_FALSE(store.setString("empty", ""));
+    ASSERT_FALSE(store.containsKey("empty"));
+    ASSERT_TRUE(store.setInt("integer", 17));
+    ASSERT_TRUE(store.setUnsignedLong("unsigned", 123UL));
+    ASSERT_TRUE(store.setFloat("float", 1.5f));
+    ASSERT_TRUE(store.setBool("boolean", true));
+
+    Preferences::failNextWrite();
+    ASSERT_FALSE(store.setString("string", "replacement"));
+    ASSERT_EQ(std::string(store.getString("string")), "known-good");
+
+    Preferences::failNextWrite();
+    ASSERT_FALSE(store.setInt("integer", 18));
+    ASSERT_EQ(store.getInt("integer"), 17);
+
+    Preferences::failNextWrite();
+    ASSERT_FALSE(store.setUnsignedLong("unsigned", 124UL));
+    ASSERT_EQ(store.getUnsignedLong("unsigned"), 123UL);
+
+    Preferences::failNextWrite();
+    ASSERT_FALSE(store.setFloat("float", 2.5f));
+    ASSERT_EQ(store.getFloat("float"), 1.5f);
+
+    Preferences::failNextWrite();
+    ASSERT_FALSE(store.setBool("boolean", false));
+    ASSERT_TRUE(store.getBool("boolean"));
+
+    // A nonzero but incomplete backend byte count is not a successful write.
+    Preferences::setNextWriteResult(1);
+    ASSERT_FALSE(store.setString("string", "partial-replacement"));
+    ASSERT_EQ(std::string(store.getString("string")), "known-good");
+
+    Preferences::setNextWriteResult(2);
+    ASSERT_FALSE(store.setInt("integer", 19));
+    ASSERT_EQ(store.getInt("integer"), 17);
+
+    store.end();
+    ASSERT_TRUE(store.begin("write_failures", true));
+    ASSERT_EQ(std::string(store.getString("string")), "known-good");
+    ASSERT_EQ(store.getInt("integer"), 17);
+    ASSERT_EQ(store.getUnsignedLong("unsigned"), 123UL);
+    ASSERT_EQ(store.getFloat("float"), 1.5f);
+    ASSERT_TRUE(store.getBool("boolean"));
+    store.end();
+}
+
 int main() {
     std::cout << "Running ConfigurationStore tests..." << std::endl;
     
@@ -521,6 +571,7 @@ int main() {
     testSetValueBool();
     testSetValueReadOnlyFails();
     testSetValueNotInitializedFails();
+    testBackendWriteFailuresAndReopen();
     
     std::cout << testsPassed << " tests passed, " << testsFailed << " tests failed." << std::endl;
     
