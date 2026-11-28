@@ -1,15 +1,15 @@
 # Modest IoT Nano Framework — Code Coverage
 
 **Version**: 1.3.0<br>
-**Date**: 2026-11-24<br>
+**Date**: 2026-11-27<br>
 **Toolchain**: GCC gcov + lcov/genhtml  
-**Platform**: macOS (local run; CI matrix targets Ubuntu)
+**Platform**: Ubuntu CI coverage run; host tests also validated on macOS
 
 ---
 
 ## Overview
 
-The current host test suite contains **54 suites**. The coverage runner still explicitly lists 53 suites and does not include the newer `I2cBus` suite. The 91.2% line and 83.6% function figures below are a historical 53-suite snapshot, not coverage results for the current host suite.
+The host CMake/CTest configuration has **54 registered test cases**, and the latest run passed 54/54. `tests/run_coverage.sh` enumerates **53 test runners** and does not include `I2cBus`; its latest run passed 53/53 and measured 90.1% line and 83.6% function coverage for its filtered, testable-code set. These are current results for the coverage runner, not coverage of every registered CTest case.
 
 ## Running Coverage Locally
 
@@ -41,7 +41,7 @@ Generate a coverage report:
 ./tests/run_coverage.sh
 ```
 
-This compiles the 53 suites currently enumerated in `tests/run_coverage.sh` with coverage instrumentation (`-fprofile-arcs -ftest-coverage`), runs them, and generates an HTML report in `build/coverage/index.html`. The coverage runner must be extended and rerun before reporting coverage for all 54 host suites.
+This compiles the 53 test runners enumerated in `tests/run_coverage.sh` with coverage instrumentation (`-fprofile-arcs -ftest-coverage`), runs them, and generates an HTML report in `build/coverage/index.html`. The runner currently omits `I2cBus`; extend it and rerun before claiming coverage for every registered host test.
 
 Set a custom minimum coverage threshold (default: 80%):
 ```bash
@@ -162,9 +162,9 @@ The coverage script ensures these exclusions are visible in the final HTML repor
 
 | Scope | Line Coverage | Functions |
 |-------|---------------|-----------|  
-| **Testable code (filtered)** | **91.2%** | **83.6%** |
+| **Testable code (filtered; 53 coverage runners)** | **90.1%** | **83.6%** |
 
-The filtered coverage (91.2% line, 83.6% function) is the most meaningful metric, as it excludes test code, GCC standard library headers, and the 7 platform-specific files listed above. These results were measured with GCC 16 and 53 suites on 2026-11-24; they predate the current 54-suite host inventory and omit `I2cBus`. Do not present these figures as current coverage until the coverage runner includes all host suites and is rerun. The `lcov --capture` step uses `--exclude` patterns to filter out system include paths (Homebrew GCC, Xcode SDK, Linux system headers) so only project source files appear in the report. The genhtml HTML report reflects only this filtered set — the excluded files do not appear.
+The filtered coverage (90.1% line, 83.6% function) is the latest recorded result, as it excludes test code, GCC standard library headers, and the 7 platform-specific files listed above. The run covered the 53 runners currently enumerated on 2026-11-27 and omitted `I2cBus`, so it is not coverage evidence for all 54 registered CTest cases. The `lcov --capture` step uses `--exclude` patterns to filter out system include paths (Homebrew GCC, Xcode SDK, Linux system headers) so only project source files appear in the report. The genhtml HTML report reflects only this filtered set — the excluded files do not appear.
 
 ## Adding Coverage to New Tests
 
@@ -184,6 +184,7 @@ When adding new source files, ensure they are included in the coverage script:
 ## Future Improvements
 
 - **Branch coverage**: Enable `-fbranch-protection` for branch-level coverage.
+- **Complete suite coverage**: Add `I2cBus` to the coverage runner and rerun before reporting whole-suite coverage.
 - **Coverage diff**: Compare coverage between PRs to detect regressions.
 - **Enforced threshold**: Set `ENFORCE_COVERAGE=1` in CI when coverage stabilizes above 85%.
 - **Badges**: Add a coverage badge to README.md when CI coverage is stable.
