@@ -67,6 +67,17 @@ int main() {
         std::printf("  [PASS] Reset clears state\n");
     }
 
+    // Test 7: A not-ready sample does not refresh sensor validity
+    {
+        LoadCellAmplifier sensor(16, 17, 0.0f, 5000.0f, 0, 2000000);
+        sensor.setFaultThreshold(1);
+        sensor.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
+        assert(!sensor.hasValidReading());
+        assert(sensor.getDataValidity(1000) == Sensor::DataValidity::NoValidSample);
+        assert(!sensor.isReadFaultActive());
+        std::printf("  [PASS] Not-ready sample does not refresh validity\n");
+    }
+
     std::printf("All LoadCellAmplifier tests passed successfully!\n");
     return 0;
 }
