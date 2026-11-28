@@ -181,6 +181,7 @@ find_package(Threads REQUIRED)
 
 file(GLOB TEST_FAKES "tests/fakes/*.h")
 file(GLOB TEST_FAKES_SRC "tests/fakes/*.cpp")
+list(FILTER TEST_FAKES_SRC EXCLUDE REGEX "/FakeLittleFS\\.cpp$")
 
 add_executable(test_DigitalLightIntensitySensor
         tests/DigitalLightIntensitySensor/test.cpp
@@ -412,6 +413,7 @@ add_executable(test_DeepSleep
         ${TEST_FAKES_SRC}
 )
 target_include_directories(test_DeepSleep PRIVATE tests/fakes src)
+target_link_libraries(test_DeepSleep PRIVATE Threads::Threads)
 
 add_executable(test_ServoMotor
         tests/ServoMotor/test.cpp
@@ -532,10 +534,12 @@ target_compile_options(test_PowerManager PRIVATE -Wall -Wextra -Werror)
 add_executable(test_TelemetryBuffer
         tests/TelemetryBuffer/test.cpp
         src/TelemetryBuffer.cpp
+        tests/fakes/FakeLittleFS.cpp
         ${TEST_FAKES}
         ${TEST_FAKES_SRC}
 )
 target_include_directories(test_TelemetryBuffer PRIVATE tests/fakes src)
+target_compile_definitions(test_TelemetryBuffer PRIVATE ARDUINO_ARCH_ESP32)
 target_compile_options(test_TelemetryBuffer PRIVATE -Wall -Wextra -Werror)
 
 add_executable(test_OtaUpdateHandler
