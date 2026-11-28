@@ -9,6 +9,17 @@ All notable changes to the Modest IoT Nano Framework will be documented in this 
 #### Shared I²C Bus Backend
 - **src/I2cBus.h** and **src/ArduinoI2cBus.h/.cpp**: Added a shared I²C transaction contract and Arduino `Wire` backend with a configurable per-transfer timeout (50 ms default), whole-transaction serialization, combined register reads, and observable transfer results. The timeout does not bound time waiting for the transaction lock; incomplete reads report `ShortRead`, and the backend does not automatically retry or recover a physically stuck bus.
 
+#### Validated Battery Measurements and Sleep Preparation
+- **src/PowerManager.h/.cpp**: Added validity-bearing battery measurements, validation for ADC scale/divider/full-scale inputs and battery thresholds, and configured raw-range rejection. Legacy millivolt/percentage accessors remain; unavailable samples cannot be treated as low battery. Static configuration is startup-only and is not synchronized for concurrent reconfiguration.
+- **examples/WeatherStation/**: Explicitly configures 12-bit ADC resolution, 11 dB attenuation, a provisional 3100 mV linear full-scale conversion, battery limits, and low/recovery hysteresis. The ADC scale remains uncalibrated hardware evidence and must be checked against a meter on each deployed board.
+- **src/Device.h/.cpp**: Added an overridable sampler-context pre-deep-sleep decision hook. `Defer` rearms sampling for the next cycle; the default proceeds as before. Applications own pending-work disposition; the hook itself does not persist or deliver work and has no framework-enforced execution-time bound.
+
+#### Persistence and Offline Replay Reliability
+- **src/ConfigurationStore.cpp**: Typed writes now succeed only when the Preferences backend reports the expected byte count. Empty strings are rejected because a zero-byte return is ambiguous with write failure; failure injection tests preserve known-good values and cover reopen/readback.
+- **src/TelemetryBuffer.h/.cpp**: LittleFS mounts without implicit formatting; packet files are enumerated/read as regular files, writes precede capacity eviction, and `claimNext()` retains records until exact-payload `acknowledge()` succeeds. Empty files are discarded with a warning; opaque nonempty payloads remain for retry or explicit clearing. Legacy `retrieveNext()` remains destructive.
+- **examples/ClimateDataUploader/**: Configures authentication and the telemetry endpoint before replay, acknowledges only after a successful 2xx response, and retries retained records no more than once per packet per 30-second replay pass. Ambiguous remote acknowledgments may still produce duplicates; bounded local capacity can evict the oldest packet with observable logging/callbacks.
+- **Host validation**: Added Preferences failure injection, a filesystem fake, and deep-sleep decision tests. Host tests do not establish ADC accuracy, flash power-loss durability, physical sleep/wake behavior, or delivery across ambiguous remote acknowledgments.
+
 #### Sensor Read Validity and Recovery
 - **src/Sensor.h/.cpp**: Added additive successful-read validity, age-based `Fresh`/`Stale` classification, and active fault state. Fault and recovery events are delivered independently from mutable or suppressed data events; failed reads retain the last valid cached reading.
 - **src/OneWireTemperatureSensor.cpp** and **src/LoadCellAmplifier.cpp**: Missing-device and not-ready conditions no longer refresh sensor validity or replace cached values.
