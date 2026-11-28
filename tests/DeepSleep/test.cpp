@@ -19,6 +19,7 @@ namespace {
 
 class TestDevice : public Device {
 public:
+    using Decision = DeepSleepDecision;
     TestDevice() : Device(1000, 0) {}
 
     void on(Event) override {}
@@ -32,6 +33,27 @@ public:
     // Expose protected methods for testing
     using Device::setPowerMode;
     using Device::getPowerMode;
+    using Device::processSamplerNotification;
+
+    bool startEngine() { return initializeAsynchronousEngine(); }
+    void stopEngine() { stopAsynchronousEngine(); }
+    void runSamplerTick() { processSamplerNotification(1U, 1U); }
+
+    DeepSleepDecision decision = DeepSleepDecision::Proceed;
+    bool useFrameworkDefault = false;
+    uint32_t preparationCalls = 0;
+    mutable uint32_t deepSleepCalls = 0;
+    uint32_t hookDurationMicros = 80;
+
+protected:
+    DeepSleepDecision prepareForDeepSleep() override {
+        ++preparationCalls;
+        fakeMicros += hookDurationMicros;
+        return useFrameworkDefault ? Device::prepareForDeepSleep() : decision;
+    }
+
+private:
+    void enterDeepSleep() const override { ++deepSleepCalls; }
 };
 
 } // namespace
@@ -128,6 +150,38 @@ int main() {
     {
         esp_sleep_enable_timer_wakeup(300000000ULL); // 5 minutes in microseconds
         std::printf("  [PASS] esp_sleep_enable_timer_wakeup is callable\n");
+    }
+
+    // =========================================================================
+    // Test 11: Deferred sleep remains awake and rearms the next sampler event
+    // =========================================================================
+    {
+        resetFakeFreeRtosState();
+        TestDevice device;
+        assert(device.startEngine());
+        device.setPowerMode(Device::PowerMode::DeepSleep);
+        device.decision = TestDevice::Decision::Defer;
+        const int alarmsBeforeDefer = fakeFreeRtosState.timerAlarmCalls;
+        device.runSamplerTick();
+        assert(device.preparationCalls == 1);
+        assert(device.deepSleepCalls == 0);
+        assert(device.getPowerMode() == Device::PowerMode::DeepSleep);
+        assert(fakeFreeRtosState.timerAlarmCalls == alarmsBeforeDefer + 1);
+        assert(!fakeFreeRtosState.lastTimerAlarmAutoReload);
+        assert(device.collectDiagnostics().worstCaseWakeMicros >= device.hookDurationMicros);
+
+        // The default hook proceeds, preserving backward-compatible behavior.
+        device.useFrameworkDefault = true;
+        device.runSamplerTick();
+        assert(device.preparationCalls == 2);
+        assert(device.deepSleepCalls == 1);
+
+        // Returning to Periodic after a deep-sleep cycle restores an autoreload alarm.
+        device.setPowerMode(Device::PowerMode::Periodic);
+        assert(fakeFreeRtosState.lastTimerAlarmAutoReload);
+        device.stopEngine();
+        resetFakeFreeRtosState();
+        std::printf("  [PASS] Deep-sleep defer rearms sampling; default proceeds and periodic mode resumes\n");
     }
 
     std::printf("All DeepSleep tests passed successfully!\n");
