@@ -178,9 +178,12 @@ public:
      * @note All identifiers must occur within the time window for the pattern to match.
      *       The condition function is called after all identifiers match, receiving the
      *       composite event ID as context. This allows a single condition function to
-     *       handle multiple patterns differently. It runs on the interrupt context, so
-     *       keep it short. Use this to check sensor values (e.g., "is cargo bay empty?")
-     *       that determine whether the composite event should actually be emitted.
+     *       handle multiple patterns differently. It runs synchronously on the event-delivery
+     *       context (normally the sampler task), so keep it short and non-blocking. Use this to
+     *       check sensor values (e.g., "is cargo bay empty?")
+ *       that determine whether the composite event should actually be emitted. The callback
+ *       runs synchronously in the context that delivers the event (normally the sampler task),
+ *       not in interrupt context.
      */
     bool addAllMatchPattern(const int* eventIdentifiers, uint8_t eventIdentifierCount,
                             const int* sourceIds, uint32_t timeWindowSeconds, int compositeEventId,
