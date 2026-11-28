@@ -15,6 +15,21 @@
 
 namespace {
 
+class Recorder : public EventHandler {
+public:
+    int eventIds[4] = {};
+    int sourceIds[4] = {};
+    int count = 0;
+
+    void on(const Event event) override {
+        if (count < 4) {
+            eventIds[count] = event.identifier;
+            sourceIds[count] = event.sourceId;
+            ++count;
+        }
+    }
+};
+
 // Test subclass that exposes protected members for testing
 class TestableOneWireTemperatureSensor : public OneWireTemperatureSensor {
 public:
@@ -108,6 +123,35 @@ int main() {
         // Difference of 0.05 < epsilon of 0.1, so suppress
         assert((sensor.cachedTemperatureInCelsius - sensor.lastNotifiedTemperatureInCelsius) < 0.1f);
         std::printf("  [PASS] Temperature change < epsilon suppresses\n");
+    }
+
+    // Test 9: Missing device preserves the last reading and recovery is independent of data suppression
+    {
+        fakeMillis = 0;
+        fakeDigitalReadValue = LOW;
+        Recorder recorder;
+        OneWireTemperatureSensor sensor(4, &recorder);
+        sensor.setFaultThreshold(1);
+
+        sensor.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
+        assert(sensor.hasValidReading());
+        assert(sensor.getTemperatureInCelsius() == 0.0f);
+        assert(recorder.count == 1);
+        assert(recorder.eventIds[0] == Sensor::DATA_READ_EVENT_IDENTIFIER);
+
+        fakeDigitalReadValue = HIGH;
+        sensor.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
+        assert(sensor.isReadFaultActive());
+        assert(recorder.count == 2);
+        assert(recorder.eventIds[1] == Sensor::SENSOR_FAULT_EVENT_IDENTIFIER);
+        assert(sensor.getTemperatureInCelsius() == 0.0f);
+
+        fakeDigitalReadValue = LOW;
+        sensor.on(Sensor::MEASURE_DATA_REQUESTED_EVENT);
+        assert(!sensor.isReadFaultActive());
+        assert(recorder.count == 3);
+        assert(recorder.eventIds[2] == Sensor::SENSOR_RECOVERED_EVENT_IDENTIFIER);
+        assert(sensor.getTemperatureInCelsius() == 0.0f);
     }
 
     std::printf("All OneWireTemperatureSensor tests passed successfully!\n");
