@@ -7,7 +7,7 @@ OUTPUT_DIRECTORY       = docs/build
 CREATE_SUBDIRS         = NO
 
 # Input
-INPUT                  = src docs/doxygen-mainpage.md docs/doxygen-groups.dox README.md docs/user-stories.md docs/improvements.md docs/adrs.md LICENSE.md
+INPUT                  = src docs/doxygen-mainpage.md docs/doxygen-groups.dox README.md CHANGELOG.md docs/user-stories.md docs/improvements.md docs/adrs.md docs/evolution.md docs/benchmarks.md docs/coverage.md LICENSE.md
 FILE_PATTERNS          = *.h *.cpp *.md *.dox
 RECURSIVE              = YES
 EXCLUDE                = cmake cmake-build-debug cmake-build-test examples tests
