@@ -1,7 +1,9 @@
 # Modest IoT Nano Framework (C++ Edition)
 
 This API reference documents the public abstractions and built-in components in
-`Modest-IoT-Nano-Framework` (v1.3.0).
+`Modest-IoT-Nano-Framework` (latest release: v1.3.0).
+
+> **Release status**: Generated API content follows the current checkout and may include unreleased changes. See the `Unreleased` section in `CHANGELOG.md`; those additions are not part of v1.3.0.
 
 > **Note**: The repository and directory names use hyphens (`Modest-IoT-Nano-Framework`) as a file system convention. The display name is "Modest IoT Nano Framework" (with spaces).
 
@@ -16,8 +18,10 @@ ESP32 microcontrollers:
   across two FreeRTOS tasks (sampler and network).
 - `TelemetryPackage` provides a serialization contract for transport clients.
 - `SamplingScheduler` manages per-slot countdown-based scheduling with tickless sleep support.
+- Successful-read-reporting sensors expose validity, freshness age, and read-fault state; recovery notifications are independent of change-filtered data events.
 - `ModestLog` provides zero-overhead compile-time logging with tag and level filtering.
-- `EventAggregator` recognizes time-windowed composite event patterns, and `RulesEngine` maps matches to actuator commands.
+- `EventAggregator` forwards raw events once and emits composites only when a new matching event contributes; `RulesEngine` maps matches to actuator commands and can observe checked outcomes.
+- Existing `void` command handlers remain compatible; checked execution reports driver-confirmed success/failure or `Unknown` when the implementation cannot confirm acceptance.
 - `ChangeFilter<T>` suppresses insignificant per-sensor telemetry changes without dynamic allocation.
 - `AiMicroModelController` and `EmlearnController` provide optional on-device inference; `ImuSensor` supports MPU6050 vibration sensing.
 
@@ -48,10 +52,10 @@ adapters, gateway clients, and 19 built-in sensors plus 7 actuators.
 - **Interrupt-driven sensors**: GPIO triggers are marshaled to the sampler task for safe execution.
 - **Cross-task commands**: `Device::enqueueCommand()` enables cloud-to-device control via MQTT subscribe.
 - **Fault detection**: Configurable consecutive-failure threshold per sensor instance.
-- **Diagnostics**: `Device::collectDiagnostics()` reports 16 stack, heap, queue, send, and timing metrics; `worstCaseWakeMicros` is currently a placeholder emitted as `0` because measurement is not implemented.
+- **Diagnostics**: `Device::collectDiagnostics()` reports 16 stack, heap, queue, send, and timing metrics, including missed/coalesced ticks and the highest observed synchronous sampler-work duration. This observation is not a hard execution bound.
 - **Automation and filtering**: Time-windowed event aggregation, fixed-capacity rules, and per-slot deadband-based telemetry suppression.
 - **On-device sensing and inference**: MPU6050 accelerometer/gyroscope statistics with an optional emlearn-backed inference adapter.
-- **Host testing**: Platform-independent core compiles natively for unit testing (54 test suites in the current host suite).
+- **Host testing**: Platform-independent core compiles natively for unit testing (54 registered CTest cases); `tests/run_all.sh` and `tests/run_coverage.sh` currently enumerate 53 runners and omit `I2cBus`.
 
 ## Documentation Conventions
 
