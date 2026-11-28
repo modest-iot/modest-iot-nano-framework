@@ -27,6 +27,7 @@
  */
 
 #include <Arduino.h>
+#include <atomic>
 #include <cstring>
 #include <memory>
 #include "ModestIoT.h"
@@ -61,6 +62,8 @@ static const char* TELEMETRY_ENDPOINT_URL = "http://192.168.1.100:8080/api/v1/te
 //@{
 /** @brief Interval between climate sensor readings. */
 static const unsigned long TELEMETRY_POLLING_INTERVAL_IN_MILLISECONDS = 1000;
+/** @brief Minimum delay between buffered replay attempts while Wi-Fi is connected. */
+static const unsigned long BUFFERED_REPLAY_RETRY_INTERVAL_IN_MILLISECONDS = 30000;
 /** @brief Delay in the main loop when no work is pending. */
 static const unsigned long MAIN_LOOP_DELAY_IN_MILLISECONDS = 60000;
 //@} // Timing Configuration
@@ -204,6 +207,11 @@ class ClimateDataUploader : public Device {
 private:
     DhtSensor climateSensor;
     HttpGatewayClient& gatewayClient;
+    WiFiConnectivityDriver* wifiTransport = nullptr;
+    char authorizationHeaderBuffer[BEARER_AUTHORIZATION_HEADER_MAX_LENGTH]{};
+    std::atomic<bool> replayEndpointConfigured{false};
+    mutable unsigned long lastReplayAttemptMs = 0;
+    mutable bool replayAttempted = false;
 
     void packageAndQueueTelemetrySnapshot() {
         auto packet = std::make_unique<ClimateTelemetryPackage>(
@@ -214,16 +222,39 @@ private:
     }
 
     /**
-     * @brief Replays any buffered packets from a previous session or failed sends.
-     * Called after successful network reconnection to drain the offline buffer.
+     * @brief Replays buffered packets in order using claim/send/acknowledge.
+     * One pass makes at most one attempt per packet and stops at the first failure.
+     * @note Replay passes are rate-limited to one per 30 seconds while connected;
+     *       later passes retry retained records. Delivery is at-least-once when
+     *       a remote acknowledgment is ambiguous.
      */
-    void replayBufferedPackets() {
-        String bufferedPacket;
-        while (TelemetryBuffer::retrieveNext(bufferedPacket)) {
-            Serial.printf("%s Replaying buffered packet: %s\n", CLIMATE_DATA_UPLOADER_LOG_PREFIX, bufferedPacket.c_str());
-            gatewayClient.sendRequest(HttpGatewayClient::HttpMethod::Post, bufferedPacket.c_str());
+    void replayBufferedPackets() const {
+        TelemetryPacketClaim claim;
+        while (TelemetryBuffer::claimNext(claim)) {
+            Serial.printf("%s Replaying packet %lu: %s\n", CLIMATE_DATA_UPLOADER_LOG_PREFIX,
+                          static_cast<unsigned long>(claim.packetId), claim.payload.c_str());
+            const bool requestSent = gatewayClient.sendRequest(
+                HttpGatewayClient::HttpMethod::Post, claim.payload.c_str());
+            const int statusCode = requestSent ? gatewayClient.getLastResponseStatusCode() : 0;
+            if (!requestSent || statusCode < 200 || statusCode >= 300) {
+                Serial.printf("%s Replay failed (HTTP %d); packet retained for a later attempt.\n",
+                              CLIMATE_DATA_UPLOADER_LOG_PREFIX, statusCode);
+                break;
+            }
+            if (!TelemetryBuffer::acknowledge(claim)) {
+                Serial.printf("%s Delivery succeeded but local acknowledgment failed; packet retained.\n",
+                              CLIMATE_DATA_UPLOADER_LOG_PREFIX);
+                break;
+            }
+            Serial.printf("%s Packet %lu delivered and acknowledged.\n", CLIMATE_DATA_UPLOADER_LOG_PREFIX,
+                          static_cast<unsigned long>(claim.packetId));
         }
-        Serial.println((String(CLIMATE_DATA_UPLOADER_LOG_PREFIX) + " Buffered packet replay complete.").c_str());
+        if (TelemetryBuffer::hasBufferedPackets()) {
+            Serial.println((String(CLIMATE_DATA_UPLOADER_LOG_PREFIX) +
+                            " Replay pass stopped; buffered packets remain for a later attempt.").c_str());
+        } else {
+            Serial.println((String(CLIMATE_DATA_UPLOADER_LOG_PREFIX) + " Buffered packet replay complete.").c_str());
+        }
     }
 
     /**
@@ -252,15 +283,14 @@ private:
 
         Serial.printf("%s Response body: %s\n", CLIMATE_DATA_UPLOADER_LOG_PREFIX, responseBody);
 
-        char authorizationHeader[BEARER_AUTHORIZATION_HEADER_MAX_LENGTH];
         char tokenPreview[BEARER_TOKEN_MAX_LENGTH];
-        if (!BearerTokenParser::buildAuthorizationHeader(responseBody, authorizationHeader,
-                                                         sizeof(authorizationHeader), tokenPreview)) {
+        if (!BearerTokenParser::buildAuthorizationHeader(responseBody, authorizationHeaderBuffer,
+                                                         sizeof(authorizationHeaderBuffer), tokenPreview)) {
             Serial.println((String(CLIMATE_DATA_UPLOADER_LOG_PREFIX) + " Could not parse token from response").c_str());
             return false;
         }
 
-        gatewayClient.setAuthorizationHeader(authorizationHeader);
+        gatewayClient.setAuthorizationHeader(authorizationHeaderBuffer);
 
         Serial.printf("%s Bearer token configured: %s...\n", CLIMATE_DATA_UPLOADER_LOG_PREFIX, tokenPreview);
         return true;
@@ -269,14 +299,16 @@ private:
 protected:
     void processQueuedTelemetryData(const TelemetryPackage* rawQueueItemPayload) const override {
         if (rawQueueItemPayload != nullptr) {
-            bool sent = gatewayClient.sendTelemetryRecord(*rawQueueItemPayload);
+            const bool endpointReady = replayEndpointConfigured.load(std::memory_order_acquire);
+            const bool sent = endpointReady && gatewayClient.sendTelemetryRecord(*rawQueueItemPayload);
             if (!sent) {
-                // Serialize and buffer the payload for later replay when connectivity is restored
+                // Persist until the authenticated endpoint is ready and delivery succeeds.
                 String failedPayload = rawQueueItemPayload->toJsonString();
                 if (TelemetryBuffer::store(failedPayload)) {
                     Serial.println((String(CLIMATE_DATA_UPLOADER_LOG_PREFIX) + " Send failed — payload buffered for offline replay.").c_str());
                 } else {
-                    Serial.println((String(CLIMATE_DATA_UPLOADER_LOG_PREFIX) + " Send failed and buffer is full — payload lost.").c_str());
+                    Serial.println((String(CLIMATE_DATA_UPLOADER_LOG_PREFIX) +
+                                    " Send failed and payload could not be persisted; data loss reported.").c_str());
                 }
             }
         }
@@ -284,6 +316,20 @@ protected:
 
     void maintainNetworkServices() const override {
         gatewayClient.service();
+        if (!replayEndpointConfigured.load(std::memory_order_acquire) ||
+            wifiTransport == nullptr || !wifiTransport->isConnected() ||
+            !TelemetryBuffer::hasBufferedPackets()) {
+            return;
+        }
+
+        const unsigned long now = millis();
+        if (replayAttempted &&
+            now - lastReplayAttemptMs < BUFFERED_REPLAY_RETRY_INTERVAL_IN_MILLISECONDS) {
+            return;
+        }
+        replayAttempted = true;
+        lastReplayAttemptMs = now;
+        replayBufferedPackets();
     }
 
 public:
@@ -341,6 +387,7 @@ public:
         if (!isAsynchronousEngineStarted()) {
             return false;
         }
+        replayEndpointConfigured.store(false, std::memory_order_relaxed);
         // Set firmware version for fleet management in telemetry
         Device::setFirmwareVersion("CLD-100 FW 1.1.0");
 
@@ -365,16 +412,12 @@ public:
             Serial.println((String(CLIMATE_DATA_UPLOADER_LOG_PREFIX) + " Wi-Fi connection timed out").c_str());
             return false;
         }
+        wifiTransport = &transport;
 
         Serial.printf("%s Connected! IP: %s, RSSI: %ld dBm\n",
                       CLIMATE_DATA_UPLOADER_LOG_PREFIX,
                       transport.getLocalIpAddress().toString().c_str(),
                       transport.getSignalStrengthInDbm());
-
-        // Replay buffered packets now that we have connectivity
-        if (TelemetryBuffer::hasBufferedPackets()) {
-            replayBufferedPackets();
-        }
 
         // Configure gateway client for authentication
         gatewayClient.setServiceEndpointUrl(authenticationEndpointUrl);
@@ -392,6 +435,7 @@ public:
         // Switch to telemetry endpoint with POST method
         gatewayClient.setServiceEndpointUrl(telemetryEndpointUrl);
         gatewayClient.setHttpMethod(HttpGatewayClient::HttpMethod::Post);
+        replayEndpointConfigured.store(true, std::memory_order_release);
 
         Serial.println((String(CLIMATE_DATA_UPLOADER_LOG_PREFIX) + " HTTP telemetry online with Bearer token authentication.").c_str());
         return true;
