@@ -6,7 +6,7 @@ Comparison tables and future work for the Modest IoT Nano Framework.
 >
 > **Internal planning**: A full internal planning document with detailed prioritization, cost/impact analysis, interdependency graphs, and implementation paths is maintained separately for framework maintainers.
 >
-> **Status snapshot**: Updated 2026-11-27. Tier completion describes the scoped work recorded for those tiers; it does not mean all platform-readiness or release gates are closed. v1.3.0 is the latest release; the I²C migration is unreleased work and still has validation limitations.
+> **Status snapshot**: Updated 2026-11-27. Tier completion describes the scoped work recorded for those tiers; it does not mean all platform-readiness or release gates are closed. v1.3.0 is the latest release; the I²C and sensor/event/actuator readiness work is unreleased, with physical validation still open.
 
 ## Document Map
 
@@ -16,11 +16,11 @@ Comparison tables and future work for the Modest IoT Nano Framework.
 | Troubleshooting guide | [troubleshooting.md](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/troubleshooting.md) |
 | Migration guide | [migration.md](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/migration.md) |
 | Quick start & components | [README.md](../README.md) |
-| Version history | [CHANGELOG.md](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/CHANGELOG.md) |
+| Version history | `CHANGELOG.md` — current release and unreleased entries |
 | Architecture decisions | [adrs.md](adrs.md) |
 | User stories | [user-stories.md](user-stories.md) |
 | Class diagram | [class-diagram.puml](class-diagram.puml) |
-| Completed work items through W47 | [evolution.md](https://github.com/modest-iot/modest-iot-nano-framework/blob/release/v1.3.0/docs/evolution.md) |
+| Completed work items through W49 | [evolution.md](evolution.md) |
 | Doxygen API reference | [doxygen-mainpage.md](doxygen-mainpage.md) |
 
 ## Status Overview
@@ -29,7 +29,7 @@ Comparison tables and future work for the Modest IoT Nano Framework.
 |-----------|--------|
 | Tiers 0–5 and pre-release work (scoped items) | **Complete for the recorded scope** |
 | v1.3.0 release features (W29, W43, W47 and listed release items) | **Released** |
-| Hardware & Platform Readiness | **Active** — I²C backend/peripheral implementation is present; Arduino 3.3.13 and physical-board validation remain open |
+| Hardware & Platform Readiness | **Active** — I²C and sensor/event/actuator implementation gates are complete; physical-board checks and later power/network/security gates remain |
 | Other planned improvements below | **Open unless explicitly marked implemented or released** |
 
 ## v1.3.0 Release Summary
@@ -48,7 +48,13 @@ Improvements are grouped by theme. Target versions indicate when each improvemen
 
 Improve reliability on physical ESP32 devices while preparing incrementally for a native ESP-IDF component without destabilizing the existing Arduino library. Readiness work covers runtime and peripheral lifecycles, bounded I²C failure handling, sensor and actuator behavior, networking and OTA safety, preserved CI support, and validation on physical hardware where simulation is insufficient. Internal implementation gates and acceptance criteria are maintained in `.junie/plans/hardware-platform-readiness.md`.
 
-The shared I²C backend hardening and injected peripheral/device-owned bus migration are implemented in the current checkout and recorded under `[Unreleased]` in `CHANGELOG.md`. Host validation and ESP32/ESP32-S3 builds with Arduino-ESP32 4.0.0 passed; the configured 3.3.13 build and physical electrical/stuck-line checks remain outstanding. This does not close the broader runtime, safety, OTA, or hardware-readiness gates.
+The shared I²C backend and injected peripheral migration, runtime lifecycle/ISR work, and sensor/event/actuator/sampler-diagnostics gate are implemented in the current checkout and recorded under `[Unreleased]` in `CHANGELOG.md`. Host tests and the configured ESP32/ESP32-S3 × Arduino-ESP32 3.3.13/4.0.0 GitHub build matrix completed successfully. Physical electrical, stuck-line, sensor-recovery, and actuator-response checks remain outstanding, as do the power/storage and networking/security gates; CI and host evidence do not close those physical or broader readiness requirements.
+
+### Sensor, Event, Actuator, and Sampler Readiness (W49)
+
+**✓ Implemented in the current checkout; unreleased.** Read-capable sensors expose validity, freshness age, and latched read-fault state while preserving cached readings on failures; fault/recovery notifications are delivered independently of data-event suppression. `EventAggregator` forwards each raw event once and emits a composite only when a newly received event contributes to the match. The additive checked-command path preserves existing `void` handlers, reports `Unknown` when a handler cannot verify acceptance, and exposes rule-action results; `ServoMotor` separates requested targets from LEDC-accepted output and does not claim measured physical movement. Sampler diagnostics now report measured synchronous work duration and coalesced missed ticks without introducing a hard real-time guarantee.
+
+**Validation**: The host suite and coverage run passed; reported coverage for the 53 coverage-runner suites was 90.1% line and 83.6% function. The configured Arduino example-build workflows passed for ESP32 and ESP32-S3 on cores 3.3.13 and 4.0.0. No physical sensor recovery, PWM response, load-safe-state, or electrical validation is claimed.
 
 ### ArduinoJson Removal (W46) ✓
 
@@ -66,12 +72,12 @@ The shared I²C backend hardening and injected peripheral/device-owned bus migra
 
 **Released**: v1.3.0
 
-### Event Aggregation & Rules Engine (W29, W31)
+### Event Aggregation & Rules Engine (W29, W31; v1.3.0 baseline)
 
-- **Event Aggregator** (W31) ✓ Implemented: `EventAggregator` component for composite event pattern matching with time-windowed detection. Implements `EventHandler` to intercept sensor events. Fixed-size circular buffer (32 captured events) and pattern array (4 patterns) — zero heap allocation. Supports AND patterns via `addAllMatchPattern()` (all required events within time window) and OR patterns via `addAnyMatchPattern()` (any single event triggers). Source-aware matching distinguishes sensors sharing the same event identifier (e.g., 9+ sensors share `DATA_READ_EVENT_IDENTIFIER = 20`) using per-position source filters with `EventAggregator::ANY_SOURCE` wildcards. Conditional patterns via `PatternCondition` callback (`bool (*)(int compositeEventId)`) suppress composite events based on sensor values at match time. Dynamic pattern management with `removePattern()` and `cleanupPatterns()`. Nested aggregator chains enabled by `EventAggregator::DEVICE_SOURCE_ID` — composite events carry sourceId 0, allowing downstream aggregators to filter composite events from raw sensor events. Three grounded examples: IntrusionDetector (standard patterns), ColdChainMonitor (conditional patterns), and PharmaceuticalCleanRoom (nested chains with OR patterns). 43 host tests.
-- **Rules Engine** (W29) ✓ Implemented: `RulesEngine` component for on-device automation rules. Maps composite events from EventAggregator to automated actions (actuator Commands). Fixed-size rule array (4 rules, 4 actions per rule) — zero heap allocation. SmartFactoryAlarm example demonstrates the complete pipeline.
+- **Event Aggregator** (W31) ✓ Implemented: `EventAggregator` component for composite event pattern matching with time-windowed detection. Implements `EventHandler` to intercept sensor events. Fixed-size circular buffer (32 captured events) and pattern array (4 patterns) — zero heap allocation. Supports AND/OR logic, source-aware and conditional matching, dynamic pattern management, and nested aggregation. The raw pass-through and contribution-gated matching behavior is a post-release W49 refinement and remains unreleased.
+- **Rules Engine** (W29) ✓ Implemented: `RulesEngine` maps composite events to fixed-capacity actuator commands. The additive checked-result observer and `Unknown` outcome for legacy handlers without verifiable results are post-release W49 refinements and remain unreleased. `ServoMotor` driver-accepted PWM reporting likewise does not confirm physical movement.
 
-**Released**: v1.3.0
+**Base components released**: v1.3.0. The W49 refinements are listed under `Unreleased` in `CHANGELOG.md`.
 
 ### Multi-Device Coordination (W30, W36)
 
@@ -129,11 +135,11 @@ Expand the component library (22 sensors and 9 actuators in the current README i
 ### Process & Release
 
 - **✓ Automated Release Workflow**: Release validation and artifact generation are documented in `docs/release.md` and implemented in the release workflows.
-- **✓ Code Coverage Reporting**: gcov/lcov reporting is integrated in CI. The latest published coverage figures are a historical 53-suite snapshot; the current 54-suite inventory has not yet been measured as a whole.
+- **✓ Code Coverage Reporting**: gcov/lcov reporting is integrated in CI. The latest filtered report is 90.1% line and 83.6% function coverage across 53 coverage-runner entries; `I2cBus` is omitted, so it is not whole-inventory coverage.
 - **✓ Dependency Update Monitoring**: GitHub Actions and dependency status workflows are present; the supported Arduino core compile matrix is explicitly pinned.
 - **✓ Benchmark Table**: `docs/benchmarks.md` publishes estimates and a validation methodology; physical measurements remain distinct from source/build estimates.
 
-**Status**: Process and reporting infrastructure implemented; refreshing measured coverage and completing hardware benchmarks remain follow-up validation work.
+**Status**: Process and reporting infrastructure implemented; the latest filtered coverage report covers 53 runners (and omits `I2cBus`), so completing full-inventory coverage and physical hardware benchmarks remain follow-up validation work.
 
 ---
 
@@ -176,8 +182,8 @@ Compares three points: a traditional Arduino `loop()` app, Modest IoT v1.2.1 (pr
 | Cloud-to-device | Hand-rolled callback                         | `Device::enqueueCommand` with `int32_t` payload for parameterized commands                   | Same, with event aggregation and rules engine for automated actions (W29 + W31)   |
 | Offline data    | Lost when network unavailable                | `TelemetryBuffer` with LittleFS persistence for offline replay                                      | Same, with event aggregation and rules engine for automated actions (W29 + W31)       |
 | Updates         | Manual reflashing required                   | OTA updates via `OtaUpdateHandler` component                                                    | Same                                                     |
-| Testing         | Rarely possible off-device                   | 53 host test suites                                                           | 54 host test suites; 54/54 passed in the recorded host run; 91.2% line coverage is a historical 53-suite snapshot |
-| Documentation   | README or inline comments                    | 30 ADRs, 19 user stories, PlantUML class diagram, Doxygen API reference, versioned CHANGELOG, and cross-linked docs | 34 ADRs, 53 user stories, PlantUML class diagram, Doxygen API reference, versioned CHANGELOG, and cross-linked docs |
+| Testing         | Rarely possible off-device                   | 53 host test runners                                                           | 54 registered CTest cases passed 54/54; `tests/run_all.sh` passed 53/53; filtered coverage is 90.1% line / 83.6% function over 53 runners and omits `I2cBus` |
+| Documentation   | README or inline comments                    | 30 ADRs, 19 user stories, PlantUML class diagram, Doxygen API reference, versioned CHANGELOG, and cross-linked docs | 35 ADRs, 54 user stories, PlantUML class diagram, Doxygen API reference, versioned CHANGELOG, and cross-linked docs (current checkout includes unreleased W49) |
 | v1.3.0 additions | N/A                                           | N/A                                                                           | BLE core 3.x/4.x HAL, `RulesEngine`, `ChangeFilter<T>`, `ImuSensor`, and optional on-device ML |
 
 ### Performance
