@@ -333,7 +333,9 @@ run_test "test_PowerManager" \
 
 # 35. TelemetryBuffer Suite
 run_test "test_TelemetryBuffer" \
+    -DARDUINO_ARCH_ESP32 \
     tests/fakes/ArduinoFake.cpp \
+    tests/fakes/FakeLittleFS.cpp \
     src/TelemetryBuffer.cpp \
     tests/TelemetryBuffer/test.cpp
 
