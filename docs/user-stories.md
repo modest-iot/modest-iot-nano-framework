@@ -12,6 +12,9 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
     - Event metadata is lightweight and deterministic enough for constrained devices.
     - **Given** a sensor faults after N consecutive read failures, **when** the threshold is reached, **then** a fault event (ID 22) is emitted exactly once.
     - **Given** a faulty sensor recovers with a successful read, **when** the next valid reading occurs, **then** a recovery event (ID 23) is emitted exactly once.
+    - **Given** a sensor implementation reports read success, **when** consumers query validity and age, **then** they can distinguish no valid sample from fresh or stale data independently of whether fault events are enabled.
+    - **Given** a read fails after a valid sample, **when** the consumer reads the cached value and validity, **then** the cached value is retained and its successful-read age is not refreshed.
+    - **Given** a latched fault clears on a successful read, **when** data-change suppression applies, **then** the recovery event is still delivered before any fresh data event.
 - **Status**: ✓ Implemented. See `Sensor.h` (fault identifiers 22/23), `Sensor.cpp` (debounced threshold state machine), and `tests/SensorFault/test.cpp`.
   Related: [ADR-009](adrs.md#adr-009-sensor-fault-events-with-debounced-threshold-state-machine), [ADR-003](adrs.md#adr-003-hybrid-approach-for-sensor-sampling-intervals)
 
@@ -22,6 +25,8 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
     - **Given** a command has an upstream propagation target, **when** it is processed, **then** it can be forwarded after local execution.
     - Command handling is deterministic and safe under repeated invocations.
     - **Given** an actuator receives a command, **when** it executes, **then** it runs exclusively on the sampler task (documented via `@runs_on sampler`).
+    - **Given** an implementation supports checked execution, **when** a command is handled, **then** the result distinguishes driver-confirmed success, failure, and unknown; legacy `void` handlers remain source-compatible and default to `Unknown` without evidence.
+    - **Given** a PWM driver accepts an actuator update, **when** reported state is inspected, **then** requested target and driver-accepted output are distinguishable without claiming measured physical motion.
 - **Status**: ✓ Implemented. See `Actuator.h`, `Buzzer.h`, `Led.h`, `RgbLed.h`, `ServoMotor.h`, `CharacterLcdDisplay.h`, and `Command.h`.
   Related: [ADR-015](adrs.md#adr-015-identifier-registry-with-reserved-ranges), [ADR-029](adrs.md#adr-029-native-servo-and-lcd-drivers-w19)
 
@@ -91,6 +96,8 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
     - **Given** sensors with different sampling periods, **when** the scheduler advances, **then** each sensor polls at its own interval via per-slot countdown timers.
     - **Given** a sensor's requested period is less than its minimum, **when** it is registered, **then** the period is clamped to the minimum and a warning is logged.
     - **Given** the network task runs, **when** the telemetry queue is empty, **then** it services MQTT keep-alive and Wi-Fi reconnection in the background.
+    - **Given** a sampler period is missed because synchronous work overruns, **when** the scheduler advances, **then** each due slot is dispatched once with phase alignment rather than replaying every missed period.
+    - **Given** synchronous sensor, event, rule, or actuator work runs, **when** diagnostics are collected, **then** the observed maximum sampler-work duration and coalesced missed ticks are reported without implying a hard real-time bound.
 - **Status**: ✓ Implemented. See `SamplingScheduler.h/.cpp`, `Device.cpp` (per-slot scheduling, bounded-timeout network worker), and `tests/SamplingScheduler/test.cpp`.
   Related: [ADR-011](adrs.md#adr-011-per-slot-samplingscheduler-with-countdown-based-dispatch), [ADR-014](adrs.md#adr-014-threading-model--single-context-sampler-with-isolated-network-task), [ADR-019](adrs.md#adr-019-mqtt-reconnect-policy--rate-limited-backoff-with-continuous-keep-alive)
 
@@ -101,6 +108,8 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
     - **Given** unchanged readings where change-only propagation is enabled, **when** sampling repeats, **then** duplicate events are suppressed.
     - **Given** operational errors, **when** they occur, **then** the framework fails safely and preserves runtime stability.
     - **Given** a sensor faults, **when** the mediator receives the fault event, **then** it can react (e.g., turn LED red, publish health telemetry).
+    - **Given** a sensor exposes successful-read validity, **when** a read fails, **then** a prior cached reading remains available but can be classified stale by age and fault state.
+    - **Given** an aggregator has emitted a composite match, **when** an unrelated event arrives, **then** the old match is not emitted again; each incoming raw event is forwarded once, and a new matching event can form a fresh match.
     - **Given** a packet is dropped from the queue, **when** the first drop occurs, **then** a warning is logged exactly once.
     - **Given** an MQTT send fails, **when** the first failure occurs, **then** a warning is logged exactly once with the topic name.
 - **Status**: ✓ Implemented. See `Sensor.cpp` (fault state machine), `Device.cpp` (first-drop logging), `MqttGatewayClient.cpp` (first-failure logging), and `tests/SensorFault/test.cpp`.
@@ -450,6 +459,8 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
     - **Given** a pattern is registered, **when** both event identifiers occur within the time window, **then** a composite event is emitted via the registered handler.
     - **Given** a pattern is registered, **when** only one event identifier occurs within the time window, **then** no composite event is emitted.
     - **Given** a pattern is registered, **when** both event identifiers occur but outside the time window, **then** no composite event is emitted.
+    - **Given** a pattern has matched, **when** a later unrelated event arrives inside the original window, **then** the earlier match is not emitted again.
+    - **Given** a later event matches a required pattern term, **when** the remaining terms are present in the time window, **then** a fresh composite match may be emitted.
     - **Given** an EventAggregator exists, **when** `addAnyMatchPattern()` is called with two event identifiers and a time window, **then** the OR pattern is registered — any single event triggers the composite event.
     - **Given** an OR pattern is registered, **when** only one of the event identifiers occurs, **then** the composite event is emitted immediately.
     - **Given** an EventAggregator exists, **when** `addAllMatchPattern()` is called with source IDs, **then** the pattern matches only events from the specified sensor sources, using `EventAggregator::ANY_SOURCE` for wildcard positions.
@@ -463,6 +474,7 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
     - **Given** an EventAggregator implements EventHandler, **when** a sensor's `setHandler()` is called with the aggregator, **then** events from the sensor are passed to the aggregator's `on(Event)` method.
     - **Given** the EventAggregator receives an event, **when** the event matches a registered pattern, **then** the composite event is emitted via the output handler.
     - **Given** the EventAggregator receives an event, **when** no pattern matches, **then** the event is captured but no composite event is emitted.
+    - **Given** the EventAggregator receives any event, **when** an output handler is configured, **then** the raw event is forwarded exactly once before any composite derived from it.
     - **Given** two EventAggregator instances are chained via `setOutputHandler()`, **when** the first aggregator emits a composite event, **then** the second aggregator receives it and can match it against its own patterns.
     - **Given** a composite event is emitted, **when** the event is inspected, **then** its sourceId is `EventAggregator::DEVICE_SOURCE_ID` (0), distinguishing it from raw sensor events.
 - **Status**: ✓ Implemented (v1.2.0). See `EventAggregator.h` (implements `EventHandler`).
@@ -474,7 +486,7 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
     - **Given** EventAggregator has a fixed-size circular buffer (32 captured events), **when** `on(Event)` is called, **then** the event is captured with its timestamp and sourceId.
     - **Given** EventAggregator has a fixed-size pattern array (4 patterns), **when** `addAllMatchPattern()` is called, **then** the AND pattern is stored.
     - **Given** EventAggregator has a fixed-size pattern array (4 patterns), **when** `addAnyMatchPattern()` is called, **then** the OR pattern is stored.
-    - **Given** an event is captured, **when** `checkForEventPatternMatch()` runs, **then** all registered patterns are checked using their respective logic (AND requires all identifiers, OR requires any one).
+    - **Given** an event is captured, **when** patterns are checked, **then** only patterns to which the new event contributes can emit; previously captured events may satisfy the other terms but unrelated input cannot retrigger a prior match.
     - **Given** a pattern matches, **when** the composite event is emitted, **then** the output handler's `on(Event)` is called with the composite event identifier and `EventAggregator::DEVICE_SOURCE_ID` as the source.
     - **Given** a pattern has a `PatternCondition` callback, **when** the pattern matches, **then** the condition function is called with the composite event ID before emitting.
     - **Given** a pattern is registered, **when** `removePattern()` is called with the composite event ID, **then** the pattern is removed and the slot is available for reuse.
@@ -529,10 +541,11 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
 - **As an** IoT Developer, **I want** rules to map composite event identifiers to actuator commands, **so that** common automation does not require a large `on(Event)` switch statement.
 - **Acceptance Criteria**:
     - **Given** a rule is registered for a composite event, **when** the matching event arrives, **then** its registered actions are dispatched to their command handlers.
+    - **Given** a result observer is configured, **when** a rule action is dispatched, **then** it receives the action's checked result; a legacy handler that cannot report evidence yields `Unknown`.
     - **Given** a rule contains multiple actions, **when** it matches, **then** each active action is dispatched in registration order, including any command payload.
     - **Given** the fixed rule or action capacity is full, **when** another entry is registered, **then** registration fails without overwriting existing entries.
     - **Given** a rule is removed or all rules are cleaned up, **when** a new rule is added, **then** the available slot can be reused.
-- **Status**: ✓ Implemented (v1.3.0, W29). See `RulesEngine.h`, `tests/RulesEngine/test.cpp`, and `examples/SmartFactoryAlarm/`.
+- **Status**: ✓ Implemented (v1.3.0, W29; checked outcomes added in unreleased W49). See `RulesEngine.h`, `tests/RulesEngine/test.cpp`, and `examples/SmartFactoryAlarm/`.
 
 ### TS52: Support BLE across ESP32 Arduino Core Generations
 
@@ -554,6 +567,22 @@ This document contains user stories for the Modest IoT Nano Framework, designed 
     - **Given** an I²C transaction fails or returns an incomplete read, **when** a sensor handles the sample, **then** its last completed value is preserved and no successful measurement is emitted; display adapters expose their last transfer result without changing the generic actuator command contract.
     - **Given** existing Arduino code uses a legacy constructor, **when** the library is migrated to the injected path, **then** that constructor remains source-compatible.
 - **Status**: ✓ Implemented. See `I2cBus.h`, `ArduinoI2cBus.h`, the I²C sensor/display headers, `examples/WeatherStation/`, `examples/IndoorAirQualityDisplay/`, and the focused I²C tests.
+
+---
+
+### TS54: Observe Sensor Validity, Event Delivery, Actuator Outcomes, and Sampler Work
+
+- **As an** IoT Developer, **I want** successful sensor data, fault recovery, composite event delivery, command outcomes, and sampler overruns to be observable, **so that** application logic can distinguish current input and verified driver acceptance from stale or unknown state.
+- **Acceptance Criteria**:
+    - **Given** a sensor has never completed a successful read, **when** validity is queried, **then** it reports `NoValidSample`; after a successful read, age-based queries distinguish `Fresh` from `Stale`.
+    - **Given** a read fails or a sample is not ready, **when** the sensor processes it, **then** the last valid cached reading and successful-read timestamp are preserved.
+    - **Given** fault notifications are enabled and the failure threshold is reached, **when** a later read succeeds, **then** recovery is emitted independently before any fresh data event, even when unchanged data is suppressed.
+    - **Given** an `EventAggregator` receives an event, **when** an output handler is configured, **then** the raw event is forwarded once before composites, and unrelated later input cannot replay a prior match.
+    - **Given** a new source-filtered event contributes to a pattern, **when** the other pattern terms remain within the time window, **then** it may trigger a fresh match, including through nested aggregators.
+    - **Given** a legacy `void` command handler cannot report driver evidence, **when** checked execution or rule observation is used, **then** the result is `Unknown` without changing the legacy command entry point.
+    - **Given** Servo PWM setup or a duty write fails, **when** the outcome/state is inspected, **then** the failure is observable and the driver-accepted angle is not updated as if successful; acceptance does not claim measured physical movement.
+    - **Given** synchronous sensor or rule work overruns timer periods, **when** the sampler processes elapsed ticks, **then** missed slots are coalesced once with phase alignment and observed handler work duration is reported without a hard real-time guarantee.
+- **Status**: ✓ Implemented in the current checkout; unreleased W49 work. See `Sensor.h`, `EventAggregator.cpp`, `CommandHandler.h`, `RulesEngine.h`, `ServoMotor.h`, `Device.h`, and the focused host tests.
 
 ---
 
