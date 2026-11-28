@@ -173,6 +173,26 @@ private:
     static void IRAM_ATTR handleSensorTrigger(void* triggerContext);
 
 protected:
+    /** @brief Policy response for a sampler-cycle deep-sleep request. */
+    enum class DeepSleepDecision : uint8_t {
+        Proceed, ///< Enter deep sleep after the application has decided its pending work disposition.
+        Defer    ///< Stay awake for this cycle and schedule the next sampler wake.
+    };
+
+    /**
+     * @brief Allows the composed application to defer an impending deep-sleep transition.
+     * @return `Proceed` to preserve the default transition, or `Defer` to stay awake
+     *         for this cycle.
+     *
+     * Called on the sampler task immediately before deep sleep. Implementations
+     * must be nonblocking and bounded by application contract; the framework does
+     * not impose a hard callback-time limit. This hook does not flush, persist,
+     * or deliver pending work. The application owns that policy and any accepted
+     * loss. A deferred cycle leaves the power mode unchanged and rearms sampling.
+     * @runs_on{sampler}
+     */
+    virtual DeepSleepDecision prepareForDeepSleep();
+
     /**
      * @brief Processes one sampler notification and records synchronous callback work.
      * @param notificationValue Notification flags returned by the sampler task.
@@ -210,7 +230,7 @@ private:
      * This method is a no-op when not on ESP32 or when the timer is null.
      * @runs_on{sampler}
      */
-    void enterDeepSleep() const;
+    virtual void enterDeepSleep() const;
 
     /**
      * @brief Assigns envelope metadata to a telemetry package.

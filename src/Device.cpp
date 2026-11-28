@@ -474,8 +474,20 @@ void Device::processSamplerNotification(const uint32_t notificationValue, uint32
             rearmTimerForNextDue();
             enterLightSleep();
         } else if (powerMode == PowerMode::DeepSleep) {
-            rearmTimerForNextDue();
-            enterDeepSleep();
+            const uint32_t preparationStartedAt = static_cast<uint32_t>(micros());
+            const DeepSleepDecision decision = prepareForDeepSleep();
+            synchronousWorkDurationMicros += static_cast<uint32_t>(micros()) - preparationStartedAt;
+            if (powerMode == PowerMode::DeepSleep) {
+                rearmTimerForNextDue();
+                if (decision == DeepSleepDecision::Proceed) {
+                    enterDeepSleep();
+                } else {
+                    MODEST_LOG_D(DEVICE_COMPONENT_NAME, "Deep sleep deferred for this sampler cycle");
+                }
+            } else if (powerMode == PowerMode::Tickless) {
+                rearmTimerForNextDue();
+                enterLightSleep();
+            }
         }
     }
 
@@ -928,6 +940,10 @@ void Device::enterDeepSleep() const {
 #endif
 }
 
+Device::DeepSleepDecision Device::prepareForDeepSleep() {
+    return DeepSleepDecision::Proceed;
+}
+
 /**
  * @brief Reports the wake reason from the last sleep cycle.
  *
@@ -975,7 +991,13 @@ void Device::setTelemetryGateway(GatewayClient* gateway) {
 }
 
 void Device::setPowerMode(const PowerMode mode) {
+    const PowerMode previousMode = powerMode;
     powerMode = mode;
+    if (mode == PowerMode::Periodic && previousMode != PowerMode::Periodic && hardwareTimer != nullptr) {
+        const uint64_t intervalInMicroseconds = static_cast<uint64_t>(pollingIntervalInMilliseconds) *
+                                                MILLISECONDS_PER_MICROSECOND;
+        timerAlarm(hardwareTimer, intervalInMicroseconds, true, 0);
+    }
 }
 
 Device::PowerMode Device::getPowerMode() const {
