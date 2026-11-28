@@ -3,9 +3,9 @@
 **Version**: 1.3.0<br>
 **Date**: 2026-11-27<br>
 **Platform**: ESP32 (Arduino core 4.0.0)  
-**Methodology**: Source code analysis, static configuration values, framework claims from positioning.md, and CI-measured sketch sizes from the compile-examples workflow. Hardware-measured values are marked with estimates based on the framework's architectural design.
+**Methodology**: Source code analysis, static configuration values, and CI-reported host-test/example-build results. Hardware-measured values are not claimed unless explicitly identified as physical measurements.
 
-> **Note**: This benchmark table provides a structured comparison of the Modest IoT Nano Framework against traditional Arduino `loop()` development and the framework's evolution through v1.3.0. This document is versioned for v1.3.0, but its resource estimates and performance comparisons have not been re-measured for the new features; do not treat them as v1.3.0 hardware benchmarks. Where v1.3.0 figures match v1.2.1, they are carried-forward estimates rather than new measurements. Values are derived from source code constants, configuration defaults, documented claims, and CI compilation output. For hardware-validated measurements, see the validation methodology at the end of this document.
+> **Note**: This table combines source-derived estimates with documented validation evidence; it is not a comparative performance study or a physical-device benchmark. Resource and latency figures have not been re-measured for the W49 sensor/event/actuator and sampler changes. Where figures match earlier releases, they are carried-forward estimates rather than new measurements. For hardware-validated measurements, see the validation methodology at the end of this document.
 
 ---
 
@@ -22,7 +22,7 @@
 | **Minimal firmware binary** | ~350-400 KB | ~680 KB | ~650-660 KB | ~650-660 KB | Includes Arduino core + Wi-Fi + BLE |
 | **ESP-IDF variant (planned)** | N/A | N/A | ~180 KB | ~180 KB | **~73% Flash reduction** vs Arduino variant |
 
-**Key finding**: v1.2.0 eliminated ArduinoJson (~30-40 KB savings), making it the **leanest architecturally disciplined Arduino library**. v1.2.1 required ESP32 Arduino core 4.0.0 for BLE; v1.3.0 supports BLE with both core 3.x and 4.x. This benchmark uses core 4.0.0 (ESP-IDF v6.1.1) with no Flash increase. The planned ESP-IDF variant reduces Flash by ~73% (~500 KB savings).
+**Key finding**: v1.2.0 eliminated ArduinoJson (estimated ~30-40 KB savings). v1.3.0 supports BLE with ESP32 Arduino core 3.x and 4.x; build compatibility is separate from the carried-forward firmware-size estimates. The planned ESP-IDF Flash reduction remains a projection, not a measured result.
 
 ### Static RAM
 
@@ -58,9 +58,9 @@
 | **Event-to-command** | Variable (loop-dependent) | ~5-50 μs | ~5-50 μs | ~5-50 μs | Direct function call via mediator |
 | **Button edge-to-action** | ~1-10 ms (polling) | ~100-500 μs | ~100-500 μs | ~100-500 μs | GPIO interrupt → ISR → event |
 | **PIR edge-to-action** | ~1-10 ms (polling) | ~100-500 μs | ~100-500 μs | ~100-500 μs | GPIO interrupt → ISR → event |
-| **Worst-case handler** | Unbounded | Tracked by `worstCaseWakeMicros` | Tracked by `worstCaseWakeMicros` | Tracked by `worstCaseWakeMicros` | Diagnostics field |
+| **Synchronous sampler work** | Unbounded | Not measured | Not measured | Maximum observed work reported by `worstCaseWakeMicros` | Diagnostic observation, not an execution bound |
 
-**Key finding**: Modest IoT uses synchronous event propagation within the sampler task, so event-to-command latency is a direct function call (~5-50 μs). GPIO interrupts use IRAM ISR handlers for minimal latency.
+**Key finding**: Sensor handlers and rule actions execute synchronously on the sampler path. `worstCaseWakeMicros` records observed handler/rule work duration, while `missedTicks` reports coalesced timer ticks; neither establishes a hard latency guarantee. Physical latency claims require board measurements.
 
 ### Telemetry Pipeline Latency
 
@@ -248,9 +248,9 @@
 |--------|-------|-------|
 | **Header files** | 62 | All in `src/` directory |
 | **Source files** | 48 | Matching `.cpp` files |
-| **Test suites** | 53 | Host unit tests (excluding `fakes/`) |
+| **Test suites** | 54 | Registered CTest cases; `tests/run_all.sh` and `tests/run_coverage.sh` currently enumerate 53 runners |
 | **Examples** | 28 | Grounded real-world devices |
-| **Components** | 30 | 21 sensors + 9 actuators |
+| **Components** | 31 | 22 sensors + 9 actuators |
 | **Core classes** | 12 | Device, Event, Command, Scheduler, etc. |
 
 ### Example Code Comparison
@@ -295,16 +295,16 @@ Run the same three reference applications on the same ESP32 board, once per vari
 
 The release checklist (`docs/release.md`) defines the CI matrix. The following validation evidence supplements the v1.3.0 resource estimates; it does not establish physical-device behavior.
 
-- **Host tests**: 54/54 host suites passed in the recorded migration validation. The earlier 53-suite sanitizer result is a separate historical run; sanitizer validation of the added suite is not claimed here.
-- **Example compilation**: All 28 sketches compiled for ESP32 and ESP32-S3 with ESP32 Arduino core 4.0.0, using the `huge_app` partition scheme (3 MB Flash). The 3.3.13 matrix was unavailable during that validation.
+- **Host tests**: `tests/run_all.sh` passed 53/53, CMake/CTest passed 54/54, and the coverage runner passed 53/53. The coverage runner does not include `I2cBus`; its latest filtered report measured 90.1% line and 83.6% function coverage and is not whole-inventory coverage.
+- **Example compilation**: The user reported that the pushed branch's GitHub workflows completed without errors. The configured example-build matrix covers ESP32 and ESP32-S3 with Arduino-ESP32 3.3.13 and 4.0.0; local physical-device behavior is not established by compilation.
 - **Lint**: Arduino Library Manager compliance via `arduino-lint`; the release checklist result remains to be confirmed.
-- **Coverage**: The 2026-11-24 GCC 16/gcov/lcov snapshot covered 53 suites and measured 91.2% line and 83.6% function coverage on testable code. It predates the 54-suite host inventory and is not current coverage evidence.
+- **Coverage**: The latest recorded 2026-11-27 GCC/gcov/lcov run covered 53 coverage runners and measured 90.1% line and 83.6% function coverage on filtered testable code. `I2cBus` is not included in the runner.
 
 ---
 
 ## 11. Summary
 
-### Framework Efficiency Claims
+### Repository Evidence (Not a Comparative Benchmark)
 
 | Claim | Evidence | Status |
 |-------|----------|--------|
@@ -312,27 +312,28 @@ The release checklist (`docs/release.md`) defines the CI matrix. The following v
 | **40-60 KB RAM** | Source code analysis + positioning.md | ✓ Supported |
 | **Zero heap allocation** | All serialization uses stack/static buffers | ✓ Verified |
 | **~30-40 KB Flash saved** | ArduinoJson removal (W46) | ✓ Verified |
-| **~73% Flash reduction** | ESP-IDF variant: ~180 KB vs ~680 KB | ✓ Planned |
-| **~40 KB RAM saved** | ESP-IDF variant: ~270 KB vs ~230 KB free heap | ✓ Planned |
-| **140 ms faster boot** | ESP-IDF variant: ~180 ms vs ~320 ms | ✓ Planned |
-| **54 test suites** | Current host-suite count (excluding `fakes/`) | ✓ Verified |
+| **~73% Flash reduction** | Projected ESP-IDF variant: ~180 KB vs ~680 KB | Projection only |
+| **~40 KB RAM saved** | Projected ESP-IDF variant: ~270 KB vs ~230 KB free heap | Projection only |
+| **140 ms faster boot** | Projected ESP-IDF variant: ~180 ms vs ~320 ms | Projection only |
+| **54 registered CTest cases / 53 shell runners** | Current test entry points; the shell and coverage runners omit `I2cBus` | ✓ Verified |
 | **28 examples** | `examples/` directory count | ✓ Verified |
 | **62 headers** | `src/*.h` file count | ✓ Verified |
-| **91.2% line coverage** | GCC 16/gcov/lcov snapshot from 2026-11-24, covering 53 suites | Historical |
+| **90.1% line coverage** | GCC/gcov/lcov snapshot from 2026-11-27, 53 runners; `I2cBus` omitted | Current scoped result |
 | **BLE core compatibility** | `BleHal` supports ESP32 Arduino core 3.x and 4.x; CI matrix verification remains on release checklist | ✓ Implemented |
 
 ### Competitive Positioning
 
-The Modest IoT Nano Framework v1.3.0 is the **leanest architecturally disciplined Arduino library** with:
+Repository facts and validation evidence for Modest IoT Nano Framework v1.3.0 include:
 
 - **Zero external dependencies** beyond MQTT (ArduinoJson removed).
 - **Zero heap allocation** in the critical path (all stack/static buffers).
 - **Comprehensive diagnostics** with 16 fields in `DiagnosticsSnapshot`.
-- **Production-grade architecture** via Arduino Library Manager installation.
-- **54 host test suites**; 54/54 passed in the recorded migration validation. The 91.2% line / 83.6% function coverage figures are a historical 53-suite snapshot, not current coverage.
-- **28 grounded examples** covering diverse use cases.
+- **Arduino library packaging metadata** in `library.properties` and `library.json`; this is not a production-readiness certification.
+- **54 registered CTest cases** (54/54 passed); `tests/run_all.sh` and coverage currently enumerate 53 runners.
+- **90.1% line / 83.6% function coverage** in the latest filtered 53-runner report; `I2cBus` is omitted, so this is not whole-suite coverage.
+- **28 examples** in the repository.
 - **ESP32 Arduino core 3.x and 4.x BLE support** through the core-agnostic `BleHal` adapter.
 
 ---
 
-*This document will be updated with hardware-measured values when the validation methodology is executed on physical ESP32 hardware.*
+*Hardware sensor recovery, PWM response, power, and timing claims remain open until validated on physical ESP32 hardware.*
