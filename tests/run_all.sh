@@ -63,8 +63,14 @@ run_test() {
 # 1. Digital Light Sensor Suite
 run_test "test_DigitalLightIntensitySensor" \
     tests/fakes/ArduinoFake.cpp \
+    tests/DigitalLightIntensitySensor/MillisCLinkage.cpp \
     src/Sensor.cpp \
     src/DigitalLightIntensitySensor.cpp \
+    src/EventAggregator.cpp \
+    src/RulesEngine.cpp \
+    src/Actuator.cpp \
+    src/ServoMotor.cpp \
+    src/TimeSynchronizationDriver.cpp \
     tests/DigitalLightIntensitySensor/test.cpp
 
 # 2. RGB LED Actuator Suite
@@ -421,6 +427,7 @@ run_test "test_Device" \
 run_test "test_EventAggregator" \
     tests/fakes/ArduinoFake.cpp \
     src/EventAggregator.cpp \
+    src/RulesEngine.cpp \
     src/TimeSynchronizationDriver.cpp \
     tests/EventAggregator/test.cpp
 
