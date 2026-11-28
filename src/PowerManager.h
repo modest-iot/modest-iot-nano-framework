@@ -13,18 +13,36 @@
 #include <cstdint>
 
 /**
- * @brief Default ADC reading for the ESP32 (12-bit resolution).
+ * @brief Default full-scale raw ADC value for a 12-bit reading.
  *
- * The ESP32 ADC returns values from 0 to 4095 for a 12-bit reading.
+ * Applications should pass the actual configured ADC full-scale value to
+ * begin() when using a different resolution.
  */
 constexpr uint16_t ADC_MAX_VALUE = 4095;
 
 /**
- * @brief Default VCC reference voltage in millivolts for ESP32 ADC.
+ * @brief Legacy nominal ADC conversion scale in millivolts.
  *
- * The ESP32 ADC reference voltage is typically 1100 mV (1.1V internal reference).
+ * This is a compatibility default, not a calibrated or universal ESP32 value
+ * or the chip's internal reference voltage. Applications should provide a
+ * board- and attenuation-appropriate full-scale conversion, calibrated against
+ * a meter where battery policy depends on it.
  */
 constexpr uint32_t DEFAULT_VCC_REFERENCE_IN_MILLIVOLTS = 1100;
+
+/** @brief Invalid ADC pin sentinel; valid GPIO selection is board-specific. */
+constexpr uint8_t INVALID_BATTERY_ADC_PIN = 0xFF;
+
+/**
+ * @brief Result of one battery ADC conversion.
+ *
+ * A valid zero-millivolt reading is distinct from an unavailable or invalid
+ * measurement.
+ */
+struct BatteryMeasurement {
+    bool valid = false;
+    uint32_t voltageInMillivolts = 0;
+};
 
 /**
  * @brief Manages battery voltage sensing and power monitoring.
@@ -32,19 +50,21 @@ constexpr uint32_t DEFAULT_VCC_REFERENCE_IN_MILLIVOLTS = 1100;
  * Reads battery voltage via an ADC pin with configurable voltage divider ratio,
  * calculates battery level percentage, and provides low-battery threshold alerts.
  *
- * All methods are static — the component is a singleton infrastructure service.
- * Falls back to safe defaults when not initialized, preserving backward compatibility.
+ * All methods are static and share one configuration. Configure during startup
+ * before concurrent tasks read measurements; this class does not synchronize
+ * concurrent configuration and reads.
  *
  * @par Voltage Divider
  * Most battery circuits use a voltage divider to scale the battery voltage to
  * the ADC input range. For example, a 2:1 divider (two equal resistors) halves
  * the battery voltage before it reaches the ADC. The divider ratio is configured
- * via setDividerRatio().
+ * via begin(). The reference/scale, raw full-scale value, ADC resolution, and
+ * attenuation must match the target board's actual configuration.
  *
  * @par Example
  * @code
  * // Configure battery monitoring on ADC pin 34 with a 2:1 voltage divider
- * PowerManager::begin(34, 2.0f);
+ * PowerManager::begin(34, 2.0f, 3300, ADC_MAX_VALUE);
  *
  * // Read battery voltage
  * uint32_t voltage = PowerManager::getBatteryVoltageInMillivolts(); // in millivolts
@@ -57,7 +77,8 @@ constexpr uint32_t DEFAULT_VCC_REFERENCE_IN_MILLIVOLTS = 1100;
  * @endcode
  *
  * @par Threading
- * @runs_on{any} — all methods are thread-safe; safe to call from any task.
+ * @runs_on{startup/readers} — configure before starting concurrent readers;
+ * reconfiguration is not thread-safe.
  */
 class PowerManager {
 public:
@@ -65,16 +86,31 @@ public:
      * @brief Initializes battery monitoring on the specified ADC pin.
      * @param batteryPin ADC pin connected to the battery voltage divider.
      * @param dividerRatio Voltage divider ratio (e.g., 2.0f for a 2:1 divider).
-     * @param vccReferenceInMillivolts ADC reference voltage in millivolts (default 1100 mV).
-     * @note Call this once in setup() before reading battery values.
+     * @param vccReferenceInMillivolts Effective ADC full-scale conversion in millivolts
+     *        (legacy default 1100 mV; supply a board-specific value for new uses).
+     * @param adcMaximumValue Maximum valid raw ADC value (default 4095 for 12-bit).
+     * @return true when the configuration is valid; false disables monitoring.
+     * @note Call during setup before reading battery values. Pin capability is
+     *       board-specific and must be verified by the application.
      *       The divider ratio scales the ADC reading back to the actual battery voltage.
      *       For example, with a 2:1 divider and a 3.7V battery, the ADC sees ~1.85V.
      */
-    static void begin(uint8_t batteryPin, float dividerRatio, uint32_t vccReferenceInMillivolts = DEFAULT_VCC_REFERENCE_IN_MILLIVOLTS);
+    static bool begin(uint8_t batteryPin,
+                      float dividerRatio,
+                      uint32_t vccReferenceInMillivolts = DEFAULT_VCC_REFERENCE_IN_MILLIVOLTS,
+                      uint16_t adcMaximumValue = ADC_MAX_VALUE);
+
+    /**
+     * @brief Reads and validates one battery measurement.
+     * @return A valid voltage, or `valid == false` when uninitialized or when
+     *         the raw ADC result is outside the configured range/conversion.
+     */
+    [[nodiscard]] static BatteryMeasurement getBatteryMeasurement();
 
     /**
      * @brief Reads the current battery voltage from the ADC.
-     * @return Battery voltage in millivolts, or 0 if not initialized.
+     * @return Battery voltage in millivolts, or 0 when unavailable. Use
+     *         getBatteryMeasurement() to distinguish unavailable from zero volts.
      * @note Applies the configured voltage divider ratio and ADC reference voltage
      *       to convert the raw ADC reading to actual battery voltage.
      */
@@ -89,9 +125,13 @@ public:
      */
     [[nodiscard]] static float getBatteryLevelInPercentage();
 
+    /** @brief Calculates the percentage from an already-read measurement. */
+    [[nodiscard]] static float getBatteryLevelInPercentage(const BatteryMeasurement& measurement);
+
     /**
      * @brief Checks whether the battery voltage is below the low-battery threshold.
-     * @return true if battery voltage is below the configured threshold.
+     * @return true only for a valid measurement below the configured threshold;
+     *         unavailable readings never indicate low battery.
      * @note Default threshold is 3300 mV. Applications can adjust via setLowBatteryThresholdInMillivolts().
      */
     [[nodiscard]] static bool isLowBattery();
@@ -99,9 +139,10 @@ public:
     /**
      * @brief Sets the low-battery voltage threshold.
      * @param thresholdInMillivolts Low-battery threshold in millivolts (default 3300 mV).
+     * @return true if the threshold is nonzero and within the configured maximum voltage.
      * @note When battery voltage drops below this threshold, isLowBattery() returns true.
      */
-    static void setLowBatteryThresholdInMillivolts(uint32_t thresholdInMillivolts);
+    static bool setLowBatteryThresholdInMillivolts(uint32_t thresholdInMillivolts);
 
     /**
      * @brief Returns the current low-battery threshold.
@@ -113,10 +154,12 @@ public:
      * @brief Sets the voltage range for battery level percentage calculation.
      * @param minimumVoltageInMillivolts Empty battery voltage in millivolts (default 3000 mV).
      * @param maximumVoltageInMillivolts Full battery voltage in millivolts (default 4200 mV).
+     * @return true if the range is ordered and includes the configured low-battery threshold.
      * @note Used by getBatteryLevelInPercentage() to calculate the percentage.
      *       Adjust these values to match your specific battery chemistry.
      */
-    static void setBatteryVoltageRange(uint32_t minimumVoltageInMillivolts, uint32_t maximumVoltageInMillivolts);
+    static bool setBatteryVoltageRange(uint32_t minimumVoltageInMillivolts,
+                                       uint32_t maximumVoltageInMillivolts);
 
     /**
      * @brief Returns the minimum voltage for battery level calculation.
@@ -132,7 +175,8 @@ public:
 
     /**
      * @brief Checks whether battery monitoring has been initialized.
-     * @return true if begin() has been called with a valid pin.
+     * @return true if begin() accepted the conversion configuration. The application
+     *         remains responsible for ensuring the selected pin supports ADC input.
      */
     [[nodiscard]] static bool isInitialized();
 
@@ -140,6 +184,7 @@ private:
     static uint8_t batteryPin;          ///< ADC pin connected to the battery voltage divider.
     static float dividerRatio;          ///< Voltage divider ratio for scaling ADC readings.
     static uint32_t vccReferenceInMillivolts;     ///< ADC reference voltage in millivolts.
+    static uint16_t adcMaximumValue;    ///< Maximum valid ADC reading for the configured resolution.
     static uint32_t lowBatteryThresholdInMillivolts; ///< Low-battery threshold in millivolts.
     static uint32_t minVoltageInMillivolts;       ///< Minimum voltage for battery level calculation (empty).
     static uint32_t maxVoltageInMillivolts;       ///< Maximum voltage for battery level calculation (full).
