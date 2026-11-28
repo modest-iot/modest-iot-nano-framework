@@ -7,7 +7,8 @@
  * @version 1.0
  *
  * The RulesEngine listens for composite events from EventAggregator and executes
- * predefined actions (actuator Commands) when a pattern matches. It implements
+ * predefined actions (actuator Commands) when a pattern matches. It can optionally
+ * report checked action outcomes; legacy handlers report Unknown. It implements
  * EventHandler so EventAggregator calls RulesEngine::on(Event) when a pattern
  * matches. RulesEngine looks up the rule for that composite event ID and dispatches
  * the associated Commands to target actuators.
@@ -66,6 +67,17 @@ struct Rule {
 };
 
 /**
+ * @brief Callback used to observe the result of a dispatched rule action.
+ * @param compositeEventId Event identifier that triggered the rule.
+ * @param target Handler that received the command.
+ * @param command Command that was dispatched.
+ * @param result Driver-level execution result.
+ * @param context Caller-provided observer context.
+ */
+using RuleActionResultObserver = void (*)(int compositeEventId, CommandHandler* target, Command command,
+                                         CommandExecutionResult result, void* context);
+
+/**
  * @brief Maps composite events to automated actuator Commands.
  * @ingroup core_module
  *
@@ -78,9 +90,8 @@ struct Rule {
  * No dynamic allocation.
  *
  * @par Threading
- * The on(Event) method runs on the sampler task context (interrupt context).
- * Actions must be fast — no blocking calls. This matches the framework's
- * handler budget convention.
+ * The on(Event) method and result observer run synchronously on the sampler task,
+ * not in interrupt context. Actions and observers must be fast and must not block.
  *
  * @par Example
  * @code
@@ -165,6 +176,13 @@ public:
     void cleanupRules();
 
     /**
+     * @brief Sets an optional observer for checked rule-action outcomes.
+     * @param observer Callback to receive each dispatched action result, or `nullptr` to disable.
+     * @param context Opaque value passed to the callback.
+     */
+    void setActionResultObserver(RuleActionResultObserver observer, void* context = nullptr);
+
+    /**
      * @brief Handles incoming composite events from EventAggregator.
      * @param event The composite event to match against registered rules.
      * @note Implements EventHandler::on(). Looks up the rule by event identifier
@@ -179,6 +197,8 @@ private:
 
     /** @brief Number of active rules. */
     uint8_t ruleCount;
+    RuleActionResultObserver actionResultObserver;
+    void* actionResultObserverContext;
 
     /**
      * @brief Finds a rule by composite event ID.

@@ -9,7 +9,8 @@
 
 #include "RulesEngine.h"
 
-RulesEngine::RulesEngine() : ruleCount(0) {
+RulesEngine::RulesEngine()
+    : ruleCount(0), actionResultObserver(nullptr), actionResultObserverContext(nullptr) {
     for (uint8_t i = 0; i < RULES_ENGINE_MAX_RULES; i++) {
         rules[i].active = false;
         rules[i].compositeEventId = -1;
@@ -107,6 +108,11 @@ void RulesEngine::cleanupRules() {
     ruleCount = 0;
 }
 
+void RulesEngine::setActionResultObserver(const RuleActionResultObserver observer, void* context) {
+    actionResultObserver = observer;
+    actionResultObserverContext = context;
+}
+
 void RulesEngine::on(const Event event) {
     Rule* rule = findRule(event.identifier);
     if (!rule) {
@@ -119,7 +125,10 @@ void RulesEngine::on(const Event event) {
         RuleAction& action = rule->actions[i];
         if (action.active && action.target) {
             const Command cmd(action.commandId, action.payload);
-            action.target->handle(cmd);
+            const CommandExecutionResult result = action.target->handleChecked(cmd);
+            if (actionResultObserver != nullptr) {
+                actionResultObserver(event.identifier, action.target, cmd, result, actionResultObserverContext);
+            }
         }
     }
 }
