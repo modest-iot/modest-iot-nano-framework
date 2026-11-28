@@ -396,17 +396,24 @@ extern int fakeLedcFreq[32];
 extern int fakeLedcResolution[32];
 extern int fakeLedcPin[32];
 extern int fakeLedcDuty[32];
+extern bool fakeLedcAttachResult;
+extern bool fakeLedcWriteResult;
+extern int fakeLedcDetachCalls;
 inline bool ledcAttach(uint8_t pin, uint32_t freq, uint8_t resolution) {
     fakeLedcFreq[pin] = freq;
     fakeLedcResolution[pin] = resolution;
     fakeLedcPin[pin] = pin;
-    return true;
+    return fakeLedcAttachResult;
 }
-inline void ledcWrite(uint8_t pin, int duty) {
-    fakeLedcDuty[pin] = duty;
+inline bool ledcWrite(uint8_t pin, int duty) {
+    if (fakeLedcWriteResult) {
+        fakeLedcDuty[pin] = duty;
+    }
+    return fakeLedcWriteResult;
 }
 inline bool ledcDetach(uint8_t pin) {
     (void)pin;
+    ++fakeLedcDetachCalls;
     return true;
 }
 

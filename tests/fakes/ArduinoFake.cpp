@@ -72,6 +72,9 @@ int fakeLedcFreq[32] = {};
 int fakeLedcResolution[32] = {};
 int fakeLedcPin[32] = {};
 int fakeLedcDuty[32] = {};
+bool fakeLedcAttachResult = true;
+bool fakeLedcWriteResult = true;
+int fakeLedcDetachCalls = 0;
 
 // Mock ESP32 deep sleep API for host testing
 esp_sleep_wakeup_cause_t fakeWakeupCause = ESP_SLEEP_WAKEUP_OTHER;
