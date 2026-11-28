@@ -8,6 +8,7 @@
  */
 
 #include "ConfigurationStore.h"
+#include <cstdint>
 
 ConfigurationStore::ConfigurationStore()
     : currentNamespace(),
@@ -102,11 +103,11 @@ bool ConfigurationStore::setString(const char* key, const char* value) const {
     if (!canWrite(key) || value == nullptr) {
         return false;
     }
-    if (strlen(value) > MAX_CONFIGURATION_STRING_VALUE_LENGTH) {
+    const size_t valueLength = strlen(value);
+    if (valueLength == 0 || valueLength > MAX_CONFIGURATION_STRING_VALUE_LENGTH) {
         return false;
     }
-    preferences.putString(key, value);
-    return true;
+    return preferences.putString(key, value) == valueLength;
 }
 
 bool ConfigurationStore::setValue(const char* key, const char* value) const {
@@ -124,8 +125,7 @@ bool ConfigurationStore::setInt(const char* key, int value) const {
     if (!canWrite(key)) {
         return false;
     }
-    preferences.putInt(key, value);
-    return true;
+    return preferences.putInt(key, value) == sizeof(int32_t);
 }
 
 bool ConfigurationStore::setValue(const char* key, const int value) const {
@@ -143,8 +143,7 @@ bool ConfigurationStore::setUnsignedLong(const char* key, const unsigned long va
     if (!canWrite(key)) {
         return false;
     }
-    preferences.putULong(key, value);
-    return true;
+    return preferences.putULong(key, value) == sizeof(uint32_t);
 }
 
 bool ConfigurationStore::setValue(const char* key, const unsigned long value) const {
@@ -162,8 +161,7 @@ bool ConfigurationStore::setFloat(const char* key, const float value) const {
     if (!canWrite(key)) {
         return false;
     }
-    preferences.putFloat(key, value);
-    return true;
+    return preferences.putFloat(key, value) == sizeof(float);
 }
 
 bool ConfigurationStore::setValue(const char* key, const float value) const {
@@ -181,8 +179,7 @@ bool ConfigurationStore::setBool(const char* key, bool value) const {
     if (!canWrite(key)) {
         return false;
     }
-    preferences.putBool(key, value);
-    return true;
+    return preferences.putBool(key, value) == sizeof(uint8_t);
 }
 
 bool ConfigurationStore::setValue(const char* key, const bool value) const {

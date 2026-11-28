@@ -166,7 +166,9 @@ public:
      * @return `true` if the value was written successfully, `false` otherwise.
      * 
      * @note Returns `false` if the store is in read-only mode, not initialized,
-     * or the key/value exceeds NVS limits.
+     * the key/value exceeds NVS limits, or the value is empty. The ESP32
+     * Preferences API reports a zero byte count for an empty string, which is
+     * indistinguishable from a failed write; use removeKey() to clear a value.
      */
     bool setString(const char* key, const char* value) const;
 
