@@ -33,7 +33,22 @@ package "Core" #FAFAFA {
 
   interface CommandHandler {
     +handle(command : Command) : void
+    +handleChecked(command : Command) : CommandExecutionResult
   }
+
+  enum CommandExecutionStatus {
+    Succeeded
+    Failed
+    Unknown
+  }
+
+  class CommandExecutionResult <<struct>> {
+    +status : CommandExecutionStatus = Unknown
+    +succeeded() : CommandExecutionResult
+    +failed() : CommandExecutionResult
+    +unknown() : CommandExecutionResult
+  }
+  CommandExecutionResult ..> CommandExecutionStatus
 
   class SamplingScheduler {
     +{static} MAXIMUM_SLOTS : uint8_t = 8
@@ -61,7 +76,7 @@ package "Core" #FAFAFA {
 
   class DiagnosticsSnapshot <<struct>> {
     +missedTicks : uint32_t
-    +worstCaseWakeMicros : uint32_t
+    +worstCaseWakeMicros : uint32_t — maximum observed synchronous sampler work
     +packetsEnqueued : uint32_t
     +packetsDropped : uint32_t
     +packetsDroppedOldest : uint32_t
@@ -91,7 +106,7 @@ package "Core" #FAFAFA {
     +{static} EVENT_AGGREGATOR_MAX_PATTERNS : uint8_t = 4
     +{static} ANY_SOURCE : int = -1
     +{static} DEVICE_SOURCE_ID : int = 0
-    +PatternCondition : type alias (bool (*)(int compositeEventId))
+    +PatternCondition : type alias (bool (*)(int compositeEventId)) — synchronous event context
     +PatternLogic : enum {And, Or}
     +EventPattern : struct {identifiers, sourceIds, compositeEventId, timeWindowSeconds, condition, logic}
     +CapturedEvent : struct {identifier, sourceId, timestampSeconds}
@@ -107,7 +122,7 @@ package "Core" #FAFAFA {
   }
   EventHandler <|.. EventAggregator : implements
   EventAggregator ..> Event : captures and emits
-  EventAggregator --> EventHandler : emits composite events
+  EventAggregator --> EventHandler : forwards raw once, then composites
 
   class RuleAction {
     +target : CommandHandler*
@@ -132,12 +147,15 @@ package "Core" #FAFAFA {
     +addActionToRule(compositeEventId : int, target : CommandHandler*, commandId : int, payload : int32_t) : bool
     +removeRule(compositeEventId : int) : bool
     +cleanupRules() : void
+    +RuleActionResultObserver : type alias (callback with CommandExecutionResult)
+    +setActionResultObserver(observer : RuleActionResultObserver, context : void*) : void
     +on(event : Event) : void
   }
   EventHandler <|.. RulesEngine : implements
   RulesEngine ..> CommandHandler : dispatches commands
   RulesEngine ..> Rule : contains
   RulesEngine ..> RuleAction : contains
+  RulesEngine ..> CommandExecutionResult : reports synchronously
 
   class ChangeFilter <<template<typename T>>> {
     +{static} MAXIMUM_SLOTS : uint8_t = 8
@@ -275,13 +293,12 @@ package "Core" #FAFAFA {
     +PowerMode : enum {Periodic, Tickless, DeepSleep}
     +TriggerEntry : struct {sensor, eventIdentifier, interruptMode, wasTriggered, slotIndex}
     +CommandEntry : struct {targetHandler, command}
-    +activeDevice : Device*
-    +triggerTable[MAX_TRIGGERED_SENSORS] : TriggerEntry
+    +triggerTable[MAX_TRIGGERED_SENSORS] : TriggerEntry {sensor, owner, registrationActive, wasTriggered}
     +commandQueueHandle : QueueHandle_t
     +highPriorityQueueHandle : QueueHandle_t
-    +onSensorTrigger(handle : uint32_t) : void
-    +onSensorTriggerWrapper() : void
+    +{static} handleSensorTrigger(triggerContext : void*) : void
     +processTriggeredSensors() : void
+    +isAsynchronousEngineStarted() const : bool
     +processPendingCommands() : void
     +enqueueCommand(targetHandler : CommandHandler*, command : Command) : bool
     +handle(command : Command) : void
@@ -292,8 +309,8 @@ package "Core" #FAFAFA {
     +{static} reportWakeReason() : void
     +stopAsynchronousEngine() : void
     +setTelemetryGateway(gateway : GatewayClient*) : void
-    #initializeAsynchronousEngine(maximumQueueLength : uint8_t = 10) : void
-    #initializeAsynchronousEngine(engineConfiguration : const EngineConfiguration&) : void
+    #initializeAsynchronousEngine(maximumQueueLength : uint8_t = 10) : bool
+    #initializeAsynchronousEngine(engineConfiguration : const EngineConfiguration&) : bool
     #enqueueTelemetryPayload(telemetryPackagePointerAddress : TelemetryPackage**) : bool
     #enqueueTelemetryPayload(telemetryPackageStandardUniquePointer : unique_ptr<TelemetryPackage>) : bool
     #enqueueHighPriorityPayload(highPriorityPayload : unique_ptr<TelemetryPackage>) : bool
@@ -324,6 +341,11 @@ package "Core" #FAFAFA {
     +setMinimalSamplingIntervalInMilliseconds(interval : uint32_t) : void
     +getMinimalSamplingIntervalInMilliseconds() const : uint32_t
     +setFaultThreshold(threshold : uint8_t) : void
+    +hasValidReading() const : bool
+    +getLastSuccessfulReadAgeInMilliseconds() const : uint32_t
+    +getDataValidity(maximumAgeInMilliseconds : uint32_t) const : DataValidity
+    +isReadFaultActive() const : bool
+    +DataValidity : enum {NoValidSample, Fresh, Stale}
     #processEvent(event : Event&) : void
   }
 
@@ -332,8 +354,10 @@ package "Core" #FAFAFA {
     #commandHandler : CommandHandler*
     +Actuator(signalGpioPin : int, parentHandler : CommandHandler* = nullptr)
     +handle(command : Command) : void
+    +handleChecked(command : Command) : CommandExecutionResult
     +setHandler(parentHandler : CommandHandler*) : void
     #executeCommand(command : Command) : void
+    #executeCommandChecked(command : Command) : CommandExecutionResult
   }
 
   interface TelemetryWriter {
@@ -878,17 +902,24 @@ package "Actuators" #EEF0FF {
 
   class ServoMotor {
     -signalGpioPin : int
-    -currentActiveAngleInDegrees : int
+    -currentActiveAngleInDegrees : int (last driver-accepted target, -1 if unknown)
     -bufferedTargetAngleInDegrees : int
+    -requestedTargetAngleInDegrees : int
+    -pwmAttached : bool
+    -initializationResult : CommandExecutionResult
     +{static} LOCK_TO_MINIMUM_LIMIT_COMMAND_IDENTIFIER : int = 150
     +{static} LOCK_TO_MAXIMUM_LIMIT_COMMAND_IDENTIFIER : int = 151
     +{static} DRIVE_TO_BUFFERED_ANGLE_COMMAND_IDENTIFIER : int = 152
     +{static} DRIVE_TO_ANGLE_COMMAND_IDENTIFIER : int = 153
     +ServoMotor(signalGpioPin : int, initialAngleInDegrees : int = 0, parentHandler : CommandHandler* = nullptr)
+    +isInitialized() const : bool
+    +getInitializationResult() const : CommandExecutionResult
     +setTargetAngleBufferInDegrees(targetAngleInDegrees : int) : void
     +getCurrentActiveAngleInDegrees() const : int
+    +getRequestedTargetAngleInDegrees() const : int
     +{static} validateOrAdjustPhysicalAngle(physicalAngle : int) : int
     #executeCommand(command : Command) : void
+    #executeCommandChecked(command : Command) : CommandExecutionResult
   }
 
   class Buzzer {
