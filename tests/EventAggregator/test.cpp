@@ -13,6 +13,7 @@ static unsigned long testFakeMillis = 0;
 extern "C" unsigned long millis() { return testFakeMillis; }
 
 #include "EventAggregator.h"
+#include "RulesEngine.h"
 #include "TimeSynchronizationDriver.h"
 
 // --- Test Helpers ---
@@ -24,15 +25,62 @@ class MockOutputHandler : public EventHandler {
 public:
     int lastEventId = -1;
     int eventCount = 0;
+    int expectedCompositeEventIds[4] = {};
+    int expectedCompositeEventCount = 0;
 
     void on(Event event) override {
+        if (event.sourceId != EventAggregator::DEVICE_SOURCE_ID) {
+            return;
+        }
+        if (expectedCompositeEventCount > 0) {
+            bool expected = false;
+            for (int i = 0; i < expectedCompositeEventCount; ++i) {
+                if (event.identifier == expectedCompositeEventIds[i]) {
+                    expected = true;
+                    break;
+                }
+            }
+            if (!expected) {
+                return;
+            }
+        }
         lastEventId = event.identifier;
         eventCount++;
+    }
+
+    void expectCompositeEventId(const int eventId) {
+        if (expectedCompositeEventCount < 4) {
+            expectedCompositeEventIds[expectedCompositeEventCount++] = eventId;
+        }
     }
 
     void reset() {
         lastEventId = -1;
         eventCount = 0;
+    }
+};
+
+class RecordingOutputHandler : public EventHandler {
+public:
+    int eventIds[16] = {};
+    int sourceIds[16] = {};
+    int eventCount = 0;
+
+    void on(const Event event) override {
+        if (eventCount < 16) {
+            eventIds[eventCount] = event.identifier;
+            sourceIds[eventCount] = event.sourceId;
+            ++eventCount;
+        }
+    }
+};
+
+class CountingCommandHandler : public CommandHandler {
+public:
+    int handleCallCount = 0;
+
+    void handle(const Command) override {
+        ++handleCallCount;
     }
 };
 
@@ -1246,6 +1294,7 @@ void test_nested_aggregators_basic_chain() {
     EventAggregator aggregatorA;
     EventAggregator aggregatorB;
     MockOutputHandler handler;
+    handler.expectCompositeEventId(600);
 
     // Chain: A → B → handler
     aggregatorA.setOutputHandler(&aggregatorB);
@@ -1283,6 +1332,7 @@ void test_nested_aggregators_source_filtering() {
     EventAggregator aggregatorA;
     EventAggregator aggregatorB;
     MockOutputHandler handler;
+    handler.expectCompositeEventId(600);
 
     aggregatorA.setOutputHandler(&aggregatorB);
     aggregatorB.setOutputHandler(&handler);
@@ -1324,6 +1374,7 @@ void test_nested_aggregators_three_level_chain() {
     EventAggregator aggregator2;
     EventAggregator aggregator3;
     MockOutputHandler handler;
+    handler.expectCompositeEventId(700);
 
     aggregator1.setOutputHandler(&aggregator2);
     aggregator2.setOutputHandler(&aggregator3);
@@ -1349,6 +1400,88 @@ void test_nested_aggregators_three_level_chain() {
     assert(handler.eventCount == 1);
     assert(handler.lastEventId == 700);
     std::printf("    Nested aggregators three-level chain: PASS\n");
+}
+
+void test_raw_passthrough_order_and_new_match_contribution() {
+    std::printf("  Test 44: Raw pass-through ordering and fresh match contribution...\n");
+    testFakeMillis = 0;
+
+    EventAggregator aggregator;
+    RecordingOutputHandler handler;
+    aggregator.setOutputHandler(&handler);
+    int ids[] = {30, 72};
+    assert(aggregator.addAllMatchPattern(ids, 2, 5, 400));
+
+    aggregator.on(Event(30, 7));
+    assert(handler.eventCount == 1);
+    assert(handler.eventIds[0] == 30);
+    assert(handler.sourceIds[0] == 7);
+
+    aggregator.on(Event(72, 8));
+    assert(handler.eventCount == 3);
+    assert(handler.eventIds[1] == 72);
+    assert(handler.sourceIds[1] == 8);
+    assert(handler.eventIds[2] == 400);
+    assert(handler.sourceIds[2] == EventAggregator::DEVICE_SOURCE_ID);
+
+    aggregator.on(Event(99, 9));
+    assert(handler.eventCount == 4);
+    assert(handler.eventIds[3] == 99);
+
+    aggregator.on(Event(30, 10));
+    assert(handler.eventCount == 6);
+    assert(handler.eventIds[4] == 30);
+    assert(handler.eventIds[5] == 400);
+    std::printf("    Raw pass-through ordering and fresh match contribution: PASS\n");
+}
+
+void test_raw_passthrough_respects_source_filtered_contribution() {
+    std::printf("  Test 45: Source-filtered matches require a new contributing event...\n");
+    testFakeMillis = 0;
+
+    EventAggregator aggregator;
+    RecordingOutputHandler handler;
+    aggregator.setOutputHandler(&handler);
+    int ids[] = {20, 72};
+    int sources[] = {4, 9};
+    assert(aggregator.addAllMatchPattern(ids, 2, sources, 5, 401));
+
+    aggregator.on(Event(20, 3));
+    aggregator.on(Event(72, 9));
+    assert(handler.eventCount == 2);
+
+    aggregator.on(Event(20, 4));
+    assert(handler.eventCount == 4);
+    assert(handler.eventIds[2] == 20);
+    assert(handler.eventIds[3] == 401);
+
+    aggregator.on(Event(20, 3));
+    assert(handler.eventCount == 5);
+    assert(handler.eventIds[4] == 20);
+    std::printf("    Source-filtered match contribution: PASS\n");
+}
+
+void test_aggregator_rules_engine_action_count() {
+    std::printf("  Test 46: Aggregator-to-rules action count...\n");
+    testFakeMillis = 0;
+
+    EventAggregator aggregator;
+    RulesEngine rulesEngine;
+    CountingCommandHandler commandHandler;
+    assert(aggregator.addAllMatchPattern((int[]){30, 72}, 2, 5, 400));
+    assert(rulesEngine.addRule(400, &commandHandler, 1));
+    aggregator.setOutputHandler(&rulesEngine);
+
+    aggregator.on(Event(30));
+    aggregator.on(Event(72));
+    assert(commandHandler.handleCallCount == 1);
+
+    aggregator.on(Event(99));
+    assert(commandHandler.handleCallCount == 1);
+
+    aggregator.on(Event(30));
+    assert(commandHandler.handleCallCount == 2);
+    std::printf("    Aggregator-to-rules action count: PASS\n");
 }
 
 // --- Main ---
@@ -1399,6 +1532,9 @@ int main() {
     test_nested_aggregators_basic_chain();
     test_nested_aggregators_source_filtering();
     test_nested_aggregators_three_level_chain();
+    test_raw_passthrough_order_and_new_match_contribution();
+    test_raw_passthrough_respects_source_filtered_contribution();
+    test_aggregator_rules_engine_action_count();
 
     std::printf("All EventAggregator tests passed.\n");
     return 0;
