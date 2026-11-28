@@ -113,8 +113,8 @@ When you push the release branch (step 2: Release Publish), the existing CI work
 
 | Workflow | Purpose |
 |----------|---------|
-| **Host Unit Tests** | Runs all 54 test suites with AddressSanitizer and UBSan (Ubuntu + macOS) |
-| **Code Coverage** | Generates gcov/lcov coverage report (80% threshold) |
+| **Host Unit Tests** | Runs the 53 suites enumerated by `tests/run_all.sh` with AddressSanitizer and UBSan (Ubuntu + macOS) |
+| **Code Coverage** | Runs 53 enumerated test runners and generates a filtered gcov/lcov report; currently omits `I2cBus` |
 | **Compile Examples** | Compiles all 28 examples for esp32 and esp32s3 on ESP32 Arduino cores 3.3.13 and 4.0.0 |
 | **Lint** | Validates library metadata with strict compliance |
 
@@ -198,7 +198,7 @@ Before starting the release process, verify:
 - [ ] `library.json` version is updated
 - [ ] `docs/Doxyfile` `PROJECT_NUMBER` is updated
 - [ ] `CMakeLists.txt` `VERSION` is updated
-- [ ] Host test entry points (`tests/run_all.sh`, `tests/run_coverage.sh`, and CMake/CTest) execute the same complete suite set and report a consistent suite count
+- [ ] Resolve the current test-entry-point difference before release: CMake/CTest registers 54 cases, while `tests/run_all.sh` and `tests/run_coverage.sh` enumerate 53 runners and omit `I2cBus`; align the entry points or document an explicit scoped exception, then report counts consistently
 - [ ] `README.md` `**Version**` is updated
 - [ ] `README.md` `**Last updated**` date is updated
 - [ ] `SECURITY.md` Supported Versions table is updated
@@ -214,7 +214,7 @@ Before starting the release process, verify:
 **After pushing the release branch (Release Publish), verify:**
 
 - [ ] All CI workflows pass on the `release/*` branch
-- [ ] Host tests: 53 suites pass on Ubuntu and macOS
+- [ ] Host CI: all 53 `tests/run_all.sh` runner entries pass on Ubuntu and macOS; separately reconcile or scope the 54-case CTest difference noted above
 - [ ] Code coverage: 80% threshold met
 - [ ] Compile examples: All 28 examples compile for esp32 and esp32s3 on ESP32 Arduino cores 3.3.13 and 4.0.0
 - [ ] Lint: Strict compliance passes
