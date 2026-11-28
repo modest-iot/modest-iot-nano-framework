@@ -29,6 +29,13 @@ protected:
      * @runs_on{sampler}
      */
     virtual void executeCommand(Command command) = 0;
+
+    /**
+     * @brief Executes a command and reports driver-level evidence when supported.
+     * @param command Command being processed.
+     * @return `Unknown` after the legacy hook unless a subclass overrides this method.
+     */
+    virtual CommandExecutionResult executeCommandChecked(Command command);
 public:
     /**
      * @brief Constructs an Actuator with a pin and optional command handler.
@@ -48,6 +55,13 @@ public:
      * @runs_on{sampler}
      */
     void handle(Command command) final;
+
+    /**
+     * @brief Executes locally, propagates the requested command, and returns the local result.
+     * @param command Command to execute.
+     * @return The local actuator result; parent propagation does not prove hardware acceptance.
+     */
+    CommandExecutionResult handleChecked(Command command) final;
 
     /**
      * @brief Sets or updates the command handler for this actuator.

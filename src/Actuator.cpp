@@ -30,7 +30,27 @@ void Actuator::handle(const Command command) {
     // Propagate the command to the parent handler for monitoring
     if (commandHandler != nullptr) {
         commandHandler->handle(command);
-    }}
+    }
+}
+
+/**
+ * @brief Adapts the legacy execution hook to the checked API without claiming success.
+ */
+CommandExecutionResult Actuator::executeCommandChecked(const Command command) {
+    executeCommand(command);
+    return CommandExecutionResult::unknown();
+}
+
+/**
+ * @brief Executes the checked local hook and propagates the requested command upstream.
+ */
+CommandExecutionResult Actuator::handleChecked(const Command command) {
+    const CommandExecutionResult result = executeCommandChecked(command);
+    if (commandHandler != nullptr) {
+        commandHandler->handle(command);
+    }
+    return result;
+}
 
 /**
  * @brief Replaces the current propagation target for this actuator.
