@@ -36,6 +36,34 @@ public:
     }
 };
 
+class CheckedMockActuator : public MockActuator {
+public:
+    CommandExecutionStatus nextResult = CommandExecutionStatus::Unknown;
+
+    CommandExecutionResult handleChecked(const Command command) override {
+        handle(command);
+        return {nextResult};
+    }
+};
+
+struct ResultCapture {
+    int compositeEventId = -1;
+    CommandHandler* target = nullptr;
+    int commandId = -1;
+    CommandExecutionStatus status = CommandExecutionStatus::Unknown;
+    int callCount = 0;
+};
+
+void captureRuleActionResult(const int compositeEventId, CommandHandler* target, const Command command,
+                             const CommandExecutionResult result, void* context) {
+    auto* capture = static_cast<ResultCapture*>(context);
+    capture->compositeEventId = compositeEventId;
+    capture->target = target;
+    capture->commandId = command.identifier;
+    capture->status = result.status;
+    ++capture->callCount;
+}
+
 int main() {
     std::cout << "Running RulesEngine tests..." << std::endl;
 
@@ -361,6 +389,36 @@ int main() {
         assert(a2.lastPayload == 20);
         testsPassed++;
         std::cout << "  [PASS] addActionToRule with payload on existing rule" << std::endl;
+    }
+
+    // Test 26: Checked rule dispatch observes unknown legacy and explicit backend outcomes
+    {
+        RulesEngine re;
+        MockActuator legacyActuator;
+        CheckedMockActuator checkedActuator;
+        ResultCapture capture;
+        checkedActuator.nextResult = CommandExecutionStatus::Failed;
+        assert(re.addRule(100, &legacyActuator, 1));
+        assert(re.addRule(200, &checkedActuator, 2));
+        re.setActionResultObserver(captureRuleActionResult, &capture);
+
+        re.on(Event(100));
+        assert(legacyActuator.handleCallCount == 1);
+        assert(capture.callCount == 1);
+        assert(capture.compositeEventId == 100);
+        assert(capture.target == &legacyActuator);
+        assert(capture.commandId == 1);
+        assert(capture.status == CommandExecutionStatus::Unknown);
+
+        re.on(Event(200));
+        assert(checkedActuator.handleCallCount == 1);
+        assert(capture.callCount == 2);
+        assert(capture.compositeEventId == 200);
+        assert(capture.target == &checkedActuator);
+        assert(capture.commandId == 2);
+        assert(capture.status == CommandExecutionStatus::Failed);
+        testsPassed++;
+        std::cout << "  [PASS] Checked dispatch reports legacy unknown and backend failure" << std::endl;
     }
 
     // Test 26: Rule with 0 actions is valid but does nothing
